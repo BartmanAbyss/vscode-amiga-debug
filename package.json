@@ -1,0 +1,85 @@
+{
+	"name": "amiga-debug",
+	"displayName": "amiga-debug",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.31.0"
+	},
+	"categories": [
+		"Debuggers"
+	],
+	"activationEvents": [
+		"onDebug"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"breakpoints": [
+			{
+				"language": "c"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "winuae",
+				"label": "WinUAE Debug",
+				"program": "./out/debugAdapter.js",
+				"runtime": "node",
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"program"
+						],
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "Absolute path to a text file.",
+								"default": ""
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "winuae",
+						"request": "launch",
+						"name": "Ask for file name",
+						"program": ""
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "WinUAE Debug: Launch",
+						"description": "A new configuration for 'debugging' a user selected markdown file.",
+						"body": {
+							"type": "winuae",
+							"request": "launch",
+							"name": "Ask for file name",
+							"program": ""
+						}
+					}
+				]
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28",
+		"tslint": "^5.12.1",
+		"@types/node": "^10.12.21",
+		"@types/mocha": "^2.2.42"
+	},
+	"dependencies": {
+		"await-notify": "^1.0.1",
+		"vscode-debugadapter": "^1.34.0",
+		"vscode-debugadapter-testsupport": "^1.34.0",
+		"vscode-debugprotocol": "^1.34.0"
+	}
+}
