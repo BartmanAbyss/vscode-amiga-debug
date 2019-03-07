@@ -5,7 +5,7 @@ export interface Breakpoint {
     file?: string;
     line?: number;
     raw?: string;
-    condition: string;
+    condition?: string;
     countCondition?: string;
     number?: number;
 }
