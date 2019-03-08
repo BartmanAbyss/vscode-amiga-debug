@@ -14,6 +14,67 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+        "commands": [
+            {
+                "command": "amiga.registers.selectedNode",
+                "title": "Selected"
+            },
+            {
+                "command": "amiga.registers.copyValue",
+                "title": "Copy Value"
+            },
+            {
+                "command": "amiga.registers.setFormat",
+                "title": "Set Value Format"
+            },
+            {
+                "category": "amiga",
+                "command": "amiga.examineMemory",
+                "title": "View Memory"
+            },
+            {
+                "category": "amiga",
+                "command": "amiga.viewDisassembly",
+                "title": "View Disassembly (Function)"
+            },
+            {
+                "category": "amiga",
+                "command": "amiga.setForceDisassembly",
+                "title": "Set Force Disassembly"
+            }
+		],
+        "languages": [
+            {
+                "id": "amiga.disassembly",
+                "aliases": [
+                    "Amiga Disassembly"
+                ],
+                "extensions": [
+                    ".amigaasm"
+                ]
+            },
+            {
+                "id": "amiga.memoryview",
+                "aliases": [
+                    "Amiga Memory View"
+                ],
+                "extensions": [
+                    ".amigamem"
+                ]
+            }
+		],
+        "grammars": [
+            {
+                "language": "amiga.disassembly",
+                "scopeName": "source.amiga-disassembly",
+                "path": "./syntaxes/amiga-disassembly.json"
+            },
+            {
+                "language": "amiga.memoryview",
+                "scopeName": "source.amiga-memoryview",
+                "path": "./syntaxes/amiga-memoryview.json"
+            }
+        ],
 		"breakpoints": [
 			{
 				"language": "c"
@@ -21,10 +82,16 @@
 		],
 		"debuggers": [
 			{
-				"type": "winuae",
-				"label": "WinUAE Debug",
+				"type": "amiga",
+				"label": "Amiga Debug",
 				"program": "./out/debugAdapter.js",
 				"runtime": "node",
+				"enableBreakpointsFor": {
+                    "languageIds": [
+                        "c",
+                        "amiga.disassembly"
+                    ]
+                },
 				"configurationAttributes": {
 					"launch": {
 						"required": [
@@ -41,7 +108,7 @@
 				},
 				"initialConfigurations": [
 					{
-						"type": "winuae",
+						"type": "amiga",
 						"request": "launch",
 						"name": "Ask for file name",
 						"program": ""
@@ -49,10 +116,10 @@
 				],
 				"configurationSnippets": [
 					{
-						"label": "WinUAE Debug: Launch",
+						"label": "Amiga Debug: Launch",
 						"description": "A new configuration for 'debugging' a user selected markdown file.",
 						"body": {
-							"type": "winuae",
+							"type": "amiga",
 							"request": "launch",
 							"name": "Ask for file name",
 							"program": ""
@@ -60,7 +127,51 @@
 					}
 				]
 			}
-		]
+		],
+		"menus": {
+            "commandPalette": [
+                {
+                    "command": "amiga.registers.copyValue",
+                    "when": "false"
+                },
+                {
+                    "command": "amiga.examineMemory",
+                    "when": "debugType == amiga"
+                },
+                {
+                    "command": "amiga.viewDisassembly",
+                    "when": "debugType == amiga"
+                },
+                {
+                    "command": "amiga.setForceDisassembly",
+                    "when": "debugType == amiga"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "amiga.registers.copyValue",
+                    "when": "view == amiga.registers && viewItem == register"
+                },
+                {
+                    "command": "amiga.registers.copyValue",
+                    "when": "view == amiga.registers && viewItem == field"
+                },
+                {
+                    "command": "amiga.registers.setFormat",
+                    "when": "view == amiga.registers"
+                }
+            ],
+            "view/title": []
+		},
+        "views": {
+            "debug": [
+                {
+                    "id": "amiga.registers",
+                    "name": "Registers",
+                    "when": "debugType == amiga"
+                }
+            ]
+        }
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -78,6 +189,7 @@
 	},
 	"dependencies": {
 		"await-notify": "^1.0.1",
+		"copy-paste": "^1.3.0",
 		"vscode-debugadapter": "^1.34.0",
 		"vscode-debugadapter-testsupport": "^1.34.0",
 		"vscode-debugprotocol": "^1.34.0"

@@ -233,7 +233,7 @@ export class MI2 extends EventEmitter implements IBackend {
             this.process.on('exit', (code) => { clearTimeout(to); });
             this.removeAllListeners('stopped');
             this.removeAllListeners('signal-stop');
-            this.on('generic-stopped', async () => {
+            this.once('generic-stopped', async () => {
                 await this.sendCommand('interpreter-exec console "kill"');
                 await this.sendCommand('gdb-exit');
                 resolve(true);

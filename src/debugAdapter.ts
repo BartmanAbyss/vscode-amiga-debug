@@ -2,5 +2,5 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { WinUaeDebugSession } from './winUaeDebug';
-WinUaeDebugSession.run(WinUaeDebugSession);
+import { AmigaDebugSession } from './amigaDebug';
+AmigaDebugSession.run(AmigaDebugSession);

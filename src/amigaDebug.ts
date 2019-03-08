@@ -21,6 +21,30 @@ class ExtendedVariable {
     }
 }
 
+class CustomStoppedEvent extends Event implements DebugProtocol.Event {
+    public readonly body: {
+        reason: string,
+        threadID: number
+    };
+    public readonly event: string;
+
+    constructor(reason: string, threadID: number) {
+        super('custom-stop', { reason: reason, threadID: threadID });
+    }
+}
+
+class CustomContinuedEvent extends Event implements DebugProtocol.Event {
+    public readonly body: {
+        threadID: number;
+        allThreads: boolean;
+    };
+    public readonly event: string;
+
+    constructor(threadID: number, allThreads: boolean = true) {
+        super('custom-continued', { threadID: threadID, allThreads: allThreads });
+    }
+}
+
 const GLOBAL_HANDLE_ID = 0xFE;
 const STACK_HANDLES_START = 0x100;
 const STACK_HANDLES_FINISH = 0xFFFF;
@@ -28,7 +52,7 @@ const STATIC_HANDLES_START = 0x010000;
 const STATIC_HANDLES_FINISH = 0x01FFFF;
 const VAR_HANDLES_START = 0x020000;
 
-export class WinUaeDebugSession extends LoggingDebugSession {
+export class AmigaDebugSession extends LoggingDebugSession {
 	private args: LaunchRequestArguments;
 	//	private symbolTable: SymbolTable;
 
@@ -40,7 +64,8 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 	protected debugReady: boolean;
 	protected miDebugger: MI2;
 	protected forceDisassembly: boolean = false;
-	protected currentThreadId: number = 0;
+    protected activeEditorPath: string|null = null;
+	protected currentThreadId: number = 1;
 
 	private stopped: boolean = false;
 	private stoppedReason: string = '';
@@ -117,7 +142,7 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 			`file-exec-and-symbols ${this.args.program}`,
 			'enable-pretty-printing',
 			'interpreter-exec console "target remote localhost:2345"',
-			'exec-continue' // no stop on entry
+			//'exec-continue' // no stop on entry
 		];
 
 		this.miDebugger.connect(".", this.args.program, commands).then(() => {
@@ -127,6 +152,115 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
 	}
+
+    protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
+        switch (command) {
+            case 'set-force-disassembly':
+                response.body = { success: true };
+                this.forceDisassembly = args.force;
+                if (this.stopped) {
+                    this.activeEditorPath = null;
+                    this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
+                    this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+                }
+                this.sendResponse(response);
+                break;
+/*            case 'load-function-symbols':
+                response.body = { functionSymbols: this.symbolTable.getFunctionSymbols() };
+                this.sendResponse(response);
+                break;*/
+            case 'set-active-editor':
+                if (args.path !== this.activeEditorPath) {
+                    this.activeEditorPath = args.path;
+                    // if (this.stopped) {
+                    //     this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId, true));
+                    // }
+                }
+                response.body = {};
+                this.sendResponse(response);
+                break;
+            case 'get-arguments':
+                response.body = this.args;
+                this.sendResponse(response);
+                break;
+/*            case 'read-memory':
+                this.readMemoryRequest(response, args['address'], args['length']);
+                break;
+            case 'write-memory':
+                this.writeMemoryRequest(response, args['address'], args['data']);
+                break;*/
+            case 'read-registers':
+                this.readRegistersRequest(response);
+                break;
+            case 'read-register-list':
+                this.readRegisterListRequest(response);
+                break;
+/*            case 'disassemble':
+                this.disassembleRequest(response, args);
+                break;*/
+            case 'execute-command':
+                let cmd = args['command'] as string;
+                if (cmd.startsWith('-')) { cmd = cmd.substring(1); }
+                else { cmd = `interpreter-exec console "${cmd}"`; }
+                this.miDebugger.sendCommand(cmd).then((node) => {
+                    response.body = node.resultRecords;
+                    this.sendResponse(response);
+                }, (error) => {
+                    response.body = error;
+                    this.sendErrorResponse(response, 110, 'Unable to execute command');
+                });
+                break;
+            default:
+                response.body = { error: 'Invalid command.' };
+                this.sendResponse(response);
+                break;
+        }
+    }
+
+    protected readRegistersRequest(response: DebugProtocol.Response) {
+        this.miDebugger.sendCommand('data-list-register-values x').then((node) => {
+            if (node.resultRecords.resultClass === 'done') {
+                const rv = node.resultRecords.results[0][1];
+                response.body = rv.map((n) => {
+                    const val = {};
+                    n.forEach((x) => {
+                        val[x[0]] = x[1];
+                    });
+                    return val;
+                });
+            }
+            else {
+                response.body = {
+                    error: 'Unable to parse response'
+                };
+            }
+            this.sendResponse(response);
+        }, (error) => {
+            response.body = { error: error };
+            this.sendErrorResponse(response, 115, `Unable to read registers: ${error.toString()}`);
+        });
+    }
+
+    protected readRegisterListRequest(response: DebugProtocol.Response) {
+        this.miDebugger.sendCommand('data-list-register-names').then((node) => {
+            if (node.resultRecords.resultClass === 'done') {
+                let registerNames;
+                node.resultRecords.results.forEach((rr) => {
+                    if (rr[0] === 'register-names') {
+                        registerNames = rr[1];
+                    }
+                });
+                response.body = registerNames;
+            }
+            else {
+                response.body = { error: node.resultRecords.results };
+            }
+            this.sendResponse(response);
+        }, (error) => {
+            response.body = { error: error };
+            this.sendErrorResponse(response, 116, `Unable to read register list: ${error.toString()}`);
+        });
+    }
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		if (this.miDebugger) {
@@ -138,10 +272,93 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected setFunctionBreakPointsRequest(
-		response: DebugProtocol.SetFunctionBreakpointsResponse,
-		args: DebugProtocol.SetFunctionBreakpointsArguments
-	): void {
+	protected handleMsg(type: string, msg: string) {
+		if (type === 'target') { type = 'stdout'; }
+		if (type === 'log') { type = 'stderr'; }
+		this.sendEvent(new OutputEvent(msg, type));
+	}
+
+	protected handleRunning(info: MINode) {
+		this.stopped = false;
+		this.sendEvent(new ContinuedEvent(this.currentThreadId));
+		this.sendEvent(new CustomContinuedEvent(this.currentThreadId, true));
+	}
+
+	protected handleBreakpoint(info: MINode) {
+		this.stopped = true;
+		this.stoppedReason = 'breakpoint';
+		this.sendEvent(new StoppedEvent('breakpoint', this.currentThreadId));
+        this.sendEvent(new CustomStoppedEvent('breakpoint', this.currentThreadId));
+	}
+
+	protected handleBreak(info: MINode) {
+		this.stopped = true;
+		this.stoppedReason = 'step';
+		this.sendEvent(new StoppedEvent('step', this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent('step', this.currentThreadId));
+	}
+
+	protected handlePause(info: MINode) {
+		this.stopped = true;
+		this.stoppedReason = 'user request';
+		this.sendEvent(new StoppedEvent('user request', this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent('user request', this.currentThreadId));
+	}
+
+	protected handleThreadCreated(info: { threadId: number, threadGroupId: number }) {
+		this.sendEvent(new ThreadEvent('started', info.threadId));
+	}
+
+	protected handleThreadExited(info: { threadId: number, threadGroupId: number }) {
+		this.sendEvent(new ThreadEvent('exited', info.threadId));
+	}
+
+	protected handleThreadSelected(info: { threadId: number }) {
+		this.currentThreadId = info.threadId;
+		this.sendEvent(new ThreadEvent('selected', info.threadId));
+	}
+
+	protected stopEvent(info: MINode) {
+		if (!this.started) { this.crashed = true; }
+		if (!this.quit) {
+			this.stopped = true;
+			this.stoppedReason = 'exception';
+			this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
+            this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
+		}
+	}
+
+	protected quitEvent() {
+		this.quit = true;
+		this.sendEvent(new TerminatedEvent());
+	}
+
+	protected launchError(err: any) {
+		this.handleMsg('stderr', 'Could not start debugger process, does the program exist in filesystem?\n');
+		this.handleMsg('stderr', err.toString() + '\n');
+		this.quitEvent();
+	}
+
+    protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): Promise<void> {
+        try {
+            let name = args.name;
+            if (args.variablesReference >= VAR_HANDLES_START) {
+                const parent = this.variableHandles.get(args.variablesReference) as VariableObject;
+                name = `${parent.name}.${name}`;
+            }
+
+            const res = await this.miDebugger.varAssign(name, args.value);
+            response.body = {
+                value: res.result('value')
+            };
+            this.sendResponse(response);
+        }
+        catch (err) {
+            this.sendErrorResponse(response, 11, `Could not continue: ${err}`);
+        }
+    }
+
+	protected setFunctionBreakPointsRequest(response: DebugProtocol.SetFunctionBreakpointsResponse, args: DebugProtocol.SetFunctionBreakpointsArguments): void {
 		const createBreakpoints = async (shouldContinue) => {
 			const all: Promise<Breakpoint | null>[] = [];
 			args.breakpoints.forEach((brk) => {
@@ -279,12 +496,48 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
-		response.body = {
-			threads: [
-				new Thread(1, "thread 1")
-			]
-		};
-		this.sendResponse(response);
+        if (!this.stopped) {
+            response.body = { threads: [] };
+            this.sendResponse(response);
+        }
+        try {
+            const threadIdNode = await this.miDebugger.sendCommand('thread-list-ids');
+            const threadIds: number[] = threadIdNode.result('thread-ids').map((ti) => parseInt(ti[1]));
+            const currentThread = threadIdNode.result('current-thread-id');
+
+            if (!currentThread) {
+                await this.miDebugger.sendCommand(`thread-select ${threadIds[0]}`);
+                this.currentThreadId = threadIds[0];
+            }
+            else {
+                this.currentThreadId = parseInt(currentThread);
+            }
+
+            const nodes = await Promise.all(threadIds.map((id) => this.miDebugger.sendCommand(`thread-info ${id}`)));
+
+            const threads = <Array<Thread>>nodes.map((node: MINode) => {
+                let th = node.result('threads');
+                if (th.length === 1) {
+                    th = th[0];
+                    const id = parseInt(MINode.valueOf(th, 'id'));
+                    const tid = MINode.valueOf(th, 'target-id');
+                    const details = MINode.valueOf(th, 'details');
+
+                    return new Thread(id, details || tid);
+                }
+                else {
+                    return null;
+                }
+            }).filter((t) => t !== null);
+
+            response.body = {
+                threads: threads
+            };
+            this.sendResponse(response);
+        }
+        catch (e) {
+            this.sendErrorResponse(response, 1, `Unable to get thread information: ${e}`);
+        }
 	}
 
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
@@ -355,7 +608,23 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 		}
 	}
 
-    private createVariable(arg, options?): number {
+	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
+		this.sendResponse(response);
+	}
+
+    protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
+        const scopes = new Array<Scope>();
+        scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
+        scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
+        scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
+
+        response.body = {
+            scopes: scopes
+        };
+        this.sendResponse(response);
+    }
+
+	private createVariable(arg, options?): number {
         if (options) {
             return this.variableHandles.create(new ExtendedVariable(arg, options));
         }
@@ -374,18 +643,6 @@ export class WinUaeDebugSession extends LoggingDebugSession {
             this.variableHandlesReverse[varObj.name] = id;
         }
         return varObj.isCompound() ? id : 0;
-    }
-
-    protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-        const scopes = new Array<Scope>();
-        scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
-        scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
-        scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
-
-        response.body = {
-            scopes: scopes
-        };
-        this.sendResponse(response);
     }
 
 	private async stackVariablesRequest(
@@ -691,71 +948,20 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
-		this.sendResponse(response);
-	}
+    protected checkFileExists(name: string): Promise<boolean> {
+        if (!name) { return Promise.resolve(false); }
 
-	protected handleMsg(type: string, msg: string) {
-		if (type === 'target') { type = 'stdout'; }
-		if (type === 'log') { type = 'stderr'; }
-		this.sendEvent(new OutputEvent(msg, type));
-	}
+        if (this.fileExistsCache.has(name)) { // Check cache
+            return Promise.resolve(this.fileExistsCache.get(name) || false);
+        }
 
-	protected handleRunning(info: MINode) {
-		this.stopped = false;
-		this.sendEvent(new ContinuedEvent(this.currentThreadId));
-	}
-
-	protected handleBreakpoint(info: MINode) {
-		this.stopped = true;
-		this.stoppedReason = 'breakpoint';
-		this.sendEvent(new StoppedEvent('breakpoint', this.currentThreadId));
-	}
-
-	protected handleBreak(info: MINode) {
-		this.stopped = true;
-		this.stoppedReason = 'step';
-		this.sendEvent(new StoppedEvent('step', this.currentThreadId));
-	}
-
-	protected handlePause(info: MINode) {
-		this.stopped = true;
-		this.stoppedReason = 'user request';
-		this.sendEvent(new StoppedEvent('user request', this.currentThreadId));
-	}
-
-	protected handleThreadCreated(info: { threadId: number, threadGroupId: number }) {
-		this.currentThreadId = info.threadId;
-		this.sendEvent(new ThreadEvent('started', info.threadId));
-	}
-
-	protected handleThreadExited(info: { threadId: number, threadGroupId: number }) {
-		this.sendEvent(new ThreadEvent('exited', info.threadId));
-	}
-
-	protected handleThreadSelected(info: { threadId: number }) {
-		this.sendEvent(new ThreadEvent('selected', info.threadId));
-	}
-
-	protected stopEvent(info: MINode) {
-		if (!this.started) { this.crashed = true; }
-		if (!this.quit) {
-			this.stopped = true;
-			this.stoppedReason = 'exception';
-			this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
-		}
-	}
-
-	protected quitEvent() {
-		this.quit = true;
-		this.sendEvent(new TerminatedEvent());
-	}
-
-	protected launchError(err: any) {
-		this.handleMsg('stderr', 'Could not start debugger process, does the program exist in filesystem?\n');
-		this.handleMsg('stderr', err.toString() + '\n');
-		this.quitEvent();
-	}
+        return new Promise((resolve, reject) => {
+            fs.exists(name, (exists) => {
+                this.fileExistsCache.set(name, exists);
+                resolve(exists);
+            });
+        });
+    }
 
 	//---- helpers
 
@@ -763,6 +969,109 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 		const convertedPath = 'c:/cygwin64' + filePath;
 		return new Source(path.basename(filePath), convertedPath);
 	}
+
+    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
+        const createVariable = (arg, options?) => {
+            if (options) {
+                return this.variableHandles.create(new ExtendedVariable(arg, options));
+            }
+            else {
+                return this.variableHandles.create(arg);
+            }
+        };
+
+        const findOrCreateVariable = (varObj: VariableObject): number => {
+            let id: number;
+            if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
+                id = this.variableHandlesReverse[varObj.name];
+            }
+            else {
+                id = createVariable(varObj);
+                this.variableHandlesReverse[varObj.name] = id;
+            }
+            return varObj.isCompound() ? id : 0;
+        };
+
+        if (args.context === 'watch') {
+            try {
+                const exp = args.expression;
+                const varObjName = `watch_${exp.replace(/\./g, '__').replace(/\[/g, '_').replace(/\]/g, '_')}`;
+                let varObj: VariableObject;
+                try {
+                    const changes = await this.miDebugger.varUpdate(varObjName);
+                    const changelist = changes.result('changelist');
+                    changelist.forEach((change) => {
+                        const name = MINode.valueOf(change, 'name');
+                        const vId = this.variableHandlesReverse[name];
+                        const v = this.variableHandles.get(vId) as any;
+                        v.applyChanges(change);
+                    });
+                    const varId = this.variableHandlesReverse[varObjName];
+                    varObj = this.variableHandles.get(varId) as any;
+                    response.body = {
+                        result: varObj.value,
+                        variablesReference: varObj.id
+                    };
+                }
+                catch (err) {
+                    if (err instanceof MIError && err.message === 'Variable object not found') {
+                        varObj = await this.miDebugger.varCreate(exp, varObjName);
+                        const varId = findOrCreateVariable(varObj);
+                        varObj.exp = exp;
+                        varObj.id = varId;
+                        response.body = {
+                            result: varObj.value,
+                            variablesReference: varObj.id
+                        };
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+                
+                this.sendResponse(response);
+            }
+            catch (err) {
+                response.body = {
+                    result: `<${err.toString()}>`,
+                    variablesReference: 0
+                };
+                this.sendErrorResponse(response, 7, err.toString());
+            }
+        }
+        else if (args.context === 'hover') {
+            try {
+                const res = await this.miDebugger.evalExpression(args.expression);
+                response.body = {
+                    variablesReference: 0,
+                    result: res.result('value')
+                };
+                this.sendResponse(response);
+            }
+            catch (e) {
+                this.sendErrorResponse(response, 7, e.toString());
+            }
+        }
+        else {
+            this.miDebugger.sendUserInput(args.expression).then((output) => {
+                if (typeof output === 'undefined') {
+                    response.body = {
+                        result: '',
+                        variablesReference: 0
+                    };
+                }
+                else {
+                    response.body = {
+                        result: JSON.stringify(output),
+                        variablesReference: 0
+                    };
+                }
+                this.sendResponse(response);
+            }, (msg) => {
+                this.sendErrorResponse(response, 8, msg.toString());
+            });
+        }
+    }
 }
 
 function normalizePath(dirName: string): string {
