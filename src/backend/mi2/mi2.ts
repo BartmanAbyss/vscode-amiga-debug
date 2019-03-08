@@ -67,7 +67,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
     private stdout(data) {
         if (trace) {
-            this.log('stderr', 'stdout: ' + data);
+            this.log('stderr', '<= ' + data);
         }
         if (typeof data === 'string') {
             this.buffer += data;
@@ -224,6 +224,22 @@ export class MI2 extends EventEmitter implements IBackend {
         const to = setTimeout(() => { process.kill(-proc.pid); }, 1000);
         this.process.on('exit', (code) => { clearTimeout(to); });
         this.sendRaw('-gdb-exit');
+    }
+
+    public abort(): Thenable<boolean> {
+        return new Promise((resolve, reject) => {
+            const proc = this.process;
+            const to = setTimeout(() => { process.kill(-proc.pid); resolve(true); }, 1000);
+            this.process.on('exit', (code) => { clearTimeout(to); });
+            this.removeAllListeners('stopped');
+            this.removeAllListeners('signal-stop');
+            this.on('generic-stopped', async () => {
+                await this.sendCommand('interpreter-exec console "kill"');
+                await this.sendCommand('gdb-exit');
+                resolve(true);
+            });
+            this.sendCommand('exec-interrupt');
+        });
     }
 
     public detach() {
@@ -558,7 +574,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
     public sendRaw(raw: string) {
         if (this.printCalls) {
-            this.log('log', raw);
+            this.log('log', '=> ' + raw);
         }
         this.process.stdin.write(raw + '\n');
     }

@@ -6,7 +6,7 @@ import { MINode } from './backend/mi_parse';
 import { expandValue, isExpandable } from './backend/gdb_expansion';
 
 import * as fs from 'fs';
-import { basename } from 'path';
+import * as path from 'path';
 
 //import { SymbolTable } from './backend/symbols';
 //import { SymbolInformation, SymbolScope, SymbolType, DisassemblyInstruction } from './symbols';
@@ -84,7 +84,7 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-		logger.setup(Logger.LogLevel.Verbose, false);
+		logger.setup(Logger.LogLevel.Warn, false);
 
 		this.args = args;
 		//this.symbolTable = new SymbolTable(args.toolchainPath, args.executable);
@@ -107,7 +107,7 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 		this.miDebugger = new MI2("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/debug.cmd']);
 		this.initDebugger();
 
-		//this.miDebugger.printCalls = true;
+		this.miDebugger.printCalls = true;
 		//this.miDebugger.debugOutput = true;
 
 		this.miDebugger.once('debug-ready', () => {
@@ -130,9 +130,12 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		if (this.miDebugger) {
-			this.miDebugger.stop();
+			this.miDebugger.abort().then((done) => {
+				this.sendResponse(response);
+			});
+		} else {
+			this.sendResponse(response);
 		}
-		this.sendResponse(response);
 	}
 
 	protected setFunctionBreakPointsRequest(
@@ -178,15 +181,18 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
 		const createBreakpoints = async (shouldContinue) => {
+			const normalizedPath = normalizePath(args.source.path || "");
 			this.debugReady = true;
-			const currentBreakpoints = (this.breakpointMap.get(args.source.path || "") || []).map((bp) => bp.number || -1);
+			const currentBreakpoints = (this.breakpointMap.get(normalizedPath) || [])
+				.filter((bp) => bp.line !== undefined)
+				.map((bp) => bp.number!);
 
 			try {
 				await this.miDebugger.removeBreakpoints(currentBreakpoints);
-				this.breakpointMap.set(args.source.path || "", []);
+				this.breakpointMap.set(normalizedPath, []);
 
 				const all: Array<Promise<Breakpoint | null>> = [];
-				const sourcepath = decodeURIComponent(args.source.path || "");
+				const sourcepath = decodeURIComponent(normalizedPath);
 /*
 				if (sourcepath.startsWith('disassembly:/')) {
 					let sidx = 13;
@@ -246,7 +252,7 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 					})
 				};
 
-				this.breakpointMap.set(args.source.path || "", finalBrks);
+				this.breakpointMap.set(normalizedPath, finalBrks);
 				this.sendResponse(response);
 			}
 			catch (msg) {
@@ -755,7 +761,15 @@ export class WinUaeDebugSession extends LoggingDebugSession {
 
 	private createSource(filePath: string): Source {
 		const convertedPath = 'c:/cygwin64' + filePath;
-		return new Source(basename(filePath), convertedPath);
+		return new Source(path.basename(filePath), convertedPath);
+	}
+}
+
+function normalizePath(dirName: string): string {
+	if (path.sep === '/') {
+		return dirName.replace(/\\+/g, path.sep);
+	} else {
+		return dirName.replace(/\/+/g, path.sep).toUpperCase();
 	}
 }
 
