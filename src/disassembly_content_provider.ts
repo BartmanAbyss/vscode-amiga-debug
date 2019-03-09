@@ -2,40 +2,39 @@ import * as vscode from 'vscode';
 import { DisassemblyInstruction } from './symbols';
 
 export class DisassemblyContentProvider implements vscode.TextDocumentContentProvider {
-    public provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): Thenable<string> {
-        return new Promise((resolve, reject) => {
-            let funcName: string;
-            let file: string|null;
-            const path = uri.path;
-            const pathParts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
-            
-            if (pathParts.length === 1) {
-                file = null;
-                funcName = pathParts[0];
-            }
-            else {
-                file = pathParts[0];
-                funcName = pathParts[1];
-            }
-            
-            vscode.debug.activeDebugSession!.customRequest('disassemble', { function: funcName, file: file }).then((data) => {
-                const instructions: DisassemblyInstruction[] = data.instructions;
+	public provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): Thenable<string> {
+		return new Promise((resolve, reject) => {
+			let funcName: string;
+			let file: string|null;
+			const path = uri.path;
+			const pathParts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
 
-                let output = '';
-                instructions.forEach((i) => {
-                    output += `${i.address}: ${this.padEnd(15, i.opcodes)} \t${i.instruction}\n`;
-                });
+			if (pathParts.length === 1) {
+				file = null;
+				funcName = pathParts[0];
+			} else {
+				file = pathParts[0];
+				funcName = pathParts[1];
+			}
 
-                resolve(output);
-            }, (error) => {
-                vscode.window.showErrorMessage(error.message);
-                reject(error.message);
-            });
-        });
-    }
+			vscode.debug.activeDebugSession!.customRequest('disassemble', { function: funcName, file }).then((data) => {
+				const instructions: DisassemblyInstruction[] = data.instructions;
 
-    private padEnd(len: number, value: string): string {
-        for (let i = value.length; i < len; i++) { value += ' '; }
-        return value;
-    }
+				let output = '';
+				instructions.forEach((i) => {
+					output += `${i.address}: ${this.padEnd(15, i.opcodes)} \t${i.instruction}\n`;
+				});
+
+				resolve(output);
+			}, (error) => {
+				vscode.window.showErrorMessage(error.message);
+				reject(error.message);
+			});
+		});
+	}
+
+	private padEnd(len: number, value: string): string {
+		for (let i = value.length; i < len; i++) { value += ' '; }
+		return value;
+	}
 }

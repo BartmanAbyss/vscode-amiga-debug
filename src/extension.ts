@@ -55,8 +55,7 @@ class AmigaDebugExtension {
 			const uri = editor.document.uri;
 			if (uri.scheme === 'file') {
 				// vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: uri.path });
-			}
-			else if (uri.scheme === 'disassembly') {
+			} else if (uri.scheme === 'disassembly') {
 				vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: `${uri.scheme}://${uri.authority}${uri.path}` });
 			}
 		}
@@ -72,8 +71,7 @@ class AmigaDebugExtension {
 			try {
 				const resp = await vscode.debug.activeDebugSession.customRequest('load-function-symbols');
 				this.functionSymbols = resp.functionSymbols;
-			}
-			catch (e) {
+			} catch (e) {
 				vscode.window.showErrorMessage('Unable to load symbol table. Disassembly view unavailable.');
 			}
 		}
@@ -92,16 +90,13 @@ class AmigaDebugExtension {
 			if (functions.length === 0) {
 				vscode.window.showErrorMessage(`No function with name ${funcname} found.`);
 				return;
-			}
-			else if (functions.length === 1) {
+			} else if (functions.length === 1) {
 				if (functions[0].scope === SymbolScope.Global) {
 					url = `disassembly:///${functions[0].name}.amigaasm`;
-				}
-				else {
+				} else {
 					url = `disassembly:///${functions[0].file}::${functions[0].name}.amigaasm`;
 				}
-			}
-			else {
+			} else {
 				const selected = await vscode.window.showQuickPick(functions.map((f) => {
 					return {
 						label: f.name,
@@ -116,15 +111,13 @@ class AmigaDebugExtension {
 
 				if (selected!.scope === SymbolScope.Global) {
 					url = `disassembly:///${selected!.name}.amigaasm`;
-				}
-				else {
+				} else {
 					url = `disassembly:///${selected!.file}::${selected!.name}.amigaasm`;
 				}
 			}
 
 			vscode.window.showTextDocument(vscode.Uri.parse(url));
-		}
-		catch (e) {
+		} catch (e) {
 			vscode.window.showErrorMessage('Unable to show disassembly.');
 		}
 	}
@@ -146,11 +139,9 @@ class AmigaDebugExtension {
 		function validateValue(address) {
 			if (/^0x[0-9a-f]{1,8}$/i.test(address)) {
 				return address;
-			}
-			else if (/^[0-9]+$/i.test(address)) {
+			} else if (/^[0-9]+$/i.test(address)) {
 				return address;
-			}
-			else {
+			} else {
 				return null;
 			}
 		}
@@ -302,14 +293,14 @@ class AmigaConfigurationProvider implements vscode.DebugConfigurationProvider {
 			// start port listener on launch of first debug session
 			if (!this.server) {
 				// start listening on a random port
-				this.server = Net.createServer(socket => {
+				this.server = Net.createServer((socket) => {
 					const session = new AmigaDebugSession();
 					session.setRunAsServer(true);
-					session.start(<NodeJS.ReadableStream>socket, socket);
+					session.start(socket as NodeJS.ReadableStream, socket);
 				}).listen(0);
 			}
 			// make VS Code connect to debug server instead of launching debug adapter
-			let address: any = this.server.address();
+			const address: any = this.server.address();
 			if (address instanceof Object) {
 				config.debugServer = address.port;
 			}
