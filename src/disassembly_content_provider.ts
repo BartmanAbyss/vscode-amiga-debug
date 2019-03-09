@@ -5,16 +5,16 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
 	public provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): Thenable<string> {
 		return new Promise((resolve, reject) => {
 			const path = uri.path;
-			const pathParts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
+			const parts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
 
 			let args;
 			// disassemble address
-			if(pathParts.length === 1 && pathParts[0].startsWith('0x')) {
-				args = { startAddress: parseInt(pathParts[0]) };
-			} else if (pathParts.length === 1) {
-				args = { function: pathParts[0] };
+			if(parts.length === 1 && parts[0].startsWith('0x')) {
+				args = { startAddress: parseInt(parts[0]) };
+			} else if (parts.length === 1) {
+				args = { function: parts[0] };
 			} else {
-				args = { file: pathParts[0], function: pathParts[1] };
+				args = { file: parts[0], function: parts[1] };
 			}
 
 			vscode.debug.activeDebugSession!.customRequest('disassemble', args).then((data) => {

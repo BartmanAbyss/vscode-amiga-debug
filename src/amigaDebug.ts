@@ -495,28 +495,38 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					let func: string;
 					let file: string | undefined;
 
-					if (parts.length === 2) {
-						func = parts[1];
-						file = parts[0];
-					} else {
-						func = parts[0];
-					}
-
-					const symbol = await this.getDisassemblyForFunction(func, file);
-
-					if (args.breakpoints && symbol && symbol.instructions) {
-						args.breakpoints.forEach((brk) => {
-							if (brk.line <= symbol.instructions!.length) {
-								const line = symbol.instructions![brk.line - 1];
+					if(parts.length === 1 && parts[0].startsWith('0x')) {
+						if (args.breakpoints) {
+							args.breakpoints.forEach((brk) => {
 								all.push(this.miDebugger.addBreakPoint({
-									file: args.source.path, // disassembly, file doesn't matter
-									line: brk.line,
 									condition: brk.condition,
 									countCondition: brk.hitCondition,
-									raw: line.address
+									raw: parts[0]
 								}));
-							}
-						});
+							});
+						}
+					} else {
+						if (parts.length === 2) {
+							func = parts[1];
+							file = parts[0];
+						} else {
+							func = parts[0];
+						}
+						const symbol = await this.getDisassemblyForFunction(func, file);
+						if (args.breakpoints && symbol && symbol.instructions) {
+							args.breakpoints.forEach((brk) => {
+								if (brk.line <= symbol.instructions!.length) {
+									const line = symbol.instructions![brk.line - 1];
+									all.push(this.miDebugger.addBreakPoint({
+										file: args.source.path, // disassembly, file doesn't matter
+										line: brk.line,
+										condition: brk.condition,
+										countCondition: brk.hitCondition,
+										raw: line.address
+									}));
+								}
+							});
+						}
 					}
 				} else {
 					if (args.breakpoints) {
