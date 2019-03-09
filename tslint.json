@@ -16,8 +16,10 @@
 		"no-conditional-assignment": false,
 		"no-string-literal": false,
 		"no-bitwise": false,
+		"whitespace": false,
 		"trailing-comma": false,
 		"object-literal-sort-keys": false,
+		"interface-name": false,
 		"radix": false,
 		"semicolon": [ true, "always" ],
 		"triple-equals": true
