@@ -230,8 +230,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async disassembleRequest(response: DebugProtocol.Response, args: any): Promise<void> {
 		if (args.function) {
-			try {
-				const funcInfo: SymbolInformation = await this.getDisassemblyForFunction(args.function, args.file);
+			const funcInfo = await this.getDisassemblyForFunction(args.function, args.file);
+			if(funcInfo) {
 				response.body = {
 					instructions: funcInfo.instructions,
 					name: funcInfo.name,
@@ -240,15 +240,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					length: funcInfo.length
 				};
 				this.sendResponse(response);
-			} catch (e) {
-				this.sendErrorResponse(response, 1, `Unable to disassemble: ${e.toString()}`);
+			} else {
+				this.sendErrorResponse(response, 1, `Unable to disassemble ${args.function}`);
 			}
 			return;
 		} else if (args.startAddress) {
-			try {
-				let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
-				if (funcInfo) {
-					funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
+			let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
+			if (funcInfo) {
+				funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
+				if(funcInfo) {
 					response.body = {
 						instructions: funcInfo.instructions,
 						name: funcInfo.name,
@@ -257,15 +257,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						length: funcInfo.length
 					};
 					this.sendResponse(response);
-				} else {
-					// tslint:disable-next-line:max-line-length
-					const instructions: DisassemblyInstruction[] = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
-					response.body = { instructions };
-					this.sendResponse(response);
+					return;
 				}
-			} catch (e) {
-				this.sendErrorResponse(response, 1, `Unable to disassemble: ${e.toString()}`);
 			}
+			const instructions: DisassemblyInstruction[] = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
+			response.body = { instructions };
+			this.sendResponse(response);
 			return;
 		} else {
 			this.sendErrorResponse(response, 1, 'Unable to disassemble; invalid parameters.');
@@ -505,14 +502,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						func = parts[0];
 					}
 
-					const symbol: SymbolInformation = await this.getDisassemblyForFunction(func, file);
+					const symbol = await this.getDisassemblyForFunction(func, file);
 
 					if (args.breakpoints && symbol && symbol.instructions) {
 						args.breakpoints.forEach((brk) => {
 							if (brk.line <= symbol.instructions!.length) {
 								const line = symbol.instructions![brk.line - 1];
 								all.push(this.miDebugger.addBreakPoint({
-									file: args.source.path,
+									file: args.source.path, // disassembly, file doesn't matter
 									line: brk.line,
 									condition: brk.condition,
 									countCondition: brk.hitCondition,
@@ -525,7 +522,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					if (args.breakpoints) {
 						args.breakpoints.forEach((brk) => {
 							all.push(this.miDebugger.addBreakPoint({
-								file: args.source.path,
+								file: unnormalizePath(args.source.path || ""),
 								line: brk.line,
 								condition: brk.condition,
 								countCondition: brk.hitCondition
@@ -619,9 +616,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const ret: StackFrame[] = [];
 			for (const element of stack) {
 				const stackId = (args.threadId << 8 | (element.level & 0xFF)) & 0xFFFF;
-				const file = element.file;
-				let disassemble = this.forceDisassembly || !file;
-				if (!disassemble) { disassemble = !(await this.checkFileExists(file)); }
+				let file;
+				let disassemble = this.forceDisassembly || element.file === undefined;
+				if (!disassemble) {
+					file = normalizePath(element.file);
+					disassemble = !(await this.checkFileExists(file)); 
+				}
 				if (!disassemble && this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
 					const symbolInfo = this.symbolTable.getFunctionByName(element.function, element.fileName);
 					let url: string;
@@ -634,36 +634,42 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						if (url === this.activeEditorPath) { disassemble = true; }
 					}
 				}
-				try {
-					if (disassemble) {
+				if (disassemble) {
+					const tryFunction = async () => {
 						const symbolInfo = await this.getDisassemblyForFunction(element.function, element.fileName);
-						let line = -1;
-						if (symbolInfo && symbolInfo.instructions) {
-							symbolInfo.instructions.forEach((inst, idx) => {
-								if (inst.address === element.address) { line = idx + 1; }
-							});
-						}
-
-						if (line !== -1) {
-							let fname: string;
-							let url: string;
-							if (symbolInfo.scope !== SymbolScope.Global && symbolInfo.file !== "") {
-								fname = `${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
-								url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
-							} else {
-								fname = `${symbolInfo.name}.amigaasm`;
-								url = `disassembly:///${symbolInfo.name}.amigaasm`;
+						if(symbolInfo) {
+							let line = -1;
+							if (symbolInfo.instructions) {
+								symbolInfo.instructions.forEach((inst, idx) => {
+									if (inst.address === element.address) { line = idx + 1; }
+								});
 							}
 
-							ret.push(new StackFrame(stackId, `${element.function}@${element.address}`, new Source(fname, url), line, 0));
-						} else {
-							ret.push(new StackFrame(stackId, element.function + '@' + element.address, undefined, element.line, 0));
+							if (line !== -1) {
+								let fname: string;
+								let url: string;
+								if (symbolInfo.scope !== SymbolScope.Global && symbolInfo.file !== "") {
+									fname = `${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
+									url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
+								} else {
+									fname = `${symbolInfo.name}.amigaasm`;
+									url = `disassembly:///${symbolInfo.name}.amigaasm`;
+								}
+
+								ret.push(new StackFrame(stackId, `${element.function}@${element.address}`, new Source(fname, url), line, 0));
+								return true;
+							}
 						}
-					} else {
-						ret.push(new StackFrame(stackId, element.function + '@' + element.address, this.createSource(file), element.line, 0));
+						return false;
+					};
+
+					if(!await tryFunction()) {
+						const fname = `${element.address}.amigaasm`;
+						const url = `disassembly:///${element.address}.amigaasm`;
+						ret.push(new StackFrame(stackId, element.address, new Source(fname, url), 1, 0));
 					}
-				} catch (e) {
-					ret.push(new StackFrame(stackId, element.function + '@' + element.address, undefined, element.line, 0));
+				} else {
+					ret.push(new StackFrame(stackId, element.function + '@' + element.address, this.createSource(file), element.line, 0));
 				}
 			}
 
@@ -824,12 +830,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected async stepInRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+	private async stepInOrOverRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, stepIn: boolean): Promise<void> {
 		try {
 			let assemblyMode = this.forceDisassembly;
 			if (!assemblyMode) {
 				const frame = await this.miDebugger.getFrame(args.threadId, 0);
-				assemblyMode = !(await this.checkFileExists(frame.file));
+				assemblyMode = frame.file === undefined || !(await this.checkFileExists(normalizePath(frame.file)));
 
 				if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
 					const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
@@ -844,11 +850,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					}
 				}
 			}
-			const done = await this.miDebugger.step(args.threadId, assemblyMode);
+			const done = await stepIn ? this.miDebugger.step(args.threadId, assemblyMode) : this.miDebugger.next(args.threadId, assemblyMode);
 			this.sendResponse(response);
 		} catch (msg) {
-			this.sendErrorResponse(response, 6, `Could not step over: ${msg}`);
+			this.sendErrorResponse(response, 6, `Could not step: ${msg}`);
 		}
+	}
+
+	protected async stepInRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+		return this.stepInOrOverRequest(response, args, true);
 	}
 
 	protected stepOutRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
@@ -860,38 +870,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
-		try {
-			let assemblyMode = this.forceDisassembly;
-			if (!assemblyMode) {
-				const frame = await this.miDebugger.getFrame(args.threadId, 0);
-				assemblyMode = !(await this.checkFileExists(frame.file));
-
-				if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
-					const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
-					let url: string;
-					if (symbolInfo) {
-						if (symbolInfo.scope !== SymbolScope.Global) {
-							url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
-						} else {
-							url = `disassembly:///${symbolInfo.name}.amigaasm`;
-						}
-						if (url === this.activeEditorPath) { assemblyMode = true; }
-					}
-				}
-			}
-			const done = await this.miDebugger.next(args.threadId, assemblyMode);
-			this.sendResponse(response);
-		} catch (msg) {
-			this.sendErrorResponse(response, 6, `Could not step over: ${msg}`);
-		}
+		return this.stepInOrOverRequest(response, args, false);
 	}
 
 	protected checkFileExists(name: string): Promise<boolean> {
-		if (!name) { return Promise.resolve(false); }
+		if (!name)
+			return Promise.resolve(false);
 
-		if (this.fileExistsCache.has(name)) { // Check cache
+		if (this.fileExistsCache.has(name)) // Check cache
 			return Promise.resolve(this.fileExistsCache.get(name) || false);
-		}
 
 		return new Promise((resolve, reject) => {
 			fs.exists(name, (exists) => {
@@ -995,42 +982,21 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	private async getDisassemblyForFunction(functionName: string, file?: string): Promise<SymbolInformation> {
-		const symbol: SymbolInformation | null = this.symbolTable.getFunctionByName(functionName, file);
+	private async getDisassemblyForFunction(functionName: string, file?: string): Promise<SymbolInformation|null> {
+		const symbol = this.symbolTable.getFunctionByName(functionName, file);
 
-		if (!symbol) { throw new Error(`Unable to find function with name ${functionName}.`); }
+		if (!symbol)
+			return null;
 
 		if (symbol.instructions) { return symbol; }
 
-		const startAddress = symbol.address;
-		const endAddress = symbol.address + symbol.length;
-
-		// tslint:disable-next-line:max-line-length
-		const result = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 2`);
-		const rawInstructions = result.result('asm_insns');
-		const instructions: DisassemblyInstruction[] = rawInstructions.map((ri) => {
-			const address = MINode.valueOf(ri, 'address');
-			const functionName = MINode.valueOf(ri, 'func-name');
-			const offset = parseInt(MINode.valueOf(ri, 'offset'));
-			const inst = MINode.valueOf(ri, 'inst');
-			const opcodes = MINode.valueOf(ri, 'opcodes');
-
-			return {
-				address,
-				functionName,
-				offset,
-				instruction: inst,
-				opcodes
-			};
-		});
-		symbol.instructions = instructions;
+		symbol.instructions = await this.getDisassemblyForAddresses(symbol.address, symbol.length);
 		return symbol;
 	}
 
 	private async getDisassemblyForAddresses(startAddress: number, length: number): Promise<DisassemblyInstruction[]> {
 		const endAddress = startAddress + length;
 
-		// tslint:disable-next-line:max-line-length
 		const result = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 2`);
 		const rawInstructions = result.result('asm_insns');
 		const instructions: DisassemblyInstruction[] = rawInstructions.map((ri) => {
@@ -1247,20 +1213,30 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	//---- helpers
 
 	private createSource(filePath: string): Source {
-		const convertedPath = 'c:/cygwin64' + filePath;
-		return new Source(path.basename(filePath), convertedPath);
+		return new Source(path.basename(filePath), filePath);
 	}
 }
 
+// gdb(cygwin)->windows
 function normalizePath(filePath: string): string {
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
-	if (path.sep === '/') {
-		return filePath.replace(/\\+/g, path.sep);
-	} else {
-		return filePath.replace(/\/+/g, path.sep).toUpperCase();
-	}
+	let converted = filePath.replace(/\/+/g, path.sep).toLowerCase();
+	if(converted.length > 0 && converted[0] == '\\')
+		converted = 'c:\\cygwin64' + converted;
+	return converted;
+}
+
+// windows->gdb(cygwin)
+function unnormalizePath(filePath: string): string {
+	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
+		return filePath;
+
+	let converted = filePath.replace(/\\+/g, '/').toLowerCase();
+	if(converted.toLowerCase().startsWith('c:/cygwin64'))
+		converted = converted.substr(11 /* "c:/cygwin64" */);
+	return converted;
 }
 
 function prettyStringArray(strings) {
