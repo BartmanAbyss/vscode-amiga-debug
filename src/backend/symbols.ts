@@ -2,7 +2,7 @@ import * as childProcess from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 
-import { SymbolType, SymbolScope, SymbolInformation } from '../symbols';
+import { SymbolType, SymbolScope, SymbolInformation, Section } from '../symbols';
 
 const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg\ !])([w\ ])([C\ ])([W\ ])([I\ ])([dD\ ])([FfO\ ])\s([^\s]+)\s([0-9a-f]+)\s(.*)\r?$/;
 
@@ -22,19 +22,16 @@ const SCOPE_MAP: { [id: string]: SymbolScope } = {
 
 export class SymbolTable {
     private symbols: SymbolInformation[];
+    private sections: Map<string, Section> = new Map();
 
-    constructor(private toolchainPath: string, private executable: string) {
+    constructor(private objdumpPath: string, private args: string[], private executable: string) {
         this.symbols = [];
+        this.sections = new Map();
     }
 
     public loadSymbols() {
         try {
-            let objdumpExePath = os.platform() !== 'win32' ? 'arm-none-eabi-objdump' : 'arm-none-eabi-objdump.exe';
-            if (this.toolchainPath) {
-                objdumpExePath = path.normalize(path.join(this.toolchainPath, objdumpExePath));
-            }
-
-            const objdump = childProcess.spawnSync(objdumpExePath, ['--syms', this.executable]);
+            const objdump = childProcess.spawnSync(this.objdumpPath, this.args.concat(['--syms', this.executable]));
             const output = objdump.stdout.toString();
             const lines = output.split('\n');
             let currentFile: string | null = null;
@@ -72,6 +69,21 @@ export class SymbolTable {
         catch (e) { }
     }
 
+    // only call once
+    public relocate(sections: Array<Section>) {
+        this.sections = new Map();
+        sections.forEach((section) => {
+            this.sections.set(section.name, section);
+        });
+
+        this.symbols.forEach((symbol) => {
+            const section = this.sections.get(symbol.section);
+            if(section) {
+                symbol.address += section.address;
+            }
+        });
+    }
+
     public getFunctionAtAddress(address: number): SymbolInformation | null {
         const matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.address <= address && (s.address + s.length) > address);
         if (!matches || matches.length === 0) { return null; }
@@ -94,7 +106,7 @@ export class SymbolTable {
 
     public getFunctionByName(name: string, file?: string): SymbolInformation | null {
         // Try to find static function first
-        let matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.scope === SymbolScope.Local && s.name === name && s.file === file);
+        let matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.scope === SymbolScope.Local && s.name === name && (s.file === file || s.file === ""));
         if (matches.length !== 0) { return matches[0]; }
         
         // Fall back to global scope

@@ -44,7 +44,7 @@ class AmigaDebugExtension {
 			vscode.debug.onDidTerminateDebugSession(this.debugSessionTerminated.bind(this)),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
-				if (e && e.textEditor.document.fileName.endsWith('.cdmem')) { this.memoryProvider.handleSelection(e); }
+				if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); }
 			}),
 			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider())
 		);
@@ -95,10 +95,10 @@ class AmigaDebugExtension {
 			}
 			else if (functions.length === 1) {
 				if (functions[0].scope === SymbolScope.Global) {
-					url = `disassembly:///${functions[0].name}.cdasm`;
+					url = `disassembly:///${functions[0].name}.amigaasm`;
 				}
 				else {
-					url = `disassembly:///${functions[0].file}::${functions[0].name}.cdasm`;
+					url = `disassembly:///${functions[0].file}::${functions[0].name}.amigaasm`;
 				}
 			}
 			else {
@@ -115,10 +115,10 @@ class AmigaDebugExtension {
 					});
 
 				if (selected!.scope === SymbolScope.Global) {
-					url = `disassembly:///${selected!.name}.cdasm`;
+					url = `disassembly:///${selected!.name}.amigaasm`;
 				}
 				else {
-					url = `disassembly:///${selected!.file}::${selected!.name}.cdasm`;
+					url = `disassembly:///${selected!.file}::${selected!.name}.amigaasm`;
 				}
 			}
 
@@ -184,7 +184,7 @@ class AmigaDebugExtension {
 
 						const timestamp = new Date().getTime();
 						// tslint:disable-next-line:max-line-length
-						vscode.workspace.openTextDocument(vscode.Uri.parse(`examinememory:///Memory%20[${address}+${length}].cdmem?address=${address}&length=${length}&timestamp=${timestamp}`))
+						vscode.workspace.openTextDocument(vscode.Uri.parse(`examinememory:///Memory%20[${address}+${length}].amigamem?address=${address}&length=${length}&timestamp=${timestamp}`))
 							.then((doc) => {
 								vscode.window.showTextDocument(doc, { viewColumn: 2, preview: false });
 							}, (error) => {
@@ -262,7 +262,7 @@ class AmigaDebugExtension {
 
 	private receivedStopEvent(e) {
 		this.registerProvider.debugStopped();
-		vscode.workspace.textDocuments.filter((td) => td.fileName.endsWith('.cdmem'))
+		vscode.workspace.textDocuments.filter((td) => td.fileName.endsWith('.amigamem'))
 			.forEach((doc) => { this.memoryProvider.update(doc); });
 	}
 
