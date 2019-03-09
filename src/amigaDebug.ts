@@ -1,6 +1,6 @@
 import { BreakpointEvent, ContinuedEvent, DebugSession, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Breakpoint, IBackend, MIError, Variable, VariableObject } from './backend/backend';
+import { Breakpoint, IBackend, MIError, Variable, VariableObject, Section } from './backend/backend';
 import { expandValue, isExpandable } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2/mi2';
 import { MINode } from './backend/mi_parse';
@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { SymbolTable } from './backend/symbols';
-import { DisassemblyInstruction, NumberFormat, Section, SymbolInformation, SymbolScope } from './symbols';
+import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug.
@@ -146,25 +146,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		this.miDebugger.connect(".", this.args.program, commands).then(() => {
 			// get section bases (symbol table needs reloc)
-			this.miDebugger.sendCommand('interpreter-exec console "info file"').then((node) => {
-				if (node) {
-					const sectionRegex = /0x([0-9a-fA-F]+) - +0x([0-9a-fA-F]+) is (.*)/;
-					const sections: Section[] = [];
-					node.output.forEach((line) => {
-						let match;
-						if (match = sectionRegex.exec(line)) {
-							sections.push({
-								name: match[3],
-								address: parseInt(match[1], 16),
-								length: parseInt(match[2], 16) - parseInt(match[1], 16)
-							});
-						}
-					});
+			this.miDebugger.getSections().then((sections) => {
+				if(sections.length > 0) {
 					this.symbolTable.relocate(sections);
 					this.started = true;
 					this.sendResponse(response);
 				} else {
-					this.sendErrorResponse(response, 103, '"info file" failed');
+					this.sendErrorResponse(response, 103, 'no sections found');
 				}
 			});
 		}, (err) => {
@@ -357,7 +345,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		if (this.miDebugger) {
-			this.miDebugger.abort().then((done) => {
+			this.miDebugger.abort(this.stopped === false).then((done) => {
 				this.sendResponse(response);
 			});
 		} else {

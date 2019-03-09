@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as net from "net";
 import { posix } from "path";
 import * as nativePath from "path";
-import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject } from "../backend";
+import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section } from "../backend";
 import { MINode, parseMI } from "../mi_parse";
 const path = posix;
 
@@ -74,19 +74,24 @@ export class MI2 extends EventEmitter implements IBackend {
 		this.sendRaw("-gdb-exit");
 	}
 
-	public abort(): Thenable<boolean> {
-		return new Promise((resolve, reject) => {
+	public abort(needToStop: boolean): Thenable<boolean> {
+		return new Promise(async (resolve, reject) => {
 			const proc = this.process;
 			const to = setTimeout(() => { process.kill(-proc.pid); resolve(true); }, 1000);
 			this.process.on("exit", (code) => { clearTimeout(to); });
-			this.removeAllListeners("stopped");
-			this.removeAllListeners("signal-stop");
-			this.once("generic-stopped", async () => {
+			const killAndExit = async () => {
 				await this.sendCommand('interpreter-exec console "kill"');
 				await this.sendCommand("gdb-exit");
 				resolve(true);
-			});
-			this.sendCommand("exec-interrupt");
+			};
+			if(needToStop) {
+				this.removeAllListeners("stopped");
+				this.removeAllListeners("signal-stop");
+				this.once("generic-stopped", killAndExit);
+				this.sendCommand("exec-interrupt");
+			} else {
+				await killAndExit();
+			}
 		});
 	}
 
@@ -317,6 +322,25 @@ export class MI2 extends EventEmitter implements IBackend {
 				valueStr: value,
 				type,
 				raw: element,
+			});
+		}
+		return ret;
+	}
+
+	public async getSections(): Promise<Section[]> {
+		const node = await this.sendCommand('interpreter-exec console "info file"');
+		const ret: Section[] = [];
+		if (node) {
+			const sectionRegex = /0x([0-9a-fA-F]+) - +0x([0-9a-fA-F]+) is (.*)/;
+			node.output.forEach((line) => {
+				let match;
+				if (match = sectionRegex.exec(line)) {
+					ret.push({
+						name: match[3],
+						address: parseInt(match[1], 16),
+						length: parseInt(match[2], 16) - parseInt(match[1], 16)
+					});
+				}
 			});
 		}
 		return ret;
