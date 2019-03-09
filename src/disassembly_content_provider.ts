@@ -4,20 +4,20 @@ import { DisassemblyInstruction } from './symbols';
 export class DisassemblyContentProvider implements vscode.TextDocumentContentProvider {
 	public provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): Thenable<string> {
 		return new Promise((resolve, reject) => {
-			let funcName: string;
-			let file: string|null;
 			const path = uri.path;
 			const pathParts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
 
-			if (pathParts.length === 1) {
-				file = null;
-				funcName = pathParts[0];
+			let args;
+			// disassemble address
+			if(pathParts.length === 1 && pathParts[0].startsWith('0x')) {
+				args = { startAddress: parseInt(pathParts[0]) };
+			} else if (pathParts.length === 1) {
+				args = { function: pathParts[0] };
 			} else {
-				file = pathParts[0];
-				funcName = pathParts[1];
+				args = { file: pathParts[0], function: pathParts[1] };
 			}
 
-			vscode.debug.activeDebugSession!.customRequest('disassemble', { function: funcName, file }).then((data) => {
+			vscode.debug.activeDebugSession!.customRequest('disassemble', args).then((data) => {
 				const instructions: DisassemblyInstruction[] = data.instructions;
 
 				let output = '';
