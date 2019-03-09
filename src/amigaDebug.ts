@@ -2,7 +2,7 @@ import { BreakpointEvent, ContinuedEvent, DebugSession, Event, Handles, Initiali
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Breakpoint, IBackend, MIError, Variable, VariableObject, Section } from './backend/backend';
 import { expandValue, isExpandable } from './backend/gdb_expansion';
-import { MI2 } from './backend/mi2/mi2';
+import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
 import { hexFormat } from './utils';
 
@@ -11,6 +11,7 @@ import * as path from 'path';
 
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope } from './symbols';
+import { resolve } from 'url';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug.
@@ -134,6 +135,16 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.miDebugger.printCalls = true;
 		//this.miDebugger.debugOutput = true;
 
+		this.miDebugger.once('sections-loaded', (sections) => {
+			if(sections.length > 0) {
+				this.symbolTable.relocate(sections);
+				this.started = true;
+				this.sendResponse(response);
+			} else {
+				this.sendErrorResponse(response, 103, 'no sections found');
+			}
+		});
+
 		this.miDebugger.once('debug-ready', () => {
 			this.debugReady = true;
 		});
@@ -145,16 +156,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		];
 
 		this.miDebugger.connect(".", this.args.program, commands).then(() => {
-			// get section bases (symbol table needs reloc)
-			this.miDebugger.getSections().then((sections) => {
-				if(sections.length > 0) {
-					this.symbolTable.relocate(sections);
-					this.started = true;
-					this.sendResponse(response);
-				} else {
-					this.sendErrorResponse(response, 103, 'no sections found');
-				}
-			});
 		}, (err) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
@@ -492,7 +493,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				if (sourcepath.startsWith('disassembly:/')) {
 					let sidx = 13;
 					if (sourcepath.startsWith('disassembly:///')) { sidx = 15; }
-					const path = sourcepath.substring(sidx, sourcepath.length - 6); // Account for protocol and extension
+					const path = sourcepath.substring(sidx, sourcepath.length - 9 /* ".amigaasm" */); // Account for protocol and extension
 					const parts = path.split('::');
 					let func: string;
 					let file: string | undefined;
@@ -1251,11 +1252,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 }
 
-function normalizePath(dirName: string): string {
+function normalizePath(filePath: string): string {
+	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
+		return filePath;
+
 	if (path.sep === '/') {
-		return dirName.replace(/\\+/g, path.sep);
+		return filePath.replace(/\\+/g, path.sep);
 	} else {
-		return dirName.replace(/\/+/g, path.sep).toUpperCase();
+		return filePath.replace(/\/+/g, path.sep).toUpperCase();
 	}
 }
 

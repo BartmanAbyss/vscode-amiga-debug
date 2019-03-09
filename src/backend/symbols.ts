@@ -2,7 +2,8 @@ import * as childProcess from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 
-import { Section, SymbolInformation, SymbolScope, SymbolType } from '../symbols';
+import { SymbolInformation, SymbolScope, SymbolType } from '../symbols';
+import { Section } from './backend';
 
 const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg\ !])([w\ ])([C\ ])([W\ ])([I\ ])([dD\ ])([FfO\ ])\s([^\s]+)\s([0-9a-f]+)\s(.*)\r?$/;
 
