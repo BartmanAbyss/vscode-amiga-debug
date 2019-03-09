@@ -4,8 +4,8 @@ import * as fs from "fs";
 import * as net from "net";
 import { posix } from "path";
 import * as nativePath from "path";
-import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section } from "../backend";
-import { MINode, parseMI } from "../mi_parse";
+import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section } from "./backend";
+import { MINode, parseMI } from "./mi_parse";
 const path = posix;
 
 export function escape(str: string) {
@@ -30,7 +30,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	public debugOutput: boolean;
 	public procEnv: any;
 	protected currentToken: number = 1;
-	protected handlers: { [index: number]: (info: MINode, output?: string[]) => any } = {};
+	protected handlers: { [index: number]: (info: MINode) => any } = {};
 	protected buffer: string;
 	protected errbuf: string;
 	protected process: ChildProcess.ChildProcess;
@@ -57,8 +57,13 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.process.on("error", ((err) => { this.emit("launcherror", err); }).bind(this));
 
 			const asyncPromise = this.sendCommand("gdb-set target-async on", true);
-			const promises = commands.map((c) => this.sendCommand(c));
+			const promises :Thenable<any>[] = commands.map((c) => this.sendCommand(c));
 			promises.push(asyncPromise);
+
+			const sectionsPromise = this.getSections().then((sections) => {
+				this.emit("sections-loaded", sections);
+			});
+			promises.push(sectionsPromise);
 
 			Promise.all(promises).then(() => {
 				this.emit("debug-ready");
