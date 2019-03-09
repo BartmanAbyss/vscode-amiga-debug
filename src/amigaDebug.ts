@@ -21,6 +21,13 @@ class ExtendedVariable {
 	}
 }
 
+const GLOBAL_HANDLE_ID = 0xFE;
+const STACK_HANDLES_START = 0x100;
+const STACK_HANDLES_FINISH = 0xFFFF;
+const STATIC_HANDLES_START = 0x010000;
+const STATIC_HANDLES_FINISH = 0x01FFFF;
+const VAR_HANDLES_START = 0x020000;
+
 class CustomStoppedEvent extends Event implements DebugProtocol.Event {
 	public readonly body: {
 		reason: string,
@@ -44,13 +51,6 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 		super('custom-continued', { threadID: threadID, allThreads: allThreads });
 	}
 }
-
-const GLOBAL_HANDLE_ID = 0xFE;
-const STACK_HANDLES_START = 0x100;
-const STACK_HANDLES_FINISH = 0xFFFF;
-const STATIC_HANDLES_START = 0x010000;
-const STATIC_HANDLES_FINISH = 0x01FFFF;
-const VAR_HANDLES_START = 0x020000;
 
 export class AmigaDebugSession extends LoggingDebugSession {
 	private args: LaunchRequestArguments;
