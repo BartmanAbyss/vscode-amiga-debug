@@ -271,7 +271,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				} else {
 					// tslint:disable-next-line:max-line-length
 					const instructions: DisassemblyInstruction[] = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
-					response.body = { instructions: instructions };
+					response.body = { instructions };
 					this.sendResponse(response);
 				}
 			} catch (e) {
@@ -291,13 +291,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const data = node.resultRecords.results[0][1][0][3][1];
 			const bytes = data.match(/[0-9a-f]{2}/g).map((b) => parseInt(b, 16));
 			response.body = {
-				startAddress: startAddress,
-				endAddress: endAddress,
-				bytes: bytes
+				startAddress,
+				endAddress,
+				bytes
 			};
 			this.sendResponse(response);
 		}, (error) => {
-			response.body = { error: error };
+			response.body = { error };
 			this.sendErrorResponse(response, 114, `Unable to read memory: ${error.toString()}`);
 		});
 	}
@@ -307,7 +307,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.miDebugger.sendCommand(`data-write-memory-bytes ${address} ${data}`).then((node) => {
 			this.sendResponse(response);
 		}, (error) => {
-			response.body = { error: error };
+			response.body = { error };
 			this.sendErrorResponse(response, 114, `Unable to write memory: ${error.toString()}`);
 		});
 	}
@@ -330,7 +330,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 			this.sendResponse(response);
 		}, (error) => {
-			response.body = { error: error };
+			response.body = { error };
 			this.sendErrorResponse(response, 115, `Unable to read registers: ${error.toString()}`);
 		});
 	}
@@ -350,7 +350,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 			this.sendResponse(response);
 		}, (error) => {
-			response.body = { error: error };
+			response.body = { error };
 			this.sendErrorResponse(response, 116, `Unable to read register list: ${error.toString()}`);
 		});
 	}
@@ -452,13 +452,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected setFunctionBreakPointsRequest(response: DebugProtocol.SetFunctionBreakpointsResponse, args: DebugProtocol.SetFunctionBreakpointsArguments): void {
 		const createBreakpoints = async (shouldContinue) => {
-			const all: Promise<Breakpoint | null>[] = [];
+			const all: Array<Promise<Breakpoint | null>> = [];
 			args.breakpoints.forEach((brk) => {
 				all.push(this.miDebugger.addBreakPoint({ raw: brk.name, condition: brk.condition, countCondition: brk.hitCondition }));
 			});
 
 			try {
-				let brkpoints = await Promise.all(all);
+				const brkpoints = await Promise.all(all);
 				const finalBrks: DebugProtocol.Breakpoint[] = [];
 				brkpoints.forEach((brkp) => {
 					if (brkp) { finalBrks.push({ verified: true, line: brkp.line || -1 }); }
@@ -476,15 +476,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		};
 
 		const process = async () => {
-			if (this.stopped) { await createBreakpoints(false); }
-			else {
+			if (this.stopped) {
+				await createBreakpoints(false);
+			} else {
 				this.miDebugger.sendCommand('exec-interrupt');
 				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
 			}
 		};
 
-		if (this.debugReady) { process(); }
-		else { this.miDebugger.once('debug-ready', process); }
+		if (this.debugReady) { process(); } else { this.miDebugger.once('debug-ready', process); }
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
@@ -512,8 +512,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					if (parts.length === 2) {
 						func = parts[1];
 						file = parts[0];
-					}
-					else {
+					} else {
 						func = parts[0];
 					}
 
@@ -574,15 +573,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const process = async () => {
 			if (this.stopped) {
 				await createBreakpoints(false);
-			}
-			else {
+			} else {
 				await this.miDebugger.sendCommand('exec-interrupt');
 				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
 			}
 		};
 
-		if (this.debugReady) { process(); }
-		else { this.miDebugger.once('debug-ready', process); }
+		if (this.debugReady) { process(); } else { this.miDebugger.once('debug-ready', process); }
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
@@ -619,11 +616,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}).filter((t) => t !== null) as Thread[];
 
 			response.body = {
-				threads: threads
+				threads
 			};
 			this.sendResponse(response);
-		}
-		catch (e) {
+		} catch (e) {
 			this.sendErrorResponse(response, 1, `Unable to get thread information: ${e}`);
 		}
 	}
@@ -702,7 +698,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
 
 		response.body = {
-			scopes: scopes
+			scopes
 		};
 		this.sendResponse(response);
 	}
@@ -727,7 +723,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return this.variableMembersRequest(id, response, args);
 			} else if (typeof id === 'object') {
 				if (id instanceof VariableObject) {
-					let pvar = id as VariableObject;
+					const pvar = id as VariableObject;
 					const variables: DebugProtocol.Variable[] = [];
 
 					// Variable members
@@ -739,8 +735,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 							child.id = varId;
 							if (/^\d+$/.test(child.exp)) {
 								child.fullExp = `${pvar.fullExp || pvar.exp}[${child.exp}]`;
-							}
-							else {
+							} else {
 								child.fullExp = `${pvar.fullExp || pvar.exp}.${child.exp}`;
 							}
 							return child.toProtocolVariable();
@@ -750,8 +745,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 							variables: vars
 						};
 						this.sendResponse(response);
-					}
-					catch (err) {
+					} catch (err) {
 						this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
 					}
 				} else if (id instanceof ExtendedVariable) {
@@ -774,14 +768,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 								const expanded = expandValue(this.createVariable.bind(this), variable.result('value'), varReq.name, variable);
 								if (!expanded) {
 									this.sendErrorResponse(response, 15, 'Could not expand variable');
-								}
-								else {
+								} else {
 									if (typeof expanded === 'string') {
 										if (expanded === '<nullptr>') {
-											if (argsPart) { argsPart = false; }
-											else { return submit(); }
-										}
-										else if (expanded[0] !== '"') {
+											if (argsPart) { argsPart = false; } else { return submit(); }
+										} else if (expanded[0] !== '"') {
 											strArr.push({
 												name: '[err]',
 												value: expanded,
@@ -795,8 +786,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 											variablesReference: 0
 										});
 										addOne();
-									}
-									else {
+									} else {
 										strArr.push({
 											name: '[err]',
 											value: expanded,
@@ -1003,8 +993,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						result: '',
 						variablesReference: 0
 					};
-				}
-				else {
+				} else {
 					response.body = {
 						result: JSON.stringify(output),
 						variablesReference: 0
@@ -1038,11 +1027,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const opcodes = MINode.valueOf(ri, 'opcodes');
 
 			return {
-				address: address,
-				functionName: functionName,
-				offset: offset,
+				address,
+				functionName,
+				offset,
 				instruction: inst,
-				opcodes: opcodes
+				opcodes
 			};
 		});
 		symbol.instructions = instructions;
@@ -1063,11 +1052,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const opcodes = MINode.valueOf(ri, 'opcodes');
 
 			return {
-				address: address,
-				functionName: functionName,
-				offset: offset,
+				address,
+				functionName,
+				offset,
 				instruction: inst,
-				opcodes: opcodes
+				opcodes
 			};
 		});
 
@@ -1226,7 +1215,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				}
 			}
 			response.body = {
-				variables: variables
+				variables
 			};
 			this.sendResponse(response);
 		} catch (err) {
