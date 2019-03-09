@@ -1,6 +1,7 @@
 import { Logger, logger, DebugSession, LoggingDebugSession, InitializedEvent, TerminatedEvent, ContinuedEvent, OutputEvent, Thread, ThreadEvent, StackFrame, Scope, Source, Handles, Event, StoppedEvent, BreakpointEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { MI2 } from './backend/mi2/mi2';
+import { hexFormat } from './utils';
 import { Breakpoint, IBackend, Variable, VariableObject, MIError } from './backend/backend';
 import { MINode } from './backend/mi_parse';
 import { expandValue, isExpandable } from './backend/gdb_expansion';
@@ -8,41 +9,40 @@ import { expandValue, isExpandable } from './backend/gdb_expansion';
 import * as fs from 'fs';
 import * as path from 'path';
 
-//import { SymbolTable } from './backend/symbols';
-//import { SymbolInformation, SymbolScope, SymbolType, DisassemblyInstruction } from './symbols';
+import { SymbolTable } from './backend/symbols';
+import { SymbolInformation, SymbolScope, NumberFormat, DisassemblyInstruction, Section } from './symbols';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-	/** An absolute path to the "program" to debug. */
-	program: string;
+	program: string; 	// An absolute path to the "program" to debug.
 }
 
 class ExtendedVariable {
-    constructor(public name, public options) {
-    }
+	constructor(public name, public options) {
+	}
 }
 
 class CustomStoppedEvent extends Event implements DebugProtocol.Event {
-    public readonly body: {
-        reason: string,
-        threadID: number
-    };
-    public readonly event: string;
+	public readonly body: {
+		reason: string,
+		threadID: number
+	};
+	public readonly event: string;
 
-    constructor(reason: string, threadID: number) {
-        super('custom-stop', { reason: reason, threadID: threadID });
-    }
+	constructor(reason: string, threadID: number) {
+		super('custom-stop', { reason: reason, threadID: threadID });
+	}
 }
 
 class CustomContinuedEvent extends Event implements DebugProtocol.Event {
-    public readonly body: {
-        threadID: number;
-        allThreads: boolean;
-    };
-    public readonly event: string;
+	public readonly body: {
+		threadID: number;
+		allThreads: boolean;
+	};
+	public readonly event: string;
 
-    constructor(threadID: number, allThreads: boolean = true) {
-        super('custom-continued', { threadID: threadID, allThreads: allThreads });
-    }
+	constructor(threadID: number, allThreads: boolean = true) {
+		super('custom-continued', { threadID: threadID, allThreads: allThreads });
+	}
 }
 
 const GLOBAL_HANDLE_ID = 0xFE;
@@ -54,17 +54,17 @@ const VAR_HANDLES_START = 0x020000;
 
 export class AmigaDebugSession extends LoggingDebugSession {
 	private args: LaunchRequestArguments;
-	//	private symbolTable: SymbolTable;
+	private symbolTable: SymbolTable;
 
-    protected variableHandles = new Handles<string | VariableObject | ExtendedVariable>(VAR_HANDLES_START);
-    protected variableHandlesReverse: { [id: string]: number } = {};
+	protected variableHandles = new Handles<string | VariableObject | ExtendedVariable>(VAR_HANDLES_START);
+	protected variableHandlesReverse: { [id: string]: number } = {};
 	protected quit: boolean;
 	protected started: boolean;
 	protected crashed: boolean;
 	protected debugReady: boolean;
 	protected miDebugger: MI2;
 	protected forceDisassembly: boolean = false;
-    protected activeEditorPath: string|null = null;
+	protected activeEditorPath: string | null = null;
 	protected currentThreadId: number = 1;
 
 	private stopped: boolean = false;
@@ -112,8 +112,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		logger.setup(Logger.LogLevel.Warn, false);
 
 		this.args = args;
-		//this.symbolTable = new SymbolTable(args.toolchainPath, args.executable);
-		//this.symbolTable.loadSymbols();
+		this.symbolTable = new SymbolTable("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/syms.cmd'], args.program);
+		this.symbolTable.loadSymbols();
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
 
@@ -146,121 +146,276 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		];
 
 		this.miDebugger.connect(".", this.args.program, commands).then(() => {
-			this.started = true;
-			this.sendResponse(response);
+			// get section bases (symbol table needs reloc)
+			this.miDebugger.sendCommand('interpreter-exec console "info file"').then((node) => {
+				if(node) {
+					const sectionRegex = /0x([0-9a-fA-F]+) - +0x([0-9a-fA-F]+) is (.*)/;
+					let sections :Section[] = [];
+					node.output.forEach((line) => {
+						let match;
+						if(match = sectionRegex.exec(line)) {
+							sections.push({ 
+								name: match[3],
+								address: parseInt(match[1], 16),
+								length: parseInt(match[2], 16) - parseInt(match[1], 16)
+							});
+						}
+					});
+					this.symbolTable.relocate(sections);
+					this.started = true;
+					this.sendResponse(response);
+				} else {
+					this.sendErrorResponse(response, 103, '"info file" failed');
+				}
+			});
 		}, (err) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
 	}
 
-    protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
-        switch (command) {
-            case 'set-force-disassembly':
-                response.body = { success: true };
-                this.forceDisassembly = args.force;
-                if (this.stopped) {
-                    this.activeEditorPath = null;
-                    this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
-                    this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-                }
-                this.sendResponse(response);
-                break;
-/*            case 'load-function-symbols':
-                response.body = { functionSymbols: this.symbolTable.getFunctionSymbols() };
-                this.sendResponse(response);
-                break;*/
-            case 'set-active-editor':
-                if (args.path !== this.activeEditorPath) {
-                    this.activeEditorPath = args.path;
-                    // if (this.stopped) {
-                    //     this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId, true));
-                    // }
-                }
-                response.body = {};
-                this.sendResponse(response);
-                break;
-            case 'get-arguments':
-                response.body = this.args;
-                this.sendResponse(response);
-                break;
-/*            case 'read-memory':
-                this.readMemoryRequest(response, args['address'], args['length']);
-                break;
-            case 'write-memory':
-                this.writeMemoryRequest(response, args['address'], args['data']);
-                break;*/
-            case 'read-registers':
-                this.readRegistersRequest(response);
-                break;
-            case 'read-register-list':
-                this.readRegisterListRequest(response);
-                break;
-/*            case 'disassemble':
-                this.disassembleRequest(response, args);
-                break;*/
-            case 'execute-command':
-                let cmd = args['command'] as string;
-                if (cmd.startsWith('-')) { cmd = cmd.substring(1); }
-                else { cmd = `interpreter-exec console "${cmd}"`; }
-                this.miDebugger.sendCommand(cmd).then((node) => {
-                    response.body = node.resultRecords;
-                    this.sendResponse(response);
-                }, (error) => {
-                    response.body = error;
-                    this.sendErrorResponse(response, 110, 'Unable to execute command');
-                });
-                break;
-            default:
-                response.body = { error: 'Invalid command.' };
-                this.sendResponse(response);
-                break;
-        }
-    }
+	protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
+		switch (command) {
+			case 'set-force-disassembly':
+				response.body = { success: true };
+				this.forceDisassembly = args.force;
+				if (this.stopped) {
+					this.activeEditorPath = null;
+					this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
+					this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+				}
+				this.sendResponse(response);
+				break;
+			case 'load-function-symbols':
+				response.body = { functionSymbols: this.symbolTable.getFunctionSymbols() };
+				this.sendResponse(response);
+				break;
+			case 'set-active-editor':
+				if (args.path !== this.activeEditorPath) {
+					this.activeEditorPath = args.path;
+					// if (this.stopped) {
+					//     this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId, true));
+					// }
+				}
+				response.body = {};
+				this.sendResponse(response);
+				break;
+			case 'get-arguments':
+				response.body = this.args;
+				this.sendResponse(response);
+				break;
+			case 'read-memory':
+				this.readMemoryRequest(response, args['address'], args['length']);
+				break;
+			case 'write-memory':
+				this.writeMemoryRequest(response, args['address'], args['data']);
+				break;
+			case 'read-registers':
+				this.readRegistersRequest(response);
+				break;
+			case 'read-register-list':
+				this.readRegisterListRequest(response);
+				break;
+			case 'disassemble':
+				this.disassembleRequest(response, args);
+				break;
+			case 'execute-command':
+				let cmd = args['command'] as string;
+				if (cmd.startsWith('-')) { cmd = cmd.substring(1); }
+				else { cmd = `interpreter-exec console "${cmd}"`; }
+				this.miDebugger.sendCommand(cmd).then((node) => {
+					response.body = node.resultRecords;
+					this.sendResponse(response);
+				}, (error) => {
+					response.body = error;
+					this.sendErrorResponse(response, 110, 'Unable to execute command');
+				});
+				break;
+			default:
+				response.body = { error: 'Invalid command.' };
+				this.sendResponse(response);
+				break;
+		}
+	}
 
-    protected readRegistersRequest(response: DebugProtocol.Response) {
-        this.miDebugger.sendCommand('data-list-register-values x').then((node) => {
-            if (node.resultRecords.resultClass === 'done') {
-                const rv = node.resultRecords.results[0][1];
-                response.body = rv.map((n) => {
-                    const val = {};
-                    n.forEach((x) => {
-                        val[x[0]] = x[1];
-                    });
-                    return val;
-                });
-            }
-            else {
-                response.body = {
-                    error: 'Unable to parse response'
-                };
-            }
-            this.sendResponse(response);
-        }, (error) => {
-            response.body = { error: error };
-            this.sendErrorResponse(response, 115, `Unable to read registers: ${error.toString()}`);
-        });
-    }
+	protected async disassembleRequest(response: DebugProtocol.Response, args: any): Promise<void> {
+		if (args.function) {
+			try {
+				const funcInfo: SymbolInformation = await this.getDisassemblyForFunction(args.function, args.file);
+				response.body = {
+					instructions: funcInfo.instructions,
+					name: funcInfo.name,
+					file: funcInfo.file,
+					address: funcInfo.address,
+					length: funcInfo.length
+				};
+				this.sendResponse(response);
+			}
+			catch (e) {
+				this.sendErrorResponse(response, 1, `Unable to disassemble: ${e.toString()}`);
+			}
+			return;
+		}
+		else if (args.startAddress) {
+			try {
+				let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
+				if (funcInfo) {
+					funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
+					response.body = {
+						instructions: funcInfo.instructions,
+						name: funcInfo.name,
+						file: funcInfo.file,
+						address: funcInfo.address,
+						length: funcInfo.length
+					};
+					this.sendResponse(response);
+				}
+				else {
+					// tslint:disable-next-line:max-line-length
+					const instructions: DisassemblyInstruction[] = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
+					response.body = { instructions: instructions };
+					this.sendResponse(response);
+				}
+			}
+			catch (e) {
+				this.sendErrorResponse(response, 1, `Unable to disassemble: ${e.toString()}`);
+			}
+			return;
+		}
+		else {
+			this.sendErrorResponse(response, 1, 'Unable to disassemble; invalid parameters.');
+		}
+	}
 
-    protected readRegisterListRequest(response: DebugProtocol.Response) {
-        this.miDebugger.sendCommand('data-list-register-names').then((node) => {
-            if (node.resultRecords.resultClass === 'done') {
-                let registerNames;
-                node.resultRecords.results.forEach((rr) => {
-                    if (rr[0] === 'register-names') {
-                        registerNames = rr[1];
-                    }
-                });
-                response.body = registerNames;
-            }
-            else {
-                response.body = { error: node.resultRecords.results };
-            }
-            this.sendResponse(response);
-        }, (error) => {
-            response.body = { error: error };
-            this.sendErrorResponse(response, 116, `Unable to read register list: ${error.toString()}`);
-        });
-    }
+	private async getDisassemblyForFunction(functionName: string, file?: string): Promise<SymbolInformation> {
+		const symbol: SymbolInformation | null = this.symbolTable.getFunctionByName(functionName, file);
+
+		if (!symbol) { throw new Error(`Unable to find function with name ${functionName}.`); }
+
+		if (symbol.instructions) { return symbol; }
+
+		const startAddress = symbol.address;
+		const endAddress = symbol.address + symbol.length;
+
+		// tslint:disable-next-line:max-line-length
+		const result = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 2`);
+		const rawInstructions = result.result('asm_insns');
+		const instructions: DisassemblyInstruction[] = rawInstructions.map((ri) => {
+			const address = MINode.valueOf(ri, 'address');
+			const functionName = MINode.valueOf(ri, 'func-name');
+			const offset = parseInt(MINode.valueOf(ri, 'offset'));
+			const inst = MINode.valueOf(ri, 'inst');
+			const opcodes = MINode.valueOf(ri, 'opcodes');
+
+			return {
+				address: address,
+				functionName: functionName,
+				offset: offset,
+				instruction: inst,
+				opcodes: opcodes
+			};
+		});
+		symbol.instructions = instructions;
+		return symbol;
+	}
+
+	private async getDisassemblyForAddresses(startAddress: number, length: number): Promise<DisassemblyInstruction[]> {
+		const endAddress = startAddress + length;
+
+		// tslint:disable-next-line:max-line-length
+		const result = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 2`);
+		const rawInstructions = result.result('asm_insns');
+		const instructions: DisassemblyInstruction[] = rawInstructions.map((ri) => {
+			const address = MINode.valueOf(ri, 'address');
+			const functionName = MINode.valueOf(ri, 'func-name');
+			const offset = parseInt(MINode.valueOf(ri, 'offset'));
+			const inst = MINode.valueOf(ri, 'inst');
+			const opcodes = MINode.valueOf(ri, 'opcodes');
+
+			return {
+				address: address,
+				functionName: functionName,
+				offset: offset,
+				instruction: inst,
+				opcodes: opcodes
+			};
+		});
+
+		return instructions;
+	}
+
+	protected readMemoryRequest(response: DebugProtocol.Response, startAddress: number, length: number) {
+		const address = hexFormat(startAddress, 8);
+		this.miDebugger.sendCommand(`data-read-memory-bytes ${address} ${length}`).then((node) => {
+			const startAddress = node.resultRecords.results[0][1][0][0][1];
+			const endAddress = node.resultRecords.results[0][1][0][2][1];
+			const data = node.resultRecords.results[0][1][0][3][1];
+			const bytes = data.match(/[0-9a-f]{2}/g).map((b) => parseInt(b, 16));
+			response.body = {
+				startAddress: startAddress,
+				endAddress: endAddress,
+				bytes: bytes
+			};
+			this.sendResponse(response);
+		}, (error) => {
+			response.body = { error: error };
+			this.sendErrorResponse(response, 114, `Unable to read memory: ${error.toString()}`);
+		});
+	}
+
+	protected writeMemoryRequest(response: DebugProtocol.Response, startAddress: number, data: string) {
+		const address = hexFormat(startAddress, 8);
+		this.miDebugger.sendCommand(`data-write-memory-bytes ${address} ${data}`).then((node) => {
+			this.sendResponse(response);
+		}, (error) => {
+			response.body = { error: error };
+			this.sendErrorResponse(response, 114, `Unable to write memory: ${error.toString()}`);
+		});
+	}
+
+	protected readRegistersRequest(response: DebugProtocol.Response) {
+		this.miDebugger.sendCommand('data-list-register-values x').then((node) => {
+			if (node.resultRecords.resultClass === 'done') {
+				const rv = node.resultRecords.results[0][1];
+				response.body = rv.map((n) => {
+					const val = {};
+					n.forEach((x) => {
+						val[x[0]] = x[1];
+					});
+					return val;
+				});
+			}
+			else {
+				response.body = {
+					error: 'Unable to parse response'
+				};
+			}
+			this.sendResponse(response);
+		}, (error) => {
+			response.body = { error: error };
+			this.sendErrorResponse(response, 115, `Unable to read registers: ${error.toString()}`);
+		});
+	}
+
+	protected readRegisterListRequest(response: DebugProtocol.Response) {
+		this.miDebugger.sendCommand('data-list-register-names').then((node) => {
+			if (node.resultRecords.resultClass === 'done') {
+				let registerNames;
+				node.resultRecords.results.forEach((rr) => {
+					if (rr[0] === 'register-names') {
+						registerNames = rr[1];
+					}
+				});
+				response.body = registerNames;
+			}
+			else {
+				response.body = { error: node.resultRecords.results };
+			}
+			this.sendResponse(response);
+		}, (error) => {
+			response.body = { error: error };
+			this.sendErrorResponse(response, 116, `Unable to read register list: ${error.toString()}`);
+		});
+	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		if (this.miDebugger) {
@@ -288,7 +443,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.stopped = true;
 		this.stoppedReason = 'breakpoint';
 		this.sendEvent(new StoppedEvent('breakpoint', this.currentThreadId));
-        this.sendEvent(new CustomStoppedEvent('breakpoint', this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent('breakpoint', this.currentThreadId));
 	}
 
 	protected handleBreak(info: MINode) {
@@ -324,7 +479,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.stopped = true;
 			this.stoppedReason = 'exception';
 			this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
-            this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
+			this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
 		}
 	}
 
@@ -339,24 +494,24 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.quitEvent();
 	}
 
-    protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): Promise<void> {
-        try {
-            let name = args.name;
-            if (args.variablesReference >= VAR_HANDLES_START) {
-                const parent = this.variableHandles.get(args.variablesReference) as VariableObject;
-                name = `${parent.name}.${name}`;
-            }
+	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): Promise<void> {
+		try {
+			let name = args.name;
+			if (args.variablesReference >= VAR_HANDLES_START) {
+				const parent = this.variableHandles.get(args.variablesReference) as VariableObject;
+				name = `${parent.name}.${name}`;
+			}
 
-            const res = await this.miDebugger.varAssign(name, args.value);
-            response.body = {
-                value: res.result('value')
-            };
-            this.sendResponse(response);
-        }
-        catch (err) {
-            this.sendErrorResponse(response, 11, `Could not continue: ${err}`);
-        }
-    }
+			const res = await this.miDebugger.varAssign(name, args.value);
+			response.body = {
+				value: res.result('value')
+			};
+			this.sendResponse(response);
+		}
+		catch (err) {
+			this.sendErrorResponse(response, 11, `Could not continue: ${err}`);
+		}
+	}
 
 	protected setFunctionBreakPointsRequest(response: DebugProtocol.SetFunctionBreakpointsResponse, args: DebugProtocol.SetFunctionBreakpointsArguments): void {
 		const createBreakpoints = async (shouldContinue) => {
@@ -410,14 +565,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 				const all: Array<Promise<Breakpoint | null>> = [];
 				const sourcepath = decodeURIComponent(normalizedPath);
-/*
 				if (sourcepath.startsWith('disassembly:/')) {
 					let sidx = 13;
 					if (sourcepath.startsWith('disassembly:///')) { sidx = 15; }
 					const path = sourcepath.substring(sidx, sourcepath.length - 6); // Account for protocol and extension
 					const parts = path.split('::');
 					let func: string;
-					let file: string;
+					let file: string | undefined;
 
 					if (parts.length === 2) {
 						func = parts[1];
@@ -429,20 +583,22 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 					const symbol: SymbolInformation = await this.getDisassemblyForFunction(func, file);
 
-					args.breakpoints.forEach((brk) => {
-						if (brk.line <= symbol.instructions.length) {
-							const line = symbol.instructions[brk.line - 1];
-							all.push(this.miDebugger.addBreakPoint({
-								file: args.source.path,
-								line: brk.line,
-								condition: brk.condition,
-								countCondition: brk.hitCondition,
-								raw: line.address
-							}));
-						}
-					});
+					if (args.breakpoints && symbol && symbol.instructions) {
+						args.breakpoints.forEach((brk) => {
+							if (brk.line <= symbol.instructions!.length) {
+								const line = symbol.instructions![brk.line - 1];
+								all.push(this.miDebugger.addBreakPoint({
+									file: args.source.path,
+									line: brk.line,
+									condition: brk.condition,
+									countCondition: brk.hitCondition,
+									raw: line.address
+								}));
+							}
+						});
+					}
 				}
-				else*/ {
+				else {
 					if (args.breakpoints) {
 						args.breakpoints.forEach((brk) => {
 							all.push(this.miDebugger.addBreakPoint({
@@ -496,48 +652,48 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
-        if (!this.stopped) {
-            response.body = { threads: [] };
-            this.sendResponse(response);
-        }
-        try {
-            const threadIdNode = await this.miDebugger.sendCommand('thread-list-ids');
-            const threadIds: number[] = threadIdNode.result('thread-ids').map((ti) => parseInt(ti[1]));
-            const currentThread = threadIdNode.result('current-thread-id');
+		if (!this.stopped) {
+			response.body = { threads: [] };
+			this.sendResponse(response);
+		}
+		try {
+			const threadIdNode = await this.miDebugger.sendCommand('thread-list-ids');
+			const threadIds: number[] = threadIdNode.result('thread-ids').map((ti) => parseInt(ti[1]));
+			const currentThread = threadIdNode.result('current-thread-id');
 
-            if (!currentThread) {
-                await this.miDebugger.sendCommand(`thread-select ${threadIds[0]}`);
-                this.currentThreadId = threadIds[0];
-            }
-            else {
-                this.currentThreadId = parseInt(currentThread);
-            }
+			if (!currentThread) {
+				await this.miDebugger.sendCommand(`thread-select ${threadIds[0]}`);
+				this.currentThreadId = threadIds[0];
+			}
+			else {
+				this.currentThreadId = parseInt(currentThread);
+			}
 
-            const nodes = await Promise.all(threadIds.map((id) => this.miDebugger.sendCommand(`thread-info ${id}`)));
+			const nodes = await Promise.all(threadIds.map((id) => this.miDebugger.sendCommand(`thread-info ${id}`)));
 
-            const threads = <Array<Thread>>nodes.map((node: MINode) => {
-                let th = node.result('threads');
-                if (th.length === 1) {
-                    th = th[0];
-                    const id = parseInt(MINode.valueOf(th, 'id'));
-                    const tid = MINode.valueOf(th, 'target-id');
-                    const details = MINode.valueOf(th, 'details');
+			const threads = <Array<Thread>>nodes.map((node: MINode) => {
+				let th = node.result('threads');
+				if (th.length === 1) {
+					th = th[0];
+					const id = parseInt(MINode.valueOf(th, 'id'));
+					const tid = MINode.valueOf(th, 'target-id');
+					const details = MINode.valueOf(th, 'details');
 
-                    return new Thread(id, details || tid);
-                }
-                else {
-                    return null;
-                }
-            }).filter((t) => t !== null);
+					return new Thread(id, details || tid);
+				}
+				else {
+					return null;
+				}
+			}).filter((t) => t !== null);
 
-            response.body = {
-                threads: threads
-            };
-            this.sendResponse(response);
-        }
-        catch (e) {
-            this.sendErrorResponse(response, 1, `Unable to get thread information: ${e}`);
-        }
+			response.body = {
+				threads: threads
+			};
+			this.sendResponse(response);
+		}
+		catch (e) {
+			this.sendErrorResponse(response, 1, `Unable to get thread information: ${e}`);
+		}
 	}
 
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
@@ -547,49 +703,50 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			for (const element of stack) {
 				const stackId = (args.threadId << 8 | (element.level & 0xFF)) & 0xFFFF;
 				const file = element.file;
-				/*				let disassemble = this.forceDisassembly || !file;
-								if (!disassemble) { disassemble = !(await this.checkFileExists(file)); }
-								if (!disassemble && this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
-									const symbolInfo = this.symbolTable.getFunctionByName(element.function, element.fileName);
-									let url: string;
-									if (symbolInfo) {
-										if (symbolInfo.scope !== SymbolScope.Global) {
-											url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.cdasm`;
-										}
-										else {
-											url = `disassembly:///${symbolInfo.name}.cdasm`;
-										}
-										if (url === this.activeEditorPath) { disassemble = true; }
-									}
-								}
-				*/
+				let disassemble = this.forceDisassembly || !file;
+				if (!disassemble) { disassemble = !(await this.checkFileExists(file)); }
+				if (!disassemble && this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
+					const symbolInfo = this.symbolTable.getFunctionByName(element.function, element.fileName);
+					let url: string;
+					if (symbolInfo) {
+						if (symbolInfo.scope !== SymbolScope.Global && symbolInfo.file !== "") {
+							url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
+						}
+						else {
+							url = `disassembly:///${symbolInfo.name}.amigaasm`;
+						}
+						if (url === this.activeEditorPath) { disassemble = true; }
+					}
+				}
 				try {
-/*					if (disassemble) {
+					if (disassemble) {
 						const symbolInfo = await this.getDisassemblyForFunction(element.function, element.fileName);
 						let line = -1;
-						symbolInfo.instructions.forEach((inst, idx) => {
-							if (inst.address === element.address) { line = idx + 1; }
-						});
+						if(symbolInfo && symbolInfo.instructions) {
+							symbolInfo.instructions.forEach((inst, idx) => {
+								if (inst.address === element.address) { line = idx + 1; }
+							});
+						}
 
 						if (line !== -1) {
 							let fname: string;
 							let url: string;
-							if (symbolInfo.scope !== SymbolScope.Global) {
-								fname = `${symbolInfo.file}::${symbolInfo.name}.cdasm`;
-								url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.cdasm`;
+							if (symbolInfo.scope !== SymbolScope.Global && symbolInfo.file !== "") {
+								fname = `${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
+								url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
 							}
 							else {
-								fname = `${symbolInfo.name}.cdasm`;
-								url = `disassembly:///${symbolInfo.name}.cdasm`;
+								fname = `${symbolInfo.name}.amigaasm`;
+								url = `disassembly:///${symbolInfo.name}.amigaasm`;
 							}
 
 							ret.push(new StackFrame(stackId, `${element.function}@${element.address}`, new Source(fname, url), line, 0));
 						}
 						else {
-							ret.push(new StackFrame(stackId, element.function + '@' + element.address, null, element.line, 0));
+							ret.push(new StackFrame(stackId, element.function + '@' + element.address, undefined, element.line, 0));
 						}
 					}
-					else*/ {
+					else {
 						ret.push(new StackFrame(stackId, element.function + '@' + element.address, this.createSource(file), element.line, 0));
 					}
 				}
@@ -612,38 +769,132 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
-    protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-        const scopes = new Array<Scope>();
-        scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
-        scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
-        scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
+	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
+		const scopes = new Array<Scope>();
+		scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
+		scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
+		scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
 
-        response.body = {
-            scopes: scopes
-        };
-        this.sendResponse(response);
+		response.body = {
+			scopes: scopes
+		};
+		this.sendResponse(response);
+	}
+
+    private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+        const symbolInfo: SymbolInformation[] = this.symbolTable.getGlobalVariables();
+
+        const globals: DebugProtocol.Variable[] = [];
+        try {
+            for (const symbol of symbolInfo) {
+                const varObjName = `global_var_${symbol.name}`;
+                let varObj: VariableObject;
+                try {
+                    const changes = await this.miDebugger.varUpdate(varObjName);
+                    const changelist = changes.result('changelist');
+                    changelist.forEach((change) => {
+                        const name = MINode.valueOf(change, 'name');
+                        const vId = this.variableHandlesReverse[name];
+                        const v = this.variableHandles.get(vId) as any;
+                        v.applyChanges(change);
+                    });
+                    const varId = this.variableHandlesReverse[varObjName];
+                    varObj = this.variableHandles.get(varId) as any;
+                }
+                catch (err) {
+                    if (err instanceof MIError && err.message === 'Variable object not found') {
+                        varObj = await this.miDebugger.varCreate(symbol.name, varObjName);
+                        const varId = this.findOrCreateVariable(varObj);
+                        varObj.exp = symbol.name;
+                        varObj.id = varId;
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+
+                globals.push(varObj.toProtocolVariable());
+            }
+
+            response.body = { variables: globals };
+            this.sendResponse(response);
+        }
+        catch (err) {
+            this.sendErrorResponse(response, 1, `Could not get global variable information: ${err}`);
+        }
+    }
+
+    private async staticVariablesRequest(
+        threadId: number,
+        frameId: number,
+        response: DebugProtocol.VariablesResponse,
+        args: DebugProtocol.VariablesArguments
+    ): Promise<void> {
+        const statics: DebugProtocol.Variable[] = [];
+
+        try {
+            const frame = await this.miDebugger.getFrame(threadId, frameId);
+            const file = frame.fileName;
+            const staticSymbols = this.symbolTable.getStaticVariables(file);
+            
+            for (const symbol of staticSymbols) {
+                const varObjName = `${file}_static_var_${symbol.name}`;
+                let varObj: VariableObject;
+                try {
+                    const changes = await this.miDebugger.varUpdate(varObjName);
+                    const changelist = changes.result('changelist');
+                    changelist.forEach((change) => {
+                        const name = MINode.valueOf(change, 'name');
+                        const vId = this.variableHandlesReverse[name];
+                        const v = this.variableHandles.get(vId) as any;
+                        v.applyChanges(change);
+                    });
+                    const varId = this.variableHandlesReverse[varObjName];
+                    varObj = this.variableHandles.get(varId) as any;
+                }
+                catch (err) {
+                    if (err instanceof MIError && err.message === 'Variable object not found') {
+                        varObj = await this.miDebugger.varCreate(symbol.name, varObjName);
+                        const varId = this.findOrCreateVariable(varObj);
+                        varObj.exp = symbol.name;
+                        varObj.id = varId;
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+
+                statics.push(varObj.toProtocolVariable());
+            }
+
+            response.body = { variables: statics };
+            this.sendResponse(response);
+        }
+        catch (err) {
+            this.sendErrorResponse(response, 1, `Could not get global variable information: ${err}`);
+        }
     }
 
 	private createVariable(arg, options?): number {
-        if (options) {
-            return this.variableHandles.create(new ExtendedVariable(arg, options));
-        }
-        else {
-            return this.variableHandles.create(arg);
-        }
-    }
+		if (options) {
+			return this.variableHandles.create(new ExtendedVariable(arg, options));
+		}
+		else {
+			return this.variableHandles.create(arg);
+		}
+	}
 
-    private findOrCreateVariable(varObj: VariableObject): number {
-        let id: number;
-        if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
-            id = this.variableHandlesReverse[varObj.name];
-        }
-        else {
-            id = this.createVariable(varObj);
-            this.variableHandlesReverse[varObj.name] = id;
-        }
-        return varObj.isCompound() ? id : 0;
-    }
+	private findOrCreateVariable(varObj: VariableObject): number {
+		let id: number;
+		if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
+			id = this.variableHandlesReverse[varObj.name];
+		}
+		else {
+			id = this.createVariable(varObj);
+			this.variableHandlesReverse[varObj.name] = id;
+		}
+		return varObj.isCompound() ? id : 0;
+	}
 
 	private async stackVariablesRequest(
 		threadId: number,
@@ -740,7 +991,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
 		let id: number | string | VariableObject | ExtendedVariable;
 
-/*		if (args.variablesReference === GLOBAL_HANDLE_ID) {
+		if (args.variablesReference === GLOBAL_HANDLE_ID) {
 			return this.globalVariablesRequest(response, args);
 		}
 		else if (args.variablesReference >= STATIC_HANDLES_START && args.variablesReference <= STATIC_HANDLES_FINISH) {
@@ -748,7 +999,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const threadId = (args.variablesReference & 0xFF00) >>> 8;
 			return this.staticVariablesRequest(threadId, frameId, response, args);
 		}
-		else*/ if (args.variablesReference >= STACK_HANDLES_START && args.variablesReference < STATIC_HANDLES_START) {
+		else if (args.variablesReference >= STACK_HANDLES_START && args.variablesReference < STATIC_HANDLES_START) {
 			const frameId = args.variablesReference & 0xFF;
 			const threadId = (args.variablesReference & 0xFF00) >>> 8;
 			return this.stackVariablesRequest(threadId, frameId, response, args);
@@ -794,7 +1045,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 					const varReq = id;
 					if (varReq.options.arg) {
-						const strArr:any[] = [];
+						const strArr: any[] = [];
 						let argsPart = true;
 						let arrIndex = 0;
 						const submit = () => {
@@ -887,23 +1138,24 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected async stepInRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
 		try {
 			let assemblyMode = this.forceDisassembly;
-			/*			if (!assemblyMode) {
-							const frame = await this.miDebugger.getFrame(args.threadId, 0);
-							assemblyMode = !(await this.checkFileExists(frame.file));
-			
-							if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
-								const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
-								let url: string;
-								if (symbolInfo.scope !== SymbolScope.Global) {
-									url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.cdasm`;
-								}
-								else {
-									url = `disassembly:///${symbolInfo.name}.cdasm`;
-								}
-								if (url === this.activeEditorPath) { assemblyMode = true; }
-							}
+			if (!assemblyMode) {
+				const frame = await this.miDebugger.getFrame(args.threadId, 0);
+				assemblyMode = !(await this.checkFileExists(frame.file));
+
+				if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
+					const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
+					if(symbolInfo) {
+						let url: string;
+						if (symbolInfo.scope !== SymbolScope.Global) {
+							url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
 						}
-			*/
+						else {
+							url = `disassembly:///${symbolInfo.name}.amigaasm`;
+						}
+						if (url === this.activeEditorPath) { assemblyMode = true; }
+					}
+				}
+			}
 			const done = await this.miDebugger.step(args.threadId, assemblyMode);
 			this.sendResponse(response);
 		}
@@ -923,23 +1175,24 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
 		try {
 			let assemblyMode = this.forceDisassembly;
-			/*			if (!assemblyMode) {
-							const frame = await this.miDebugger.getFrame(args.threadId, 0);
-							assemblyMode = !(await this.checkFileExists(frame.file));
-			
-							if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
-								const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
-								let url: string;
-								if (symbolInfo.scope !== SymbolScope.Global) {
-									url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.cdasm`;
-								}
-								else {
-									url = `disassembly:///${symbolInfo.name}.cdasm`;
-								}
-								if (url === this.activeEditorPath) { assemblyMode = true; }
-							}
+			if (!assemblyMode) {
+				const frame = await this.miDebugger.getFrame(args.threadId, 0);
+				assemblyMode = !(await this.checkFileExists(frame.file));
+
+				if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
+					const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
+					let url: string;
+					if(symbolInfo) {
+						if (symbolInfo.scope !== SymbolScope.Global) {
+							url = `disassembly:///${symbolInfo.file}::${symbolInfo.name}.amigaasm`;
 						}
-			*/
+						else {
+							url = `disassembly:///${symbolInfo.name}.amigaasm`;
+						}
+						if (url === this.activeEditorPath) { assemblyMode = true; }
+					}
+				}
+			}
 			const done = await this.miDebugger.next(args.threadId, assemblyMode);
 			this.sendResponse(response);
 		}
@@ -948,20 +1201,20 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-    protected checkFileExists(name: string): Promise<boolean> {
-        if (!name) { return Promise.resolve(false); }
+	protected checkFileExists(name: string): Promise<boolean> {
+		if (!name) { return Promise.resolve(false); }
 
-        if (this.fileExistsCache.has(name)) { // Check cache
-            return Promise.resolve(this.fileExistsCache.get(name) || false);
-        }
+		if (this.fileExistsCache.has(name)) { // Check cache
+			return Promise.resolve(this.fileExistsCache.get(name) || false);
+		}
 
-        return new Promise((resolve, reject) => {
-            fs.exists(name, (exists) => {
-                this.fileExistsCache.set(name, exists);
-                resolve(exists);
-            });
-        });
-    }
+		return new Promise((resolve, reject) => {
+			fs.exists(name, (exists) => {
+				this.fileExistsCache.set(name, exists);
+				resolve(exists);
+			});
+		});
+	}
 
 	//---- helpers
 
@@ -970,108 +1223,108 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		return new Source(path.basename(filePath), convertedPath);
 	}
 
-    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
-        const createVariable = (arg, options?) => {
-            if (options) {
-                return this.variableHandles.create(new ExtendedVariable(arg, options));
-            }
-            else {
-                return this.variableHandles.create(arg);
-            }
-        };
+	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
+		const createVariable = (arg, options?) => {
+			if (options) {
+				return this.variableHandles.create(new ExtendedVariable(arg, options));
+			}
+			else {
+				return this.variableHandles.create(arg);
+			}
+		};
 
-        const findOrCreateVariable = (varObj: VariableObject): number => {
-            let id: number;
-            if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
-                id = this.variableHandlesReverse[varObj.name];
-            }
-            else {
-                id = createVariable(varObj);
-                this.variableHandlesReverse[varObj.name] = id;
-            }
-            return varObj.isCompound() ? id : 0;
-        };
+		const findOrCreateVariable = (varObj: VariableObject): number => {
+			let id: number;
+			if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
+				id = this.variableHandlesReverse[varObj.name];
+			}
+			else {
+				id = createVariable(varObj);
+				this.variableHandlesReverse[varObj.name] = id;
+			}
+			return varObj.isCompound() ? id : 0;
+		};
 
-        if (args.context === 'watch') {
-            try {
-                const exp = args.expression;
-                const varObjName = `watch_${exp.replace(/\./g, '__').replace(/\[/g, '_').replace(/\]/g, '_')}`;
-                let varObj: VariableObject;
-                try {
-                    const changes = await this.miDebugger.varUpdate(varObjName);
-                    const changelist = changes.result('changelist');
-                    changelist.forEach((change) => {
-                        const name = MINode.valueOf(change, 'name');
-                        const vId = this.variableHandlesReverse[name];
-                        const v = this.variableHandles.get(vId) as any;
-                        v.applyChanges(change);
-                    });
-                    const varId = this.variableHandlesReverse[varObjName];
-                    varObj = this.variableHandles.get(varId) as any;
-                    response.body = {
-                        result: varObj.value,
-                        variablesReference: varObj.id
-                    };
-                }
-                catch (err) {
-                    if (err instanceof MIError && err.message === 'Variable object not found') {
-                        varObj = await this.miDebugger.varCreate(exp, varObjName);
-                        const varId = findOrCreateVariable(varObj);
-                        varObj.exp = exp;
-                        varObj.id = varId;
-                        response.body = {
-                            result: varObj.value,
-                            variablesReference: varObj.id
-                        };
-                    }
-                    else {
-                        throw err;
-                    }
-                }
-                
-                this.sendResponse(response);
-            }
-            catch (err) {
-                response.body = {
-                    result: `<${err.toString()}>`,
-                    variablesReference: 0
-                };
-                this.sendErrorResponse(response, 7, err.toString());
-            }
-        }
-        else if (args.context === 'hover') {
-            try {
-                const res = await this.miDebugger.evalExpression(args.expression);
-                response.body = {
-                    variablesReference: 0,
-                    result: res.result('value')
-                };
-                this.sendResponse(response);
-            }
-            catch (e) {
-                this.sendErrorResponse(response, 7, e.toString());
-            }
-        }
-        else {
-            this.miDebugger.sendUserInput(args.expression).then((output) => {
-                if (typeof output === 'undefined') {
-                    response.body = {
-                        result: '',
-                        variablesReference: 0
-                    };
-                }
-                else {
-                    response.body = {
-                        result: JSON.stringify(output),
-                        variablesReference: 0
-                    };
-                }
-                this.sendResponse(response);
-            }, (msg) => {
-                this.sendErrorResponse(response, 8, msg.toString());
-            });
-        }
-    }
+		if (args.context === 'watch') {
+			try {
+				const exp = args.expression;
+				const varObjName = `watch_${exp.replace(/\./g, '__').replace(/\[/g, '_').replace(/\]/g, '_')}`;
+				let varObj: VariableObject;
+				try {
+					const changes = await this.miDebugger.varUpdate(varObjName);
+					const changelist = changes.result('changelist');
+					changelist.forEach((change) => {
+						const name = MINode.valueOf(change, 'name');
+						const vId = this.variableHandlesReverse[name];
+						const v = this.variableHandles.get(vId) as any;
+						v.applyChanges(change);
+					});
+					const varId = this.variableHandlesReverse[varObjName];
+					varObj = this.variableHandles.get(varId) as any;
+					response.body = {
+						result: varObj.value,
+						variablesReference: varObj.id
+					};
+				}
+				catch (err) {
+					if (err instanceof MIError && err.message === 'Variable object not found') {
+						varObj = await this.miDebugger.varCreate(exp, varObjName);
+						const varId = findOrCreateVariable(varObj);
+						varObj.exp = exp;
+						varObj.id = varId;
+						response.body = {
+							result: varObj.value,
+							variablesReference: varObj.id
+						};
+					}
+					else {
+						throw err;
+					}
+				}
+
+				this.sendResponse(response);
+			}
+			catch (err) {
+				response.body = {
+					result: `<${err.toString()}>`,
+					variablesReference: 0
+				};
+				this.sendErrorResponse(response, 7, err.toString());
+			}
+		}
+		else if (args.context === 'hover') {
+			try {
+				const res = await this.miDebugger.evalExpression(args.expression);
+				response.body = {
+					variablesReference: 0,
+					result: res.result('value')
+				};
+				this.sendResponse(response);
+			}
+			catch (e) {
+				this.sendErrorResponse(response, 7, e.toString());
+			}
+		}
+		else {
+			this.miDebugger.sendUserInput(args.expression).then((output) => {
+				if (typeof output === 'undefined') {
+					response.body = {
+						result: '',
+						variablesReference: 0
+					};
+				}
+				else {
+					response.body = {
+						result: JSON.stringify(output),
+						variablesReference: 0
+					};
+				}
+				this.sendResponse(response);
+			}, (msg) => {
+				this.sendErrorResponse(response, 8, msg.toString());
+			});
+		}
+	}
 }
 
 function normalizePath(dirName: string): string {
@@ -1083,13 +1336,13 @@ function normalizePath(dirName: string): string {
 }
 
 function prettyStringArray(strings) {
-    if (typeof strings === 'object') {
-        if (strings.length !== undefined) {
-            return strings.join(', ');
-        }
-        else {
-            return JSON.stringify(strings);
-        }
-    }
-    else { return strings; }
+	if (typeof strings === 'object') {
+		if (strings.length !== undefined) {
+			return strings.join(', ');
+		}
+		else {
+			return JSON.stringify(strings);
+		}
+	}
+	else { return strings; }
 }

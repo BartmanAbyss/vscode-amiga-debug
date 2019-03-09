@@ -7,7 +7,7 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
             let funcName: string;
             let file: string|null;
             const path = uri.path;
-            const pathParts = path.substring(1, path.length - 6).split('::');
+            const pathParts = path.substring(1, path.length - 9 /* ".amigaasm" */).split('::');
             
             if (pathParts.length === 1) {
                 file = null;

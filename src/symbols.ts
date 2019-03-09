@@ -20,6 +20,12 @@ export enum SymbolScope {
     Both
 }
 
+export interface Section {
+    name: string;
+    address: number;
+    length: number;
+}
+
 export interface SymbolInformation {
     address: number;
     length: number;

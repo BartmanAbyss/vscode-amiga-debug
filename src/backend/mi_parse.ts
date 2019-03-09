@@ -1,5 +1,6 @@
 export interface MIInfo {
     token: number;
+    output: string[];
     outOfBandRecord: Array<{ isStream: boolean, type: string, asyncClass: string, output: Array<[string, any]>, content: string }>;
     resultRecords: { resultClass: string, results: Array<[string, any]> };
 }
@@ -72,6 +73,7 @@ function parseString(str: string): string {
 
 export class MINode implements MIInfo {
     public token: number;
+    public output: string[] = []; // stream output from stdout that may be relevant
     public outOfBandRecord: Array<{ isStream: boolean, type: string, asyncClass: string, output: Array<[string, any]>, content: string }>;
     public resultRecords: { resultClass: string, results: Array<[string, any]> };
 
