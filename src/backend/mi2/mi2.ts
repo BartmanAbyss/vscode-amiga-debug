@@ -2,7 +2,6 @@ import { Breakpoint, IBackend, Stack, Variable, VariableObject, MIError } from '
 import * as ChildProcess from 'child_process';
 import { EventEmitter } from 'events';
 import { parseMI, MINode } from '../mi_parse';
-import * as linuxTerm from '../linux/console';
 import * as net from 'net';
 import * as fs from 'fs';
 import { posix } from 'path';
