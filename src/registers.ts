@@ -50,30 +50,24 @@ export class BaseNode {
 
 export class RegisterNode extends BaseNode {
 	private fields: FieldNode[];
+	private width: number = 32; // width in bits
 	private currentValue: number|undefined;
 
 	constructor(public name: string, public index: number) {
 		super(RecordType.Register);
 		this.name = this.name;
 
-		if (name.toUpperCase() === 'XPSR' || name.toUpperCase() === 'CPSR') {
+		if (name.toUpperCase() === 'SR') {
+			this.width = 16;
 			this.fields = [
-				new FieldNode('Negative Flag (N)', 31, 1, this),
-				new FieldNode('Zero Flag (Z)', 30, 1, this),
-				new FieldNode('Carry or borrow flag (C)', 29, 1, this),
-				new FieldNode('Overflow Flag (V)', 28, 1, this),
-				new FieldNode('Saturation Flag (Q)', 27, 1, this),
-				new FieldNode('GE', 16, 4, this),
-				new FieldNode('Interrupt Number', 0, 8, this),
-				new FieldNode('ICI/IT', 25, 2, this),
-				new FieldNode('ICI/IT', 10, 6, this),
-				new FieldNode('Thumb State (T)', 24, 1, this)
-			];
-		} else if (name.toUpperCase() === 'CONTROL') {
-			this.fields = [
-				new FieldNode('FPCA', 2, 1, this),
-				new FieldNode('SPSEL', 1, 1, this),
-				new FieldNode('nPRIV', 0, 1, this)
+				new FieldNode('Carry (C)', 0, 1, this),
+				new FieldNode('Overflow (V)', 1, 1, this),
+				new FieldNode('Zero (Z)', 2, 1, this),
+				new FieldNode('Negative (N)', 3, 1, this),
+				new FieldNode('Extend (X)', 4, 1, this),
+				new FieldNode('Interrupt Priority Mask', 8, 3, this),
+				new FieldNode('Supervisor/User (S)', 13, 1, this),
+				new FieldNode('Trace Mode (T)', 15, 1, this)
 			];
 		}
 	}
@@ -91,10 +85,10 @@ export class RegisterNode extends BaseNode {
 				label += this.currentValue.toString();
 				break;
 			case NumberFormat.Binary:
-				label += binaryFormat(this.currentValue, 32, false, true);
+				label += binaryFormat(this.currentValue, this.width, false, true);
 				break;
 			default:
-				label += hexFormat(this.currentValue, 8);
+				label += hexFormat(this.currentValue, this.width / 4);
 				break;
 		}
 
