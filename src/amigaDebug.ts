@@ -299,7 +299,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected readRegistersRequest(response: DebugProtocol.Response) {
-		this.miDebugger.sendCommand('data-list-register-values x').then((node) => {
+		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x').then((node) => {
 			if (node.resultRecords.resultClass === 'done') {
 				const rv = node.resultRecords.results[0][1];
 				response.body = rv.map((n) => {
@@ -872,10 +872,24 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected stepOutRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-		this.miDebugger.stepOut(args.threadId).then((done) => {
-			this.sendResponse(response);
+		this.miDebugger.sendCommand('data-list-register-values x 17').then(async (node) => { // get PC
+			if (node.resultRecords.resultClass === 'done') {
+				const rv = node.resultRecords.results[0][1];
+				const pc = parseInt(rv[0][1][1]);
+				if(pc >= 0xF80000) {
+					await this.miDebugger.sendCommand("break-insert -t *0xffffffff");
+					await this.miDebugger.sendCommand("exec-continue");
+					this.sendResponse(response);
+				} else {
+					this.miDebugger.stepOut(args.threadId).then((done) => {
+						this.sendResponse(response);
+					}, (msg) => {
+						this.sendErrorResponse(response, 5, `Could not step out: ${msg}`);
+					});
+				}
+			}
 		}, (msg) => {
-			this.sendErrorResponse(response, 5, `Could not step out: ${msg}`);
+			this.sendErrorResponse(response, 5, `Could not get PC: ${msg}`);
 		});
 	}
 

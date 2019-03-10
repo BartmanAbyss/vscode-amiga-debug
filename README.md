@@ -2,9 +2,13 @@
 
 Debug Amiga C programs compiled by gcc in WinUAE.
 
+## Blabla
+
+* kicstart breakpoint 0xfc0cf0
+
 ## Known Issues
 
-* registers.ts still has lots of cortex-debug code in it
+* step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
 * sometimes fail at start: Unable to open 'main.amigaasm': Cannot read property 'customRequest' of undefined.
