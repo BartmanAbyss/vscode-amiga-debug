@@ -244,7 +244,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendErrorResponse(response, 1, `Unable to disassemble ${args.function}`);
 			}
 			return;
-		} else if (args.startAddress) {
+		} else if (args.startAddress !== undefined) {
 			let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
 			if (funcInfo) {
 				funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
@@ -1029,7 +1029,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
-		const symbolInfo: SymbolInformation[] = this.symbolTable.getGlobalVariables();
+		const symbolInfo = this.symbolTable.getGlobalVariables();
 
 		const globals: DebugProtocol.Variable[] = [];
 		try {
@@ -1232,7 +1232,7 @@ function normalizePath(filePath: string): string {
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
-	let converted = filePath.replace(/\/+/g, path.sep).toLowerCase();
+	let converted = filePath.replace(/\/+/g, path.sep);
 	if(converted.length > 0 && converted[0] == '\\')
 		converted = 'c:\\cygwin64' + converted;
 	return converted;
@@ -1243,7 +1243,7 @@ function unnormalizePath(filePath: string): string {
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
-	let converted = filePath.replace(/\\+/g, '/').toLowerCase();
+	let converted = filePath.replace(/\\+/g, '/');
 	if(converted.toLowerCase().startsWith('c:/cygwin64'))
 		converted = converted.substr(11 /* "c:/cygwin64" */);
 	return converted;

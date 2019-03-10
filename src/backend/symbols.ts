@@ -44,7 +44,7 @@ export class SymbolTable {
 						currentFile = match[11].trim();
 					}
 					const type = TYPE_MAP[match[8]];
-					const scope = SCOPE_MAP[match[2]];
+					let scope = SCOPE_MAP[match[2]];
 					let name = match[11].trim();
 					let hidden = false;
 
@@ -52,6 +52,10 @@ export class SymbolTable {
 						name = name.substring(7).trim();
 						hidden = true;
 					}
+
+					// fix for LTO
+					if(scope === SymbolScope.Local && !currentFile)
+						scope = SymbolScope.Global;
 
 					this.symbols.push({
 						address: parseInt(match[1], 16),
@@ -106,7 +110,7 @@ export class SymbolTable {
 
 	public getFunctionByName(name: string, file?: string): SymbolInformation | null {
 		// Try to find static function first
-		let matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.scope === SymbolScope.Local && s.name === name && (s.file === file || s.file === ""));
+		let matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.scope === SymbolScope.Local && s.name === name && s.file === file);
 		if (matches.length !== 0) { return matches[0]; }
 
 		// Fall back to global scope
