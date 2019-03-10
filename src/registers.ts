@@ -93,7 +93,7 @@ export class RegisterNode extends BaseNode {
 		}
 
 		if (this.fields && this.fields.length > 0) {
-			return new TreeNode(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed, 'register', this);
+			return new TreeNode(label, vscode.TreeItemCollapsibleState.Collapsed, 'register', this);
 		} else {
 			return new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'register', this);
 		}
@@ -120,19 +120,6 @@ export class RegisterNode extends BaseNode {
 
 	public getFormat(): NumberFormat {
 		return this.format;
-	}
-
-	public _saveState(): NodeSetting[] {
-		const settings: NodeSetting[] = [];
-		if (this.expanded || this.format !== NumberFormat.Auto) {
-			settings.push({ node: this.name, format: this.format, expanded: this.expanded });
-		}
-
-		if (this.fields) {
-			settings.push(...this.fields.map((c) => c._saveState()).filter((c) => c !== null) as NodeSetting[]);
-		}
-
-		return settings;
 	}
 }
 
@@ -178,15 +165,6 @@ export class FieldNode extends BaseNode {
 
 	public getFormat(): NumberFormat {
 		if (this.format === NumberFormat.Auto) { return this.register.getFormat(); } else { return this.format; }
-	}
-
-	public _saveState(): NodeSetting|null {
-		return this.format !== NumberFormat.Auto
-			? {
-				node: `${this.register.name}.${this.name}`,
-				format: this.format
-			}
-			: null;
 	}
 }
 
@@ -252,35 +230,6 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 		});
 
 		this.loaded = true;
-
-		vscode.workspace.findFiles('.vscode/.amiga.registers.state.json', null, 1).then((value) => {
-			if (value.length > 0) {
-				const fspath = value[0].fsPath;
-				const data = fs.readFileSync(fspath, 'utf8');
-				const settings = JSON.parse(data);
-
-				settings.forEach((s: NodeSetting) => {
-					if (s.node.indexOf('.') === -1) {
-						const register = this.registers.find((r) => r.name === s.node);
-						if (register) {
-							if (s.expanded) { register.expanded = s.expanded; }
-							if (s.format) { register.setFormat(s.format); }
-						}
-					} else {
-						const [regname, fieldname] = s.node.split('.');
-						const register = this.registers.find((r) => r.name === regname);
-						if (register) {
-							const field = register.getChildren().find((f) => f.name === fieldname);
-							if (field && s.format) { field.setFormat(s.format); }
-						}
-					}
-				});
-				this._onDidChangeTreeData.fire();
-			}
-		}, (error) => {
-
-		});
-
 		this._onDidChangeTreeData.fire();
 	}
 
@@ -307,21 +256,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 		}
 	}
 
-	public _saveState(fspath: string) {
-		const state: NodeSetting[] = [];
-		this.registers.forEach((r) => {
-			state.push(...r._saveState());
-		});
-
-		fs.writeFileSync(fspath, JSON.stringify(state), { encoding: 'utf8', flag: 'w' });
-	}
-
 	public debugSessionTerminated() {
-		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-			const fspath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.vscode', '.amiga.registers.state.json');
-			this._saveState(fspath);
-		}
-
 		this.loaded = false;
 		this.registers = [];
 		this.registerMap = {};
