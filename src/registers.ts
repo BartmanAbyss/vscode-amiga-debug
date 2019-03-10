@@ -25,7 +25,7 @@ export class TreeNode extends vscode.TreeItem {
 		super(label, collapsibleState);
 
 		this.command = {
-			command: 'cortex-debug.registers.selectedNode',
+			command: 'amiga.registers.selectedNode',
 			arguments: [node],
 			title: 'Selected Node'
 		};
@@ -50,7 +50,7 @@ export class BaseNode {
 
 export class RegisterNode extends BaseNode {
 	private fields: FieldNode[];
-	private currentValue: number;
+	private currentValue: number|undefined;
 
 	constructor(public name: string, public index: number) {
 		super(RecordType.Register);
@@ -76,8 +76,6 @@ export class RegisterNode extends BaseNode {
 				new FieldNode('nPRIV', 0, 1, this)
 			];
 		}
-
-		this.currentValue = 0x00;
 	}
 
 	public extractBits(offset: number, width: number): number {
@@ -85,6 +83,8 @@ export class RegisterNode extends BaseNode {
 	}
 
 	public getTreeNode(): TreeNode {
+		if(this.currentValue === undefined)
+			return null;
 		let label = `${this.name} = `;
 		switch (this.getFormat()) {
 			case NumberFormat.Decimal:
@@ -227,6 +227,8 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 		vscode.debug.activeDebugSession!.customRequest('read-registers').then((data) => {
 			data.forEach((reg) => {
 				const index = parseInt(reg.number, 10);
+				if(reg.value === "<unavailable>")
+					return;
 				const value = parseInt(reg.value, 16);
 				const regNode = this.registerMap[index];
 				if (regNode) { regNode.setValue(value); }
@@ -257,7 +259,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
 		this.loaded = true;
 
-		vscode.workspace.findFiles('.vscode/.cortex-debug.registers.state.json', null, 1).then((value) => {
+		vscode.workspace.findFiles('.vscode/.amiga.registers.state.json', null, 1).then((value) => {
 			if (value.length > 0) {
 				const fspath = value[0].fsPath;
 				const data = fs.readFileSync(fspath, 'utf8');
@@ -322,7 +324,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	public debugSessionTerminated() {
 		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-			const fspath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.vscode', '.cortex-debug.registers.state.json');
+			const fspath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.vscode', '.amiga.registers.state.json');
 			this._saveState(fspath);
 		}
 
