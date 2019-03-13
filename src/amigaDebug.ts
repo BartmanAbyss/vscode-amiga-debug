@@ -871,26 +871,30 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		return this.stepInOrOverRequest(response, args, true);
 	}
 
-	protected stepOutRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-		this.miDebugger.sendCommand('data-list-register-values x 17').then(async (node) => { // get PC
-			if (node.resultRecords.resultClass === 'done') {
-				const rv = node.resultRecords.results[0][1];
-				const pc = parseInt(rv[0][1][1]);
-				if(pc >= 0xF80000) {
-					await this.miDebugger.sendCommand("break-insert -t *0xffffffff");
-					await this.miDebugger.sendCommand("exec-continue");
+	protected async stepOutRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+		const node = await this.miDebugger.sendCommand('data-list-register-values x 17 16'); // get PC, SR
+		if (node.resultRecords.resultClass === 'done') {
+			const rv = node.resultRecords.results[0][1];
+			const pc = parseInt(rv[0][1][1]);
+			const sr = parseInt(rv[1][1][1]);
+			if(sr & (1 << 13)) {
+				// in Interrupt handler (supervisor mode)
+				await this.miDebugger.sendCommand("break-insert -t *0xeeeeeeee");
+				await this.miDebugger.sendCommand("exec-continue");
+				this.sendResponse(response);
+			} else if(pc >= 0xF80000) {
+				// in Kickstart
+				await this.miDebugger.sendCommand("break-insert -t *0xffffffff");
+				await this.miDebugger.sendCommand("exec-continue");
+				this.sendResponse(response);
+			} else {
+				this.miDebugger.stepOut(args.threadId).then((done) => {
 					this.sendResponse(response);
-				} else {
-					this.miDebugger.stepOut(args.threadId).then((done) => {
-						this.sendResponse(response);
-					}, (msg) => {
-						this.sendErrorResponse(response, 5, `Could not step out: ${msg}`);
-					});
-				}
+				}, (msg) => {
+					this.sendErrorResponse(response, 5, `Could not step out: ${msg}`);
+				});
 			}
-		}, (msg) => {
-			this.sendErrorResponse(response, 5, `Could not get PC: ${msg}`);
-		});
+		}
 	}
 
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
@@ -1046,8 +1050,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const symbolInfo = this.symbolTable.getGlobalVariables();
 
 		const globals: DebugProtocol.Variable[] = [];
-		try {
-			for (const symbol of symbolInfo) {
+		for (const symbol of symbolInfo) {
+			try {
 				const varObjName = `global_var_${symbol.name}`;
 				let varObj: VariableObject;
 				try {
@@ -1071,15 +1075,16 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						throw err;
 					}
 				}
-
 				globals.push(varObj.toProtocolVariable());
+			} catch (err) {
+				// this occurs usually when the linker renames duplicate static variables when LTO is activated. 
+				// nothing much we can do about it. If this is important, try to resolve it via raw address
+				// see https://stackoverflow.com/questions/27866865/
 			}
-
-			response.body = { variables: globals };
-			this.sendResponse(response);
-		} catch (err) {
-			this.sendErrorResponse(response, 1, `Could not get global variable information: ${err}`);
 		}
+
+		response.body = { variables: globals };
+		this.sendResponse(response);
 	}
 
 	private async staticVariablesRequest(
@@ -1247,7 +1252,9 @@ function normalizePath(filePath: string): string {
 		return filePath;
 
 	let converted = filePath.replace(/\/+/g, path.sep);
-	if(converted.length > 0 && converted[0] == '\\')
+	if(converted.toLowerCase().startsWith('\\cygdrive\\'))
+		converted = converted[10] + ':' + converted.substr(11);
+	if(converted.length > 0 && converted[0] === '\\')
 		converted = 'c:\\cygwin64' + converted;
 	return converted;
 }
@@ -1260,6 +1267,8 @@ function unnormalizePath(filePath: string): string {
 	let converted = filePath.replace(/\\+/g, '/');
 	if(converted.toLowerCase().startsWith('c:/cygwin64'))
 		converted = converted.substr(11 /* "c:/cygwin64" */);
+	else if(converted.length > 2 && converted[1] === ':')
+		converted = '/cygdrive/' + converted[0] + '/' + converted.substr(2);
 	return converted;
 }
 

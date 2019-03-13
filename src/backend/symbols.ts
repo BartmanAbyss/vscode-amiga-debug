@@ -86,6 +86,7 @@ export class SymbolTable {
 				symbol.address += section.address;
 			}
 		});
+		console.log(this.symbols);
 	}
 
 	public getFunctionAtAddress(address: number): SymbolInformation | null {

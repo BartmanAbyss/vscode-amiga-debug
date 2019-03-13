@@ -8,7 +8,6 @@ import { RegisterTreeProvider, TreeNode as RTreeNode, RecordType as RRecordType,
 import { MemoryContentProvider } from './memory_content_provider';
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { SymbolInformation, SymbolScope, NumberFormat } from './symbols';
-import * as CopyPaste from 'copy-paste';
 
 
 /*
@@ -202,7 +201,7 @@ class AmigaDebugExtension {
 	private registersCopyValue(tn: RTreeNode): void {
 		const cv = tn.node!.getCopyValue();
 		if (cv) {
-			CopyPaste.copy(cv);
+			vscode.env.clipboard.writeText(cv);
 		}
 	}
 
