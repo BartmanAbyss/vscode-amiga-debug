@@ -244,7 +244,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendErrorResponse(response, 1, `Unable to disassemble ${args.function}`);
 			}
 			return;
+<<<<<<< HEAD
 		} else if (args.startAddress !== undefined) {
+=======
+		} else if (args.startAddress) {
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 			let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
 			if (funcInfo) {
 				funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
@@ -299,7 +303,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected readRegistersRequest(response: DebugProtocol.Response) {
+<<<<<<< HEAD
 		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x').then((node) => {
+=======
+		this.miDebugger.sendCommand('data-list-register-values x').then((node) => {
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 			if (node.resultRecords.resultClass === 'done') {
 				const rv = node.resultRecords.results[0][1];
 				response.body = rv.map((n) => {
@@ -495,6 +503,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					let func: string;
 					let file: string | undefined;
 
+<<<<<<< HEAD
 					if(parts.length === 1 && parts[0].startsWith('0x')) {
 						if (args.breakpoints) {
 							args.breakpoints.forEach((brk) => {
@@ -527,6 +536,30 @@ export class AmigaDebugSession extends LoggingDebugSession {
 								}
 							});
 						}
+=======
+					if (parts.length === 2) {
+						func = parts[1];
+						file = parts[0];
+					} else {
+						func = parts[0];
+					}
+
+					const symbol = await this.getDisassemblyForFunction(func, file);
+
+					if (args.breakpoints && symbol && symbol.instructions) {
+						args.breakpoints.forEach((brk) => {
+							if (brk.line <= symbol.instructions!.length) {
+								const line = symbol.instructions![brk.line - 1];
+								all.push(this.miDebugger.addBreakPoint({
+									file: args.source.path, // disassembly, file doesn't matter
+									line: brk.line,
+									condition: brk.condition,
+									countCondition: brk.hitCondition,
+									raw: line.address
+								}));
+							}
+						});
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 					}
 				} else {
 					if (args.breakpoints) {
@@ -864,6 +897,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendResponse(response);
 		} catch (msg) {
 			this.sendErrorResponse(response, 6, `Could not step: ${msg}`);
+<<<<<<< HEAD
 		}
 	}
 
@@ -916,6 +950,42 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
+=======
+		}
+	}
+
+	protected async stepInRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+		return this.stepInOrOverRequest(response, args, true);
+	}
+
+	protected stepOutRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
+		this.miDebugger.stepOut(args.threadId).then((done) => {
+			this.sendResponse(response);
+		}, (msg) => {
+			this.sendErrorResponse(response, 5, `Could not step out: ${msg}`);
+		});
+	}
+
+	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+		return this.stepInOrOverRequest(response, args, false);
+	}
+
+	protected checkFileExists(name: string): Promise<boolean> {
+		if (!name)
+			return Promise.resolve(false);
+
+		if (this.fileExistsCache.has(name)) // Check cache
+			return Promise.resolve(this.fileExistsCache.get(name) || false);
+
+		return new Promise((resolve, reject) => {
+			fs.exists(name, (exists) => {
+				this.fileExistsCache.set(name, exists);
+				resolve(exists);
+			});
+		});
+	}
+
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		const createVariable = (arg, options?) => {
 			if (options) {
@@ -1047,6 +1117,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+<<<<<<< HEAD
 		const symbolInfo = this.symbolTable.getGlobalVariables();
 
 		const globals: DebugProtocol.Variable[] = [];
@@ -1087,6 +1158,143 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
+	private async staticVariablesRequest(
+		threadId: number,
+		frameId: number,
+		response: DebugProtocol.VariablesResponse,
+		args: DebugProtocol.VariablesArguments
+	): Promise<void> {
+		const statics: DebugProtocol.Variable[] = [];
+
+		try {
+			const frame = await this.miDebugger.getFrame(threadId, frameId);
+			const file = frame.fileName;
+			const staticSymbols = this.symbolTable.getStaticVariables(file);
+
+			for (const symbol of staticSymbols) {
+				const varObjName = `${file}_static_var_${symbol.name}`;
+=======
+		const symbolInfo: SymbolInformation[] = this.symbolTable.getGlobalVariables();
+
+		const globals: DebugProtocol.Variable[] = [];
+		try {
+			for (const symbol of symbolInfo) {
+				const varObjName = `global_var_${symbol.name}`;
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
+				let varObj: VariableObject;
+				try {
+					const changes = await this.miDebugger.varUpdate(varObjName);
+					const changelist = changes.result('changelist');
+					changelist.forEach((change) => {
+						const name = MINode.valueOf(change, 'name');
+						const vId = this.variableHandlesReverse[name];
+						const v = this.variableHandles.get(vId) as any;
+						v.applyChanges(change);
+					});
+					const varId = this.variableHandlesReverse[varObjName];
+					varObj = this.variableHandles.get(varId) as any;
+				} catch (err) {
+					if (err instanceof MIError && err.message === 'Variable object not found') {
+						varObj = await this.miDebugger.varCreate(symbol.name, varObjName);
+						const varId = this.findOrCreateVariable(varObj);
+						varObj.exp = symbol.name;
+						varObj.id = varId;
+					} else {
+						throw err;
+					}
+				}
+
+<<<<<<< HEAD
+				statics.push(varObj.toProtocolVariable());
+			}
+
+			response.body = { variables: statics };
+=======
+				globals.push(varObj.toProtocolVariable());
+			}
+
+			response.body = { variables: globals };
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
+			this.sendResponse(response);
+		} catch (err) {
+			this.sendErrorResponse(response, 1, `Could not get global variable information: ${err}`);
+		}
+	}
+
+<<<<<<< HEAD
+	private createVariable(arg, options?): number {
+		if (options) {
+			return this.variableHandles.create(new ExtendedVariable(arg, options));
+		} else {
+			return this.variableHandles.create(arg);
+		}
+	}
+
+	private findOrCreateVariable(varObj: VariableObject): number {
+		let id: number;
+		if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
+			id = this.variableHandlesReverse[varObj.name];
+		} else {
+			id = this.createVariable(varObj);
+			this.variableHandlesReverse[varObj.name] = id;
+		}
+		return varObj.isCompound() ? id : 0;
+	}
+
+	private async stackVariablesRequest(
+		threadId: number,
+		frameId: number,
+		response: DebugProtocol.VariablesResponse,
+		args: DebugProtocol.VariablesArguments
+	): Promise<void> {
+		const variables: DebugProtocol.Variable[] = [];
+		let stack: Variable[];
+		try {
+			stack = await this.miDebugger.getStackVariables(threadId, frameId);
+			for (const variable of stack) {
+				try {
+					const varObjName = `var_${variable.name}`;
+					let varObj: VariableObject;
+					try {
+						const changes = await this.miDebugger.varUpdate(varObjName);
+						const changelist = changes.result('changelist');
+						changelist.forEach((change) => {
+							const name = MINode.valueOf(change, 'name');
+							const vId = this.variableHandlesReverse[name];
+							const v = this.variableHandles.get(vId) as any;
+							v.applyChanges(change);
+						});
+						const varId = this.variableHandlesReverse[varObjName];
+						varObj = this.variableHandles.get(varId) as any;
+					} catch (err) {
+						if (err instanceof MIError && err.message === 'Variable object not found') {
+							varObj = await this.miDebugger.varCreate(variable.name, varObjName);
+							const varId = this.findOrCreateVariable(varObj);
+							varObj.exp = variable.name;
+							varObj.id = varId;
+						} else {
+							throw err;
+						}
+					}
+					variables.push(varObj.toProtocolVariable());
+				} catch (err) {
+					variables.push({
+						name: variable.name,
+						value: `<${err}>`,
+						variablesReference: 0
+					});
+				}
+			}
+			response.body = {
+				variables
+			};
+			this.sendResponse(response);
+		} catch (err) {
+			this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
+		}
+	}
+
+=======
 	private async staticVariablesRequest(
 		threadId: number,
 		frameId: number,
@@ -1207,6 +1415,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 	private async variableMembersRequest(id: string, response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
 		// Variable members
 		let variable;
@@ -1245,6 +1454,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		return new Source(path.basename(filePath), filePath);
 	}
 }
+<<<<<<< HEAD
 
 // gdb(cygwin)->windows
 function normalizePath(filePath: string): string {
@@ -1255,6 +1465,16 @@ function normalizePath(filePath: string): string {
 	if(converted.toLowerCase().startsWith('\\cygdrive\\'))
 		converted = converted[10] + ':' + converted.substr(11);
 	if(converted.length > 0 && converted[0] === '\\')
+=======
+
+// gdb(cygwin)->windows
+function normalizePath(filePath: string): string {
+	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
+		return filePath;
+
+	let converted = filePath.replace(/\/+/g, path.sep).toLowerCase();
+	if(converted.length > 0 && converted[0] == '\\')
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 		converted = 'c:\\cygwin64' + converted;
 	return converted;
 }
@@ -1264,11 +1484,17 @@ function unnormalizePath(filePath: string): string {
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
+<<<<<<< HEAD
 	let converted = filePath.replace(/\\+/g, '/');
 	if(converted.toLowerCase().startsWith('c:/cygwin64'))
 		converted = converted.substr(11 /* "c:/cygwin64" */);
 	else if(converted.length > 2 && converted[1] === ':')
 		converted = '/cygdrive/' + converted[0] + '/' + converted.substr(2);
+=======
+	let converted = filePath.replace(/\\+/g, '/').toLowerCase();
+	if(converted.toLowerCase().startsWith('c:/cygwin64'))
+		converted = converted.substr(11 /* "c:/cygwin64" */);
+>>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
 	return converted;
 }
 
