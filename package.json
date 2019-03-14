@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
     "name": "amiga-debug",
     "displayName": "amiga-debug",
     "publisher": "bwodok",
@@ -16,23 +15,6 @@
     ],
     "main": "./out/src/extension.js",
     "contributes": {
-=======
-	"name": "amiga-debug",
-	"displayName": "amiga-debug",
-	"description": "",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.31.0"
-	},
-	"categories": [
-		"Debuggers"
-	],
-	"activationEvents": [
-		"onDebug"
-	],
-	"main": "./out/src/extension.js",
-	"contributes": {
->>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
         "commands": [
             {
                 "command": "amiga.registers.selectedNode",
@@ -94,7 +76,6 @@
                 "path": "./syntaxes/amiga-memoryview.json"
             }
         ],
-<<<<<<< HEAD
         "breakpoints": [
             {
                 "language": "c"
@@ -107,20 +88,6 @@
                 "program": "./out/src/debugAdapter.js",
                 "runtime": "node",
                 "enableBreakpointsFor": {
-=======
-		"breakpoints": [
-			{
-				"language": "c"
-			}
-		],
-		"debuggers": [
-			{
-				"type": "amiga",
-				"label": "Amiga Debug",
-				"program": "./out/src/debugAdapter.js",
-				"runtime": "node",
-				"enableBreakpointsFor": {
->>>>>>> b44af42c5affa591600496dbdebd051e9e8a473e
                     "languageIds": [
                         "c",
                         "amiga.disassembly"

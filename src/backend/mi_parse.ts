@@ -225,6 +225,7 @@ export function parseMI(output: string): MINode {
 		const canBeValueList = output[0] === '[';
 		output = output.substr(1);
 		if (output[0] === '}' || output[0] === ']') {
+			output = output.substr(1); // ]
 			return [];
 		}
 		if (canBeValueList) {
@@ -244,7 +245,7 @@ export function parseMI(output: string): MINode {
 		if (result) {
 			const results:any[] = [];
 			results.push(result);
-			while (result = parseCommaResult()) {
+			while ((result = parseCommaResult()) !== undefined) {
 				results.push(result);
 			}
 			output = output.substr(1); // }
@@ -309,7 +310,7 @@ export function parseMI(output: string): MINode {
 					output: <any[]> []
 				};
 				let result;
-				while (result = parseCommaResult()) {
+				while ((result = parseCommaResult()) !== undefined) {
 					asyncRecord.output.push(result);
 				}
 				outOfBandRecord.push(asyncRecord);
@@ -336,7 +337,7 @@ export function parseMI(output: string): MINode {
 			results: []
 		};
 		let result;
-		while (result = parseCommaResult()) {
+		while ((result = parseCommaResult()) !== undefined) {
 			resultRecords.results.push(result);
 		}
 
