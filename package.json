@@ -1,196 +1,189 @@
 {
-    "name": "amiga-debug",
-    "displayName": "amiga-debug",
-    "publisher": "bwodok",
-    "description": "",
-    "version": "0.0.1",
-    "engines": {
-        "vscode": "^1.31.0"
-    },
-    "categories": [
-        "Debuggers"
-    ],
-    "activationEvents": [
-        "onDebug"
-    ],
-    "main": "./out/src/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "amiga.registers.selectedNode",
-                "title": "Selected"
-            },
-            {
-                "command": "amiga.registers.copyValue",
-                "title": "Copy Value"
-            },
-            {
-                "command": "amiga.registers.setFormat",
-                "title": "Set Value Format"
-            },
-            {
-                "category": "amiga",
-                "command": "amiga.examineMemory",
-                "title": "View Memory"
-            },
-            {
-                "category": "amiga",
-                "command": "amiga.viewDisassembly",
-                "title": "View Disassembly (Function)"
-            },
-            {
-                "category": "amiga",
-                "command": "amiga.setForceDisassembly",
-                "title": "Set Force Disassembly"
-            }
-        ],
-        "languages": [
-            {
-                "id": "amiga.disassembly",
-                "aliases": [
-                    "Amiga Disassembly"
-                ],
-                "extensions": [
-                    ".amigaasm"
-                ]
-            },
-            {
-                "id": "amiga.memoryview",
-                "aliases": [
-                    "Amiga Memory View"
-                ],
-                "extensions": [
-                    ".amigamem"
-                ]
-            }
-        ],
-        "grammars": [
-            {
-                "language": "amiga.disassembly",
-                "scopeName": "source.amiga-disassembly",
-                "path": "./syntaxes/amiga-disassembly.json"
-            },
-            {
-                "language": "amiga.memoryview",
-                "scopeName": "source.amiga-memoryview",
-                "path": "./syntaxes/amiga-memoryview.json"
-            }
-        ],
-        "breakpoints": [
-            {
-                "language": "c"
-            }
-        ],
-        "debuggers": [
-            {
-                "type": "amiga",
-                "label": "Amiga Debug",
-                "program": "./out/src/debugAdapter.js",
-                "runtime": "node",
-                "enableBreakpointsFor": {
-                    "languageIds": [
-                        "c",
-                        "amiga.disassembly"
-                    ]
-                },
-                "configurationAttributes": {
-                    "launch": {
-                        "required": [
-                            "program"
-                        ],
-                        "properties": {
-                            "program": {
-                                "type": "string",
-                                "description": "Absolute path to a text file.",
-                                "default": ""
-                            }
-                        }
-                    }
-                },
-                "initialConfigurations": [
-                    {
-                        "type": "amiga",
-                        "request": "launch",
-                        "name": "Ask for file name",
-                        "program": ""
-                    }
-                ],
-                "configurationSnippets": [
-                    {
-                        "label": "Amiga Debug: Launch",
-                        "description": "A new configuration for 'debugging' a user selected markdown file.",
-                        "body": {
-                            "type": "amiga",
-                            "request": "launch",
-                            "name": "Ask for file name",
-                            "program": ""
-                        }
-                    }
-                ]
-            }
-        ],
-        "menus": {
-            "commandPalette": [
-                {
-                    "command": "amiga.registers.copyValue",
-                    "when": "false"
-                },
-                {
-                    "command": "amiga.examineMemory",
-                    "when": "debugType == amiga"
-                },
-                {
-                    "command": "amiga.viewDisassembly",
-                    "when": "debugType == amiga"
-                },
-                {
-                    "command": "amiga.setForceDisassembly",
-                    "when": "debugType == amiga"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "amiga.registers.copyValue",
-                    "when": "view == amiga.registers && viewItem == register"
-                },
-                {
-                    "command": "amiga.registers.copyValue",
-                    "when": "view == amiga.registers && viewItem == field"
-                },
-                {
-                    "command": "amiga.registers.setFormat",
-                    "when": "view == amiga.registers"
-                }
-            ],
-            "view/title": []
-        },
-        "views": {
-            "debug": [
-                {
-                    "id": "amiga.registers",
-                    "name": "Registers",
-                    "when": "debugType == amiga"
-                }
-            ]
-        }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^10.12.30",
-        "tslint": "^5.12.1",
-        "typescript": "^3.3.1",
-        "vscode": "^1.1.28",
-        "vscode-debugadapter-testsupport": "^1.34.0"
-    },
-    "dependencies": {
-        "vscode-debugadapter": "^1.34.0",
-        "vscode-debugprotocol": "^1.34.0"
-    }
+	"name": "amiga-debug",
+	"displayName": "amiga-debug",
+	"publisher": "bwodok",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.31.0"
+	},
+	"categories": [
+		"Debuggers"
+	],
+	"activationEvents": [
+		"onDebug"
+	],
+	"main": "./out/src/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "amiga.registers.selectedNode",
+				"title": "Selected"
+			},
+			{
+				"command": "amiga.registers.copyValue",
+				"title": "Copy Value"
+			},
+			{
+				"command": "amiga.registers.setFormat",
+				"title": "Set Value Format"
+			},
+			{
+				"category": "amiga",
+				"command": "amiga.examineMemory",
+				"title": "View Memory"
+			},
+			{
+				"category": "amiga",
+				"command": "amiga.viewDisassembly",
+				"title": "View Disassembly (Function)"
+			},
+			{
+				"category": "amiga",
+				"command": "amiga.setForceDisassembly",
+				"title": "Set Force Disassembly"
+			}
+		],
+		"languages": [
+			{
+				"id": "amiga.disassembly",
+				"aliases": [ "Amiga Disassembly" ],
+				"extensions": [ ".amigaasm" ],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "amiga.memoryview",
+				"aliases": [ "Amiga Memory View" ],
+				"extensions": [ ".amigamem" ]
+			}
+		],
+		"grammars": [
+			{
+				"language": "amiga.disassembly",
+				"scopeName": "source.amiga-disassembly",
+				"path": "./syntaxes/amiga-disassembly.json"
+			},
+			{
+				"language": "amiga.memoryview",
+				"scopeName": "source.amiga-memoryview",
+				"path": "./syntaxes/amiga-memoryview.json"
+			}
+		],
+		"breakpoints": [
+			{
+				"language": "c"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "amiga",
+				"label": "Amiga Debug",
+				"program": "./out/src/debugAdapter.js",
+				"runtime": "node",
+				"enableBreakpointsFor": {
+					"languageIds": [
+						"c",
+						"amiga.disassembly"
+					]
+				},
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"program"
+						],
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "Absolute path to a text file.",
+								"default": ""
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "amiga",
+						"request": "launch",
+						"name": "Ask for file name",
+						"program": ""
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "Amiga Debug: Launch",
+						"description": "A new configuration for 'debugging' a user selected markdown file.",
+						"body": {
+							"type": "amiga",
+							"request": "launch",
+							"name": "Ask for file name",
+							"program": ""
+						}
+					}
+				]
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "amiga.registers.copyValue",
+					"when": "false"
+				},
+				{
+					"command": "amiga.examineMemory",
+					"when": "debugType == amiga"
+				},
+				{
+					"command": "amiga.viewDisassembly",
+					"when": "debugType == amiga"
+				},
+				{
+					"command": "amiga.setForceDisassembly",
+					"when": "debugType == amiga"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "amiga.registers.copyValue",
+					"when": "view == amiga.registers && viewItem == register"
+				},
+				{
+					"command": "amiga.registers.copyValue",
+					"when": "view == amiga.registers && viewItem == field"
+				},
+				{
+					"command": "amiga.registers.setFormat",
+					"when": "view == amiga.registers"
+				}
+			],
+			"view/title": []
+		},
+		"views": {
+			"debug": [
+				{
+					"id": "amiga.registers",
+					"name": "Registers",
+					"when": "debugType == amiga"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.42",
+		"@types/node": "^10.12.30",
+		"tslint": "^5.12.1",
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28",
+		"vscode-debugadapter-testsupport": "^1.34.0"
+	},
+	"dependencies": {
+		"vscode-debugadapter": "^1.34.0",
+		"vscode-debugprotocol": "^1.34.0"
+	}
 }

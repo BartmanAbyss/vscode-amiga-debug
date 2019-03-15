@@ -1,0 +1,41 @@
+{
+	"name": "Amiga Disassembly",
+	"scopeName": "source.amiga-disassembly",
+	"uuid": "cb7550f6-41b7-4127-9b95-697da854e6e6",
+	"patterns": [
+		{
+			"name": "meta.embedded.amigaasm",
+			"begin": "^(0x[A-Za-z0-9]{8}):\\s((?:[a-zA-Z0-9]{2}\\s)+)\\s+([\\w\\.]+)",
+			"end": "$",
+			"beginCaptures": {
+				"1": { "name": "constant.numeric" },
+				"2": { "name": "punctuation.definition.tag" },
+				"3": { "name": "keyword.opcode" }
+			},
+			"patterns": [
+				{
+					"include": "#amigaasm"
+				}
+			]
+		},
+		{
+			"include": "source.c"
+		}
+   ],
+   "repository": {
+	   "amigaasm": {
+		   "patterns": [
+				{
+					"comment": "Numeric constant",
+					"name": "constant.numeric",
+					"match": "(#)?((-?0x[0-9A-Fa-f]+)|(-?[0-9]+))"
+				},
+				{
+					"comment": "Register",
+					"name": "variable.language",
+					"match": "(?i)\\b([ad][0-7]|SP|PC|vbr|fp[0-7])\\b"
+				}
+		   ]
+	   }
+	}
+}
