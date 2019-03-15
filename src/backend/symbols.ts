@@ -64,7 +64,7 @@ export class SymbolTable {
 						section: match[9].trim(),
 						length: parseInt(match[10], 16),
 						name,
-						instructions: null,
+						lines: null,
 						file: scope === SymbolScope.Local ? currentFile : null,
 						hidden
 					});

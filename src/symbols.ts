@@ -1,3 +1,11 @@
+export interface SourceLineWithDisassembly {
+	source: string;
+	line: number;
+	file: string;
+	fullname: string;
+	instructions: DisassemblyInstruction[];
+}
+
 export interface DisassemblyInstruction {
 	address: string;
 	functionName: string;
@@ -28,7 +36,7 @@ export interface SymbolInformation {
 	type: SymbolType;
 	scope: SymbolScope;
 	file: string | null;
-	instructions: DisassemblyInstruction[] | null;
+	lines: SourceLineWithDisassembly[] | null;
 	hidden: boolean;
 }
 

@@ -8,9 +8,10 @@ import { hexFormat } from './utils';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as util from 'util';
 
 import { SymbolTable } from './backend/symbols';
-import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope } from './symbols';
+import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope, SourceLineWithDisassembly } from './symbols';
 import { resolve } from 'url';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -112,7 +113,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		logger.setup(Logger.LogLevel.Warn, false);
 
 		this.args = args;
-		this.symbolTable = new SymbolTable("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/syms.cmd'], args.program);
+		this.symbolTable = new SymbolTable("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/objdump.cmd'], args.program);
 		this.symbolTable.loadSymbols();
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
@@ -231,13 +232,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if (args.function) {
 			const funcInfo = await this.getDisassemblyForFunction(args.function, args.file);
 			if(funcInfo) {
-				response.body = {
-					instructions: funcInfo.instructions,
-					name: funcInfo.name,
-					file: funcInfo.file,
-					address: funcInfo.address,
-					length: funcInfo.length
-				};
+				response.body = funcInfo;
 				this.sendResponse(response);
 			} else {
 				this.sendErrorResponse(response, 1, `Unable to disassemble ${args.function}`);
@@ -248,19 +243,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			if (funcInfo) {
 				funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
 				if(funcInfo) {
-					response.body = {
-						instructions: funcInfo.instructions,
-						name: funcInfo.name,
-						file: funcInfo.file,
-						address: funcInfo.address,
-						length: funcInfo.length
-					};
+					response.body = funcInfo;
 					this.sendResponse(response);
 					return;
 				}
 			}
-			const instructions: DisassemblyInstruction[] = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
-			response.body = { instructions };
+			const lines = await this.getDisassemblyForAddresses(args.startAddress, args.length || 256);
+			response.body = { lines };
 			this.sendResponse(response);
 			return;
 		} else {
@@ -512,10 +501,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 							func = parts[0];
 						}
 						const symbol = await this.getDisassemblyForFunction(func, file);
-						if (args.breakpoints && symbol && symbol.instructions) {
+						if (args.breakpoints && symbol && symbol.lines) {
 							args.breakpoints.forEach((brk) => {
-								if (brk.line <= symbol.instructions!.length) {
-									const line = symbol.instructions![brk.line - 1];
+								// TODO: line => address for SourceLineWithDisassembly[]
+								/*
+								if (brk.line <= symbol.lines!.length) {
+									const line = symbol.lines![brk.line - 1];
 									all.push(this.miDebugger.addBreakPoint({
 										file: args.source.path, // disassembly, file doesn't matter
 										line: brk.line,
@@ -524,6 +515,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 										raw: line.address
 									}));
 								}
+								*/
 							});
 						}
 					}
@@ -648,10 +640,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						const symbolInfo = await this.getDisassemblyForFunction(element.function, element.fileName);
 						if(symbolInfo) {
 							let line = -1;
-							if (symbolInfo.instructions) {
-								symbolInfo.instructions.forEach((inst, idx) => {
+							if (symbolInfo.lines) {
+								// TODO: line => address for SourceLineWithDisassembly[]
+								/*
+								symbolInfo.lines.forEach((inst, idx) => {
 									if (inst.address === element.address) { line = idx + 1; }
 								});
+								*/
 							}
 
 							if (line !== -1) {
@@ -692,7 +687,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
-		await this.miDebugger.continue(this.currentThreadId);
+		//await this.miDebugger.continue(this.currentThreadId); //TEST
 		this.sendResponse(response);
 	}
 
@@ -1016,13 +1011,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if (!symbol)
 			return null;
 
-		if (symbol.instructions) { return symbol; }
+		if (symbol.lines) { return symbol; }
 
-		symbol.instructions = await this.getDisassemblyForAddresses(symbol.address, symbol.length);
+		symbol.lines = await this.getDisassemblyForAddresses(symbol.address, symbol.length);
 		return symbol;
 	}
 
-	private async getDisassemblyForAddresses(startAddress: number, length: number): Promise<DisassemblyInstruction[]> {
+	private async getDisassemblyForAddresses(startAddress: number, length: number): Promise<SourceLineWithDisassembly[]> {
+		const fileCache: Map<string, string[]> = new Map();
+		const readFile = util.promisify(fs.readFile);
 		const endAddress = startAddress + length;
 		// 0 disassembly only
 		// 2 disassembly with raw opcodes
@@ -1030,18 +1027,32 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		// 5 mixed source and disassembly with raw opcodes
 		const parsed = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 5`);
 		const asm_insn = parsed.resultRecords.results[0][1];
-		let instructions: DisassemblyInstruction[] = [];
-		asm_insn.forEach((ri) => {
-			const src_and_asm_line = ri[1];
-			const line_asm_insn = MINode.valueOf(src_and_asm_line, "line_asm_insn");
-			line_asm_insn.forEach((line_asm) => {
-				const address = MINode.valueOf(line_asm, 'address');
-				const functionName = MINode.valueOf(line_asm, 'func-name');
-				const offset = parseInt(MINode.valueOf(line_asm, 'offset'));
-				const inst = MINode.valueOf(line_asm, 'inst');
-				const opcodes = MINode.valueOf(line_asm, 'opcodes');
+		const lines: SourceLineWithDisassembly[] = [];
+		for(const ri of asm_insn) {
+			const srcAndAsmLine = ri[1];
+			const line = MINode.valueOf(srcAndAsmLine, "line");
+			const file = MINode.valueOf(srcAndAsmLine, "file");
+			const fullname = MINode.valueOf(srcAndAsmLine, "fullname");
+			const instructions: DisassemblyInstruction[] = [];
+			const lineAsmInsn = MINode.valueOf(srcAndAsmLine, "line_asm_insn");
+			let source = "";
 
-				// TODO: source lines!
+			const normalizedPath = normalizePath(fullname);
+			if(await this.checkFileExists(normalizedPath)) {
+				if(!fileCache.has(normalizedPath)) {
+					const data = await readFile(normalizedPath);
+					fileCache.set(normalizedPath, data.toString().replace("\r", "").split("\n"));
+				}
+				const sourceLines = fileCache.get(normalizedPath);
+				if(line < sourceLines.length + 1)
+					source = sourceLines[line - 1];
+			}
+			for(const lineAsm of lineAsmInsn) {
+				const address = MINode.valueOf(lineAsm, 'address');
+				const functionName = MINode.valueOf(lineAsm, 'func-name');
+				const offset = parseInt(MINode.valueOf(lineAsm, 'offset'));
+				const inst = MINode.valueOf(lineAsm, 'inst');
+				const opcodes = MINode.valueOf(lineAsm, 'opcodes');
 				instructions.push({
 					address,
 					functionName,
@@ -1049,10 +1060,17 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					instruction: inst,
 					opcodes
 				});
+			}
+			lines.push({
+				source,
+				line,
+				file,
+				fullname,
+				instructions
 			});
-		});
+		}
 
-		return instructions;
+		return lines;
 	}
 
 	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
@@ -1257,6 +1275,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 // gdb(cygwin)->windows
 function normalizePath(filePath: string): string {
+	return filePath; // not needed with MinGW
+
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
@@ -1270,6 +1290,8 @@ function normalizePath(filePath: string): string {
 
 // windows->gdb(cygwin)
 function unnormalizePath(filePath: string): string {
+	return filePath; // not needed with MinGW
+
 	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
 		return filePath;
 
