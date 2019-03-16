@@ -1,8 +1,8 @@
 export interface SourceLineWithDisassembly {
-	source: string;
-	line: number;
-	file: string;
-	fullname: string;
+	source?: string;
+	line?: number;
+	file?: string;
+	fullname?: string;
 	instructions: DisassemblyInstruction[];
 }
 

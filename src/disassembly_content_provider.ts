@@ -22,7 +22,8 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
 
 				let output = '';
 				lines.forEach((line) => {
-					output += line.source;
+					if(line.source !== undefined)
+						output += line.source;
 					line.instructions.forEach((i) => {
 						output += `${i.address}: ${this.padEnd(15, i.opcodes)} \t${i.instruction}\n`;
 					});

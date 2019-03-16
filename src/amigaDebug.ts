@@ -506,14 +506,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 							let curLine = 1;
 							for(const l of symbol.lines) {
 								const sourceLine = curLine;
-								curLine++;
-								if(l.instructions) {
-									for(const i of l.instructions) {
-										if(brkLine === sourceLine || brkLine === curLine) {
-											return { line: curLine, address: i.address };
-										}
-										curLine++;
+								if(l.source !== undefined)
+									curLine++;
+								for(const i of l.instructions) {
+									if(brkLine === sourceLine || brkLine === curLine) {
+										return { line: curLine, address: i.address };
 									}
+									curLine++;
 								}
 							}
 							return undefined;
@@ -661,14 +660,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 									let curLine = 1;
 									for(const l of symbolInfo.lines) {
 										const sourceLine = curLine;
-										curLine++;
-										if(l.instructions) {
-											for(const i of l.instructions) {
-												if(element.address === i.address) {
-													return curLine;
-												}
-												curLine++;
+										if(l.source !== undefined)
+											curLine++;
+										for(const i of l.instructions) {
+											if(element.address === i.address) {
+												return curLine;
 											}
+											curLine++;
 										}
 									}
 									return -1;
@@ -1056,31 +1054,62 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const asm_insn = parsed.resultRecords.results[0][1];
 		const lines: SourceLineWithDisassembly[] = [];
 		for(const ri of asm_insn) {
-			const srcAndAsmLine = ri[1];
-			const line = MINode.valueOf(srcAndAsmLine, "line");
-			const file = MINode.valueOf(srcAndAsmLine, "file");
-			const fullname = MINode.valueOf(srcAndAsmLine, "fullname");
-			const instructions: DisassemblyInstruction[] = [];
-			const lineAsmInsn = MINode.valueOf(srcAndAsmLine, "line_asm_insn");
-			let source = "";
+			if(ri[0] === "src_and_asm_line") {
+				// mixed source and disassembly
+				const srcAndAsmLine = ri[1];
+				const line = MINode.valueOf(srcAndAsmLine, "line");
+				const file = MINode.valueOf(srcAndAsmLine, "file");
+				const fullname = MINode.valueOf(srcAndAsmLine, "fullname");
+				const instructions: DisassemblyInstruction[] = [];
+				const lineAsmInsn = MINode.valueOf(srcAndAsmLine, "line_asm_insn");
+				let source = "";
 
-			const normalizedPath = normalizePath(fullname);
-			if(await this.checkFileExists(normalizedPath)) {
-				if(!fileCache.has(normalizedPath)) {
-					const data = await readFile(normalizedPath);
-					fileCache.set(normalizedPath, data.toString().replace("\r", "").split("\n"));
+				const normalizedPath = normalizePath(fullname);
+				if(await this.checkFileExists(normalizedPath)) {
+					if(!fileCache.has(normalizedPath)) {
+						const data = await readFile(normalizedPath);
+						fileCache.set(normalizedPath, data.toString().replace("\r", "").split("\n"));
+					}
+					const sourceLines = fileCache.get(normalizedPath);
+					if(line < sourceLines.length + 1)
+						source = sourceLines[line - 1];
 				}
-				const sourceLines = fileCache.get(normalizedPath);
-				if(line < sourceLines.length + 1)
-					source = sourceLines[line - 1];
-			}
-			for(const lineAsm of lineAsmInsn) {
-				const address = MINode.valueOf(lineAsm, 'address');
-				const functionName = MINode.valueOf(lineAsm, 'func-name');
-				const offset = parseInt(MINode.valueOf(lineAsm, 'offset'));
-				const inst = MINode.valueOf(lineAsm, 'inst');
-				const opcodes = MINode.valueOf(lineAsm, 'opcodes');
-				instructions.push({
+				for(const lineAsm of lineAsmInsn) {
+					const address = MINode.valueOf(lineAsm, 'address');
+					const functionName = MINode.valueOf(lineAsm, 'func-name');
+					const offset = parseInt(MINode.valueOf(lineAsm, 'offset'));
+					const inst = MINode.valueOf(lineAsm, 'inst');
+					const opcodes = MINode.valueOf(lineAsm, 'opcodes');
+					instructions.push({
+						address,
+						functionName,
+						offset,
+						instruction: inst,
+						opcodes
+					});
+				}
+				lines.push({
+					source,
+					line,
+					file,
+					fullname,
+					instructions
+				});
+			} else {
+				if(lines.length === 0) {
+					lines.push({
+						instructions: []
+					});
+				}
+
+				// no source information
+				const address = MINode.valueOf(ri, 'address');
+				const functionName = MINode.valueOf(ri, 'func-name');
+				const offset = parseInt(MINode.valueOf(ri, 'offset'));
+				const inst = MINode.valueOf(ri, 'inst');
+				const opcodes = MINode.valueOf(ri, 'opcodes');
+
+				lines[0].instructions.push({
 					address,
 					functionName,
 					offset,
@@ -1088,13 +1117,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					opcodes
 				});
 			}
-			lines.push({
-				source,
-				line,
-				file,
-				fullname,
-				instructions
-			});
 		}
 
 		return lines;
