@@ -462,7 +462,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
-		const createBreakpoints = async (shouldContinue) => {
+		const createBreakpoints = async (shouldContinue: boolean) => {
 			const normalizedPath = normalizePath(args.source.path || "");
 			this.debugReady = true;
 			const currentBreakpoints = (this.breakpointMap.get(normalizedPath) || [])
@@ -500,26 +500,42 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						} else {
 							func = parts[0];
 						}
+
 						const symbol = await this.getDisassemblyForFunction(func, file);
+						const getLineAndAddress = (brkLine: number) => {
+							let curLine = 1;
+							for(const l of symbol.lines) {
+								const sourceLine = curLine;
+								curLine++;
+								if(l.instructions) {
+									for(const i of l.instructions) {
+										if(brkLine === sourceLine || brkLine === curLine) {
+											return { line: curLine, address: i.address };
+										}
+										curLine++;
+									}
+								}
+							}
+							return undefined;
+						};
+
 						if (args.breakpoints && symbol && symbol.lines) {
 							args.breakpoints.forEach((brk) => {
-								// TODO: line => address for SourceLineWithDisassembly[]
-								/*
-								if (brk.line <= symbol.lines!.length) {
-									const line = symbol.lines![brk.line - 1];
+								const lineAndAddress = getLineAndAddress(brk.line);
+								if(lineAndAddress !== undefined) {
 									all.push(this.miDebugger.addBreakPoint({
-										file: args.source.path, // disassembly, file doesn't matter
-										line: brk.line,
+										file: args.source.path, // disassembly, just for editor
+										line: lineAndAddress.line,
 										condition: brk.condition,
 										countCondition: brk.hitCondition,
-										raw: line.address
+										raw: lineAndAddress.address
 									}));
 								}
-								*/
 							});
 						}
 					}
 				} else {
+					// real source
 					if (args.breakpoints) {
 						args.breakpoints.forEach((brk) => {
 							all.push(this.miDebugger.addBreakPoint({
@@ -641,12 +657,23 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						if(symbolInfo) {
 							let line = -1;
 							if (symbolInfo.lines) {
-								// TODO: line => address for SourceLineWithDisassembly[]
-								/*
-								symbolInfo.lines.forEach((inst, idx) => {
-									if (inst.address === element.address) { line = idx + 1; }
-								});
-								*/
+								const getLine = () => {
+									let curLine = 1;
+									for(const l of symbolInfo.lines) {
+										const sourceLine = curLine;
+										curLine++;
+										if(l.instructions) {
+											for(const i of l.instructions) {
+												if(element.address === i.address) {
+													return curLine;
+												}
+												curLine++;
+											}
+										}
+									}
+									return -1;
+								};
+								line = getLine();
 							}
 
 							if (line !== -1) {
@@ -687,7 +714,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
-		//await this.miDebugger.continue(this.currentThreadId); //TEST
+		await this.miDebugger.continue(this.currentThreadId);
 		this.sendResponse(response);
 	}
 
