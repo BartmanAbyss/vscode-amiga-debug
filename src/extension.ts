@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { AmigaDebugSession } from './amigaDebug';
 import * as Net from 'net';
+import * as path from 'path';
 
 import { RegisterTreeProvider, TreeNode as RTreeNode, RecordType as RRecordType, BaseNode as RBaseNode, RegisterNode } from './registers';
 import { MemoryContentProvider } from './memory_content_provider';
@@ -27,6 +28,8 @@ class AmigaDebugExtension {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
 
+		const extensionPath = context.extensionPath;
+
 		context.subscriptions.push(
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
@@ -36,6 +39,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.examineMemory', this.examineMemory.bind(this)),
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
+			vscode.commands.registerCommand('amiga.bin-path', () => { return path.join(extensionPath, 'bin'); }),
 
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),

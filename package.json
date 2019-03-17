@@ -11,7 +11,8 @@
 		"Debuggers"
 	],
 	"activationEvents": [
-		"onDebug"
+		"onDebug",
+		"onCommand:amiga.bin-path"
 	],
 	"main": "./out/src/extension.js",
 	"contributes": {

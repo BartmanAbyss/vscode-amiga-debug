@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { BreakpointEvent, ContinuedEvent, DebugSession, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Breakpoint, IBackend, MIError, Variable, VariableObject, Section } from './backend/backend';
@@ -6,6 +7,7 @@ import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
 import { hexFormat } from './utils';
 
+import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
@@ -15,7 +17,7 @@ import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope, S
 import { resolve } from 'url';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-	program: string; 	// An absolute path to the "program" to debug.
+	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
 }
 
 class ExtendedVariable {
@@ -109,17 +111,37 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
-	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): Promise<void> {
 		logger.setup(Logger.LogLevel.Warn, false);
 
+		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+
+		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
+		const gdbArgs = ['-q', '--interpreter=mi2'];
+
+		const winuaePath = path.join(binPath, "winuae-gdb.exe");
+		const winuaeArgs = [
+			'-s', 'use_gui=no',
+			'-s', 'win32.start_not_captured=yes',
+			'-s', 'quickstart=a500',
+			'-s', 'debugging_features=gdbserver',
+			'-0', args.program + ".exe"
+		];
+
 		this.args = args;
-		this.symbolTable = new SymbolTable("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/objdump.cmd'], args.program);
+		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
 		this.symbolTable.loadSymbols();
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
 
-		if (!fs.existsSync(this.args.program)) {
-			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program}.`);
+		if (!fs.existsSync(this.args.program + ".elf")) {
+			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".elf"}.`);
+			return;
+		}
+
+		if (!fs.existsSync(this.args.program + ".exe")) {
+			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".exe"}.`);
 			return;
 		}
 
@@ -129,8 +151,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.debugReady = false;
 		this.stopped = false;
 
-		//let gdbargs = ['' '-q', '--interpreter=mi2'];
-		this.miDebugger = new MI2("cmd.exe", ['/c', 'c:/cygwin64/home/Chuck/amiga_test/debug.cmd']);
+		const winUae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+
+		this.miDebugger = new MI2(gdbPath, gdbArgs);
 		this.initDebugger();
 
 		this.miDebugger.printCalls = true;
@@ -150,12 +173,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.debugReady = true;
 		});
 		const commands = [
-			`file-exec-and-symbols ${this.args.program}`,
+			`file-exec-and-symbols ${this.args.program + ".elf"}`,
 			'enable-pretty-printing',
 			'interpreter-exec console "target remote localhost:2345"'
 		];
 
-		this.miDebugger.connect(".", this.args.program, commands).then(() => {
+		this.miDebugger.connect(".", this.args.program + ".elf", commands).then(() => {
 		}, (err) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});

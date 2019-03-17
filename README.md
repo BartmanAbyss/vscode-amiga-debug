@@ -5,6 +5,7 @@ Debug Amiga C programs compiled by gcc in WinUAE.
 ## Known Issues
 
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
+* when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
 * sometimes fail at start: Unable to open 'main.amigaasm': Cannot read property 'customRequest' of undefined.
 * restartRequest not implemented

@@ -25,14 +25,14 @@ export class SymbolTable {
 	private symbols: SymbolInformation[];
 	private sections: Map<string, Section> = new Map();
 
-	constructor(private objdumpPath: string, private args: string[], private executable: string) {
+	constructor(private objdumpPath: string, private executable: string) {
 		this.symbols = [];
 		this.sections = new Map();
 	}
 
 	public loadSymbols() {
 		try {
-			const objdump = childProcess.spawnSync(this.objdumpPath, this.args.concat(['--syms', this.executable]));
+			const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
 			const output = objdump.stdout.toString();
 			const lines = output.split('\n');
 			let currentFile: string | null = null;
