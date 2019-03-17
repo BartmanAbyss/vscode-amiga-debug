@@ -30,6 +30,9 @@ class AmigaDebugExtension {
 
 		const extensionPath = context.extensionPath;
 
+		//vscode.workspace.getConfiguration().update("C_Cpp.default.includePath", `${extensionPath}\\bin\\opt\\m68k-amiga-elf\\sys-include`, false);
+		vscode.workspace.getConfiguration().update("C_Cpp.default.compilerPath", `${extensionPath}\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe`, false);
+
 		context.subscriptions.push(
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),

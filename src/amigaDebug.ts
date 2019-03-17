@@ -173,13 +173,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.debugReady = true;
 		});
 		const commands = [
-			`file-exec-and-symbols ${this.args.program + ".elf"}`,
 			'enable-pretty-printing',
 			'interpreter-exec console "target remote localhost:2345"'
 		];
 
-		this.miDebugger.connect(".", this.args.program + ".elf", commands).then(() => {
-		}, (err) => {
+		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
 	}
