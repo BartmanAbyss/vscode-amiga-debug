@@ -54,7 +54,7 @@ export class SymbolTable {
 					}
 
 					// fix for LTO
-					if(scope === SymbolScope.Local && !currentFile)
+					if(scope === SymbolScope.Local && (!currentFile || currentFile === "<artificial>"))
 						scope = SymbolScope.Global;
 
 					this.symbols.push({
