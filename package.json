@@ -1,9 +1,9 @@
 {
 	"name": "amiga-debug",
 	"displayName": "amiga-debug",
-	"publisher": "bwodok",
+	"publisher": "bartman-abyss",
 	"description": "",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.31.0"
 	},
