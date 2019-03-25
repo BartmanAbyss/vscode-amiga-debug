@@ -18,6 +18,7 @@ import { resolve } from 'url';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
+	kickstart?: string;  // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 }
 
 class ExtendedVariable {
@@ -55,6 +56,8 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 		super('custom-continued', { threadID, allThreads });
 	}
 }
+
+let winuae : childProcess.ChildProcess;
 
 export class AmigaDebugSession extends LoggingDebugSession {
 	protected variableHandles = new Handles<string | VariableObject | ExtendedVariable>(VAR_HANDLES_START);
@@ -122,12 +125,25 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		const winuaePath = path.join(binPath, "winuae-gdb.exe");
 		const winuaeArgs = [
+			'-portable',
 			'-s', 'use_gui=no',
 			'-s', 'win32.start_not_captured=yes',
+			'-s', 'boot_rom_uae=min', // so we can control warp mode from within amiga executables
 			'-s', 'quickstart=a500',
+			'-s', 'cpu_cycle_exact=true',
+			'-s', 'cpu_memory_cycle_exact=true',
+			'-s', 'blitter_cycle_exact=true',
+			'-s', 'cycle_exact=true',
 			'-s', 'debugging_features=gdbserver',
 			'-0', args.program + ".exe"
 		];
+		if(args.kickstart !== undefined) {
+			if (!fs.existsSync(args.kickstart)) {
+				this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
+				return;
+			}
+			winuaeArgs.push('-s', 'kickstart_rom_file=' + args.kickstart);
+		}
 
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
@@ -151,7 +167,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.debugReady = false;
 		this.stopped = false;
 
-		const winUae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+		// kill leftover WinUAE process
+		if(winuae !== undefined)
+			winuae.kill();
+		winuae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
 
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
 		this.initDebugger();
