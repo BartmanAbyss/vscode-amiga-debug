@@ -173,9 +173,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		winuae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
 
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
+		this.miDebugger.procEnv = { "XDG_CACHE_HOME": gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
 
-		this.miDebugger.printCalls = true;
+		//this.miDebugger.printCalls = true;
 		//this.miDebugger.debugOutput = true;
 
 		this.miDebugger.once('sections-loaded', (sections) => {

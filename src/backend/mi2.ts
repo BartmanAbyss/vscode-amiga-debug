@@ -23,7 +23,7 @@ function couldBeOutput(line: string) {
 	return true;
 }
 
-const trace = true;
+const trace = false;
 
 export class MI2 extends EventEmitter implements IBackend {
 	public printCalls: boolean;
@@ -31,8 +31,8 @@ export class MI2 extends EventEmitter implements IBackend {
 	public procEnv: any;
 	protected currentToken: number = 1;
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
-	protected buffer: string;
-	protected errbuf: string;
+	protected buffer: string = "";
+	protected errbuf: string = "";
 	protected process: ChildProcess.ChildProcess;
 	protected stream;
 
