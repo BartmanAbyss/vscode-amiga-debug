@@ -119,6 +119,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+		const dh0Path = path.join(binPath, "dh0");
+		const runmePath = path.join(dh0Path, "runme.exe");
 
 		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
@@ -135,7 +137,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			'-s', 'blitter_cycle_exact=true',
 			'-s', 'cycle_exact=true',
 			'-s', 'debugging_features=gdbserver',
-			'-0', args.program + ".exe"
+			'-s', 'filesystem=rw,dh0:' + dh0Path
 		];
 		if(args.kickstart !== undefined) {
 			if (!fs.existsSync(args.kickstart)) {
@@ -158,6 +160,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (!fs.existsSync(this.args.program + ".exe")) {
 			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".exe"}.`);
+			return;
+		}
+		try {
+			fs.copyFileSync(this.args.program + ".exe", runmePath);
+		} catch(err) {
+			this.sendErrorResponse(response, 103, `Failed to copy executable file at ${this.args.program + ".exe"} to ${runmePath}. ${err.toString()}`);
 			return;
 		}
 

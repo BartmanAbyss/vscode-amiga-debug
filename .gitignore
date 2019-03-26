@@ -3,3 +3,4 @@ node_modules
 .vscode-test/
 *.vsix
 bin/winuae.ini
+bin/dh0/runme.exe

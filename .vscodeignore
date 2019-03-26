@@ -7,3 +7,5 @@ src/**
 **/tslint.json
 **/*.map
 **/*.ts
+bin/winuae.ini
+bin/dh0/runme.exe
