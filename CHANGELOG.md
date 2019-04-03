@@ -2,8 +2,6 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## 0.3.0
 
-## [Unreleased]
-
-- Initial release
+- added keyboard mapping <kbd>^</kbd> = single step, <kbd>Page-up</kbd> = warp mode

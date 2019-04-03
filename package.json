@@ -3,7 +3,7 @@
 	"displayName": "amiga-debug",
 	"publisher": "bartman-abyss",
 	"description": "",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"engines": {
 		"vscode": "^1.31.0"
 	},
@@ -48,14 +48,22 @@
 		"languages": [
 			{
 				"id": "amiga.disassembly",
-				"aliases": [ "Amiga Disassembly" ],
-				"extensions": [ ".amigaasm" ],
+				"aliases": [
+					"Amiga Disassembly"
+				],
+				"extensions": [
+					".amigaasm"
+				],
 				"configuration": "./language-configuration.json"
 			},
 			{
 				"id": "amiga.memoryview",
-				"aliases": [ "Amiga Memory View" ],
-				"extensions": [ ".amigamem" ]
+				"aliases": [
+					"Amiga Memory View"
+				],
+				"extensions": [
+					".amigamem"
+				]
 			}
 		],
 		"grammars": [

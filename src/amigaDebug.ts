@@ -131,7 +131,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			'-s', 'use_gui=no',
 			'-s', 'win32.start_not_captured=yes',
 			'-s', 'boot_rom_uae=min', // so we can control warp mode from within amiga executables
-			'-s', 'quickstart=a500',
+			'-s', 'quickstart=a500,1', // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+			'-s', 'input.config=1',
+			'-s', 'input.1.keyboard.0.friendlyname=WinUAE keyboard',
+			'-s', 'input.1.keyboard.0.name=NULLKEYBOARD',
+			'-s', 'input.1.keyboard.0.empty=false',
+			'-s', 'input.1.keyboard.0.disabled=false',
+			'-s', 'input.1.keyboard.0.button.41.GRAVE=SPC_SINGLESTEP.0',
+			'-s', 'input.1.keyboard.0.button.201.PREV=SPC_WARP.0',
 			'-s', 'cpu_cycle_exact=true',
 			'-s', 'cpu_memory_cycle_exact=true',
 			'-s', 'blitter_cycle_exact=true',
