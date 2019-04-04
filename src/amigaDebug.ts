@@ -57,13 +57,14 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 	}
 }
 
-let winuae : childProcess.ChildProcess;
+let winuae: childProcess.ChildProcess;
 
 export class AmigaDebugSession extends LoggingDebugSession {
 	protected variableHandles = new Handles<string | VariableObject | ExtendedVariable>(VAR_HANDLES_START);
 	protected variableHandlesReverse: { [id: string]: number } = {};
 	protected quit: boolean;
 	protected started: boolean;
+	protected firstBreak: boolean = true;
 	protected crashed: boolean;
 	protected debugReady: boolean;
 	protected miDebugger: MI2;
@@ -386,16 +387,27 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		if (this.miDebugger) {
+		if(winuae)
+			winuae.kill();
+		this.sendResponse(response);
+		vscode.commands.executeCommand("workbench.view.explorer");
+
+/*		if (this.miDebugger) {
 			this.miDebugger.abort(this.stopped === false).then((done) => {
 				this.sendResponse(response);
+				vscode.commands.executeCommand("workbench.view.explorer");
 			});
 		} else {
 			this.sendResponse(response);
+			vscode.commands.executeCommand("workbench.view.explorer");
 		}
+*/		
 	}
 
 	protected handleMsg(type: string, msg: string) {
+		// ignore GDB console output
+		if(type === 'console')
+			return;
 		if (type === 'target') { type = 'stdout'; }
 		if (type === 'log') { type = 'stderr'; }
 		this.sendEvent(new OutputEvent(msg, type));
@@ -444,10 +456,18 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected stopEvent(info: MINode) {
 		if (!this.started) { this.crashed = true; }
 		if (!this.quit) {
-			this.stopped = true;
-			this.stoppedReason = 'exception';
-			this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
-			this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
+			if(this.firstBreak) {
+				// ignore break-at-main
+				this.firstBreak = false;
+				this.stopped = true;
+				this.stoppedReason = 'entry';
+				// configurationDoneEvent will issue a 'continue' command
+			} else {
+				this.stopped = true;
+				this.stoppedReason = 'exception';
+				this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
+				this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
+			}
 		}
 	}
 

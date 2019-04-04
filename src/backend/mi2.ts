@@ -572,7 +572,8 @@ export class MI2 extends EventEmitter implements IBackend {
 										this.log("stderr", "Program exited with code " + parsed.record("exit-code"));
 										this.emit("exited-normally", parsed);
 									} else {
-										this.log("console", "Not implemented stop reason (assuming exception): " + reason);
+										if(reason !== undefined)
+											this.log("console", "Not implemented stop reason (assuming exception): " + reason);
 										this.emit("stopped", parsed);
 									}
 									this.emit("generic-stopped", parsed);
