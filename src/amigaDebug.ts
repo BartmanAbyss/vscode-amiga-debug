@@ -387,21 +387,18 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		if(winuae)
-			winuae.kill();
-		this.sendResponse(response);
-		vscode.commands.executeCommand("workbench.view.explorer");
-
-/*		if (this.miDebugger) {
-			this.miDebugger.abort(this.stopped === false).then((done) => {
-				this.sendResponse(response);
-				vscode.commands.executeCommand("workbench.view.explorer");
-			});
-		} else {
+		const done = () => {
+			if(winuae)
+				winuae.kill();
 			this.sendResponse(response);
 			vscode.commands.executeCommand("workbench.view.explorer");
+		};
+
+		if (this.miDebugger) {
+			this.miDebugger.abort(this.stopped === false).then(done);
+		} else {
+			done();
 		}
-*/		
 	}
 
 	protected handleMsg(type: string, msg: string) {

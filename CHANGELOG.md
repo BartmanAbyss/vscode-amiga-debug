@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.5.0
+
+- revert back to old way of ending gdb/WinUAE
+
 ## 0.4.0
 
 - don't activate Visual Studio Code on break-on-entry
