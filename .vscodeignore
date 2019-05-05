@@ -9,3 +9,6 @@ src/**
 **/*.ts
 bin/winuae.ini
 bin/dh0/runme.exe
+bin/configuration.*
+bin/*.uae
+bin/*.ini

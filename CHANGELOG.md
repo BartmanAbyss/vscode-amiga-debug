@@ -2,6 +2,12 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.6.0
+
+- instead of passing arguments to WinUAE, they are now written to the default config (default.uae).
+You can now change settings in WinUAE and save over default.uae and changes will persist.
+- removed WinUAE notification icon
+
 ## 0.5.0
 
 - revert back to old way of ending gdb/WinUAE
