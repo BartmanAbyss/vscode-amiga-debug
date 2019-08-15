@@ -12,7 +12,7 @@
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
 - State-of-the-art code generation by GCC with Link-Time-Optimizations (LTO) for increased performance and smaller code size
 - IntelliSense
-- Full source-level and assembly-level debugging with callstack, breakpoints, watches, registers, memory view
+- Full source-level and assembly-level debugging with callstack, breakpoints, watches, registers, memory view with GDB-enabled WinUAE
 - Fully AmigaOS compatible via included .h files
 - `INCBIN` support
 - Output to debug console from WinUAE
