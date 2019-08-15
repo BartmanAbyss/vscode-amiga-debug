@@ -44,13 +44,13 @@ APTR GetInterruptHandler() {
 //vsync begins at line 2 hpos 132 and ends at vpos 5 hpos 18 
 void WaitVbl() {
 	while (1) {
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
 		vpos&=0x1ff00;
 		if (vpos!=(311<<8))
 			break;
 	}
 	while (1) {
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
 		vpos&=0x1ff00;
 		if (vpos==(311<<8))
 			break;
