@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { AmigaDebugSession } from './amigaDebug';
 import * as Net from 'net';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import { RegisterTreeProvider, TreeNode as RTreeNode, RecordType as RRecordType, BaseNode as RBaseNode, RegisterNode } from './registers';
 import { MemoryContentProvider } from './memory_content_provider';
@@ -23,15 +24,16 @@ class AmigaDebugExtension {
 	private memoryProvider: MemoryContentProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
+	private extensionPath: string = '';
 
 	constructor(context: vscode.ExtensionContext) {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
 
-		const extensionPath = context.extensionPath;
+		this.extensionPath = context.extensionPath;
 
 		//vscode.workspace.getConfiguration().update("C_Cpp.default.includePath", `${extensionPath}\\bin\\opt\\m68k-amiga-elf\\sys-include`, false);
-		vscode.workspace.getConfiguration().update("C_Cpp.default.compilerPath", `${extensionPath}\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe`, false);
+		vscode.workspace.getConfiguration().update("C_Cpp.default.compilerPath", `${this.extensionPath}\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe`, false);
 
 		context.subscriptions.push(
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
@@ -42,7 +44,8 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.examineMemory', this.examineMemory.bind(this)),
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
-			vscode.commands.registerCommand('amiga.bin-path', () => { return path.join(extensionPath, 'bin'); }),
+			vscode.commands.registerCommand('amiga.bin-path', () => { return path.join(this.extensionPath, 'bin'); }),
+			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),
@@ -125,6 +128,32 @@ class AmigaDebugExtension {
 			vscode.window.showTextDocument(vscode.Uri.parse(url));
 		} catch (e) {
 			vscode.window.showErrorMessage('Unable to show disassembly.');
+		}
+	}
+	private initProject() {
+		const copyRecursiveSync = (src: string, dest: string) => {
+			const exists = fs.existsSync(src);
+			const stats = exists && fs.statSync(src);
+			const isDirectory = exists && stats.isDirectory();
+			if (exists && isDirectory) {
+				try {
+					fs.mkdirSync(dest);
+				} catch(err) {
+				}
+				fs.readdirSync(src).forEach((childItemName) => {
+					copyRecursiveSync(path.join(src, childItemName),
+						path.join(dest, childItemName));
+				});
+			} else {
+				fs.copyFileSync(src, dest);
+			}
+		};
+		try {
+			const source = this.extensionPath + '/template';
+			const dest = vscode.workspace.workspaceFolders[0].uri.fsPath;
+			copyRecursiveSync(source, dest);
+		} catch(err) {
+			vscode.window.showErrorMessage(`Failed to init project. ${err.toString()}`);
 		}
 	}
 

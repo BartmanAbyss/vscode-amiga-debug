@@ -1,0 +1,340 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+Address of section .text set to 0x0
+LOAD C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+LOAD C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+LOAD obj8mingw/gcc8_a_support.o
+                [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x80000000))
+                0x0000000080000074                . = (SEGMENT_START ("text-segment", 0x80000000) + SIZEOF_HEADERS)
+
+.interp
+ *(.interp)
+
+.note.gnu.build-id
+ *(.note.gnu.build-id)
+
+.hash
+ *(.hash)
+
+.gnu.hash
+ *(.gnu.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rela.dyn       0x0000000080000074        0x0
+ *(.rela.init)
+ *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
+ *(.rela.fini)
+ *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*)
+ *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*)
+ *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*)
+ *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*)
+ *(.rela.ctors)
+ *(.rela.dtors)
+ *(.rela.got)
+ *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*)
+                [!provide]                        PROVIDE (__rela_iplt_start = .)
+ *(.rela.iplt)
+                [!provide]                        PROVIDE (__rela_iplt_end = .)
+
+.rela.plt
+ *(.rela.plt)
+
+.init
+ *(SORT_NONE(.init))
+
+.plt
+ *(.plt)
+
+.iplt
+ *(.iplt)
+
+.text           0x0000000000000000      0x72c
+ *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+ .text.unlikely
+                0x0000000000000000        0x6 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+                0x0000000000000000                _start
+ *(.text.exit .text.exit.*)
+ *(.text.startup .text.startup.*)
+ .text.startup  0x0000000000000006      0x372 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+                0x0000000000000006                main
+ *(.text.hot .text.hot.*)
+ *(.text .stub .text.* .gnu.linkonce.t.*)
+ .text          0x0000000000000378      0x2aa C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+                0x00000000000004ae                memcpy
+                0x0000000000000540                memset
+                0x000000000000060e                strlen
+ *fill*         0x0000000000000622        0x2 4e714e71
+ .text          0x0000000000000624      0x108 obj8mingw/gcc8_a_support.o
+                0x0000000000000624                __mulsi3
+                0x0000000000000646                __udivsi3
+                0x00000000000006a2                __divsi3
+                0x00000000000006cc                __modsi3
+                0x00000000000006f4                __umodsi3
+                0x000000000000071e                KPutCharX
+ *(.gnu.warning)
+
+.fini
+ *(SORT_NONE(.fini))
+                [!provide]                        PROVIDE (__etext = .)
+                [!provide]                        PROVIDE (_etext = .)
+                [!provide]                        PROVIDE (etext = .)
+
+.rodata         0x000000000000072c       0x91
+ *(.rodata .rodata.* .gnu.linkonce.r.*)
+ .rodata        0x000000000000072c       0x91 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+
+.rodata1
+ *(.rodata1)
+
+.eh_frame_hdr
+ *(.eh_frame_hdr)
+ *(.eh_frame_entry .eh_frame_entry.*)
+
+.eh_frame
+ *(.eh_frame)
+ *(.eh_frame.*)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.gnu_extab
+ *(.gnu_extab*)
+
+.exception_ranges
+ *(.exception_ranges*)
+                0x00000000000027bd                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+
+.eh_frame
+ *(.eh_frame)
+ *(.eh_frame.*)
+
+.gnu_extab
+ *(.gnu_extab)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges*)
+
+.tdata          0x00000000000027bd        0x0
+                [!provide]                        PROVIDE (__tdata_start = .)
+ *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+.tbss
+ *(.tbss .tbss.* .gnu.linkonce.tb.*)
+ *(.tcommon)
+
+.preinit_array  0x00000000000027bd        0x0
+                [!provide]                        PROVIDE (__preinit_array_start = .)
+ *(.preinit_array)
+                [!provide]                        PROVIDE (__preinit_array_end = .)
+
+.init_array     0x00000000000027bd        0x0
+                [!provide]                        PROVIDE (__init_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
+ *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
+                [!provide]                        PROVIDE (__init_array_end = .)
+
+.fini_array     0x00000000000027bd        0x0
+                [!provide]                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
+ *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
+                [!provide]                        PROVIDE (__fini_array_end = .)
+
+.ctors
+ *crtbegin.o(.ctors)
+ *crtbegin?.o(.ctors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+ *(SORT_BY_NAME(.ctors.*))
+ *(.ctors)
+
+.dtors
+ *crtbegin.o(.dtors)
+ *crtbegin?.o(.dtors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ *(SORT_BY_NAME(.dtors.*))
+ *(.dtors)
+
+.jcr
+ *(.jcr)
+
+.data.rel.ro
+ *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+ *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+
+.dynamic
+ *(.dynamic)
+                0x00000000000027bd                . = DATA_SEGMENT_RELRO_END (., 0x0)
+
+.got
+ *(.got.plt)
+ *(.igot.plt)
+ *(.got)
+ *(.igot)
+
+.data           0x00000000000027c0        0x0
+ *(.data .data.* .gnu.linkonce.d.*)
+ .data          0x00000000000027c0        0x0 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .data          0x00000000000027c0        0x0 obj8mingw/gcc8_a_support.o
+
+.data1
+ *(.data1)
+                0x00000000000027c0                _edata = .
+                [!provide]                        PROVIDE (edata = .)
+                0x00000000000027c0                . = .
+                0x00000000000027c0                __bss_start = .
+
+.bss            0x00000000000027c0       0x24
+ *(.dynbss)
+ *(.bss .bss.* .gnu.linkonce.b.*)
+ .bss           0x00000000000027c0       0x24 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .bss           0x00000000000027e4        0x0 obj8mingw/gcc8_a_support.o
+ *(COMMON)
+                0x00000000000027e4                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x00000000000027e4                . = ALIGN (0x4)
+                0x00000000000027e4                . = SEGMENT_START ("ldata-segment", .)
+                0x00000000000027e4                . = ALIGN (0x4)
+                0x00000000000027e4                _end = .
+                [!provide]                        PROVIDE (end = .)
+                0x00000000000027e4                . = DATA_SEGMENT_END (.)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x0000000000000000       0x11
+ *(.comment)
+ .comment       0x0000000000000000       0x11 C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+                                         0x24 (size before relaxing)
+ .comment       0x0000000000000011       0x12 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+
+.gnu.build.attributes
+ *(.gnu.build.attributes .gnu.build.attributes.*)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges  0x0000000000000000       0x50
+ *(.debug_aranges)
+ .debug_aranges
+                0x0000000000000000       0x30 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .debug_aranges
+                0x0000000000000030       0x20 obj8mingw/gcc8_a_support.o
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info     0x0000000000000000     0x507b
+ *(.debug_info .gnu.linkonce.wi.*)
+ .debug_info    0x0000000000000000     0x4219 C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+                0x0000000000000000                main.c.3529c2a8
+                0x0000000000003d69                gcc8_c_support.c.85bb0846
+ .debug_info    0x0000000000004219      0xe3c C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .debug_info    0x0000000000005055       0x26 obj8mingw/gcc8_a_support.o
+
+.debug_abbrev   0x0000000000000000      0x472
+ *(.debug_abbrev)
+ .debug_abbrev  0x0000000000000000      0x30e C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+ .debug_abbrev  0x000000000000030e      0x150 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .debug_abbrev  0x000000000000045e       0x14 obj8mingw/gcc8_a_support.o
+
+.debug_line     0x0000000000000000     0x1c12
+ *(.debug_line .debug_line.* .debug_line_end)
+ .debug_line    0x0000000000000000      0x5b5 C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+ .debug_line    0x00000000000005b5     0x1570 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .debug_line    0x0000000000001b25       0xed obj8mingw/gcc8_a_support.o
+
+.debug_frame    0x0000000000000000      0x22c
+ *(.debug_frame)
+ .debug_frame   0x0000000000000000      0x22c C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+
+.debug_str      0x0000000000000000      0x1bb
+ *(.debug_str)
+ .debug_str     0x0000000000000000      0x111 C:\Users\Chuck\AppData\Local\Temp\cccNJdVMdebugobj
+ .debug_str     0x0000000000000111        0x0 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+ .debug_str     0x0000000000000111       0xaa obj8mingw/gcc8_a_support.o
+
+.debug_loc      0x0000000000000000      0x57a
+ *(.debug_loc)
+ .debug_loc     0x0000000000000000      0x57a C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.debug_pubtypes
+ *(.debug_pubtypes)
+
+.debug_ranges   0x0000000000000000       0xe8
+ *(.debug_ranges)
+ .debug_ranges  0x0000000000000000       0xe8 C:\Users\Chuck\AppData\Local\Temp\ccWIRcG0.ltrans0.ltrans.o
+
+.debug_macro
+ *(.debug_macro)
+
+.debug_addr
+ *(.debug_addr)
+
+.gnu.attributes
+ *(.gnu.attributes)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.gnu_debuglink)
+ *(.gnu.lto_*)
+OUTPUT(a.mingw.elf elf32-m68k)

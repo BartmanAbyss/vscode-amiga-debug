@@ -2,6 +2,12 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.7.0
+
+- added command amiga.initProject
+- better README
+- added template project
+
 ## 0.6.0
 
 - instead of passing arguments to WinUAE, they are now written to the default config (default.uae).

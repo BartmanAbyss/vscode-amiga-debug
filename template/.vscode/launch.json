@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile",
+            "name": "Blabla",
+            "program": "${workspaceFolder}/a.mingw",
+            "kickstart": "c:/amiga-dev/winuae/Kickstarts/KICK.rom",
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+    ]
+}

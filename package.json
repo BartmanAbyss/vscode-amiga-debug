@@ -3,7 +3,7 @@
 	"displayName": "amiga-debug",
 	"publisher": "bartman-abyss",
 	"description": "",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"engines": {
 		"vscode": "^1.31.0"
 	},
@@ -12,7 +12,8 @@
 	],
 	"activationEvents": [
 		"onDebug",
-		"onCommand:amiga.bin-path"
+		"onCommand:amiga.bin-path",
+		"onCommand:amiga.initProject"
 	],
 	"main": "./out/src/extension.js",
 	"contributes": {
@@ -43,6 +44,11 @@
 				"category": "amiga",
 				"command": "amiga.setForceDisassembly",
 				"title": "Set Force Disassembly"
+			},
+			{
+				"category": "amiga",
+				"command": "amiga.initProject",
+				"title": "Init Amiga Project"
 			}
 		],
 		"languages": [
@@ -103,7 +109,7 @@
 						"properties": {
 							"program": {
 								"type": "string",
-								"description": "Absolute path to a text file.",
+								"description": "Absolute path to a executable file.",
 								"default": ""
 							},
 							"kickstart": {

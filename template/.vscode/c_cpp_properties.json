@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "name": "Amiga",
+            "includePath": [ "${workspaceFolder}/**" ],
+            "defines": [ "__GNUC__=8", "_NO_INLINE" ],
+            "compilerPath": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

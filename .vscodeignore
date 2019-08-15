@@ -12,3 +12,7 @@ bin/dh0/runme.exe
 bin/configuration.*
 bin/*.uae
 bin/*.ini
+template/obj8mingw
+template/*.elf
+template/a.mingw.*
+template/.vscode/settings.json
