@@ -11,6 +11,7 @@
 ## Features
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
 - State-of-the-art code generation by GCC with Link-Time-Optimizations (LTO) for increased performance and smaller code size
+- IntelliSense
 - Full source-level and assembly-level debugging with callstack, breakpoints, watches, registers, memory view
 - Fully AmigaOS compatible via included .h files
 - `INCBIN` support
@@ -32,24 +33,24 @@ Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://g
 Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
 
 This extension contains binaries of:
-* modified GCC 8.3.0 (source coming soon)
-  * Copyright (C) 2018 Free Software Foundation, Inc.
-  * This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* modified [GNU Binutils 2.32.51.20190311](https://github.com/BartmanAbyss/binutils-gdb)
-  * Copyright (C) 2019 Free Software Foundation, Inc.
-  * License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  * This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-* modified [GNU gdb (GDB) 8.3.50.20190311-git](https://github.com/BartmanAbyss/binutils-gdb)
-  * Copyright (C) 2019 Free Software Foundation, Inc.
-  * This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
-* modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
-* modified elf2hunk
-  * Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.
-  * Modified 2018-2019, Bartman/Abyss
-* GNU Make 4.2.1
-  * Copyright (C) 1988-2016 Free Software Foundation, Inc.
-  * License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  * This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
+- modified GCC 8.3.0 (source coming soon)
+  - Copyright (C) 2018 Free Software Foundation, Inc.
+  - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+- modified [GNU Binutils 2.32.51.20190311](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2019 Free Software Foundation, Inc.
+  - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+  - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
+- modified [GNU gdb (GDB) 8.3.50.20190311-git](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2019 Free Software Foundation, Inc.
+  - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
+- modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
+- modified elf2hunk
+  - Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.
+  - Modified 2018-2019, Bartman/Abyss
+- GNU Make 4.2.1
+  - Copyright (C) 1988-2016 Free Software Foundation, Inc.
+  - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+  - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
 
 ## Known Issues
 

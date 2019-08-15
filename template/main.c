@@ -44,13 +44,13 @@ APTR GetInterruptHandler() {
 //vsync begins at line 2 hpos 132 and ends at vpos 5 hpos 18 
 void WaitVbl() {
 	while (1) {
-		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
 		vpos&=0x1ff00;
 		if (vpos!=(311<<8))
 			break;
 	}
 	while (1) {
-		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
 		vpos&=0x1ff00;
 		if (vpos==(311<<8))
 			break;
@@ -60,7 +60,7 @@ void WaitVbl() {
 inline void WaitBlt() {
 	UWORD tst=*(volatile UWORD*)&hw->dmaconr; //for compatiblity a1000
 	(void)tst;
-	while (*(volatile UWORD*)&hw->dmaconr&(1<<14)); //blitter busy wait
+	while (*(volatile UWORD*)&hw->dmaconr&(1<<14)) {} //blitter busy wait
 }
 
 void TakeSystem() {
@@ -82,7 +82,7 @@ void TakeSystem() {
 
 	//set all colors black
 	for(int a=0;a<32;a++)
-		*(UWORD*)(0xdff180+a*2)=0;
+		hw->color[a]=0;
 
 	LoadView(0);
 	WaitTOF();
@@ -129,10 +129,7 @@ inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
 volatile UWORD bgcolor = 0;
 
 static __attribute__((interrupt)) void interruptHandler() {
-	//if (hw->intreqr&(1<<INTB_VERTB)) {
-		hw->intreq=(1<<INTB_VERTB);//reset vbl req. twice for a4000 bug.
-		hw->intreq=(1<<INTB_VERTB);//reset vbl req. twice for a4000 bug.
-	//}
+	hw->intreq=(1<<INTB_VERTB); hw->intreq=(1<<INTB_VERTB); //reset vbl req. twice for a4000 bug.
 
 	bgcolor++;
 }
