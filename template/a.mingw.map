@@ -7,8 +7,8 @@ Name             Origin             Length             Attributes
 Linker script and memory map
 
 Address of section .text set to 0x0
-LOAD C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
-LOAD C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+LOAD C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
+LOAD C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 LOAD obj8mingw/gcc8_a_support.o
                 [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x80000000))
                 0x0000000080000074                . = (SEGMENT_START ("text-segment", 0x80000000) + SIZEOF_HEADERS)
@@ -68,28 +68,31 @@ LOAD obj8mingw/gcc8_a_support.o
 .iplt
  *(.iplt)
 
-.text           0x0000000000000000      0x72c
+.text           0x0000000000000000      0x778
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  .text.unlikely
-                0x0000000000000000        0x6 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+                0x0000000000000000        0x6 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
                 0x0000000000000000                _start
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
- .text.startup  0x0000000000000006      0x372 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .text.startup  0x0000000000000006      0x370 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
                 0x0000000000000006                main
  *(.text.hot .text.hot.*)
  *(.text .stub .text.* .gnu.linkonce.t.*)
- .text          0x0000000000000378      0x2ac C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
-                0x00000000000004b0                memcpy
-                0x0000000000000542                memset
-                0x0000000000000610                strlen
- .text          0x0000000000000624      0x108 obj8mingw/gcc8_a_support.o
-                0x0000000000000624                __mulsi3
-                0x0000000000000646                __udivsi3
-                0x00000000000006a2                __divsi3
-                0x00000000000006cc                __modsi3
-                0x00000000000006f4                __umodsi3
-                0x000000000000071e                KPutCharX
+ *fill*         0x0000000000000376        0x2 4e714e71
+ .text          0x0000000000000378      0x2f2 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+                0x00000000000004f4                memcpy
+                0x0000000000000586                memset
+                0x0000000000000656                strlen
+ *fill*         0x000000000000066a        0x2 4e714e71
+ .text          0x000000000000066c      0x10c obj8mingw/gcc8_a_support.o
+                0x000000000000066c                __mulsi3
+                0x000000000000068e                __udivsi3
+                0x00000000000006ea                __divsi3
+                0x0000000000000714                __modsi3
+                0x000000000000073c                __umodsi3
+                0x0000000000000766                KPutCharX
+                0x0000000000000774                PutChar
  *(.gnu.warning)
 
 .fini
@@ -98,9 +101,9 @@ LOAD obj8mingw/gcc8_a_support.o
                 [!provide]                        PROVIDE (_etext = .)
                 [!provide]                        PROVIDE (etext = .)
 
-.rodata         0x000000000000072c       0x91
+.rodata         0x0000000000000778       0x91
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x000000000000072c       0x91 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .rodata        0x0000000000000778       0x91 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 
 .rodata1
  *(.rodata1)
@@ -121,7 +124,7 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .exception_ranges
  *(.exception_ranges*)
-                0x00000000000027bd                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+                0x0000000000002809                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
 
 .eh_frame
  *(.eh_frame)
@@ -136,7 +139,7 @@ LOAD obj8mingw/gcc8_a_support.o
 .exception_ranges
  *(.exception_ranges*)
 
-.tdata          0x00000000000027bd        0x0
+.tdata          0x0000000000002809        0x0
                 [!provide]                        PROVIDE (__tdata_start = .)
  *(.tdata .tdata.* .gnu.linkonce.td.*)
 
@@ -144,18 +147,18 @@ LOAD obj8mingw/gcc8_a_support.o
  *(.tbss .tbss.* .gnu.linkonce.tb.*)
  *(.tcommon)
 
-.preinit_array  0x00000000000027bd        0x0
+.preinit_array  0x0000000000002809        0x0
                 [!provide]                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array)
                 [!provide]                        PROVIDE (__preinit_array_end = .)
 
-.init_array     0x00000000000027bd        0x0
+.init_array     0x0000000000002809        0x0
                 [!provide]                        PROVIDE (__init_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
                 [!provide]                        PROVIDE (__init_array_end = .)
 
-.fini_array     0x00000000000027bd        0x0
+.fini_array     0x0000000000002809        0x0
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
@@ -184,7 +187,7 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .dynamic
  *(.dynamic)
-                0x00000000000027bd                . = DATA_SEGMENT_RELRO_END (., 0x0)
+                0x0000000000002809                . = DATA_SEGMENT_RELRO_END (., 0x0)
 
 .got
  *(.got.plt)
@@ -192,31 +195,31 @@ LOAD obj8mingw/gcc8_a_support.o
  *(.got)
  *(.igot)
 
-.data           0x00000000000027c0        0x0
+.data           0x000000000000280c        0x0
  *(.data .data.* .gnu.linkonce.d.*)
- .data          0x00000000000027c0        0x0 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .data          0x00000000000027c0        0x0 obj8mingw/gcc8_a_support.o
+ .data          0x000000000000280c        0x0 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .data          0x000000000000280c        0x0 obj8mingw/gcc8_a_support.o
 
 .data1
  *(.data1)
-                0x00000000000027c0                _edata = .
+                0x000000000000280c                _edata = .
                 [!provide]                        PROVIDE (edata = .)
-                0x00000000000027c0                . = .
-                0x00000000000027c0                __bss_start = .
+                0x000000000000280c                . = .
+                0x000000000000280c                __bss_start = .
 
-.bss            0x00000000000027c0       0x24
+.bss            0x000000000000280c       0x24
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
- .bss           0x00000000000027c0       0x24 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .bss           0x00000000000027e4        0x0 obj8mingw/gcc8_a_support.o
+ .bss           0x000000000000280c       0x24 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .bss           0x0000000000002830        0x0 obj8mingw/gcc8_a_support.o
  *(COMMON)
-                0x00000000000027e4                . = ALIGN ((. != 0x0)?0x4:0x1)
-                0x00000000000027e4                . = ALIGN (0x4)
-                0x00000000000027e4                . = SEGMENT_START ("ldata-segment", .)
-                0x00000000000027e4                . = ALIGN (0x4)
-                0x00000000000027e4                _end = .
+                0x0000000000002830                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x0000000000002830                . = ALIGN (0x4)
+                0x0000000000002830                . = SEGMENT_START ("ldata-segment", .)
+                0x0000000000002830                . = ALIGN (0x4)
+                0x0000000000002830                _end = .
                 [!provide]                        PROVIDE (end = .)
-                0x00000000000027e4                . = DATA_SEGMENT_END (.)
+                0x0000000000002830                . = DATA_SEGMENT_END (.)
 
 .stab
  *(.stab)
@@ -238,9 +241,9 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .comment        0x0000000000000000       0x11
  *(.comment)
- .comment       0x0000000000000000       0x11 C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
+ .comment       0x0000000000000000       0x11 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
                                          0x24 (size before relaxing)
- .comment       0x0000000000000011       0x12 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .comment       0x0000000000000011       0x12 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 
 .gnu.build.attributes
  *(.gnu.build.attributes .gnu.build.attributes.*)
@@ -260,46 +263,46 @@ LOAD obj8mingw/gcc8_a_support.o
 .debug_aranges  0x0000000000000000       0x50
  *(.debug_aranges)
  .debug_aranges
-                0x0000000000000000       0x30 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+                0x0000000000000000       0x30 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
  .debug_aranges
                 0x0000000000000030       0x20 obj8mingw/gcc8_a_support.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x0000000000000000     0x5066
+.debug_info     0x0000000000000000     0x51f0
  *(.debug_info .gnu.linkonce.wi.*)
- .debug_info    0x0000000000000000     0x4219 C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
+ .debug_info    0x0000000000000000     0x42e7 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
                 0x0000000000000000                main.c.e5dffb8b
-                0x0000000000003d69                gcc8_c_support.c.85bb0846
- .debug_info    0x0000000000004219      0xe27 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .debug_info    0x0000000000005040       0x26 obj8mingw/gcc8_a_support.o
+                0x0000000000003d69                gcc8_c_support.c.da39cb95
+ .debug_info    0x00000000000042e7      0xee3 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_info    0x00000000000051ca       0x26 obj8mingw/gcc8_a_support.o
 
-.debug_abbrev   0x0000000000000000      0x47c
+.debug_abbrev   0x0000000000000000      0x4ad
  *(.debug_abbrev)
- .debug_abbrev  0x0000000000000000      0x30e C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
- .debug_abbrev  0x000000000000030e      0x15a C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .debug_abbrev  0x0000000000000468       0x14 obj8mingw/gcc8_a_support.o
+ .debug_abbrev  0x0000000000000000      0x336 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
+ .debug_abbrev  0x0000000000000336      0x163 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_abbrev  0x0000000000000499       0x14 obj8mingw/gcc8_a_support.o
 
-.debug_line     0x0000000000000000     0x1c46
+.debug_line     0x0000000000000000     0x1d46
  *(.debug_line .debug_line.* .debug_line_end)
- .debug_line    0x0000000000000000      0x5b5 C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
- .debug_line    0x00000000000005b5     0x15a4 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .debug_line    0x0000000000001b59       0xed obj8mingw/gcc8_a_support.o
+ .debug_line    0x0000000000000000      0x5b5 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
+ .debug_line    0x00000000000005b5     0x16a2 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_line    0x0000000000001c57       0xef obj8mingw/gcc8_a_support.o
 
-.debug_frame    0x0000000000000000      0x210
+.debug_frame    0x0000000000000000      0x230
  *(.debug_frame)
- .debug_frame   0x0000000000000000      0x210 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .debug_frame   0x0000000000000000      0x230 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 
-.debug_str      0x0000000000000000      0x1bb
+.debug_str      0x0000000000000000      0x217
  *(.debug_str)
- .debug_str     0x0000000000000000      0x111 C:\Users\Chuck\AppData\Local\Temp\ccUYpdsadebugobj
- .debug_str     0x0000000000000111        0x0 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
- .debug_str     0x0000000000000111       0xaa obj8mingw/gcc8_a_support.o
+ .debug_str     0x0000000000000000      0x16d C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
+ .debug_str     0x000000000000016d        0x0 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_str     0x000000000000016d       0xaa obj8mingw/gcc8_a_support.o
 
-.debug_loc      0x0000000000000000      0x599
+.debug_loc      0x0000000000000000      0x674
  *(.debug_loc)
- .debug_loc     0x0000000000000000      0x599 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .debug_loc     0x0000000000000000      0x674 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -321,7 +324,7 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .debug_ranges   0x0000000000000000      0x118
  *(.debug_ranges)
- .debug_ranges  0x0000000000000000      0x118 C:\Users\Chuck\AppData\Local\Temp\ccwilxe9.ltrans0.ltrans.o
+ .debug_ranges  0x0000000000000000      0x118 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
 
 .debug_macro
  *(.debug_macro)

@@ -5,7 +5,7 @@ a.mingw.elf:     file format elf32-m68k
 Disassembly of section .text:
 
 00000000 <_start>:
-}
+
 
 int main();
 
@@ -24,319 +24,319 @@ int main() {
    a:	48e7 3132      	movem.l d2-d3/d7/a2-a3/a6,-(sp)
 	SysBase = *((struct ExecBase**)4UL);
    e:	2c78 0004      	movea.l 4 <_start+0x4>,a6
-  12:	23ce 0000 27e0 	move.l a6,27e0 <SysBase>
+  12:	23ce 0000 282c 	move.l a6,282c <SysBase>
 	hw = (struct Custom*)0xdff000;
-  18:	23fc 00df f000 	move.l #14675968,27dc <hw>
-  1e:	0000 27dc 
+  18:	23fc 00df f000 	move.l #14675968,2828 <hw>
+  1e:	0000 2828 
 
 	// We will use the graphics library only to locate and restore the system copper list once we are through.
 	GfxBase = (struct GfxBase *)OpenLibrary("graphics.library",0);
-  22:	43f9 0000 0774 	lea 774 <KPutCharX+0x56>,a1
+  22:	43f9 0000 07c0 	lea 7c0 <PutChar+0x4c>,a1
   28:	7000           	moveq #0,d0
   2a:	4eae fdd8      	jsr -552(a6)
-  2e:	23c0 0000 27d8 	move.l d0,27d8 <GfxBase>
+  2e:	23c0 0000 2824 	move.l d0,2824 <GfxBase>
 	if (!GfxBase)
   34:	6700 02ca      	beq.w 300 <main+0x2fa>
 		Exit(0);
 
 	// used for printing
 	DOSBase = (struct DosLibrary*)OpenLibrary("dos.library", 0);
-  38:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
-  3e:	43f9 0000 0785 	lea 785 <KPutCharX+0x67>,a1
+  38:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+  3e:	43f9 0000 07d1 	lea 7d1 <PutChar+0x5d>,a1
   44:	7000           	moveq #0,d0
   46:	4eae fdd8      	jsr -552(a6)
-  4a:	2c40           	movea.l d0,a6
-  4c:	23c0 0000 27d4 	move.l d0,27d4 <DOSBase>
+  4a:	23c0 0000 2820 	move.l d0,2820 <DOSBase>
 	if (!DOSBase)
-  52:	6700 029c      	beq.w 2f0 <main+0x2ea>
+  50:	6700 02a2      	beq.w 2f4 <main+0x2ee>
 		Exit(0);
 
 	KPrintF("Hello debugger from Amiga!\n");
-  56:	4879 0000 0791 	pea 791 <KPutCharX+0x73>
-  5c:	4eb9 0000 041a 	jsr 41a <KPrintF>
+  54:	4879 0000 07dd 	pea 7dd <PutChar+0x69>
+  5a:	4eb9 0000 041a 	jsr 41a <KPrintF>
 	Write(Output(), "Hello console!\n", 15);
-  62:	4eae ffc4      	jsr -60(a6)
-  66:	2c79 0000 27d4 	movea.l 27d4 <DOSBase>,a6
-  6c:	2200           	move.l d0,d1
-  6e:	243c 0000 07ad 	move.l #1965,d2
-  74:	760f           	moveq #15,d3
-  76:	4eae ffd0      	jsr -48(a6)
+  60:	2c79 0000 2820 	movea.l 2820 <DOSBase>,a6
+  66:	4eae ffc4      	jsr -60(a6)
+  6a:	2c79 0000 2820 	movea.l 2820 <DOSBase>,a6
+  70:	2200           	move.l d0,d1
+  72:	243c 0000 07f9 	move.l #2041,d2
+  78:	760f           	moveq #15,d3
+  7a:	4eae ffd0      	jsr -48(a6)
 	Delay(50);
-  7a:	2c79 0000 27d4 	movea.l 27d4 <DOSBase>,a6
-  80:	7232           	moveq #50,d1
-  82:	4eae ff3a      	jsr -198(a6)
+  7e:	2c79 0000 2820 	movea.l 2820 <DOSBase>,a6
+  84:	7232           	moveq #50,d1
+  86:	4eae ff3a      	jsr -198(a6)
 
 void warpmode(int on) 
 { // bool
 	long(*UaeConf)(long mode, int index, const char* param, int param_len, char* outbuf, int outbuf_len);
 	UaeConf = (void *)0xf0ff60;
 	if(*((ULONG *)UaeConf)) {
-  86:	247c 00f0 ff60 	movea.l #15794016,a2
-  8c:	588f           	addq.l #4,sp
-  8e:	4a92           	tst.l (a2)
-  90:	6718           	beq.s aa <main+0xa4>
-  92:	4878 0001      	pea 1 <_start+0x1>
-  96:	47f9 0000 0378 	lea 378 <warpmode.part.0>,a3
-  9c:	4e93           	jsr (a3)
-  9e:	588f           	addq.l #4,sp
-  a0:	4a92           	tst.l (a2)
-  a2:	6706           	beq.s aa <main+0xa4>
-  a4:	42a7           	clr.l -(sp)
-  a6:	4e93           	jsr (a3)
-  a8:	588f           	addq.l #4,sp
+  8a:	247c 00f0 ff60 	movea.l #15794016,a2
+  90:	588f           	addq.l #4,sp
+  92:	4a92           	tst.l (a2)
+  94:	6718           	beq.s ae <main+0xa8>
+  96:	4878 0001      	pea 1 <_start+0x1>
+  9a:	47f9 0000 0378 	lea 378 <warpmode.part.0>,a3
+  a0:	4e93           	jsr (a3)
+  a2:	588f           	addq.l #4,sp
+  a4:	4a92           	tst.l (a2)
+  a6:	6706           	beq.s ae <main+0xa8>
+  a8:	42a7           	clr.l -(sp)
+  aa:	4e93           	jsr (a3)
+  ac:	588f           	addq.l #4,sp
 	ActiView=GfxBase->ActiView; //store current view
-  aa:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
-  b0:	23ee 0022 0000 	move.l 34(a6),27c0 <_edata>
-  b6:	27c0 
+  ae:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+  b4:	23ee 0022 0000 	move.l 34(a6),280c <_edata>
+  ba:	280c 
 	OwnBlitter();
-  b8:	4eae fe38      	jsr -456(a6)
+  bc:	4eae fe38      	jsr -456(a6)
 	WaitBlit();	
-  bc:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
-  c2:	4eae ff1c      	jsr -228(a6)
+  c0:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+  c6:	4eae ff1c      	jsr -228(a6)
 	Disable();
-  c6:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
-  cc:	4eae ff88      	jsr -120(a6)
+  ca:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+  d0:	4eae ff88      	jsr -120(a6)
 	SystemADKCON=hw->adkconr;
-  d0:	2479 0000 27dc 	movea.l 27dc <hw>,a2
-  d6:	302a 0010      	move.w 16(a2),d0
-  da:	33c0 0000 27c4 	move.w d0,27c4 <SystemADKCON>
+  d4:	2479 0000 2828 	movea.l 2828 <hw>,a2
+  da:	302a 0010      	move.w 16(a2),d0
+  de:	33c0 0000 2810 	move.w d0,2810 <SystemADKCON>
 	SystemInts=hw->intenar;
-  e0:	302a 001c      	move.w 28(a2),d0
-  e4:	33c0 0000 27c8 	move.w d0,27c8 <SystemInts>
+  e4:	302a 001c      	move.w 28(a2),d0
+  e8:	33c0 0000 2814 	move.w d0,2814 <SystemInts>
 	SystemDMA=hw->dmaconr;
-  ea:	302a 0002      	move.w 2(a2),d0
-  ee:	33c0 0000 27c6 	move.w d0,27c6 <SystemDMA>
+  ee:	302a 0002      	move.w 2(a2),d0
+  f2:	33c0 0000 2812 	move.w d0,2812 <SystemDMA>
 	hw->intena=0x7fff;//disable all interrupts
-  f4:	357c 7fff 009a 	move.w #32767,154(a2)
+  f8:	357c 7fff 009a 	move.w #32767,154(a2)
 	hw->intreq=0x7fff;//Clear any interrupts that were pending
-  fa:	357c 7fff 009c 	move.w #32767,156(a2)
+  fe:	357c 7fff 009c 	move.w #32767,156(a2)
 	WaitVbl();
- 100:	47f9 0000 0468 	lea 468 <WaitVbl>,a3
- 106:	4e93           	jsr (a3)
+ 104:	47f9 0000 04ac 	lea 4ac <WaitVbl>,a3
+ 10a:	4e93           	jsr (a3)
 	WaitVbl();
- 108:	4e93           	jsr (a3)
+ 10c:	4e93           	jsr (a3)
 	hw->dmacon=0x7fff;//Clear all DMA channels
- 10a:	357c 7fff 0096 	move.w #32767,150(a2)
+ 10e:	357c 7fff 0096 	move.w #32767,150(a2)
 	for(int a=0;a<32;a++)
- 110:	7200           	moveq #0,d1
+ 114:	7200           	moveq #0,d1
 		hw->color[a]=0;
- 112:	2001           	move.l d1,d0
- 114:	0680 0000 00c0 	addi.l #192,d0
- 11a:	d080           	add.l d0,d0
- 11c:	35bc 0000 0800 	move.w #0,(0,a2,d0.l)
+ 116:	2001           	move.l d1,d0
+ 118:	0680 0000 00c0 	addi.l #192,d0
+ 11e:	d080           	add.l d0,d0
+ 120:	35bc 0000 0800 	move.w #0,(0,a2,d0.l)
 	for(int a=0;a<32;a++)
- 122:	5281           	addq.l #1,d1
- 124:	7020           	moveq #32,d0
- 126:	b081           	cmp.l d1,d0
- 128:	66e8           	bne.s 112 <main+0x10c>
+ 126:	5281           	addq.l #1,d1
+ 128:	7020           	moveq #32,d0
+ 12a:	b081           	cmp.l d1,d0
+ 12c:	66e8           	bne.s 116 <main+0x110>
 	LoadView(0);
- 12a:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 130:	93c9           	suba.l a1,a1
- 132:	4eae ff22      	jsr -222(a6)
+ 12e:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 134:	93c9           	suba.l a1,a1
+ 136:	4eae ff22      	jsr -222(a6)
 	WaitTOF();
- 136:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 13c:	4eae fef2      	jsr -270(a6)
+ 13a:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 140:	4eae fef2      	jsr -270(a6)
 	WaitTOF();
- 140:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 146:	4eae fef2      	jsr -270(a6)
+ 144:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 14a:	4eae fef2      	jsr -270(a6)
 	WaitVbl();
- 14a:	4e93           	jsr (a3)
+ 14e:	4e93           	jsr (a3)
 	WaitVbl();
- 14c:	4e93           	jsr (a3)
+ 150:	4e93           	jsr (a3)
 	UWORD getvbr[] = { 0x4e7a, 0x0801, 0x4e73 }; // MOVEC.L VBR,D0 RTE
- 14e:	3f7c 4e7a 001e 	move.w #20090,30(sp)
- 154:	3f7c 0801 0020 	move.w #2049,32(sp)
- 15a:	3f7c 4e73 0022 	move.w #20083,34(sp)
+ 152:	3f7c 4e7a 001e 	move.w #20090,30(sp)
+ 158:	3f7c 0801 0020 	move.w #2049,32(sp)
+ 15e:	3f7c 4e73 0022 	move.w #20083,34(sp)
 	if (SysBase->AttnFlags & AFF_68010) 
- 160:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 166:	082e 0000 0129 	btst #0,297(a6)
- 16c:	6700 01be      	beq.w 32c <main+0x326>
+ 164:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 16a:	082e 0000 0129 	btst #0,297(a6)
+ 170:	6700 01b8      	beq.w 32a <main+0x324>
 		vbr = (APTR)Supervisor((void*)getvbr);
- 170:	7e1e           	moveq #30,d7
- 172:	de8f           	add.l sp,d7
- 174:	cf8d           	exg d7,a5
- 176:	4eae ffe2      	jsr -30(a6)
- 17a:	cf8d           	exg d7,a5
+ 174:	7e1e           	moveq #30,d7
+ 176:	de8f           	add.l sp,d7
+ 178:	cf8d           	exg d7,a5
+ 17a:	4eae ffe2      	jsr -30(a6)
+ 17e:	cf8d           	exg d7,a5
 	VBR=GetVBR();
- 17c:	23c0 0000 27d0 	move.l d0,27d0 <VBR>
+ 180:	23c0 0000 281c 	move.l d0,281c <VBR>
 	return *(volatile APTR*)(((UBYTE*)VBR)+0x6c);
- 182:	2079 0000 27d0 	movea.l 27d0 <VBR>,a0
- 188:	2428 006c      	move.l 108(a0),d2
+ 186:	2079 0000 281c 	movea.l 281c <VBR>,a0
+ 18c:	2428 006c      	move.l 108(a0),d2
 	SystemIrq=GetInterruptHandler(); //store interrupt register
- 18c:	23c2 0000 27ca 	move.l d2,27ca <SystemIrq>
+ 190:	23c2 0000 2816 	move.l d2,2816 <SystemIrq>
 	warpmode(1);
 	// TODO: precalc stuff here
 	warpmode(0);
 
 	TakeSystem();
 	WaitVbl();
- 192:	4e93           	jsr (a3)
+ 196:	4e93           	jsr (a3)
 	*(volatile APTR*)(((UBYTE*)VBR)+0x6c) = interrupt;
- 194:	2079 0000 27d0 	movea.l 27d0 <VBR>,a0
- 19a:	217c 0000 043e 	move.l #1086,108(a0)
- 1a0:	006c 
+ 198:	2079 0000 281c 	movea.l 281c <VBR>,a0
+ 19e:	217c 0000 0482 	move.l #1154,108(a0)
+ 1a4:	006c 
 
 	// DEMO
 	SetInterruptHandler((APTR)interruptHandler);
 	hw->intena=(1<<INTB_SETCLR)|(1<<INTB_INTEN)|(1<<INTB_VERTB);
- 1a2:	2479 0000 27dc 	movea.l 27dc <hw>,a2
- 1a8:	357c c020 009a 	move.w #-16352,154(a2)
+ 1a6:	2479 0000 2828 	movea.l 2828 <hw>,a2
+ 1ac:	357c c020 009a 	move.w #-16352,154(a2)
 	hw->intreq=1<<INTB_VERTB;//reset vbl req
- 1ae:	357c 0020 009c 	move.w #32,156(a2)
+ 1b2:	357c 0020 009c 	move.w #32,156(a2)
 inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
- 1b4:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.85bb0846+0xbfa298>,d0
+ 1b8:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.da39cb95+0xbfa298>,d0
 
 	while(!MouseLeft()) {
- 1ba:	0800 0006      	btst #6,d0
- 1be:	675a           	beq.s 21a <main+0x214>
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
- 1c0:	202a 0004      	move.l 4(a2),d0
- 1c4:	2f40 001e      	move.l d0,30(sp)
+ 1be:	0800 0006      	btst #6,d0
+ 1c2:	675a           	beq.s 21e <main+0x218>
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+ 1c4:	202a 0004      	move.l 4(a2),d0
+ 1c8:	2f40 001e      	move.l d0,30(sp)
 		vpos&=0x1ff00;
- 1c8:	202f 001e      	move.l 30(sp),d0
- 1cc:	0280 0001 ff00 	andi.l #130816,d0
- 1d2:	2f40 001e      	move.l d0,30(sp)
+ 1cc:	202f 001e      	move.l 30(sp),d0
+ 1d0:	0280 0001 ff00 	andi.l #130816,d0
+ 1d6:	2f40 001e      	move.l d0,30(sp)
 		if (vpos!=(311<<8))
- 1d6:	202f 001e      	move.l 30(sp),d0
- 1da:	0c80 0001 3700 	cmpi.l #79616,d0
- 1e0:	67de           	beq.s 1c0 <main+0x1ba>
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
- 1e2:	202a 0004      	move.l 4(a2),d0
- 1e6:	2f40 001a      	move.l d0,26(sp)
+ 1da:	202f 001e      	move.l 30(sp),d0
+ 1de:	0c80 0001 3700 	cmpi.l #79616,d0
+ 1e4:	67de           	beq.s 1c4 <main+0x1be>
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+ 1e6:	202a 0004      	move.l 4(a2),d0
+ 1ea:	2f40 001a      	move.l d0,26(sp)
 		vpos&=0x1ff00;
- 1ea:	202f 001a      	move.l 26(sp),d0
- 1ee:	0280 0001 ff00 	andi.l #130816,d0
- 1f4:	2f40 001a      	move.l d0,26(sp)
+ 1ee:	202f 001a      	move.l 26(sp),d0
+ 1f2:	0280 0001 ff00 	andi.l #130816,d0
+ 1f8:	2f40 001a      	move.l d0,26(sp)
 		if (vpos==(311<<8))
- 1f8:	202f 001a      	move.l 26(sp),d0
- 1fc:	0c80 0001 3700 	cmpi.l #79616,d0
- 202:	66de           	bne.s 1e2 <main+0x1dc>
+ 1fc:	202f 001a      	move.l 26(sp),d0
+ 200:	0c80 0001 3700 	cmpi.l #79616,d0
+ 206:	66de           	bne.s 1e6 <main+0x1e0>
 		WaitVbl();
 		hw->color[0] = bgcolor;
- 204:	3039 0000 27ce 	move.w 27ce <bgcolor>,d0
- 20a:	3540 0180      	move.w d0,384(a2)
+ 208:	3039 0000 281a 	move.w 281a <bgcolor>,d0
+ 20e:	3540 0180      	move.w d0,384(a2)
 inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
- 20e:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.85bb0846+0xbfa298>,d0
+ 212:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.da39cb95+0xbfa298>,d0
 	while(!MouseLeft()) {
- 214:	0800 0006      	btst #6,d0
- 218:	66a6           	bne.s 1c0 <main+0x1ba>
+ 218:	0800 0006      	btst #6,d0
+ 21c:	66a6           	bne.s 1c4 <main+0x1be>
 	WaitVbl();
- 21a:	4e93           	jsr (a3)
+ 21e:	4e93           	jsr (a3)
 	UWORD tst=*(volatile UWORD*)&hw->dmaconr; //for compatiblity a1000
- 21c:	302a 0002      	move.w 2(a2),d0
-	while (*(volatile UWORD*)&hw->dmaconr&(1<<14)) {} //blitter busy wait
  220:	302a 0002      	move.w 2(a2),d0
- 224:	0800 000e      	btst #14,d0
- 228:	66f6           	bne.s 220 <main+0x21a>
+	while (*(volatile UWORD*)&hw->dmaconr&(1<<14)) {} //blitter busy wait
+ 224:	302a 0002      	move.w 2(a2),d0
+ 228:	0800 000e      	btst #14,d0
+ 22c:	66f6           	bne.s 224 <main+0x21e>
 	hw->intena=0x7fff;//disable all interrupts
- 22a:	357c 7fff 009a 	move.w #32767,154(a2)
+ 22e:	357c 7fff 009a 	move.w #32767,154(a2)
 	hw->intreq=0x7fff;//Clear any interrupts that were pending
- 230:	357c 7fff 009c 	move.w #32767,156(a2)
+ 234:	357c 7fff 009c 	move.w #32767,156(a2)
 	hw->dmacon=0x7fff;//Clear all DMA channels
- 236:	357c 7fff 0096 	move.w #32767,150(a2)
+ 23a:	357c 7fff 0096 	move.w #32767,150(a2)
 	*(volatile APTR*)(((UBYTE*)VBR)+0x6c) = interrupt;
- 23c:	2079 0000 27d0 	movea.l 27d0 <VBR>,a0
- 242:	2142 006c      	move.l d2,108(a0)
+ 240:	2079 0000 281c 	movea.l 281c <VBR>,a0
+ 246:	2142 006c      	move.l d2,108(a0)
 	hw->cop1lc=(ULONG)GfxBase->copinit;
- 246:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 24c:	256e 0026 0080 	move.l 38(a6),128(a2)
+ 24a:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 250:	256e 0026 0080 	move.l 38(a6),128(a2)
 	hw->cop2lc=(ULONG)GfxBase->LOFlist;
- 252:	256e 0032 0084 	move.l 50(a6),132(a2)
+ 256:	256e 0032 0084 	move.l 50(a6),132(a2)
 	hw->copjmp1=0x7fff; //start coppper
- 258:	357c 7fff 0088 	move.w #32767,136(a2)
+ 25c:	357c 7fff 0088 	move.w #32767,136(a2)
 	hw->intena=SystemInts|0x8000;
- 25e:	3039 0000 27c8 	move.w 27c8 <SystemInts>,d0
- 264:	0040 8000      	ori.w #-32768,d0
- 268:	3540 009a      	move.w d0,154(a2)
+ 262:	3039 0000 2814 	move.w 2814 <SystemInts>,d0
+ 268:	0040 8000      	ori.w #-32768,d0
+ 26c:	3540 009a      	move.w d0,154(a2)
 	hw->dmacon=SystemDMA|0x8000;
- 26c:	3039 0000 27c6 	move.w 27c6 <SystemDMA>,d0
- 272:	0040 8000      	ori.w #-32768,d0
- 276:	3540 0096      	move.w d0,150(a2)
+ 270:	3039 0000 2812 	move.w 2812 <SystemDMA>,d0
+ 276:	0040 8000      	ori.w #-32768,d0
+ 27a:	3540 0096      	move.w d0,150(a2)
 	hw->adkcon=SystemADKCON|0x8000;
- 27a:	3039 0000 27c4 	move.w 27c4 <SystemADKCON>,d0
- 280:	0040 8000      	ori.w #-32768,d0
- 284:	3540 009e      	move.w d0,158(a2)
+ 27e:	3039 0000 2810 	move.w 2810 <SystemADKCON>,d0
+ 284:	0040 8000      	ori.w #-32768,d0
+ 288:	3540 009e      	move.w d0,158(a2)
 	LoadView(ActiView);
- 288:	2279 0000 27c0 	movea.l 27c0 <_edata>,a1
- 28e:	4eae ff22      	jsr -222(a6)
+ 28c:	2279 0000 280c 	movea.l 280c <_edata>,a1
+ 292:	4eae ff22      	jsr -222(a6)
 	WaitTOF();
- 292:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 298:	4eae fef2      	jsr -270(a6)
+ 296:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 29c:	4eae fef2      	jsr -270(a6)
 	WaitTOF();
- 29c:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 2a2:	4eae fef2      	jsr -270(a6)
+ 2a0:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 2a6:	4eae fef2      	jsr -270(a6)
 	WaitBlit();	
- 2a6:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 2ac:	4eae ff1c      	jsr -228(a6)
+ 2aa:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 2b0:	4eae ff1c      	jsr -228(a6)
 	DisownBlitter();
- 2b0:	2c79 0000 27d8 	movea.l 27d8 <GfxBase>,a6
- 2b6:	4eae fe32      	jsr -462(a6)
+ 2b4:	2c79 0000 2824 	movea.l 2824 <GfxBase>,a6
+ 2ba:	4eae fe32      	jsr -462(a6)
 	Enable();
- 2ba:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 2c0:	4eae ff82      	jsr -126(a6)
+ 2be:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 2c4:	4eae ff82      	jsr -126(a6)
 	}
 
 	// END
 	FreeSystem();
 
 	CloseLibrary((struct Library*)DOSBase);
- 2c4:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 2ca:	2279 0000 27d4 	movea.l 27d4 <DOSBase>,a1
- 2d0:	4eae fe62      	jsr -414(a6)
+ 2c8:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 2ce:	2279 0000 2820 	movea.l 2820 <DOSBase>,a1
+ 2d4:	4eae fe62      	jsr -414(a6)
 	CloseLibrary((struct Library*)GfxBase);
- 2d4:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 2da:	2279 0000 27d8 	movea.l 27d8 <GfxBase>,a1
- 2e0:	4eae fe62      	jsr -414(a6)
+ 2d8:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 2de:	2279 0000 2824 	movea.l 2824 <GfxBase>,a1
+ 2e4:	4eae fe62      	jsr -414(a6)
 }
- 2e4:	7000           	moveq #0,d0
- 2e6:	4cdf 4c8c      	movem.l (sp)+,d2-d3/d7/a2-a3/a6
- 2ea:	4fef 000c      	lea 12(sp),sp
- 2ee:	4e75           	rts
+ 2e8:	7000           	moveq #0,d0
+ 2ea:	4cdf 4c8c      	movem.l (sp)+,d2-d3/d7/a2-a3/a6
+ 2ee:	4fef 000c      	lea 12(sp),sp
+ 2f2:	4e75           	rts
 		Exit(0);
- 2f0:	7200           	moveq #0,d1
- 2f2:	4eae ff70      	jsr -144(a6)
- 2f6:	2c79 0000 27d4 	movea.l 27d4 <DOSBase>,a6
- 2fc:	6000 fd58      	bra.w 56 <main+0x50>
+ 2f4:	9dce           	suba.l a6,a6
+ 2f6:	7200           	moveq #0,d1
+ 2f8:	4eae ff70      	jsr -144(a6)
+ 2fc:	6000 fd56      	bra.w 54 <main+0x4e>
 		Exit(0);
- 300:	2c79 0000 27d4 	movea.l 27d4 <DOSBase>,a6
+ 300:	2c79 0000 2820 	movea.l 2820 <DOSBase>,a6
  306:	7200           	moveq #0,d1
  308:	4eae ff70      	jsr -144(a6)
 	DOSBase = (struct DosLibrary*)OpenLibrary("dos.library", 0);
- 30c:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 312:	43f9 0000 0785 	lea 785 <KPutCharX+0x67>,a1
+ 30c:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 312:	43f9 0000 07d1 	lea 7d1 <PutChar+0x5d>,a1
  318:	7000           	moveq #0,d0
  31a:	4eae fdd8      	jsr -552(a6)
- 31e:	2c40           	movea.l d0,a6
- 320:	23c0 0000 27d4 	move.l d0,27d4 <DOSBase>
+ 31e:	23c0 0000 2820 	move.l d0,2820 <DOSBase>
 	if (!DOSBase)
- 326:	6600 fd2e      	bne.w 56 <main+0x50>
- 32a:	60c4           	bra.s 2f0 <main+0x2ea>
+ 324:	6600 fd2e      	bne.w 54 <main+0x4e>
+ 328:	60ca           	bra.s 2f4 <main+0x2ee>
 	APTR vbr = 0;
- 32c:	7000           	moveq #0,d0
+ 32a:	7000           	moveq #0,d0
 	VBR=GetVBR();
- 32e:	23c0 0000 27d0 	move.l d0,27d0 <VBR>
+ 32c:	23c0 0000 281c 	move.l d0,281c <VBR>
 	return *(volatile APTR*)(((UBYTE*)VBR)+0x6c);
- 334:	2079 0000 27d0 	movea.l 27d0 <VBR>,a0
- 33a:	2428 006c      	move.l 108(a0),d2
+ 332:	2079 0000 281c 	movea.l 281c <VBR>,a0
+ 338:	2428 006c      	move.l 108(a0),d2
 	SystemIrq=GetInterruptHandler(); //store interrupt register
- 33e:	23c2 0000 27ca 	move.l d2,27ca <SystemIrq>
+ 33c:	23c2 0000 2816 	move.l d2,2816 <SystemIrq>
 	WaitVbl();
- 344:	4e93           	jsr (a3)
+ 342:	4e93           	jsr (a3)
 	*(volatile APTR*)(((UBYTE*)VBR)+0x6c) = interrupt;
- 346:	2079 0000 27d0 	movea.l 27d0 <VBR>,a0
- 34c:	217c 0000 043e 	move.l #1086,108(a0)
- 352:	006c 
+ 344:	2079 0000 281c 	movea.l 281c <VBR>,a0
+ 34a:	217c 0000 0482 	move.l #1154,108(a0)
+ 350:	006c 
 	hw->intena=(1<<INTB_SETCLR)|(1<<INTB_INTEN)|(1<<INTB_VERTB);
- 354:	2479 0000 27dc 	movea.l 27dc <hw>,a2
- 35a:	357c c020 009a 	move.w #-16352,154(a2)
+ 352:	2479 0000 2828 	movea.l 2828 <hw>,a2
+ 358:	357c c020 009a 	move.w #-16352,154(a2)
 	hw->intreq=1<<INTB_VERTB;//reset vbl req
- 360:	357c 0020 009c 	move.w #32,156(a2)
+ 35e:	357c 0020 009c 	move.w #32,156(a2)
 inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
- 366:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.85bb0846+0xbfa298>,d0
+ 364:	1039 00bf e001 	move.b bfe001 <gcc8_c_support.c.da39cb95+0xbfa298>,d0
 	while(!MouseLeft()) {
- 36c:	0800 0006      	btst #6,d0
- 370:	6600 fe4e      	bne.w 1c0 <main+0x1ba>
- 374:	6000 fea4      	bra.w 21a <main+0x214>
+ 36a:	0800 0006      	btst #6,d0
+ 36e:	6600 fe54      	bne.w 1c4 <main+0x1be>
+ 372:	6000 feaa      	bra.w 21e <main+0x218>
+ 376:	4e71           	nop
 
 00000378 <warpmode.part.0>:
 void warpmode(int on) 
@@ -351,20 +351,20 @@ void warpmode(int on)
  388:	d48f           	add.l sp,d2
  38a:	2f02           	move.l d2,-(sp)
  38c:	42a7           	clr.l -(sp)
- 38e:	4879 0000 075f 	pea 75f <KPutCharX+0x41>
- 394:	4878 ffff      	pea ffffffff <gcc8_c_support.c.85bb0846+0xffffc296>
+ 38e:	4879 0000 07ab 	pea 7ab <PutChar+0x37>
+ 394:	4878 ffff      	pea ffffffff <gcc8_c_support.c.da39cb95+0xffffc296>
  398:	4878 0052      	pea 52 <main+0x4c>
- 39c:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.85bb0846+0xf0c1f7>
+ 39c:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
  3a2:	4fef 0018      	lea 24(sp),sp
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
- 3a6:	203c 0000 0745 	move.l #1861,d0
+ 3a6:	203c 0000 0791 	move.l #1937,d0
  3ac:	4878 0001      	pea 1 <_start+0x1>
  3b0:	2f02           	move.l d2,-(sp)
  3b2:	42a7           	clr.l -(sp)
  3b4:	2f00           	move.l d0,-(sp)
- 3b6:	4878 ffff      	pea ffffffff <gcc8_c_support.c.85bb0846+0xffffc296>
+ 3b6:	4878 ffff      	pea ffffffff <gcc8_c_support.c.da39cb95+0xffffc296>
  3ba:	4878 0052      	pea 52 <main+0x4c>
- 3be:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.85bb0846+0xf0c1f7>
+ 3be:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
 	}
 }
  3c4:	4fef 0018      	lea 24(sp),sp
@@ -377,20 +377,20 @@ void warpmode(int on)
  3d4:	d48f           	add.l sp,d2
  3d6:	2f02           	move.l d2,-(sp)
  3d8:	42a7           	clr.l -(sp)
- 3da:	4879 0000 0769 	pea 769 <KPutCharX+0x4b>
- 3e0:	4878 ffff      	pea ffffffff <gcc8_c_support.c.85bb0846+0xffffc296>
+ 3da:	4879 0000 07b5 	pea 7b5 <PutChar+0x41>
+ 3e0:	4878 ffff      	pea ffffffff <gcc8_c_support.c.da39cb95+0xffffc296>
  3e4:	4878 0052      	pea 52 <main+0x4c>
- 3e8:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.85bb0846+0xf0c1f7>
+ 3e8:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
  3ee:	4fef 0018      	lea 24(sp),sp
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
- 3f2:	203c 0000 072c 	move.l #1836,d0
+ 3f2:	203c 0000 0778 	move.l #1912,d0
  3f8:	4878 0001      	pea 1 <_start+0x1>
  3fc:	2f02           	move.l d2,-(sp)
  3fe:	42a7           	clr.l -(sp)
  400:	2f00           	move.l d0,-(sp)
- 402:	4878 ffff      	pea ffffffff <gcc8_c_support.c.85bb0846+0xffffc296>
+ 402:	4878 ffff      	pea ffffffff <gcc8_c_support.c.da39cb95+0xffffc296>
  406:	4878 0052      	pea 52 <main+0x4c>
- 40a:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.85bb0846+0xf0c1f7>
+ 40a:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
 }
  410:	4fef 0018      	lea 24(sp),sp
  414:	241f           	move.l (sp)+,d2
@@ -399,521 +399,555 @@ void warpmode(int on)
 
 0000041a <KPrintF>:
 {
- 41a:	48e7 0032      	movem.l a2-a3/a6,-(sp)
-	RawDoFmt(fmt, vl, KPutCharX, 0);
- 41e:	2c79 0000 27e0 	movea.l 27e0 <SysBase>,a6
- 424:	206f 0010      	movea.l 16(sp),a0
- 428:	43ef 0014      	lea 20(sp),a1
- 42c:	45f9 0000 071e 	lea 71e <KPutCharX>,a2
- 432:	97cb           	suba.l a3,a3
- 434:	4eae fdf6      	jsr -522(a6)
+ 41a:	4fef ff80      	lea -128(sp),sp
+ 41e:	48e7 0032      	movem.l a2-a3/a6,-(sp)
+    if(*((ULONG *)UaeDbgLog)) {
+ 422:	4ab9 00f0 ff60 	tst.l f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
+ 428:	6734           	beq.s 45e <KPrintF+0x44>
+		RawDoFmt(fmt, vl, PutChar, temp);
+ 42a:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 430:	206f 0090      	movea.l 144(sp),a0
+ 434:	43ef 0094      	lea 148(sp),a1
+ 438:	45f9 0000 0774 	lea 774 <PutChar>,a2
+ 43e:	47ef 000c      	lea 12(sp),a3
+ 442:	4eae fdf6      	jsr -522(a6)
+		UaeDbgLog(86, temp);
+ 446:	2f0b           	move.l a3,-(sp)
+ 448:	4878 0056      	pea 56 <main+0x50>
+ 44c:	4eb9 00f0 ff60 	jsr f0ff60 <gcc8_c_support.c.da39cb95+0xf0c1f7>
+ 452:	508f           	addq.l #8,sp
 }
- 438:	4cdf 4c00      	movem.l (sp)+,a2-a3/a6
- 43c:	4e75           	rts
+ 454:	4cdf 4c00      	movem.l (sp)+,a2-a3/a6
+ 458:	4fef 0080      	lea 128(sp),sp
+ 45c:	4e75           	rts
+		RawDoFmt(fmt, vl, KPutCharX, 0);
+ 45e:	2c79 0000 282c 	movea.l 282c <SysBase>,a6
+ 464:	206f 0090      	movea.l 144(sp),a0
+ 468:	43ef 0094      	lea 148(sp),a1
+ 46c:	45f9 0000 0766 	lea 766 <KPutCharX>,a2
+ 472:	97cb           	suba.l a3,a3
+ 474:	4eae fdf6      	jsr -522(a6)
+}
+ 478:	4cdf 4c00      	movem.l (sp)+,a2-a3/a6
+ 47c:	4fef 0080      	lea 128(sp),sp
+ 480:	4e75           	rts
 
-0000043e <interruptHandler>:
+00000482 <interruptHandler>:
 static __attribute__((interrupt)) void interruptHandler() {
- 43e:	2f08           	move.l a0,-(sp)
- 440:	2f00           	move.l d0,-(sp)
+ 482:	2f08           	move.l a0,-(sp)
+ 484:	2f00           	move.l d0,-(sp)
 	hw->intreq=(1<<INTB_VERTB); hw->intreq=(1<<INTB_VERTB); //reset vbl req. twice for a4000 bug.
- 442:	2079 0000 27dc 	movea.l 27dc <hw>,a0
- 448:	317c 0020 009c 	move.w #32,156(a0)
- 44e:	317c 0020 009c 	move.w #32,156(a0)
+ 486:	2079 0000 2828 	movea.l 2828 <hw>,a0
+ 48c:	317c 0020 009c 	move.w #32,156(a0)
+ 492:	317c 0020 009c 	move.w #32,156(a0)
 	bgcolor++;
- 454:	3039 0000 27ce 	move.w 27ce <bgcolor>,d0
- 45a:	5240           	addq.w #1,d0
- 45c:	33c0 0000 27ce 	move.w d0,27ce <bgcolor>
+ 498:	3039 0000 281a 	move.w 281a <bgcolor>,d0
+ 49e:	5240           	addq.w #1,d0
+ 4a0:	33c0 0000 281a 	move.w d0,281a <bgcolor>
 }
- 462:	201f           	move.l (sp)+,d0
- 464:	205f           	movea.l (sp)+,a0
- 466:	4e73           	rte
+ 4a6:	201f           	move.l (sp)+,d0
+ 4a8:	205f           	movea.l (sp)+,a0
+ 4aa:	4e73           	rte
 
-00000468 <WaitVbl>:
+000004ac <WaitVbl>:
 void WaitVbl() {
- 468:	518f           	subq.l #8,sp
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
- 46a:	2079 0000 27dc 	movea.l 27dc <hw>,a0
- 470:	2028 0004      	move.l 4(a0),d0
- 474:	2e80           	move.l d0,(sp)
+ 4ac:	518f           	subq.l #8,sp
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+ 4ae:	2079 0000 2828 	movea.l 2828 <hw>,a0
+ 4b4:	2028 0004      	move.l 4(a0),d0
+ 4b8:	2e80           	move.l d0,(sp)
 		vpos&=0x1ff00;
- 476:	2017           	move.l (sp),d0
- 478:	0280 0001 ff00 	andi.l #130816,d0
- 47e:	2e80           	move.l d0,(sp)
+ 4ba:	2017           	move.l (sp),d0
+ 4bc:	0280 0001 ff00 	andi.l #130816,d0
+ 4c2:	2e80           	move.l d0,(sp)
 		if (vpos!=(311<<8))
- 480:	2017           	move.l (sp),d0
- 482:	0c80 0001 3700 	cmpi.l #79616,d0
- 488:	67e6           	beq.s 470 <WaitVbl+0x8>
-		volatile ULONG vpos=*(volatile ULONG*)&hw->vposr;
- 48a:	2028 0004      	move.l 4(a0),d0
- 48e:	2f40 0004      	move.l d0,4(sp)
+ 4c4:	2017           	move.l (sp),d0
+ 4c6:	0c80 0001 3700 	cmpi.l #79616,d0
+ 4cc:	67e6           	beq.s 4b4 <WaitVbl+0x8>
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+ 4ce:	2028 0004      	move.l 4(a0),d0
+ 4d2:	2f40 0004      	move.l d0,4(sp)
 		vpos&=0x1ff00;
- 492:	202f 0004      	move.l 4(sp),d0
- 496:	0280 0001 ff00 	andi.l #130816,d0
- 49c:	2f40 0004      	move.l d0,4(sp)
+ 4d6:	202f 0004      	move.l 4(sp),d0
+ 4da:	0280 0001 ff00 	andi.l #130816,d0
+ 4e0:	2f40 0004      	move.l d0,4(sp)
 		if (vpos==(311<<8))
- 4a0:	202f 0004      	move.l 4(sp),d0
- 4a4:	0c80 0001 3700 	cmpi.l #79616,d0
- 4aa:	66de           	bne.s 48a <WaitVbl+0x22>
+ 4e4:	202f 0004      	move.l 4(sp),d0
+ 4e8:	0c80 0001 3700 	cmpi.l #79616,d0
+ 4ee:	66de           	bne.s 4ce <WaitVbl+0x22>
 }
- 4ac:	508f           	addq.l #8,sp
- 4ae:	4e75           	rts
+ 4f0:	508f           	addq.l #8,sp
+ 4f2:	4e75           	rts
 
-000004b0 <memcpy>:
+000004f4 <memcpy>:
 {
- 4b0:	48e7 3820      	movem.l d2-d4/a2,-(sp)
- 4b4:	202f 0014      	move.l 20(sp),d0
- 4b8:	226f 0018      	movea.l 24(sp),a1
- 4bc:	222f 001c      	move.l 28(sp),d1
+ 4f4:	48e7 3820      	movem.l d2-d4/a2,-(sp)
+ 4f8:	202f 0014      	move.l 20(sp),d0
+ 4fc:	226f 0018      	movea.l 24(sp),a1
+ 500:	222f 001c      	move.l 28(sp),d1
 	while(len--)
- 4c0:	2601           	move.l d1,d3
- 4c2:	5383           	subq.l #1,d3
- 4c4:	4a81           	tst.l d1
- 4c6:	6762           	beq.s 52a <memcpy+0x7a>
- 4c8:	2040           	movea.l d0,a0
- 4ca:	5888           	addq.l #4,a0
- 4cc:	b1c9           	cmpa.l a1,a0
- 4ce:	53c2           	sl.s d2
- 4d0:	4402           	neg.b d2
- 4d2:	41e9 0004      	lea 4(a1),a0
- 4d6:	b1c0           	cmpa.l d0,a0
- 4d8:	53c4           	sl.s d4
- 4da:	4404           	neg.b d4
- 4dc:	8404           	or.b d4,d2
- 4de:	7808           	moveq #8,d4
- 4e0:	b883           	cmp.l d3,d4
- 4e2:	55c4           	sc.s d4
- 4e4:	4404           	neg.b d4
- 4e6:	c404           	and.b d4,d2
- 4e8:	6746           	beq.s 530 <memcpy+0x80>
- 4ea:	2409           	move.l a1,d2
- 4ec:	8480           	or.l d0,d2
- 4ee:	7803           	moveq #3,d4
- 4f0:	c484           	and.l d4,d2
- 4f2:	663c           	bne.s 530 <memcpy+0x80>
- 4f4:	2049           	movea.l a1,a0
- 4f6:	2440           	movea.l d0,a2
- 4f8:	74fc           	moveq #-4,d2
- 4fa:	c481           	and.l d1,d2
- 4fc:	d489           	add.l a1,d2
+ 504:	2601           	move.l d1,d3
+ 506:	5383           	subq.l #1,d3
+ 508:	4a81           	tst.l d1
+ 50a:	6762           	beq.s 56e <memcpy+0x7a>
+ 50c:	2040           	movea.l d0,a0
+ 50e:	5888           	addq.l #4,a0
+ 510:	b1c9           	cmpa.l a1,a0
+ 512:	53c2           	sl.s d2
+ 514:	4402           	neg.b d2
+ 516:	41e9 0004      	lea 4(a1),a0
+ 51a:	b1c0           	cmpa.l d0,a0
+ 51c:	53c4           	sl.s d4
+ 51e:	4404           	neg.b d4
+ 520:	8404           	or.b d4,d2
+ 522:	7808           	moveq #8,d4
+ 524:	b883           	cmp.l d3,d4
+ 526:	55c4           	sc.s d4
+ 528:	4404           	neg.b d4
+ 52a:	c404           	and.b d4,d2
+ 52c:	6746           	beq.s 574 <memcpy+0x80>
+ 52e:	2409           	move.l a1,d2
+ 530:	8480           	or.l d0,d2
+ 532:	7803           	moveq #3,d4
+ 534:	c484           	and.l d4,d2
+ 536:	663c           	bne.s 574 <memcpy+0x80>
+ 538:	2049           	movea.l a1,a0
+ 53a:	2440           	movea.l d0,a2
+ 53c:	74fc           	moveq #-4,d2
+ 53e:	c481           	and.l d1,d2
+ 540:	d489           	add.l a1,d2
 		*d++ = *s++;
- 4fe:	24d8           	move.l (a0)+,(a2)+
- 500:	b488           	cmp.l a0,d2
- 502:	66fa           	bne.s 4fe <memcpy+0x4e>
- 504:	74fc           	moveq #-4,d2
- 506:	c481           	and.l d1,d2
- 508:	2040           	movea.l d0,a0
- 50a:	d1c2           	adda.l d2,a0
- 50c:	d3c2           	adda.l d2,a1
- 50e:	9682           	sub.l d2,d3
- 510:	b481           	cmp.l d1,d2
- 512:	6716           	beq.s 52a <memcpy+0x7a>
- 514:	1091           	move.b (a1),(a0)
+ 542:	24d8           	move.l (a0)+,(a2)+
+ 544:	b488           	cmp.l a0,d2
+ 546:	66fa           	bne.s 542 <memcpy+0x4e>
+ 548:	74fc           	moveq #-4,d2
+ 54a:	c481           	and.l d1,d2
+ 54c:	2040           	movea.l d0,a0
+ 54e:	d1c2           	adda.l d2,a0
+ 550:	d3c2           	adda.l d2,a1
+ 552:	9682           	sub.l d2,d3
+ 554:	b481           	cmp.l d1,d2
+ 556:	6716           	beq.s 56e <memcpy+0x7a>
+ 558:	1091           	move.b (a1),(a0)
 	while(len--)
- 516:	4a83           	tst.l d3
- 518:	6710           	beq.s 52a <memcpy+0x7a>
+ 55a:	4a83           	tst.l d3
+ 55c:	6710           	beq.s 56e <memcpy+0x7a>
 		*d++ = *s++;
- 51a:	1169 0001 0001 	move.b 1(a1),1(a0)
+ 55e:	1169 0001 0001 	move.b 1(a1),1(a0)
 	while(len--)
- 520:	5383           	subq.l #1,d3
- 522:	6706           	beq.s 52a <memcpy+0x7a>
+ 564:	5383           	subq.l #1,d3
+ 566:	6706           	beq.s 56e <memcpy+0x7a>
 		*d++ = *s++;
- 524:	1169 0002 0002 	move.b 2(a1),2(a0)
+ 568:	1169 0002 0002 	move.b 2(a1),2(a0)
 }
- 52a:	4cdf 041c      	movem.l (sp)+,d2-d4/a2
- 52e:	4e75           	rts
- 530:	2040           	movea.l d0,a0
- 532:	d289           	add.l a1,d1
+ 56e:	4cdf 041c      	movem.l (sp)+,d2-d4/a2
+ 572:	4e75           	rts
+ 574:	2040           	movea.l d0,a0
+ 576:	d289           	add.l a1,d1
 		*d++ = *s++;
- 534:	10d9           	move.b (a1)+,(a0)+
+ 578:	10d9           	move.b (a1)+,(a0)+
 	while(len--)
- 536:	b289           	cmp.l a1,d1
- 538:	67f0           	beq.s 52a <memcpy+0x7a>
+ 57a:	b289           	cmp.l a1,d1
+ 57c:	67f0           	beq.s 56e <memcpy+0x7a>
 		*d++ = *s++;
- 53a:	10d9           	move.b (a1)+,(a0)+
+ 57e:	10d9           	move.b (a1)+,(a0)+
 	while(len--)
- 53c:	b289           	cmp.l a1,d1
- 53e:	66f4           	bne.s 534 <memcpy+0x84>
- 540:	60e8           	bra.s 52a <memcpy+0x7a>
+ 580:	b289           	cmp.l a1,d1
+ 582:	66f4           	bne.s 578 <memcpy+0x84>
+ 584:	60e8           	bra.s 56e <memcpy+0x7a>
 
-00000542 <memset>:
+00000586 <memset>:
 {
- 542:	48e7 3f30      	movem.l d2-d7/a2-a3,-(sp)
- 546:	202f 0024      	move.l 36(sp),d0
- 54a:	2a2f 0028      	move.l 40(sp),d5
- 54e:	226f 002c      	movea.l 44(sp),a1
+ 586:	48e7 3f30      	movem.l d2-d7/a2-a3,-(sp)
+ 58a:	202f 0024      	move.l 36(sp),d0
+ 58e:	2a2f 0028      	move.l 40(sp),d5
+ 592:	226f 002c      	movea.l 44(sp),a1
 	while(len-- > 0)
- 552:	2809           	move.l a1,d4
- 554:	5384           	subq.l #1,d4
- 556:	b2fc 0000      	cmpa.w #0,a1
- 55a:	6700 00ae      	beq.w 60a <memset+0xc8>
- 55e:	1e05           	move.b d5,d7
- 560:	2200           	move.l d0,d1
- 562:	4481           	neg.l d1
- 564:	7403           	moveq #3,d2
- 566:	c282           	and.l d2,d1
- 568:	7c05           	moveq #5,d6
+ 596:	2809           	move.l a1,d4
+ 598:	5384           	subq.l #1,d4
+ 59a:	b2fc 0000      	cmpa.w #0,a1
+ 59e:	6f00 00b0      	ble.w 650 <memset+0xca>
+ 5a2:	1e05           	move.b d5,d7
+ 5a4:	2200           	move.l d0,d1
+ 5a6:	4481           	neg.l d1
+ 5a8:	7403           	moveq #3,d2
+ 5aa:	c282           	and.l d2,d1
+ 5ac:	7c05           	moveq #5,d6
 		*ptr++ = val;
- 56a:	2440           	movea.l d0,a2
- 56c:	bc84           	cmp.l d4,d6
- 56e:	646a           	bcc.s 5da <memset+0x98>
- 570:	4a81           	tst.l d1
- 572:	6724           	beq.s 598 <memset+0x56>
- 574:	14c5           	move.b d5,(a2)+
+ 5ae:	2440           	movea.l d0,a2
+ 5b0:	bc84           	cmp.l d4,d6
+ 5b2:	646a           	bcc.s 61e <memset+0x98>
+ 5b4:	4a81           	tst.l d1
+ 5b6:	6724           	beq.s 5dc <memset+0x56>
+ 5b8:	14c5           	move.b d5,(a2)+
 	while(len-- > 0)
- 576:	5384           	subq.l #1,d4
- 578:	7401           	moveq #1,d2
- 57a:	b481           	cmp.l d1,d2
- 57c:	671a           	beq.s 598 <memset+0x56>
+ 5ba:	5384           	subq.l #1,d4
+ 5bc:	7401           	moveq #1,d2
+ 5be:	b481           	cmp.l d1,d2
+ 5c0:	671a           	beq.s 5dc <memset+0x56>
 		*ptr++ = val;
- 57e:	2440           	movea.l d0,a2
- 580:	548a           	addq.l #2,a2
- 582:	2040           	movea.l d0,a0
- 584:	1145 0001      	move.b d5,1(a0)
+ 5c2:	2440           	movea.l d0,a2
+ 5c4:	548a           	addq.l #2,a2
+ 5c6:	2040           	movea.l d0,a0
+ 5c8:	1145 0001      	move.b d5,1(a0)
 	while(len-- > 0)
- 588:	5384           	subq.l #1,d4
- 58a:	7403           	moveq #3,d2
- 58c:	b481           	cmp.l d1,d2
- 58e:	6608           	bne.s 598 <memset+0x56>
+ 5cc:	5384           	subq.l #1,d4
+ 5ce:	7403           	moveq #3,d2
+ 5d0:	b481           	cmp.l d1,d2
+ 5d2:	6608           	bne.s 5dc <memset+0x56>
 		*ptr++ = val;
- 590:	528a           	addq.l #1,a2
- 592:	1145 0002      	move.b d5,2(a0)
+ 5d4:	528a           	addq.l #1,a2
+ 5d6:	1145 0002      	move.b d5,2(a0)
 	while(len-- > 0)
- 596:	5384           	subq.l #1,d4
- 598:	2609           	move.l a1,d3
- 59a:	9681           	sub.l d1,d3
- 59c:	7c00           	moveq #0,d6
- 59e:	1c05           	move.b d5,d6
- 5a0:	2406           	move.l d6,d2
- 5a2:	4842           	swap d2
- 5a4:	4242           	clr.w d2
- 5a6:	2042           	movea.l d2,a0
- 5a8:	2406           	move.l d6,d2
- 5aa:	e14a           	lsl.w #8,d2
- 5ac:	4842           	swap d2
- 5ae:	4242           	clr.w d2
- 5b0:	e18e           	lsl.l #8,d6
- 5b2:	2646           	movea.l d6,a3
- 5b4:	2c08           	move.l a0,d6
- 5b6:	8486           	or.l d6,d2
- 5b8:	2c0b           	move.l a3,d6
- 5ba:	8486           	or.l d6,d2
- 5bc:	1407           	move.b d7,d2
- 5be:	2040           	movea.l d0,a0
- 5c0:	d1c1           	adda.l d1,a0
- 5c2:	72fc           	moveq #-4,d1
- 5c4:	c283           	and.l d3,d1
- 5c6:	d288           	add.l a0,d1
+ 5da:	5384           	subq.l #1,d4
+ 5dc:	2609           	move.l a1,d3
+ 5de:	9681           	sub.l d1,d3
+ 5e0:	7c00           	moveq #0,d6
+ 5e2:	1c05           	move.b d5,d6
+ 5e4:	2406           	move.l d6,d2
+ 5e6:	4842           	swap d2
+ 5e8:	4242           	clr.w d2
+ 5ea:	2042           	movea.l d2,a0
+ 5ec:	2406           	move.l d6,d2
+ 5ee:	e14a           	lsl.w #8,d2
+ 5f0:	4842           	swap d2
+ 5f2:	4242           	clr.w d2
+ 5f4:	e18e           	lsl.l #8,d6
+ 5f6:	2646           	movea.l d6,a3
+ 5f8:	2c08           	move.l a0,d6
+ 5fa:	8486           	or.l d6,d2
+ 5fc:	2c0b           	move.l a3,d6
+ 5fe:	8486           	or.l d6,d2
+ 600:	1407           	move.b d7,d2
+ 602:	2040           	movea.l d0,a0
+ 604:	d1c1           	adda.l d1,a0
+ 606:	72fc           	moveq #-4,d1
+ 608:	c283           	and.l d3,d1
+ 60a:	d288           	add.l a0,d1
 		*ptr++ = val;
- 5c8:	20c2           	move.l d2,(a0)+
- 5ca:	b1c1           	cmpa.l d1,a0
- 5cc:	66fa           	bne.s 5c8 <memset+0x86>
- 5ce:	72fc           	moveq #-4,d1
- 5d0:	c283           	and.l d3,d1
- 5d2:	d5c1           	adda.l d1,a2
- 5d4:	9881           	sub.l d1,d4
- 5d6:	b283           	cmp.l d3,d1
- 5d8:	6730           	beq.s 60a <memset+0xc8>
- 5da:	1485           	move.b d5,(a2)
+ 60c:	20c2           	move.l d2,(a0)+
+ 60e:	b1c1           	cmpa.l d1,a0
+ 610:	66fa           	bne.s 60c <memset+0x86>
+ 612:	72fc           	moveq #-4,d1
+ 614:	c283           	and.l d3,d1
+ 616:	d5c1           	adda.l d1,a2
+ 618:	9881           	sub.l d1,d4
+ 61a:	b283           	cmp.l d3,d1
+ 61c:	6732           	beq.s 650 <memset+0xca>
+ 61e:	1485           	move.b d5,(a2)
 	while(len-- > 0)
- 5dc:	4a84           	tst.l d4
- 5de:	672a           	beq.s 60a <memset+0xc8>
+ 620:	4a84           	tst.l d4
+ 622:	6f2c           	ble.s 650 <memset+0xca>
 		*ptr++ = val;
- 5e0:	1545 0001      	move.b d5,1(a2)
+ 624:	1545 0001      	move.b d5,1(a2)
 	while(len-- > 0)
- 5e4:	7201           	moveq #1,d1
- 5e6:	b284           	cmp.l d4,d1
- 5e8:	6720           	beq.s 60a <memset+0xc8>
+ 628:	7201           	moveq #1,d1
+ 62a:	b284           	cmp.l d4,d1
+ 62c:	6c22           	bge.s 650 <memset+0xca>
 		*ptr++ = val;
- 5ea:	1545 0002      	move.b d5,2(a2)
+ 62e:	1545 0002      	move.b d5,2(a2)
 	while(len-- > 0)
- 5ee:	7402           	moveq #2,d2
- 5f0:	b484           	cmp.l d4,d2
- 5f2:	6716           	beq.s 60a <memset+0xc8>
+ 632:	7402           	moveq #2,d2
+ 634:	b484           	cmp.l d4,d2
+ 636:	6c18           	bge.s 650 <memset+0xca>
 		*ptr++ = val;
- 5f4:	1545 0003      	move.b d5,3(a2)
+ 638:	1545 0003      	move.b d5,3(a2)
 	while(len-- > 0)
- 5f8:	7c03           	moveq #3,d6
- 5fa:	bc84           	cmp.l d4,d6
- 5fc:	670c           	beq.s 60a <memset+0xc8>
+ 63c:	7c03           	moveq #3,d6
+ 63e:	bc84           	cmp.l d4,d6
+ 640:	6c0e           	bge.s 650 <memset+0xca>
 		*ptr++ = val;
- 5fe:	1545 0004      	move.b d5,4(a2)
+ 642:	1545 0004      	move.b d5,4(a2)
 	while(len-- > 0)
- 602:	5984           	subq.l #4,d4
- 604:	6704           	beq.s 60a <memset+0xc8>
+ 646:	7204           	moveq #4,d1
+ 648:	b284           	cmp.l d4,d1
+ 64a:	6c04           	bge.s 650 <memset+0xca>
 		*ptr++ = val;
- 606:	1545 0005      	move.b d5,5(a2)
+ 64c:	1545 0005      	move.b d5,5(a2)
 }
- 60a:	4cdf 0cfc      	movem.l (sp)+,d2-d7/a2-a3
- 60e:	4e75           	rts
+ 650:	4cdf 0cfc      	movem.l (sp)+,d2-d7/a2-a3
+ 654:	4e75           	rts
 
-00000610 <strlen>:
+00000656 <strlen>:
 {
- 610:	206f 0004      	movea.l 4(sp),a0
+ 656:	206f 0004      	movea.l 4(sp),a0
 	unsigned long t=0;
- 614:	7000           	moveq #0,d0
+ 65a:	7000           	moveq #0,d0
 	while(*s++)
- 616:	4a10           	tst.b (a0)
- 618:	6708           	beq.s 622 <strlen+0x12>
+ 65c:	4a10           	tst.b (a0)
+ 65e:	6708           	beq.s 668 <strlen+0x12>
 		t++;
- 61a:	5280           	addq.l #1,d0
+ 660:	5280           	addq.l #1,d0
 	while(*s++)
- 61c:	4a30 0800      	tst.b (0,a0,d0.l)
- 620:	66f8           	bne.s 61a <strlen+0xa>
+ 662:	4a30 0800      	tst.b (0,a0,d0.l)
+ 666:	66f8           	bne.s 660 <strlen+0xa>
 }
- 622:	4e75           	rts
+ 668:	4e75           	rts
+ 66a:	4e71           	nop
 
-00000624 <__mulsi3>:
+0000066c <__mulsi3>:
  
 	.text
 	FUNC(__mulsi3)
 	.globl	SYM (__mulsi3)
 SYM (__mulsi3):
 	movew	sp@(4), d0	/* x0 -> d0 */
- 624:	302f 0004      	move.w 4(sp),d0
+ 66c:	302f 0004      	move.w 4(sp),d0
 	muluw	sp@(10), d0	/* x0*y1 */
- 628:	c0ef 000a      	mulu.w 10(sp),d0
+ 670:	c0ef 000a      	mulu.w 10(sp),d0
 	movew	sp@(6), d1	/* x1 -> d1 */
- 62c:	322f 0006      	move.w 6(sp),d1
+ 674:	322f 0006      	move.w 6(sp),d1
 	muluw	sp@(8), d1	/* x1*y0 */
- 630:	c2ef 0008      	mulu.w 8(sp),d1
+ 678:	c2ef 0008      	mulu.w 8(sp),d1
 	addw	d1, d0
- 634:	d041           	add.w d1,d0
+ 67c:	d041           	add.w d1,d0
 	swap	d0
- 636:	4840           	swap d0
+ 67e:	4840           	swap d0
 	clrw	d0
- 638:	4240           	clr.w d0
+ 680:	4240           	clr.w d0
 	movew	sp@(6), d1	/* x1 -> d1 */
- 63a:	322f 0006      	move.w 6(sp),d1
+ 682:	322f 0006      	move.w 6(sp),d1
 	muluw	sp@(10), d1	/* x1*y1 */
- 63e:	c2ef 000a      	mulu.w 10(sp),d1
+ 686:	c2ef 000a      	mulu.w 10(sp),d1
 	addl	d1, d0
- 642:	d081           	add.l d1,d0
+ 68a:	d081           	add.l d1,d0
 
 	rts
- 644:	4e75           	rts
+ 68c:	4e75           	rts
 
-00000646 <__udivsi3>:
+0000068e <__udivsi3>:
 
 	.text
 	FUNC(__udivsi3)
 	.globl	SYM (__udivsi3)
 SYM (__udivsi3):
 	movel	d2, sp@-
- 646:	2f02           	move.l d2,-(sp)
+ 68e:	2f02           	move.l d2,-(sp)
 	movel	sp@(12), d1	/* d1 = divisor */
- 648:	222f 000c      	move.l 12(sp),d1
+ 690:	222f 000c      	move.l 12(sp),d1
 	movel	sp@(8), d0	/* d0 = dividend */
- 64c:	202f 0008      	move.l 8(sp),d0
+ 694:	202f 0008      	move.l 8(sp),d0
 
 	cmpl	IMM (0x10000), d1 /* divisor >= 2 ^ 16 ?   */
- 650:	0c81 0001 0000 	cmpi.l #65536,d1
+ 698:	0c81 0001 0000 	cmpi.l #65536,d1
 	jcc	3f		/* then try next algorithm */
- 656:	6416           	bcc.s 66e <__udivsi3+0x28>
+ 69e:	6416           	bcc.s 6b6 <__udivsi3+0x28>
 	movel	d0, d2
- 658:	2400           	move.l d0,d2
+ 6a0:	2400           	move.l d0,d2
 	clrw	d2
- 65a:	4242           	clr.w d2
+ 6a2:	4242           	clr.w d2
 	swap	d2
- 65c:	4842           	swap d2
+ 6a4:	4842           	swap d2
 	divu	d1, d2          /* high quotient in lower word */
- 65e:	84c1           	divu.w d1,d2
+ 6a6:	84c1           	divu.w d1,d2
 	movew	d2, d0		/* save high quotient */
- 660:	3002           	move.w d2,d0
+ 6a8:	3002           	move.w d2,d0
 	swap	d0
- 662:	4840           	swap d0
+ 6aa:	4840           	swap d0
 	movew	sp@(10), d2	/* get low dividend + high rest */
- 664:	342f 000a      	move.w 10(sp),d2
+ 6ac:	342f 000a      	move.w 10(sp),d2
 	divu	d1, d2		/* low quotient */
- 668:	84c1           	divu.w d1,d2
+ 6b0:	84c1           	divu.w d1,d2
 	movew	d2, d0
- 66a:	3002           	move.w d2,d0
+ 6b2:	3002           	move.w d2,d0
 	jra	6f
- 66c:	6030           	bra.s 69e <__udivsi3+0x58>
+ 6b4:	6030           	bra.s 6e6 <__udivsi3+0x58>
 
 3:	movel	d1, d2		/* use d2 as divisor backup */
- 66e:	2401           	move.l d1,d2
+ 6b6:	2401           	move.l d1,d2
 4:	lsrl	IMM (1), d1	/* shift divisor */
- 670:	e289           	lsr.l #1,d1
+ 6b8:	e289           	lsr.l #1,d1
 	lsrl	IMM (1), d0	/* shift dividend */
- 672:	e288           	lsr.l #1,d0
+ 6ba:	e288           	lsr.l #1,d0
 	cmpl	IMM (0x10000), d1 /* still divisor >= 2 ^ 16 ?  */
- 674:	0c81 0001 0000 	cmpi.l #65536,d1
+ 6bc:	0c81 0001 0000 	cmpi.l #65536,d1
 	jcc	4b
- 67a:	64f4           	bcc.s 670 <__udivsi3+0x2a>
+ 6c2:	64f4           	bcc.s 6b8 <__udivsi3+0x2a>
 	divu	d1, d0		/* now we have 16-bit divisor */
- 67c:	80c1           	divu.w d1,d0
+ 6c4:	80c1           	divu.w d1,d0
 	andl	IMM (0xffff), d0 /* mask out divisor, ignore remainder */
- 67e:	0280 0000 ffff 	andi.l #65535,d0
+ 6c6:	0280 0000 ffff 	andi.l #65535,d0
 
 /* Multiply the 16-bit tentative quotient with the 32-bit divisor.  Because of
    the operand ranges, this might give a 33-bit product.  If this product is
    greater than the dividend, the tentative quotient was too large. */
 	movel	d2, d1
- 684:	2202           	move.l d2,d1
+ 6cc:	2202           	move.l d2,d1
 	mulu	d0, d1		/* low part, 32 bits */
- 686:	c2c0           	mulu.w d0,d1
+ 6ce:	c2c0           	mulu.w d0,d1
 	swap	d2
- 688:	4842           	swap d2
+ 6d0:	4842           	swap d2
 	mulu	d0, d2		/* high part, at most 17 bits */
- 68a:	c4c0           	mulu.w d0,d2
+ 6d2:	c4c0           	mulu.w d0,d2
 	swap	d2		/* align high part with low part */
- 68c:	4842           	swap d2
+ 6d4:	4842           	swap d2
 	tstw	d2		/* high part 17 bits? */
- 68e:	4a42           	tst.w d2
+ 6d6:	4a42           	tst.w d2
 	jne	5f		/* if 17 bits, quotient was too large */
- 690:	660a           	bne.s 69c <__udivsi3+0x56>
+ 6d8:	660a           	bne.s 6e4 <__udivsi3+0x56>
 	addl	d2, d1		/* add parts */
- 692:	d282           	add.l d2,d1
+ 6da:	d282           	add.l d2,d1
 	jcs	5f		/* if sum is 33 bits, quotient was too large */
- 694:	6506           	bcs.s 69c <__udivsi3+0x56>
+ 6dc:	6506           	bcs.s 6e4 <__udivsi3+0x56>
 	cmpl	sp@(8), d1	/* compare the sum with the dividend */
- 696:	b2af 0008      	cmp.l 8(sp),d1
+ 6de:	b2af 0008      	cmp.l 8(sp),d1
 	jls	6f		/* if sum > dividend, quotient was too large */
- 69a:	6302           	bls.s 69e <__udivsi3+0x58>
+ 6e2:	6302           	bls.s 6e6 <__udivsi3+0x58>
 5:	subql	IMM (1), d0	/* adjust quotient */
- 69c:	5380           	subq.l #1,d0
+ 6e4:	5380           	subq.l #1,d0
 
 6:	movel	sp@+, d2
- 69e:	241f           	move.l (sp)+,d2
+ 6e6:	241f           	move.l (sp)+,d2
 	rts
- 6a0:	4e75           	rts
+ 6e8:	4e75           	rts
 
-000006a2 <__divsi3>:
+000006ea <__divsi3>:
 
 	.text
 	FUNC(__divsi3)
 	.globl	SYM (__divsi3)
 SYM (__divsi3):
 	movel	d2, sp@-
- 6a2:	2f02           	move.l d2,-(sp)
+ 6ea:	2f02           	move.l d2,-(sp)
 
 	moveq	IMM (1), d2	/* sign of result stored in d2 (=1 or =-1) */
- 6a4:	7401           	moveq #1,d2
+ 6ec:	7401           	moveq #1,d2
 	movel	sp@(12), d1	/* d1 = divisor */
- 6a6:	222f 000c      	move.l 12(sp),d1
+ 6ee:	222f 000c      	move.l 12(sp),d1
 	jpl	1f
- 6aa:	6a04           	bpl.s 6b0 <__divsi3+0xe>
+ 6f2:	6a04           	bpl.s 6f8 <__divsi3+0xe>
 	negl	d1
- 6ac:	4481           	neg.l d1
+ 6f4:	4481           	neg.l d1
 	negb	d2		/* change sign because divisor <0  */
- 6ae:	4402           	neg.b d2
+ 6f6:	4402           	neg.b d2
 1:	movel	sp@(8), d0	/* d0 = dividend */
- 6b0:	202f 0008      	move.l 8(sp),d0
+ 6f8:	202f 0008      	move.l 8(sp),d0
 	jpl	2f
- 6b4:	6a04           	bpl.s 6ba <__divsi3+0x18>
+ 6fc:	6a04           	bpl.s 702 <__divsi3+0x18>
 	negl	d0
- 6b6:	4480           	neg.l d0
+ 6fe:	4480           	neg.l d0
 	negb	d2
- 6b8:	4402           	neg.b d2
+ 700:	4402           	neg.b d2
 
 2:	movel	d1, sp@-
- 6ba:	2f01           	move.l d1,-(sp)
+ 702:	2f01           	move.l d1,-(sp)
 	movel	d0, sp@-
- 6bc:	2f00           	move.l d0,-(sp)
+ 704:	2f00           	move.l d0,-(sp)
 	PICCALL	SYM (__udivsi3)	/* divide abs(dividend) by abs(divisor) */
- 6be:	6186           	bsr.s 646 <__udivsi3>
+ 706:	6186           	bsr.s 68e <__udivsi3>
 	addql	IMM (8), sp
- 6c0:	508f           	addq.l #8,sp
+ 708:	508f           	addq.l #8,sp
 
 	tstb	d2
- 6c2:	4a02           	tst.b d2
+ 70a:	4a02           	tst.b d2
 	jpl	3f
- 6c4:	6a02           	bpl.s 6c8 <__divsi3+0x26>
+ 70c:	6a02           	bpl.s 710 <__divsi3+0x26>
 	negl	d0
- 6c6:	4480           	neg.l d0
+ 70e:	4480           	neg.l d0
 
 3:	movel	sp@+, d2
- 6c8:	241f           	move.l (sp)+,d2
+ 710:	241f           	move.l (sp)+,d2
 	rts
- 6ca:	4e75           	rts
+ 712:	4e75           	rts
 
-000006cc <__modsi3>:
+00000714 <__modsi3>:
 
 	.text
 	FUNC(__modsi3)
 	.globl	SYM (__modsi3)
 SYM (__modsi3):
 	movel	sp@(8), d1	/* d1 = divisor */
- 6cc:	222f 0008      	move.l 8(sp),d1
+ 714:	222f 0008      	move.l 8(sp),d1
 	movel	sp@(4), d0	/* d0 = dividend */
- 6d0:	202f 0004      	move.l 4(sp),d0
+ 718:	202f 0004      	move.l 4(sp),d0
 	movel	d1, sp@-
- 6d4:	2f01           	move.l d1,-(sp)
+ 71c:	2f01           	move.l d1,-(sp)
 	movel	d0, sp@-
- 6d6:	2f00           	move.l d0,-(sp)
+ 71e:	2f00           	move.l d0,-(sp)
 	PICCALL	SYM (__divsi3)
- 6d8:	61c8           	bsr.s 6a2 <__divsi3>
+ 720:	61c8           	bsr.s 6ea <__divsi3>
 	addql	IMM (8), sp
- 6da:	508f           	addq.l #8,sp
+ 722:	508f           	addq.l #8,sp
 	movel	sp@(8), d1	/* d1 = divisor */
- 6dc:	222f 0008      	move.l 8(sp),d1
+ 724:	222f 0008      	move.l 8(sp),d1
 	movel	d1, sp@-
- 6e0:	2f01           	move.l d1,-(sp)
+ 728:	2f01           	move.l d1,-(sp)
 	movel	d0, sp@-
- 6e2:	2f00           	move.l d0,-(sp)
+ 72a:	2f00           	move.l d0,-(sp)
 	PICCALL	SYM (__mulsi3)	/* d0 = (a/b)*b */
- 6e4:	6100 ff3e      	bsr.w 624 <__mulsi3>
+ 72c:	6100 ff3e      	bsr.w 66c <__mulsi3>
 	addql	IMM (8), sp
- 6e8:	508f           	addq.l #8,sp
+ 730:	508f           	addq.l #8,sp
 	movel	sp@(4), d1	/* d1 = dividend */
- 6ea:	222f 0004      	move.l 4(sp),d1
+ 732:	222f 0004      	move.l 4(sp),d1
 	subl	d0, d1		/* d1 = a - (a/b)*b */
- 6ee:	9280           	sub.l d0,d1
+ 736:	9280           	sub.l d0,d1
 	movel	d1, d0
- 6f0:	2001           	move.l d1,d0
+ 738:	2001           	move.l d1,d0
 	rts
- 6f2:	4e75           	rts
+ 73a:	4e75           	rts
 
-000006f4 <__umodsi3>:
+0000073c <__umodsi3>:
 
 	.text
 	FUNC(__umodsi3)
 	.globl	SYM (__umodsi3)
 SYM (__umodsi3):
 	movel	sp@(8), d1	/* d1 = divisor */
- 6f4:	222f 0008      	move.l 8(sp),d1
+ 73c:	222f 0008      	move.l 8(sp),d1
 	movel	sp@(4), d0	/* d0 = dividend */
- 6f8:	202f 0004      	move.l 4(sp),d0
+ 740:	202f 0004      	move.l 4(sp),d0
 	movel	d1, sp@-
- 6fc:	2f01           	move.l d1,-(sp)
+ 744:	2f01           	move.l d1,-(sp)
 	movel	d0, sp@-
- 6fe:	2f00           	move.l d0,-(sp)
+ 746:	2f00           	move.l d0,-(sp)
 	PICCALL	SYM (__udivsi3)
- 700:	6100 ff44      	bsr.w 646 <__udivsi3>
+ 748:	6100 ff44      	bsr.w 68e <__udivsi3>
 	addql	IMM (8), sp
- 704:	508f           	addq.l #8,sp
+ 74c:	508f           	addq.l #8,sp
 	movel	sp@(8), d1	/* d1 = divisor */
- 706:	222f 0008      	move.l 8(sp),d1
+ 74e:	222f 0008      	move.l 8(sp),d1
 	movel	d1, sp@-
- 70a:	2f01           	move.l d1,-(sp)
+ 752:	2f01           	move.l d1,-(sp)
 	movel	d0, sp@-
- 70c:	2f00           	move.l d0,-(sp)
+ 754:	2f00           	move.l d0,-(sp)
 	PICCALL	SYM (__mulsi3)	/* d0 = (a/b)*b */
- 70e:	6100 ff14      	bsr.w 624 <__mulsi3>
+ 756:	6100 ff14      	bsr.w 66c <__mulsi3>
 	addql	IMM (8), sp
- 712:	508f           	addq.l #8,sp
+ 75a:	508f           	addq.l #8,sp
 	movel	sp@(4), d1	/* d1 = dividend */
- 714:	222f 0004      	move.l 4(sp),d1
+ 75c:	222f 0004      	move.l 4(sp),d1
 	subl	d0, d1		/* d1 = a - (a/b)*b */
- 718:	9280           	sub.l d0,d1
+ 760:	9280           	sub.l d0,d1
 	movel	d1, d0
- 71a:	2001           	move.l d1,d0
+ 762:	2001           	move.l d1,d0
 	rts
- 71c:	4e75           	rts
+ 764:	4e75           	rts
 
-0000071e <KPutCharX>:
+00000766 <KPutCharX>:
 	.text
 	FUNC(KPutCharX)
 	.globl	SYM (KPutCharX)
 
 SYM(KPutCharX):
     move.l  a6, -(sp)
- 71e:	2f0e           	move.l a6,-(sp)
+ 766:	2f0e           	move.l a6,-(sp)
     move.l  4.w, a6
- 720:	2c78 0004      	movea.l 4 <_start+0x4>,a6
+ 768:	2c78 0004      	movea.l 4 <_start+0x4>,a6
     jsr     -0x204(a6)
- 724:	4eae fdfc      	jsr -516(a6)
+ 76c:	4eae fdfc      	jsr -516(a6)
     movea.l (sp)+, a6
- 728:	2c5f           	movea.l (sp)+,a6
+ 770:	2c5f           	movea.l (sp)+,a6
     rts
- 72a:	4e75           	rts
+ 772:	4e75           	rts
+
+00000774 <PutChar>:
+	.text
+	FUNC(PutChar)
+	.globl	SYM (PutChar)
+
+SYM(PutChar):
+	move.b d0, (a3)+
+ 774:	16c0           	move.b d0,(a3)+
+	rts
+ 776:	4e75           	rts

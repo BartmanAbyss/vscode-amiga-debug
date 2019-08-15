@@ -175,3 +175,11 @@ SYM(KPutCharX):
     jsr     -0x204(a6)
     movea.l (sp)+, a6
     rts
+
+	.text
+	FUNC(PutChar)
+	.globl	SYM (PutChar)
+
+SYM(PutChar):
+	move.b d0, (a3)+
+	rts

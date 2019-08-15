@@ -12,7 +12,7 @@ unsigned long strlen(const char* s)
 }
 
 __attribute__((optimize("no-tree-loop-distribute-patterns"))) 
-void* memset(void *dest, unsigned long val, unsigned long len)
+	void* memset(void *dest, int val, int len)
 {
 	unsigned char *ptr = dest;
 	while(len-- > 0)
@@ -35,14 +35,23 @@ typedef unsigned char *va_list;
 #define va_start(ap, lastarg) ((ap)=(va_list)(&lastarg+1)) 
 
 void KPutCharX(int);
+void PutChar(int);
 
 __attribute__((noinline)) __attribute__((optimize("O1")))
 void KPrintF(const char* fmt, ...)
 {
 	va_list vl;
 	va_start(vl, fmt);
-	RawDoFmt(fmt, vl, KPutCharX, 0);
+    long(*UaeDbgLog)(long mode, const char* string) = (void *)0xf0ff60;
+    if(*((ULONG *)UaeDbgLog)) {
+		char temp[128];
+		RawDoFmt(fmt, vl, PutChar, temp);
+		UaeDbgLog(86, temp);
+    } else {
+		RawDoFmt(fmt, vl, KPutCharX, 0);
+	}
 }
+
 
 int main();
 
