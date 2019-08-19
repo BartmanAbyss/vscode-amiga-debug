@@ -23,7 +23,7 @@ void KPrintF(const char* fmt, ...); // output to debugger
     ); \
     extern const __attribute__((aligned(2))) char incbin_ ## name ## _start[1024*1024]; \
 	extern const void* incbin_ ## name ## _end;\
-    const void* name=&incbin_ ## name ## _start;
+    const void* name = &incbin_ ## name ## _start;
 
 inline unsigned int muluw(unsigned short b,unsigned short c) {
     unsigned short a;

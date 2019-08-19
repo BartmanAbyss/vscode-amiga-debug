@@ -25,6 +25,9 @@
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
 
+## Credits
+Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
+
 ## Acknowledgements
 This extension is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
@@ -52,9 +55,11 @@ This extension contains binaries of:
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
   - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
 
-## Known Issues
+## Caveats
+- sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
 
-* package.json fertigmachen. Configs, settings, ...
+## Known Issues
+* finish package.json fertigmachen. Configs, settings, ...
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
@@ -64,4 +69,3 @@ This extension contains binaries of:
 * not getting handleThreadSelected(), thread ID now set in class
 * sometimes Pause/Resume button doesn't correctly switch to "Pause" icon while amiga program is running
 * step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
-
