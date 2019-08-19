@@ -33,7 +33,7 @@ Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://g
 Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
 
 This extension contains binaries of:
-- modified GCC 8.3.0 (source coming soon)
+- modified [GCC 8.3.0](https://github.com/BartmanAbyss/gcc/tree/amiga-8_3_0)
   - Copyright (C) 2018 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 - modified [GNU Binutils 2.32.51.20190311](https://github.com/BartmanAbyss/binutils-gdb)
@@ -44,7 +44,7 @@ This extension contains binaries of:
   - Copyright (C) 2019 Free Software Foundation, Inc.
   - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
 - modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
-- modified elf2hunk
+- modified elf2hunk (source included)
   - Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.
   - Modified 2018-2019, Bartman/Abyss
 - GNU Make 4.2.1

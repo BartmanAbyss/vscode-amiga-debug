@@ -3,6 +3,9 @@
 	"displayName": "amiga-debug",
 	"publisher": "bartman-abyss",
 	"description": "",
+	"repository": {
+		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
+	},
 	"version": "0.7.0",
 	"engines": {
 		"vscode": "^1.31.0"
