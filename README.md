@@ -59,6 +59,59 @@ This extension contains binaries of:
 ## Caveats
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
 
+## Porting
+Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
+Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
+
+Here are the command-lines used to compile the external tools:
+
+### Binutils
+```
+mkdir -p build-binutils-2.32
+cd build-binutils-2.32
+../binutils-2.32/configure --disable-multilib --disable-nls --enable-lto --prefix=/opt/amiga/8.3.0 --target=m68k-amiga-elf --host=x86_64-w64-mingw32
+make -j6
+sudo make install
+```
+
+### GDB
+```
+cd build-binutils-gdb
+../binutils-gdb/configure --prefix=/opt/amiga/8.3.0 --target=m68k-amiga-elf --disable-werror --host=x86_64-w64-mingw32
+make
+```
+
+### GCC
+```
+mkdir -p build-gcc-8.3.0
+cd build-gcc-8.3.0
+../gcc-8.3.0/configure \
+    --target=m68k-amiga-elf \
+    --disable-nls \
+    --enable-languages=c \
+    --enable-lto \
+    --prefix=/opt/amiga/8.3.0 \
+    --disable-libssp \
+    --disable-gcov \
+    --disable-multilib \
+    --disable-threads \
+    --with-cpu=68000 \
+    --disable-libsanitizer \
+    --disable-libada \
+    --disable-libgomp \
+    --disable-libvtv \
+    --disable-nls \
+    --disable-clocale \
+    --host=x86_64-w64-mingw32
+make all-gcc -j6
+sudo make install-gcc
+```
+
+### elf2hunk
+```
+gcc -o elf2hunk -DDEBUG=0 elf2hunk.c
+```
+
 ## Known Issues
 * finish package.json fertigmachen. Configs, settings, ...
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
