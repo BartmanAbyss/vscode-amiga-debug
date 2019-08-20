@@ -139,6 +139,7 @@ class AmigaDebugExtension {
 				try {
 					fs.mkdirSync(dest);
 				} catch(err) {
+					// don't care...
 				}
 				fs.readdirSync(src).forEach((childItemName) => {
 					copyRecursiveSync(path.join(src, childItemName),
@@ -151,6 +152,11 @@ class AmigaDebugExtension {
 		try {
 			const source = this.extensionPath + '/template';
 			const dest = vscode.workspace.workspaceFolders[0].uri.fsPath;
+			const files = fs.readdirSync(dest);
+			if(files.length) {
+				vscode.window.showErrorMessage(`Failed to init project. Project folder is not empty`);
+				return;
+			}
 			copyRecursiveSync(source, dest);
 		} catch(err) {
 			vscode.window.showErrorMessage(`Failed to init project. ${err.toString()}`);

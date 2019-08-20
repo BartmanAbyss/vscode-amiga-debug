@@ -4,7 +4,7 @@
 
 ## Quick-start
 0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
-1. Create a new project folder with `File > Open Folder...`
+1. Create a new empty project folder with `File > Open Folder...`
 2. From the command palette <kbd>Ctrl+Shift+P</kbd> select `Amiga: Init Project`
 3. Open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
 3. Hit <kbd>F5</kbd> to build and run a minimal sample project
