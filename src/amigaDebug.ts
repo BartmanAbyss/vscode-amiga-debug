@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { BreakpointEvent, ContinuedEvent, DebugSession, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Breakpoint, IBackend, MIError, Variable, VariableObject, Section } from './backend/backend';
+import { Breakpoint, IBackend, MIError, Section, Variable, VariableObject } from './backend/backend';
 import { expandValue, isExpandable } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
@@ -12,9 +12,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
 
-import { SymbolTable } from './backend/symbols';
-import { DisassemblyInstruction, NumberFormat, SymbolInformation, SymbolScope, SourceLineWithDisassembly } from './symbols';
 import { resolve } from 'url';
+import { SymbolTable } from './backend/symbols';
+import { DisassemblyInstruction, NumberFormat, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
@@ -129,7 +129,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const parseCfg = (str: string) => {
 			const out = [];
 			const lines = str.split(/[\r\n]+/g);
-			const re = /^([^=]+)=(.*)$/i
+			const re = /^([^=]+)=(.*)$/i;
 			for(const line of lines) {
 				if(line.startsWith(';'))
 					continue;
@@ -152,7 +152,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		let config = [];
 		try {
 			config = parseCfg(fs.readFileSync(defaultPath, 'utf-8'));
-		} catch(e) {}
+		} catch(e) { /**/ }
 
 		// mandatory
 		config['use_gui'] = 'no';
@@ -256,7 +256,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		winuae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
 
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
-		this.miDebugger.procEnv = { "XDG_CACHE_HOME": gdbPath }; // to shut up GDB about index cache directory
+		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
 
 		//this.miDebugger.printCalls = true;
@@ -384,12 +384,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected readMemoryRequest(response: DebugProtocol.Response, startAddress: number, length: number) {
 		const address = hexFormat(startAddress, 8);
 		this.miDebugger.sendCommand(`data-read-memory-bytes ${address} ${length}`).then((node) => {
-			const startAddress = node.resultRecords.results[0][1][0][0][1];
+			const startAddress2 = node.resultRecords.results[0][1][0][0][1];
 			const endAddress = node.resultRecords.results[0][1][0][2][1];
 			const data = node.resultRecords.results[0][1][0][3][1];
 			const bytes = data.match(/[0-9a-f]{2}/g).map((b) => parseInt(b, 16));
 			response.body = {
-				startAddress,
+				startAddress2,
 				endAddress,
 				bytes
 			};
@@ -618,8 +618,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				if (sourcepath.startsWith('disassembly:/')) {
 					let sidx = 13;
 					if (sourcepath.startsWith('disassembly:///')) { sidx = 15; }
-					const path = sourcepath.substring(sidx, sourcepath.length - 9 /* ".amigaasm" */); // Account for protocol and extension
-					const parts = path.split('::');
+					const path2 = sourcepath.substring(sidx, sourcepath.length - 9 /* ".amigaasm" */); // Account for protocol and extension
+					const parts = path2.split('::');
 					let func: string;
 					let file: string | undefined;
 
@@ -776,7 +776,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				let disassemble = this.forceDisassembly || element.file === undefined;
 				if (!disassemble) {
 					file = normalizePath(element.file);
-					disassemble = !(await this.checkFileExists(file)); 
+					disassemble = !(await this.checkFileExists(file));
 				}
 				if (!disassemble && this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
 					const symbolInfo = this.symbolTable.getFunctionByName(element.function, element.fileName);
@@ -1068,10 +1068,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if (this.fileExistsCache.has(name)) // Check cache
 			return Promise.resolve(this.fileExistsCache.get(name) || false);
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve2, reject) => {
 			fs.exists(name, (exists) => {
 				this.fileExistsCache.set(name, exists);
-				resolve(exists);
+				resolve2(exists);
 			});
 		});
 	}
@@ -1191,9 +1191,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		// 4 mixed source and disassembly
 		// 5 mixed source and disassembly with raw opcodes
 		const parsed = await this.miDebugger.sendCommand(`data-disassemble -s ${hexFormat(startAddress, 8)} -e ${hexFormat(endAddress, 8)} -- 5`);
-		const asm_insn = parsed.resultRecords.results[0][1];
+		const asmInsn = parsed.resultRecords.results[0][1];
 		const lines: SourceLineWithDisassembly[] = [];
-		for(const ri of asm_insn) {
+		for(const ri of asmInsn) {
 			if(ri[0] === "src_and_asm_line") {
 				// mixed source and disassembly
 				const srcAndAsmLine = ri[1];
@@ -1293,7 +1293,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				}
 				globals.push(varObj.toProtocolVariable());
 			} catch (err) {
-				// this occurs usually when the linker renames duplicate static variables when LTO is activated. 
+				// this occurs usually when the linker renames duplicate static variables when LTO is activated.
 				// nothing much we can do about it. If this is important, try to resolve it via raw address
 				// see https://stackoverflow.com/questions/27866865/
 			}
