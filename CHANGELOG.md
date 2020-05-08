@@ -5,6 +5,9 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 0.8.0
 - support C++ (template project updated, just rename main.c to main.cpp)
 
+## 0.7.2
+- `INCBIN` macro was broken. Fixed now and added example code to "new project" template.
+
 ## 0.7.1
 - "Init Amiga Project" now checks if project folder is empty
 

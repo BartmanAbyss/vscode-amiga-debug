@@ -126,12 +126,14 @@ void FreeSystem() {
 inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
 inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
 
-volatile UWORD bgcolor = 0;
+// DEMO - INCBIN
+volatile int frameCounter = 0;
+INCBIN(colors, "colors.bin")
 
 static __attribute__((interrupt)) void interruptHandler() {
 	hw->intreq=(1<<INTB_VERTB); hw->intreq=(1<<INTB_VERTB); //reset vbl req. twice for a4000 bug.
-
-	bgcolor++;
+	// DEMO - increment frameCounter
+	frameCounter++;
 }
 
 #ifdef __cplusplus
@@ -184,7 +186,8 @@ int main() {
 
 	while(!MouseLeft()) {
 		WaitVbl();
-		hw->color[0] = bgcolor;
+		// DEMO - set colors from INCBIN (contains 64 colors)
+		hw->color[0] = ((UWORD*)colors)[frameCounter & 63];
 	}
 
 	// END

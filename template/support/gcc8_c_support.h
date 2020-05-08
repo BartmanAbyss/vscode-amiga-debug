@@ -12,16 +12,16 @@ void KPrintF(const char* fmt, ...); // output to debugger
 
 #define INCBIN(name, file) \
     __asm__(".pushsection .rodata\n" \
-            ".global incbin_" INCBIN_STR(name) "_start\n" \
-            ".type incbin_" INCBIN_STR(name) "_start, @object\n" \
+            ".global incbin_" #name "_start\n" \
+            ".type incbin_" #name "_start, @object\n" \
             ".balign 2\n" \
-            "incbin_" INCBIN_STR(name) "_start:\n" \
+            "incbin_" #name "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
-            ".global incbin_" INCBIN_STR(name) "_end\n" \
-            ".type incbin_" INCBIN_STR(name) "_end, @object\n" \
+            ".global incbin_" #name "_end\n" \
+            ".type incbin_" #name "_end, @object\n" \
             ".balign 1\n" \
-            "incbin_" INCBIN_STR(name) "_end:\n" \
+            "incbin_" #name "_end:\n" \
             ".byte 0\n" \
 			".popsection\n" \
     ); \
