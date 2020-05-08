@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.8.1
+- fix prototypes in string.h
+
 ## 0.8.0
 - support C++ (template project updated, just rename main.c to main.cpp)
 
