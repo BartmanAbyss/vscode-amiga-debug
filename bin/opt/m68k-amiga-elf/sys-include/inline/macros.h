@@ -30,7 +30,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
       : "=r" (_##name##_re), "=r" (_d1), "=r" (_a0), "=r" (_a1)	\
@@ -49,7 +49,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
       : "=r" (_##name##_re), "=r" (_d1), "=r" (_a0), "=r" (_a1)	\
@@ -83,7 +83,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
@@ -104,7 +104,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
@@ -125,7 +125,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
@@ -147,7 +147,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
@@ -185,7 +185,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("exg %%d7,%%a5\n\tjsr %%a6@(-"#offs":W)\n\texg %%d7,%%a5" \
@@ -225,7 +225,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       __asm volatile ("\texg %%d7,%%a5\n\tjsr %%a6@(-"#offs":W)\n\texg %%d7,%%a5" \
@@ -264,7 +264,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -306,7 +306,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
       __asm volatile ("jsr %%a6@(-"#offs":W)"			\
@@ -329,7 +329,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -353,7 +353,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -396,7 +396,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -442,7 +442,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
       volatile register t3 _n3 __asm(#r3) = _##name##_v3;		\
@@ -488,7 +488,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -514,7 +514,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -541,7 +541,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -636,7 +636,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -713,7 +713,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -743,7 +743,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -770,7 +770,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -875,7 +875,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -904,7 +904,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -933,7 +933,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -962,7 +962,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1019,7 +1019,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -1077,7 +1077,7 @@
       volatile register int _d1 __asm("d1");				                \
       volatile register int _a0 __asm("a0");				                \
       volatile register int _a1 __asm("a1");				                \
-      volatile register rt _##name##_re __asm("d0");			            \
+               register rt _##name##_re __asm("d0");			            \
       volatile register void *const _##name##_bn __asm("a6") = (bn);	    \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		        \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		        \
@@ -1108,7 +1108,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -1139,7 +1139,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1236,7 +1236,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1269,7 +1269,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -1335,7 +1335,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1401,7 +1401,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -1468,7 +1468,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1538,7 +1538,7 @@
       volatile register int _d1 __asm("d1");                             \
       volatile register int _a0 __asm("a0");                             \
       volatile register int _a1 __asm("a1");                             \
-      volatile register rt _##name##_re __asm("d0");                     \
+               register rt _##name##_re __asm("d0");                     \
       volatile register void *const _##name##_bn __asm("a6") = (bn);     \
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;                \
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;                \
@@ -1609,7 +1609,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1683,7 +1683,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\
@@ -1723,7 +1723,7 @@
       volatile register int _d1 __asm("d1");				\
       volatile register int _a0 __asm("a0");				\
       volatile register int _a1 __asm("a1");				\
-      volatile register rt _##name##_re __asm("d0");			\
+               register rt _##name##_re __asm("d0");			\
       volatile register void *const _##name##_bn __asm("a6") = (bn);	\
       volatile register t1 _n1 __asm(#r1) = _##name##_v1;		\
       volatile register t2 _n2 __asm(#r2) = _##name##_v2;		\

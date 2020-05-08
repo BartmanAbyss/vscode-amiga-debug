@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "${command:amiga.bin-path}\\gnumake.exe",
             "args": [
-                "-f", "Makefile8mingw", "-j4",
+                "-j4",
             ],
             "options": {
                 "cwd": "${workspaceRoot}",

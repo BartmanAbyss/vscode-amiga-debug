@@ -1,6 +1,9 @@
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-**One-stop Visual Code Extention to compile and debug Amiga C programs compiled by included gcc 8.3.0 in WinUAE.**
+**One-stop Visual Code Extention to compile and debug Amiga C/C++ programs compiled by the bundled gcc 8.3.0 in WinUAE.**
+
+## Overview
+This extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500. It supports C and C++, however no standard library is available.
 
 ## Quick-start
 0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
@@ -63,7 +66,7 @@ This extension contains binaries of:
 Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
 Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
 
-Here are the command-lines used to compile the external tools:
+Here are the command-lines used to compile the external tools (MinGW on WSL):
 
 ### Binutils
 ```
@@ -83,12 +86,15 @@ make
 
 ### GCC
 ```
+cd gcc-8.3.0
+./contrib/download_prerequisites
+cd ..
 mkdir -p build-gcc-8.3.0
 cd build-gcc-8.3.0
-../gcc-8.3.0/configure \
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-8.3.0/configure \
     --target=m68k-amiga-elf \
     --disable-nls \
-    --enable-languages=c \
+    --enable-languages=c,c++ \
     --enable-lto \
     --prefix=/opt/amiga/8.3.0 \
     --disable-libssp \
@@ -102,6 +108,7 @@ cd build-gcc-8.3.0
     --disable-libvtv \
     --disable-nls \
     --disable-clocale \
+    --enable-static \
     --host=x86_64-w64-mingw32
 make all-gcc -j6
 sudo make install-gcc

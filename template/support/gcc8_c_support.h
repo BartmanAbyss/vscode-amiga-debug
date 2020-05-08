@@ -1,8 +1,12 @@
 #pragma once
-void *memcpy (void *, const void *, int);
-void *memmove (void *, const void *, int);
-void *memset (void *, int, int);
-int strlen (const char *);
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+void *memcpy (void *, const void *, unsigned long);
+void *memset (void *, int, unsigned long);
+unsigned long strlen (const char *);
 void warpmode(int on); // bool on/off
 void KPrintF(const char* fmt, ...); // output to debugger
 
@@ -35,3 +39,7 @@ inline int mulsw(short b,short c) {
     asm("mulsw %2,%0":"=d"(a): "0"(c),"d"(b): "cc");
     return a;
 }
+
+#ifdef __cplusplus
+	} // extern "C"
+#endif

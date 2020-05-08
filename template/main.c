@@ -27,7 +27,7 @@ static APTR GetVBR(void) {
 	UWORD getvbr[] = { 0x4e7a, 0x0801, 0x4e73 }; // MOVEC.L VBR,D0 RTE
 
 	if (SysBase->AttnFlags & AFF_68010) 
-		vbr = (APTR)Supervisor((void*)getvbr);
+		vbr = (APTR)Supervisor((ULONG (*)())getvbr);
 
 	return vbr;
 }
@@ -134,6 +134,20 @@ static __attribute__((interrupt)) void interruptHandler() {
 	bgcolor++;
 }
 
+#ifdef __cplusplus
+	class TestClass {
+	public:
+		TestClass(int y) {
+			static int x = 7;
+			i = y + x;
+		}
+
+		int i;
+	};
+
+	TestClass staticClass(4);
+#endif
+
 int main() {
 	SysBase = *((struct ExecBase**)4UL);
 	hw = (struct Custom*)0xdff000;
@@ -148,8 +162,12 @@ int main() {
 	if (!DOSBase)
 		Exit(0);
 
+#ifdef __cplusplus
+	KPrintF("Hello debugger from Amiga: %ld!\n", staticClass.i);
+#else
 	KPrintF("Hello debugger from Amiga!\n");
-	Write(Output(), "Hello console!\n", 15);
+#endif
+	Write(Output(), (APTR)"Hello console!\n", 15);
 	Delay(50);
 
 	warpmode(1);

@@ -7,9 +7,9 @@ Name             Origin             Length             Attributes
 Linker script and memory map
 
 Address of section .text set to 0x0
-LOAD C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
-LOAD C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
-LOAD obj8mingw/gcc8_a_support.o
+LOAD C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
+LOAD C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+LOAD obj/gcc8_a_support.o
                 [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x80000000))
                 0x0000000080000074                . = (SEGMENT_START ("text-segment", 0x80000000) + SIZEOF_HEADERS)
 
@@ -68,31 +68,30 @@ LOAD obj8mingw/gcc8_a_support.o
 .iplt
  *(.iplt)
 
-.text           0x0000000000000000      0x778
+.text           0x0000000000000000      0x800
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  .text.unlikely
-                0x0000000000000000        0x6 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+                0x0000000000000000       0x7a C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
                 0x0000000000000000                _start
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
- .text.startup  0x0000000000000006      0x370 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
-                0x0000000000000006                main
+ .text.startup  0x000000000000007a      0x38a C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+                0x000000000000008a                main
  *(.text.hot .text.hot.*)
  *(.text .stub .text.* .gnu.linkonce.t.*)
- *fill*         0x0000000000000376        0x2 4e714e71
- .text          0x0000000000000378      0x2f2 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
-                0x00000000000004f4                memcpy
-                0x0000000000000586                memset
-                0x0000000000000656                strlen
- *fill*         0x000000000000066a        0x2 4e714e71
- .text          0x000000000000066c      0x10c obj8mingw/gcc8_a_support.o
-                0x000000000000066c                __mulsi3
-                0x000000000000068e                __udivsi3
-                0x00000000000006ea                __divsi3
-                0x0000000000000714                __modsi3
-                0x000000000000073c                __umodsi3
-                0x0000000000000766                KPutCharX
-                0x0000000000000774                PutChar
+ .text          0x0000000000000404      0x2ee C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+                0x000000000000057e                memcpy
+                0x0000000000000610                memset
+                0x00000000000006de                strlen
+ *fill*         0x00000000000006f2        0x2 4e714e71
+ .text          0x00000000000006f4      0x10c obj/gcc8_a_support.o
+                0x00000000000006f4                __mulsi3
+                0x0000000000000716                __udivsi3
+                0x0000000000000772                __divsi3
+                0x000000000000079c                __modsi3
+                0x00000000000007c4                __umodsi3
+                0x00000000000007ee                KPutCharX
+                0x00000000000007fc                PutChar
  *(.gnu.warning)
 
 .fini
@@ -101,9 +100,9 @@ LOAD obj8mingw/gcc8_a_support.o
                 [!provide]                        PROVIDE (_etext = .)
                 [!provide]                        PROVIDE (etext = .)
 
-.rodata         0x0000000000000778       0x91
+.rodata         0x0000000000000800       0x96
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x0000000000000778       0x91 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .rodata        0x0000000000000800       0x96 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
 
 .rodata1
  *(.rodata1)
@@ -124,7 +123,7 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .exception_ranges
  *(.exception_ranges*)
-                0x0000000000002809                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+                0x0000000000002896                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
 
 .eh_frame
  *(.eh_frame)
@@ -139,7 +138,7 @@ LOAD obj8mingw/gcc8_a_support.o
 .exception_ranges
  *(.exception_ranges*)
 
-.tdata          0x0000000000002809        0x0
+.tdata          0x0000000000002896        0x0
                 [!provide]                        PROVIDE (__tdata_start = .)
  *(.tdata .tdata.* .gnu.linkonce.td.*)
 
@@ -147,22 +146,23 @@ LOAD obj8mingw/gcc8_a_support.o
  *(.tbss .tbss.* .gnu.linkonce.tb.*)
  *(.tcommon)
 
-.preinit_array  0x0000000000002809        0x0
-                [!provide]                        PROVIDE (__preinit_array_start = .)
+.preinit_array  0x0000000000002896        0x0
+                0x0000000000002896                PROVIDE (__preinit_array_start = .)
  *(.preinit_array)
-                [!provide]                        PROVIDE (__preinit_array_end = .)
+                0x0000000000002896                PROVIDE (__preinit_array_end = .)
 
-.init_array     0x0000000000002809        0x0
-                [!provide]                        PROVIDE (__init_array_start = .)
+.init_array     0x0000000000002898        0x4
+                0x0000000000002898                PROVIDE (__init_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
-                [!provide]                        PROVIDE (__init_array_end = .)
+ .ctors         0x0000000000002898        0x4 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+                0x000000000000289c                PROVIDE (__init_array_end = .)
 
-.fini_array     0x0000000000002809        0x0
-                [!provide]                        PROVIDE (__fini_array_start = .)
+.fini_array     0x000000000000289c        0x0
+                0x000000000000289c                PROVIDE (__fini_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
-                [!provide]                        PROVIDE (__fini_array_end = .)
+                0x000000000000289c                PROVIDE (__fini_array_end = .)
 
 .ctors
  *crtbegin.o(.ctors)
@@ -187,7 +187,7 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .dynamic
  *(.dynamic)
-                0x0000000000002809                . = DATA_SEGMENT_RELRO_END (., 0x0)
+                0x000000000000289c                . = DATA_SEGMENT_RELRO_END (., 0x0)
 
 .got
  *(.got.plt)
@@ -195,31 +195,34 @@ LOAD obj8mingw/gcc8_a_support.o
  *(.got)
  *(.igot)
 
-.data           0x000000000000280c        0x0
+.data           0x000000000000289c        0x4
  *(.data .data.* .gnu.linkonce.d.*)
- .data          0x000000000000280c        0x0 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .data          0x000000000000280c        0x0 obj8mingw/gcc8_a_support.o
+ .data          0x000000000000289c        0x0 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .gnu.linkonce.d._ZZN9TestClassC4EiE1x
+                0x000000000000289c        0x4 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+                0x000000000000289c                _ZZN9TestClassC4EiE1x
+ .data          0x00000000000028a0        0x0 obj/gcc8_a_support.o
 
 .data1
  *(.data1)
-                0x000000000000280c                _edata = .
+                0x00000000000028a0                _edata = .
                 [!provide]                        PROVIDE (edata = .)
-                0x000000000000280c                . = .
-                0x000000000000280c                __bss_start = .
+                0x00000000000028a0                . = .
+                0x00000000000028a0                __bss_start = .
 
-.bss            0x000000000000280c       0x24
+.bss            0x00000000000028a0       0x28
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
- .bss           0x000000000000280c       0x24 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .bss           0x0000000000002830        0x0 obj8mingw/gcc8_a_support.o
+ .bss           0x00000000000028a0       0x28 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .bss           0x00000000000028c8        0x0 obj/gcc8_a_support.o
  *(COMMON)
-                0x0000000000002830                . = ALIGN ((. != 0x0)?0x4:0x1)
-                0x0000000000002830                . = ALIGN (0x4)
-                0x0000000000002830                . = SEGMENT_START ("ldata-segment", .)
-                0x0000000000002830                . = ALIGN (0x4)
-                0x0000000000002830                _end = .
+                0x00000000000028c8                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x00000000000028c8                . = ALIGN (0x4)
+                0x00000000000028c8                . = SEGMENT_START ("ldata-segment", .)
+                0x00000000000028c8                . = ALIGN (0x4)
+                0x00000000000028c8                _end = .
                 [!provide]                        PROVIDE (end = .)
-                0x0000000000002830                . = DATA_SEGMENT_END (.)
+                0x00000000000028c8                . = DATA_SEGMENT_END (.)
 
 .stab
  *(.stab)
@@ -241,9 +244,9 @@ LOAD obj8mingw/gcc8_a_support.o
 
 .comment        0x0000000000000000       0x11
  *(.comment)
- .comment       0x0000000000000000       0x11 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
+ .comment       0x0000000000000000       0x11 C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
                                          0x24 (size before relaxing)
- .comment       0x0000000000000011       0x12 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .comment       0x0000000000000011       0x12 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
 
 .gnu.build.attributes
  *(.gnu.build.attributes .gnu.build.attributes.*)
@@ -260,49 +263,49 @@ LOAD obj8mingw/gcc8_a_support.o
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x0000000000000000       0x50
+.debug_aranges  0x0000000000000000       0x58
  *(.debug_aranges)
  .debug_aranges
-                0x0000000000000000       0x30 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+                0x0000000000000000       0x38 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
  .debug_aranges
-                0x0000000000000030       0x20 obj8mingw/gcc8_a_support.o
+                0x0000000000000038       0x20 obj/gcc8_a_support.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x0000000000000000     0x51f0
+.debug_info     0x0000000000000000     0x558f
  *(.debug_info .gnu.linkonce.wi.*)
- .debug_info    0x0000000000000000     0x42e7 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
-                0x0000000000000000                main.c.e5dffb8b
-                0x0000000000003d69                gcc8_c_support.c.da39cb95
- .debug_info    0x00000000000042e7      0xee3 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .debug_info    0x00000000000051ca       0x26 obj8mingw/gcc8_a_support.o
+ .debug_info    0x0000000000000000     0x45a0 C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
+                0x0000000000000000                main.cpp.71385280
+                0x0000000000003f46                gcc8_c_support.c.fc12646f
+ .debug_info    0x00000000000045a0      0xfc9 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .debug_info    0x0000000000005569       0x26 obj/gcc8_a_support.o
 
-.debug_abbrev   0x0000000000000000      0x4ad
+.debug_abbrev   0x0000000000000000      0x563
  *(.debug_abbrev)
- .debug_abbrev  0x0000000000000000      0x336 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
- .debug_abbrev  0x0000000000000336      0x163 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .debug_abbrev  0x0000000000000499       0x14 obj8mingw/gcc8_a_support.o
+ .debug_abbrev  0x0000000000000000      0x3d9 C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
+ .debug_abbrev  0x00000000000003d9      0x176 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .debug_abbrev  0x000000000000054f       0x14 obj/gcc8_a_support.o
 
-.debug_line     0x0000000000000000     0x1d46
+.debug_line     0x0000000000000000     0x1f9b
  *(.debug_line .debug_line.* .debug_line_end)
- .debug_line    0x0000000000000000      0x5b5 C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
- .debug_line    0x00000000000005b5     0x16a2 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .debug_line    0x0000000000001c57       0xef obj8mingw/gcc8_a_support.o
+ .debug_line    0x0000000000000000      0x5c2 C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
+ .debug_line    0x00000000000005c2     0x18e9 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .debug_line    0x0000000000001eab       0xf0 obj/gcc8_a_support.o
 
-.debug_frame    0x0000000000000000      0x230
+.debug_frame    0x0000000000000000      0x258
  *(.debug_frame)
- .debug_frame   0x0000000000000000      0x230 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_frame   0x0000000000000000      0x258 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
 
-.debug_str      0x0000000000000000      0x217
+.debug_str      0x0000000000000000      0x223
  *(.debug_str)
- .debug_str     0x0000000000000000      0x16d C:\Users\Chuck\AppData\Local\Temp\cc1HC4b4debugobj
- .debug_str     0x000000000000016d        0x0 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
- .debug_str     0x000000000000016d       0xaa obj8mingw/gcc8_a_support.o
+ .debug_str     0x0000000000000000      0x177 C:\Users\bwodok\AppData\Local\Temp\ccLIMeYFdebugobj
+ .debug_str     0x0000000000000177        0x0 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
+ .debug_str     0x0000000000000177       0xac obj/gcc8_a_support.o
 
-.debug_loc      0x0000000000000000      0x674
+.debug_loc      0x0000000000000000      0x72d
  *(.debug_loc)
- .debug_loc     0x0000000000000000      0x674 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_loc     0x0000000000000000      0x72d C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -322,9 +325,9 @@ LOAD obj8mingw/gcc8_a_support.o
 .debug_pubtypes
  *(.debug_pubtypes)
 
-.debug_ranges   0x0000000000000000      0x118
+.debug_ranges   0x0000000000000000      0x168
  *(.debug_ranges)
- .debug_ranges  0x0000000000000000      0x118 C:\Users\Chuck\AppData\Local\Temp\cch7KS1M.ltrans0.ltrans.o
+ .debug_ranges  0x0000000000000000      0x168 C:\Users\bwodok\AppData\Local\Temp\cc5hccFT.ltrans0.ltrans.o
 
 .debug_macro
  *(.debug_macro)

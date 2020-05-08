@@ -13,6 +13,7 @@ bin/configuration.*
 bin/*.uae
 bin/*.ini
 template/obj8mingw
+template/obj
 template/*.elf
 template/a.mingw.*
 template/.vscode/settings.json

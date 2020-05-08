@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.8.0
+- support C++ (template project updated, just rename main.c to main.cpp)
+
 ## 0.7.1
 - "Init Amiga Project" now checks if project folder is empty
 
