@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "ELFEDIT 1"
-.TH ELFEDIT 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH ELFEDIT 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-elfedit \- Update ELF header and program property of ELF files.
+elfedit \- update ELF header and program property of ELF files
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 elfedit [\fB\-\-input\-mach=\fR\fImachine\fR]
@@ -165,30 +165,30 @@ equivalent. At least one of the \fB\-\-output\-mach\fR,
 \&\fB\-\-output\-type\fR, \fB\-\-output\-osabi\fR,
 \&\fB\-\-enable\-x86\-feature\fR and \fB\-\-disable\-x86\-feature\fR
 options must be given.
-.IP "\fB\-\-input\-mach=\fR\fImachine\fR\fB \fR" 4
-.IX Item "--input-mach=machine "
+.IP "\fB\-\-input\-mach=\fR\fImachine\fR" 4
+.IX Item "--input-mach=machine"
 Set the matching input \s-1ELF\s0 machine type to \fImachine\fR.  If
 \&\fB\-\-input\-mach\fR isn't specified, it will match any \s-1ELF\s0
 machine types.
 .Sp
 The supported \s-1ELF\s0 machine types are, \fIi386\fR, \fI\s-1IAMCU\s0\fR, \fIL1OM\fR,
 \&\fIK1OM\fR and \fIx86\-64\fR.
-.IP "\fB\-\-output\-mach=\fR\fImachine\fR\fB \fR" 4
-.IX Item "--output-mach=machine "
+.IP "\fB\-\-output\-mach=\fR\fImachine\fR" 4
+.IX Item "--output-mach=machine"
 Change the \s-1ELF\s0 machine type in the \s-1ELF\s0 header to \fImachine\fR.  The
 supported \s-1ELF\s0 machine types are the same as \fB\-\-input\-mach\fR.
-.IP "\fB\-\-input\-type=\fR\fItype\fR\fB \fR" 4
-.IX Item "--input-type=type "
+.IP "\fB\-\-input\-type=\fR\fItype\fR" 4
+.IX Item "--input-type=type"
 Set the matching input \s-1ELF\s0 file type to \fItype\fR.  If
 \&\fB\-\-input\-type\fR isn't specified, it will match any \s-1ELF\s0 file types.
 .Sp
 The supported \s-1ELF\s0 file types are, \fIrel\fR, \fIexec\fR and \fIdyn\fR.
-.IP "\fB\-\-output\-type=\fR\fItype\fR\fB \fR" 4
-.IX Item "--output-type=type "
+.IP "\fB\-\-output\-type=\fR\fItype\fR" 4
+.IX Item "--output-type=type"
 Change the \s-1ELF\s0 file type in the \s-1ELF\s0 header to \fItype\fR.  The
 supported \s-1ELF\s0 types are the same as \fB\-\-input\-type\fR.
-.IP "\fB\-\-input\-osabi=\fR\fIosabi\fR\fB \fR" 4
-.IX Item "--input-osabi=osabi "
+.IP "\fB\-\-input\-osabi=\fR\fIosabi\fR" 4
+.IX Item "--input-osabi=osabi"
 Set the matching input \s-1ELF\s0 file \s-1OSABI\s0 to \fIosabi\fR.  If
 \&\fB\-\-input\-osabi\fR isn't specified, it will match any \s-1ELF\s0 OSABIs.
 .Sp
@@ -197,17 +197,17 @@ The supported \s-1ELF\s0 OSABIs are, \fInone\fR, \fI\s-1HPUX\s0\fR, \fINetBSD\fR
 \&\fISolaris\fR, \fI\s-1AIX\s0\fR, \fIIrix\fR,
 \&\fIFreeBSD\fR, \fI\s-1TRU64\s0\fR, \fIModesto\fR, \fIOpenBSD\fR, \fIOpenVMS\fR,
 \&\fI\s-1NSK\s0\fR, \fI\s-1AROS\s0\fR and \fIFenixOS\fR.
-.IP "\fB\-\-output\-osabi=\fR\fIosabi\fR\fB \fR" 4
-.IX Item "--output-osabi=osabi "
+.IP "\fB\-\-output\-osabi=\fR\fIosabi\fR" 4
+.IX Item "--output-osabi=osabi"
 Change the \s-1ELF OSABI\s0 in the \s-1ELF\s0 header to \fIosabi\fR.  The
 supported \s-1ELF OSABI\s0 are the same as \fB\-\-input\-osabi\fR.
-.IP "\fB\-\-enable\-x86\-feature=\fR\fIfeature\fR\fB \fR" 4
-.IX Item "--enable-x86-feature=feature "
+.IP "\fB\-\-enable\-x86\-feature=\fR\fIfeature\fR" 4
+.IX Item "--enable-x86-feature=feature"
 Set the \fIfeature\fR bit in program property in \fIexec\fR or \fIdyn\fR
 \&\s-1ELF\s0 files with machine types of \fIi386\fR or \fIx86\-64\fR.  The
 supported features are, \fIibt\fR and \fIshstk\fR.
-.IP "\fB\-\-disable\-x86\-feature=\fR\fIfeature\fR\fB \fR" 4
-.IX Item "--disable-x86-feature=feature "
+.IP "\fB\-\-disable\-x86\-feature=\fR\fIfeature\fR" 4
+.IX Item "--disable-x86-feature=feature"
 Clear the \fIfeature\fR bit in program property in \fIexec\fR or
 \&\fIdyn\fR \s-1ELF\s0 files with machine types of \fIi386\fR or \fIx86\-64\fR.
 The supported features are the same as \fB\-\-enable\-x86\-feature\fR.
@@ -246,7 +246,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 \&\fIreadelf\fR\|(1), and the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

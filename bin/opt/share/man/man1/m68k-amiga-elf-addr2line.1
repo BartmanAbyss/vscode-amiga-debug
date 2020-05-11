@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "ADDR2LINE 1"
-.TH ADDR2LINE 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH ADDR2LINE 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-addr2line \- convert addresses into file names and line numbers.
+addr2line \- convert addresses into file names and line numbers
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 addr2line [\fB\-a\fR|\fB\-\-addresses\fR]
@@ -216,11 +216,11 @@ equivalent.
 Display the address before the function name, file and line number
 information.  The address is printed with a \fB0x\fR prefix to easily
 identify it.
-.IP "\fB\-b\fR \fIbfdname\fR\fB \fR" 4
-.IX Item "-b bfdname "
+.IP "\fB\-b\fR \fIbfdname\fR" 4
+.IX Item "-b bfdname"
 .PD 0
-.IP "\fB\-\-target=\fR\fIbfdname\fR\fB \fR" 4
-.IX Item "--target=bfdname "
+.IP "\fB\-\-target=\fR\fIbfdname\fR" 4
+.IX Item "--target=bfdname"
 .PD
 Specify that the object-code format for the object files is
 \&\fIbfdname\fR.
@@ -235,11 +235,11 @@ Besides removing any initial underscore prepended by the system, this
 makes \*(C+ function names readable.  Different compilers have different
 mangling styles. The optional demangling style argument can be used to
 choose an appropriate demangling style for your compiler.
-.IP "\fB\-e\fR \fIfilename\fR\fB \fR" 4
-.IX Item "-e filename "
+.IP "\fB\-e\fR \fIfilename\fR" 4
+.IX Item "-e filename"
 .PD 0
-.IP "\fB\-\-exe=\fR\fIfilename\fR\fB \fR" 4
-.IX Item "--exe=filename "
+.IP "\fB\-\-exe=\fR\fIfilename\fR" 4
+.IX Item "--exe=filename"
 .PD
 Specify the name of the executable for which addresses should be
 translated.  The default file is \fIa.out\fR.
@@ -335,7 +335,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

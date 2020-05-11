@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "READELF 1"
-.TH READELF 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH READELF 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-readelf \- Displays information about ELF files.
+readelf \- display information about ELF files
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 readelf [\fB\-a\fR|\fB\-\-all\fR]
@@ -154,6 +154,7 @@ readelf [\fB\-a\fR|\fB\-\-all\fR]
         [\fB\-V\fR|\fB\-\-version\-info\fR]
         [\fB\-A\fR|\fB\-\-arch\-specific\fR]
         [\fB\-D\fR|\fB\-\-use\-dynamic\fR]
+        [\fB\-L\fR|\fB\-\-lint\fR|\fB\-\-enable\-checks\fR]
         [\fB\-x\fR <number or name>|\fB\-\-hex\-dump=\fR<number or name>]
         [\fB\-p\fR <number or name>|\fB\-\-string\-dump=\fR<number or name>]
         [\fB\-R\fR <number or name>|\fB\-\-relocated\-dump=\fR<number or name>]
@@ -163,6 +164,10 @@ readelf [\fB\-a\fR|\fB\-\-all\fR]
          \fB\-\-debug\-dump\fR[=rawline,=decodedline,=info,=abbrev,=pubnames,=aranges,=macro,=frames,=frames\-interp,=str,=loc,=Ranges,=pubtypes,=trace_info,=trace_abbrev,=trace_aranges,=gdb_index,=addr,=cu_index,=links,=follow\-links]]
         [\fB\-\-dwarf\-depth=\fR\fIn\fR]
         [\fB\-\-dwarf\-start=\fR\fIn\fR]
+        [\fB\-\-ctf=\fR\fIsection\fR]
+        [\fB\-\-ctf\-parent=\fR\fIsection\fR]
+        [\fB\-\-ctf\-symbols=\fR\fIsection\fR]
+        [\fB\-\-ctf\-strings=\fR\fIsection\fR]
         [\fB\-I\fR|\fB\-\-histogram\fR]
         [\fB\-v\fR|\fB\-\-version\fR]
         [\fB\-W\fR|\fB\-\-wide\fR]
@@ -333,6 +338,19 @@ symbol table sections.
 .Sp
 When displaying relocations, this option makes \fBreadelf\fR
 display the dynamic relocations rather than the static relocations.
+.IP "\fB\-L\fR" 4
+.IX Item "-L"
+.PD 0
+.IP "\fB\-\-lint\fR" 4
+.IX Item "--lint"
+.IP "\fB\-\-enable\-checks\fR" 4
+.IX Item "--enable-checks"
+.PD
+Displays warning messages about possible problems with the file(s)
+being examined.  If used on its own then all of the contents of the
+file(s) will be examined.  If used with one of the dumping options
+then the warning messages will only be produced for the things being
+displayed.
 .IP "\fB\-x <number or name>\fR" 4
 .IX Item "-x <number or name>"
 .PD 0
@@ -630,6 +648,27 @@ information and all DIEs before the \s-1DIE\s0 numbered \fIn\fR.  Only
 siblings and children of the specified \s-1DIE\s0 will be printed.
 .Sp
 This can be used in conjunction with \fB\-\-dwarf\-depth\fR.
+.IP "\fB\-\-ctf=\fR\fIsection\fR" 4
+.IX Item "--ctf=section"
+Display the contents of the specified \s-1CTF\s0 section.  \s-1CTF\s0 sections themselves
+contain many subsections, all of which are displayed in order.
+.IP "\fB\-\-ctf\-parent=\fR\fIsection\fR" 4
+.IX Item "--ctf-parent=section"
+Specify the name of another section from which the \s-1CTF\s0 dictionary can inherit
+types.  (If none is specified, we assume the \s-1CTF\s0 dictionary inherits types
+from the default-named member of the archive contained within this section.)
+.IP "\fB\-\-ctf\-symbols=\fR\fIsection\fR" 4
+.IX Item "--ctf-symbols=section"
+.PD 0
+.IP "\fB\-\-ctf\-strings=\fR\fIsection\fR" 4
+.IX Item "--ctf-strings=section"
+.PD
+Specify the name of another section from which the \s-1CTF\s0 file can inherit
+strings and symbols.  By default, the \f(CW\*(C`.symtab\*(C'\fR and its linked
+string table are used.
+.Sp
+If either of \fB\-\-ctf\-symbols\fR or \fB\-\-ctf\-strings\fR is specified, the
+other must be specified as well.
 .IP "\fB\-I\fR" 4
 .IX Item "-I"
 .PD 0
@@ -681,7 +720,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 \&\fIobjdump\fR\|(1), and the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

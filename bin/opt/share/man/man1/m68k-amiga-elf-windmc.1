@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "WINDMC 1"
-.TH WINDMC 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH WINDMC 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-windmc \- generates Windows message resources.
+windmc \- generates Windows message resources
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 windmc [options] input-file
@@ -144,22 +144,22 @@ windmc [options] input-file
 \&\fBwindmc\fR reads message definitions from an input file (.mc) and
 translate them into a set of output files.  The output files may be of
 four kinds:
-.ie n .IP """h """ 4
-.el .IP "\f(CWh \fR" 4
-.IX Item "h "
+.ie n .IP """h""" 4
+.el .IP "\f(CWh\fR" 4
+.IX Item "h"
 A C header file containing the message definitions.
-.ie n .IP """rc """ 4
-.el .IP "\f(CWrc \fR" 4
-.IX Item "rc "
+.ie n .IP """rc""" 4
+.el .IP "\f(CWrc\fR" 4
+.IX Item "rc"
 A resource file compilable by the \fBwindres\fR tool.
-.ie n .IP """bin """ 4
-.el .IP "\f(CWbin \fR" 4
-.IX Item "bin "
+.ie n .IP """bin""" 4
+.el .IP "\f(CWbin\fR" 4
+.IX Item "bin"
 One or more binary files containing the resource data for a specific
 message language.
-.ie n .IP """dbg """ 4
-.el .IP "\f(CWdbg \fR" 4
-.IX Item "dbg "
+.ie n .IP """dbg""" 4
+.el .IP "\f(CWdbg\fR" 4
+.IX Item "dbg"
 A C include file that maps message id's to their symbolic name.
 .PP
 The exact description of these different formats is available in
@@ -201,11 +201,11 @@ basename of the source file.
 .IX Item "--customflag"
 .PD
 Sets the customer bit in all message id's.
-.IP "\fB\-C\fR \fIcodepage\fR\fB \fR" 4
-.IX Item "-C codepage "
+.IP "\fB\-C\fR \fIcodepage\fR" 4
+.IX Item "-C codepage"
 .PD 0
-.IP "\fB\-\-codepage_in\fR \fIcodepage\fR\fB \fR" 4
-.IX Item "--codepage_in codepage "
+.IP "\fB\-\-codepage_in\fR \fIcodepage\fR" 4
+.IX Item "--codepage_in codepage"
 .PD
 Sets the default codepage to be used to convert input file to \s-1UTF16.\s0 The
 default is ocdepage 1252.
@@ -217,28 +217,28 @@ default is ocdepage 1252.
 .PD
 Outputs the constants in the header file in decimal. Default is using
 hexadecimal output.
-.IP "\fB\-e\fR \fIext\fR\fB \fR" 4
-.IX Item "-e ext "
+.IP "\fB\-e\fR \fIext\fR" 4
+.IX Item "-e ext"
 .PD 0
-.IP "\fB\-\-extension\fR \fIext\fR\fB \fR" 4
-.IX Item "--extension ext "
+.IP "\fB\-\-extension\fR \fIext\fR" 4
+.IX Item "--extension ext"
 .PD
 The extension for the header file. The default is .h extension.
-.IP "\fB\-F\fR \fItarget\fR\fB \fR" 4
-.IX Item "-F target "
+.IP "\fB\-F\fR \fItarget\fR" 4
+.IX Item "-F target"
 .PD 0
-.IP "\fB\-\-target\fR \fItarget\fR\fB \fR" 4
-.IX Item "--target target "
+.IP "\fB\-\-target\fR \fItarget\fR" 4
+.IX Item "--target target"
 .PD
 Specify the \s-1BFD\s0 format to use for a bin file as output.  This
 is a \s-1BFD\s0 target name; you can use the \fB\-\-help\fR option to see a list
 of supported targets.  Normally \fBwindmc\fR will use the default
 format, which is the first one listed by the \fB\-\-help\fR option.
-.IP "\fB\-h\fR \fIpath\fR\fB \fR" 4
-.IX Item "-h path "
+.IP "\fB\-h\fR \fIpath\fR" 4
+.IX Item "-h path"
 .PD 0
-.IP "\fB\-\-headerdir\fR \fIpath\fR\fB \fR" 4
-.IX Item "--headerdir path "
+.IP "\fB\-\-headerdir\fR \fIpath\fR" 4
+.IX Item "--headerdir path"
 .PD
 The target directory of the generated header file. The default is the
 current directory.
@@ -249,11 +249,11 @@ current directory.
 .IX Item "--help"
 .PD
 Displays a list of command-line options and then exits.
-.IP "\fB\-m\fR \fIcharacters\fR\fB \fR" 4
-.IX Item "-m characters "
+.IP "\fB\-m\fR \fIcharacters\fR" 4
+.IX Item "-m characters"
 .PD 0
-.IP "\fB\-\-maxlength\fR \fIcharacters\fR\fB \fR" 4
-.IX Item "--maxlength characters "
+.IP "\fB\-\-maxlength\fR \fIcharacters\fR" 4
+.IX Item "--maxlength characters"
 .PD
 Instructs \fBwindmc\fR to generate a warning if the length
 of any message exceeds the number specified.
@@ -274,19 +274,19 @@ terminated by \s-1CR/LF.\s0
 Not yet implemented. Instructs \f(CW\*(C`windmc\*(C'\fR to generate an \s-1OLE2\s0 header
 file, using \s-1HRESULT\s0 definitions. Status codes are used if the flag is not
 specified.
-.IP "\fB\-O\fR \fIcodepage\fR\fB \fR" 4
-.IX Item "-O codepage "
+.IP "\fB\-O\fR \fIcodepage\fR" 4
+.IX Item "-O codepage"
 .PD 0
-.IP "\fB\-\-codepage_out\fR \fIcodepage\fR\fB \fR" 4
-.IX Item "--codepage_out codepage "
+.IP "\fB\-\-codepage_out\fR \fIcodepage\fR" 4
+.IX Item "--codepage_out codepage"
 .PD
 Sets the default codepage to be used to output text files. The default
 is ocdepage 1252.
-.IP "\fB\-r\fR \fIpath\fR\fB \fR" 4
-.IX Item "-r path "
+.IP "\fB\-r\fR \fIpath\fR" 4
+.IX Item "-r path"
 .PD 0
-.IP "\fB\-\-rcdir\fR \fIpath\fR\fB \fR" 4
-.IX Item "--rcdir path "
+.IP "\fB\-\-rcdir\fR \fIpath\fR" 4
+.IX Item "--rcdir path"
 .PD
 The target directory for the generated \f(CW\*(C`rc\*(C'\fR script and the generated
 \&\f(CW\*(C`bin\*(C'\fR files that the resource compiler script includes. The default
@@ -320,11 +320,11 @@ Enable verbose mode.
 .IX Item "--version"
 .PD
 Prints the version number for \fBwindmc\fR.
-.IP "\fB\-x\fR \fIpath\fR\fB \fR" 4
-.IX Item "-x path "
+.IP "\fB\-x\fR \fIpath\fR" 4
+.IX Item "-x path"
 .PD 0
-.IP "\fB\-\-xdgb\fR \fIpath\fR\fB \fR" 4
-.IX Item "--xdgb path "
+.IP "\fB\-\-xdgb\fR \fIpath\fR" 4
+.IX Item "--xdgb path"
 .PD
 The path of the \f(CW\*(C`dbg\*(C'\fR C include file that maps message id's to the
 symbolic name. No such file is generated without specifying the switch.
@@ -346,7 +346,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

@@ -1,5 +1,5 @@
-/* Script for ld -r: link without relocation */
-/* Copyright (C) 2014-2019 Free Software Foundation, Inc.
+/* Script for -r */
+/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
    Copying and distribution of this script, with or without modification,
    are permitted in any medium without royalty provided the copyright
    notice and this notice are preserved.  */
@@ -50,7 +50,7 @@ SECTIONS
   .text         0 :
   {
     *(.text .stub)
-    /* .gnu.warning sections are handled specially by elf32.em.  */
+    /* .gnu.warning sections are handled specially by elf.em.  */
     *(.gnu.warning)
   } =0x4e714e71
   .fini         0 :

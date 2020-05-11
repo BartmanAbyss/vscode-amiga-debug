@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "AS 1"
-.TH AS 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH AS 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -142,7 +142,8 @@ as [\fB\-a\fR[\fBcdghlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
  [\fB\-\-compress\-debug\-sections\fR]  [\fB\-\-nocompress\-debug\-sections\fR]
  [\fB\-\-debug\-prefix\-map\fR \fIold\fR=\fInew\fR]
  [\fB\-\-defsym\fR \fIsym\fR=\fIval\fR] [\fB\-f\fR] [\fB\-g\fR] [\fB\-\-gstabs\fR]
- [\fB\-\-gstabs+\fR] [\fB\-\-gdwarf\-2\fR] [\fB\-\-gdwarf\-sections\fR]
+ [\fB\-\-gstabs+\fR] [\fB\-\-gdwarf\-<N>\fR] [\fB\-\-gdwarf\-sections\fR]
+ [\fB\-\-gdwarf\-cie\-version\fR=\fI\s-1VERSION\s0\fR]
  [\fB\-\-help\fR] [\fB\-I\fR \fIdir\fR] [\fB\-J\fR]
  [\fB\-K\fR] [\fB\-L\fR] [\fB\-\-listing\-lhs\-width\fR=\fI\s-1NUM\s0\fR]
  [\fB\-\-listing\-lhs\-width2\fR=\fI\s-1NUM\s0\fR] [\fB\-\-listing\-rhs\-width\fR=\fI\s-1NUM\s0\fR]
@@ -196,6 +197,9 @@ as [\fB\-a\fR[\fBcdghlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
    [\fB\-mfdpic\fR]
    [\fB\-mno\-fdpic\fR]
    [\fB\-mnopic\fR]
+.PP
+\&\fITarget \s-1BPF\s0 options:\fR
+   [\fB\-EL\fR] [\fB\-EB\fR]
 .PP
 \&\fITarget \s-1CRIS\s0 options:\fR
    [\fB\-\-underscore\fR | \fB\-\-no\-underscore\fR]
@@ -437,13 +441,12 @@ as [\fB\-a\fR[\fBcdghlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
  [\fB\-\-[no\-]trampolines\fR]
 .PP
 \&\fITarget Z80 options:\fR
-  [\fB\-z80\fR] [\fB\-r800\fR]
-  [ \fB\-ignore\-undocumented\-instructions\fR] [\fB\-Wnud\fR]
-  [ \fB\-ignore\-unportable\-instructions\fR] [\fB\-Wnup\fR]
-  [ \fB\-warn\-undocumented\-instructions\fR] [\fB\-Wud\fR]
-  [ \fB\-warn\-unportable\-instructions\fR] [\fB\-Wup\fR]
-  [ \fB\-forbid\-undocumented\-instructions\fR] [\fB\-Fud\fR]
-  [ \fB\-forbid\-unportable\-instructions\fR] [\fB\-Fup\fR]
+  [\fB\-march=\fR\fI\s-1CPU\s0\fR\fI[\-EXT]\fR\fI[+EXT]\fR]
+  [\fB\-local\-prefix=\fR\fI\s-1PREFIX\s0\fR]
+  [\fB\-colonless\fR]
+  [\fB\-sdcc\fR]
+  [\fB\-fp\-s=\fR\fI\s-1FORMAT\s0\fR]
+  [\fB\-fp\-d=\fR\fI\s-1FORMAT\s0\fR]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 \&\s-1GNU\s0 \fBas\fR is really a family of assemblers.
@@ -638,6 +641,27 @@ the location of the current working directory at assembling time.
 Generate \s-1DWARF2\s0 debugging information for each assembler line.  This
 may help debugging assembler code, if the debugger can handle it.  Note\-\-\-this
 option is only supported by some targets, not all of them.
+.IP "\fB\-\-gdwarf\-3\fR" 4
+.IX Item "--gdwarf-3"
+This option is the same as the \fB\-\-gdwarf\-2\fR option, except that it
+allows for the possibility of the generation of extra debug information as per
+version 3 of the \s-1DWARF\s0 specification.  Note \- enabling this option does not
+guarantee the generation of any extra infortmation, the choice to do so is on a
+per target basis.
+.IP "\fB\-\-gdwarf\-4\fR" 4
+.IX Item "--gdwarf-4"
+This option is the same as the \fB\-\-gdwarf\-2\fR option, except that it
+allows for the possibility of the generation of extra debug information as per
+version 4 of the \s-1DWARF\s0 specification.  Note \- enabling this option does not
+guarantee the generation of any extra infortmation, the choice to do so is on a
+per target basis.
+.IP "\fB\-\-gdwarf\-5\fR" 4
+.IX Item "--gdwarf-5"
+This option is the same as the \fB\-\-gdwarf\-2\fR option, except that it
+allows for the possibility of the generation of extra debug information as per
+version 5 of the \s-1DWARF\s0 specification.  Note \- enabling this option does not
+guarantee the generation of any extra infortmation, the choice to do so is on a
+per target basis.
 .IP "\fB\-\-gdwarf\-sections\fR" 4
 .IX Item "--gdwarf-sections"
 Instead of creating a .debug_line section, create a series of
@@ -647,6 +671,11 @@ will have its dwarf line number information placed into a section called
 \&\fI.debug_line.text.func\fR.  If the code section is just called \fI.text\fR
 then debug line section will still be called just \fI.debug_line\fR without any
 suffix.
+.IP "\fB\-\-gdwarf\-cie\-version=\fR\fIversion\fR" 4
+.IX Item "--gdwarf-cie-version=version"
+Control which version of \s-1DWARF\s0 Common Information Entries (CIEs) are produced.
+When this flag is not specificed the default is version 1, though some targets
+can modify this default.  Other possible values for \fIversion\fR are 3 or 4.
 .IP "\fB\-\-size\-check=error\fR" 4
 .IX Item "--size-check=error"
 .PD 0
@@ -802,14 +831,19 @@ file in \s-1ELF32\s0 and \s-1ELF64\s0 format respectively.  The default is \f(CW
 This option specifies the target processor.  The assembler will issue an error
 message if an attempt is made to assemble an instruction which will not execute
 on the target processor.  The following processor names are recognized:
+\&\f(CW\*(C`cortex\-a34\*(C'\fR,
 \&\f(CW\*(C`cortex\-a35\*(C'\fR,
 \&\f(CW\*(C`cortex\-a53\*(C'\fR,
 \&\f(CW\*(C`cortex\-a55\*(C'\fR,
 \&\f(CW\*(C`cortex\-a57\*(C'\fR,
+\&\f(CW\*(C`cortex\-a65\*(C'\fR,
+\&\f(CW\*(C`cortex\-a65ae\*(C'\fR,
 \&\f(CW\*(C`cortex\-a72\*(C'\fR,
 \&\f(CW\*(C`cortex\-a73\*(C'\fR,
 \&\f(CW\*(C`cortex\-a75\*(C'\fR,
 \&\f(CW\*(C`cortex\-a76\*(C'\fR,
+\&\f(CW\*(C`cortex\-a76ae\*(C'\fR,
+\&\f(CW\*(C`cortex\-a77\*(C'\fR,
 \&\f(CW\*(C`ares\*(C'\fR,
 \&\f(CW\*(C`exynos\-m1\*(C'\fR,
 \&\f(CW\*(C`falkor\*(C'\fR,
@@ -841,7 +875,7 @@ issue an error message if an attempt is made to assemble an
 instruction which will not execute on the target architecture.  The
 following architecture names are recognized: \f(CW\*(C`armv8\-a\*(C'\fR,
 \&\f(CW\*(C`armv8.1\-a\*(C'\fR, \f(CW\*(C`armv8.2\-a\*(C'\fR, \f(CW\*(C`armv8.3\-a\*(C'\fR, \f(CW\*(C`armv8.4\-a\*(C'\fR
-and \f(CW\*(C`armv8.5\-a\*(C'\fR.
+\&\f(CW\*(C`armv8.5\-a\*(C'\fR, and \f(CW\*(C`armv8.6\-a\*(C'\fR.
 .Sp
 If both \fB\-mcpu\fR and \fB\-march\fR are specified, the
 assembler will use the setting for \fB\-mcpu\fR.  If neither are
@@ -1039,6 +1073,22 @@ Assemble for the \s-1FDPIC ABI.\s0
 .PD
 Disable \-mfdpic.
 .PP
+The following options are available when as is configured for
+the Linux kernel \s-1BPF\s0 processor family.
+.PP
+\&\f(CW@chapter\fR \s-1BPF\s0 Dependent Features
+.SS "Options"
+.IX Subsection "Options"
+.IP "\fB\-EB\fR" 4
+.IX Item "-EB"
+This option specifies that the assembler should emit big-endian eBPF.
+.IP "\fB\-EL\fR" 4
+.IX Item "-EL"
+This option specifies that the assembler should emit little-endian
+eBPF.
+.PP
+Note that if no endianness option is specified in the command line,
+the host endianness is used.
 See the info pages for documentation of the CRIS-specific options.
 .PP
 The following options are available when as is configured for
@@ -1321,6 +1371,7 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`sse\*(C'\fR,
 \&\f(CW\*(C`sse2\*(C'\fR,
 \&\f(CW\*(C`sse3\*(C'\fR,
+\&\f(CW\*(C`sse4a\*(C'\fR,
 \&\f(CW\*(C`ssse3\*(C'\fR,
 \&\f(CW\*(C`sse4.1\*(C'\fR,
 \&\f(CW\*(C`sse4.2\*(C'\fR,
@@ -1328,6 +1379,7 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`nosse\*(C'\fR,
 \&\f(CW\*(C`nosse2\*(C'\fR,
 \&\f(CW\*(C`nosse3\*(C'\fR,
+\&\f(CW\*(C`nosse4a\*(C'\fR,
 \&\f(CW\*(C`nossse3\*(C'\fR,
 \&\f(CW\*(C`nosse4.1\*(C'\fR,
 \&\f(CW\*(C`nosse4.2\*(C'\fR,
@@ -1354,6 +1406,9 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`clwb\*(C'\fR,
 \&\f(CW\*(C`movdiri\*(C'\fR,
 \&\f(CW\*(C`movdir64b\*(C'\fR,
+\&\f(CW\*(C`enqcmd\*(C'\fR,
+\&\f(CW\*(C`serialize\*(C'\fR,
+\&\f(CW\*(C`tsxldtrk\*(C'\fR,
 \&\f(CW\*(C`avx512f\*(C'\fR,
 \&\f(CW\*(C`avx512cd\*(C'\fR,
 \&\f(CW\*(C`avx512er\*(C'\fR,
@@ -1369,6 +1424,7 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`avx512_vbmi2\*(C'\fR,
 \&\f(CW\*(C`avx512_vnni\*(C'\fR,
 \&\f(CW\*(C`avx512_bitalg\*(C'\fR,
+\&\f(CW\*(C`avx512_bf16\*(C'\fR,
 \&\f(CW\*(C`noavx512f\*(C'\fR,
 \&\f(CW\*(C`noavx512cd\*(C'\fR,
 \&\f(CW\*(C`noavx512er\*(C'\fR,
@@ -1384,6 +1440,11 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`noavx512_vbmi2\*(C'\fR,
 \&\f(CW\*(C`noavx512_vnni\*(C'\fR,
 \&\f(CW\*(C`noavx512_bitalg\*(C'\fR,
+\&\f(CW\*(C`noavx512_vp2intersect\*(C'\fR,
+\&\f(CW\*(C`noavx512_bf16\*(C'\fR,
+\&\f(CW\*(C`noenqcmd\*(C'\fR,
+\&\f(CW\*(C`noserialize\*(C'\fR,
+\&\f(CW\*(C`notsxldtrk\*(C'\fR,
 \&\f(CW\*(C`vmx\*(C'\fR,
 \&\f(CW\*(C`vmfunc\*(C'\fR,
 \&\f(CW\*(C`smx\*(C'\fR,
@@ -1401,6 +1462,7 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`movbe\*(C'\fR,
 \&\f(CW\*(C`ept\*(C'\fR,
 \&\f(CW\*(C`lzcnt\*(C'\fR,
+\&\f(CW\*(C`popcnt\*(C'\fR,
 \&\f(CW\*(C`hle\*(C'\fR,
 \&\f(CW\*(C`rtm\*(C'\fR,
 \&\f(CW\*(C`invpcid\*(C'\fR,
@@ -1411,6 +1473,9 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`pconfig\*(C'\fR,
 \&\f(CW\*(C`waitpkg\*(C'\fR,
 \&\f(CW\*(C`cldemote\*(C'\fR,
+\&\f(CW\*(C`rdpru\*(C'\fR,
+\&\f(CW\*(C`mcommit\*(C'\fR,
+\&\f(CW\*(C`sev_es\*(C'\fR,
 \&\f(CW\*(C`lwp\*(C'\fR,
 \&\f(CW\*(C`fma4\*(C'\fR,
 \&\f(CW\*(C`xop\*(C'\fR,
@@ -1421,8 +1486,7 @@ accept various extension mnemonics.  For example,
 \&\f(CW\*(C`3dnowa\*(C'\fR,
 \&\f(CW\*(C`sse4a\*(C'\fR,
 \&\f(CW\*(C`sse5\*(C'\fR,
-\&\f(CW\*(C`svme\*(C'\fR,
-\&\f(CW\*(C`abm\*(C'\fR and
+\&\f(CW\*(C`svme\*(C'\fR and
 \&\f(CW\*(C`padlock\*(C'\fR.
 Note that rather than extending a basic instruction set, the extension
 mnemonics starting with \f(CW\*(C`no\*(C'\fR revoke the respective functionality.
@@ -1467,6 +1531,9 @@ instructions.  \fB\-mavxscalar=\fR\fI128\fR will encode scalar
 \&\s-1AVX\s0 instructions with 128bit vector length, which is the default.
 \&\fB\-mavxscalar=\fR\fI256\fR will encode scalar \s-1AVX\s0 instructions
 with 256bit vector length.
+.Sp
+\&\s-1WARNING:\s0 Don't use this for production code \- due to \s-1CPU\s0 errata the
+resulting code may not work on certain models.
 .IP "\fB\-mvexwig=\fR\fI0\fR" 4
 .IX Item "-mvexwig=0"
 .PD 0
@@ -1478,6 +1545,9 @@ These options control how the assembler should encode \s-1VEX\s0.W\-ignored (\s-
 instructions with vex.w = 0, which is the default.
 \&\fB\-mvexwig=\fR\fI1\fR will encode \s-1WIG EVEX\s0 instructions with
 vex.w = 1.
+.Sp
+\&\s-1WARNING:\s0 Don't use this for production code \- due to \s-1CPU\s0 errata the
+resulting code may not work on certain models.
 .IP "\fB\-mevexlig=\fR\fI128\fR" 4
 .IX Item "-mevexlig=128"
 .PD 0
@@ -1540,7 +1610,7 @@ slightly bigger.  This option only affects the handling of branch
 instructions.
 .IP "\fB\-mbig\-obj\fR" 4
 .IX Item "-mbig-obj"
-On x86\-64 \s-1PE/COFF\s0 target this option forces the use of big object file
+On \s-1PE/COFF\s0 target this option forces the use of big object file
 format, which allows more than 32768 sections.
 .IP "\fB\-momit\-lock\-prefix=\fR\fIno\fR" 4
 .IX Item "-momit-lock-prefix=no"
@@ -1581,6 +1651,90 @@ R_X86_64_REX_GOTPCRELX, in 64\-bit mode.
 \&\fB\-mrelax\-relocations=\fR\fIno\fR will not generate relax
 relocations.  The default can be controlled by a configure option
 \&\fB\-\-enable\-x86\-relax\-relocations\fR.
+.IP "\fB\-malign\-branch\-boundary=\fR\fI\s-1NUM\s0\fR" 4
+.IX Item "-malign-branch-boundary=NUM"
+This option controls how the assembler should align branches with segment
+prefixes or \s-1NOP.\s0  \fI\s-1NUM\s0\fR must be a power of 2.  It should be 0 or
+no less than 16.  Branches will be aligned within \fI\s-1NUM\s0\fR byte
+boundary.  \fB\-malign\-branch\-boundary=0\fR, which is the default,
+doesn't align branches.
+.IP "\fB\-malign\-branch=\fR\fI\s-1TYPE\s0\fR\fB[+\fR\fI\s-1TYPE\s0\fR\fB...]\fR" 4
+.IX Item "-malign-branch=TYPE[+TYPE...]"
+This option specifies types of branches to align. \fI\s-1TYPE\s0\fR is
+combination of \fBjcc\fR, which aligns conditional jumps,
+\&\fBfused\fR, which aligns fused conditional jumps, \fBjmp\fR,
+which aligns unconditional jumps, \fBcall\fR which aligns calls,
+\&\fBret\fR, which aligns rets, \fBindirect\fR, which aligns indirect
+jumps and calls.  The default is \fB\-malign\-branch=jcc+fused+jmp\fR.
+.IP "\fB\-malign\-branch\-prefix\-size=\fR\fI\s-1NUM\s0\fR" 4
+.IX Item "-malign-branch-prefix-size=NUM"
+This option specifies the maximum number of prefixes on an instruction
+to align branches.  \fI\s-1NUM\s0\fR should be between 0 and 5.  The default
+\&\fI\s-1NUM\s0\fR is 5.
+.IP "\fB\-mbranches\-within\-32B\-boundaries\fR" 4
+.IX Item "-mbranches-within-32B-boundaries"
+This option aligns conditional jumps, fused conditional jumps and
+unconditional jumps within 32 byte boundary with up to 5 segment prefixes
+on an instruction.  It is equivalent to
+\&\fB\-malign\-branch\-boundary=32\fR
+\&\fB\-malign\-branch=jcc+fused+jmp\fR
+\&\fB\-malign\-branch\-prefix\-size=5\fR.
+The default doesn't align branches.
+.IP "\fB\-mlfence\-after\-load=\fR\fIno\fR" 4
+.IX Item "-mlfence-after-load=no"
+.PD 0
+.IP "\fB\-mlfence\-after\-load=\fR\fIyes\fR" 4
+.IX Item "-mlfence-after-load=yes"
+.PD
+These options control whether the assembler should generate lfence
+after load instructions.  \fB\-mlfence\-after\-load=\fR\fIyes\fR will
+generate lfence.  \fB\-mlfence\-after\-load=\fR\fIno\fR will not generate
+lfence, which is the default.
+.IP "\fB\-mlfence\-before\-indirect\-branch=\fR\fInone\fR" 4
+.IX Item "-mlfence-before-indirect-branch=none"
+.PD 0
+.IP "\fB\-mlfence\-before\-indirect\-branch=\fR\fIall\fR" 4
+.IX Item "-mlfence-before-indirect-branch=all"
+.IP "\fB\-mlfence\-before\-indirect\-branch=\fR\fIregister\fR" 4
+.IX Item "-mlfence-before-indirect-branch=register"
+.IP "\fB\-mlfence\-before\-indirect\-branch=\fR\fImemory\fR" 4
+.IX Item "-mlfence-before-indirect-branch=memory"
+.PD
+These options control whether the assembler should generate lfence
+before indirect near branch instructions.
+\&\fB\-mlfence\-before\-indirect\-branch=\fR\fIall\fR will generate lfence
+before indirect near branch via register and issue a warning before
+indirect near branch via memory.
+It also implicitly sets \fB\-mlfence\-before\-ret=\fR\fIshl\fR when
+there's no explict \fB\-mlfence\-before\-ret=\fR.
+\&\fB\-mlfence\-before\-indirect\-branch=\fR\fIregister\fR will generate
+lfence before indirect near branch via register.
+\&\fB\-mlfence\-before\-indirect\-branch=\fR\fImemory\fR will issue a
+warning before indirect near branch via memory.
+\&\fB\-mlfence\-before\-indirect\-branch=\fR\fInone\fR will not generate
+lfence nor issue warning, which is the default.  Note that lfence won't
+be generated before indirect near branch via register with
+\&\fB\-mlfence\-after\-load=\fR\fIyes\fR since lfence will be generated
+after loading branch target register.
+.IP "\fB\-mlfence\-before\-ret=\fR\fInone\fR" 4
+.IX Item "-mlfence-before-ret=none"
+.PD 0
+.IP "\fB\-mlfence\-before\-ret=\fR\fIshl\fR" 4
+.IX Item "-mlfence-before-ret=shl"
+.IP "\fB\-mlfence\-before\-ret=\fR\fIor\fR" 4
+.IX Item "-mlfence-before-ret=or"
+.IP "\fB\-mlfence\-before\-ret=\fR\fIyes\fR" 4
+.IX Item "-mlfence-before-ret=yes"
+.IP "\fB\-mlfence\-before\-ret=\fR\fInot\fR" 4
+.IX Item "-mlfence-before-ret=not"
+.PD
+These options control whether the assembler should generate lfence
+before ret.  \fB\-mlfence\-before\-ret=\fR\fIor\fR will generate
+generate or instruction with lfence.
+\&\fB\-mlfence\-before\-ret=\fR\fIshl/yes\fR will generate shl instruction
+with lfence. \fB\-mlfence\-before\-ret=\fR\fInot\fR will generate not
+instruction with lfence. \fB\-mlfence\-before\-ret=\fR\fInone\fR will not
+generate lfence, which is the default.
 .IP "\fB\-mx86\-used\-note=\fR\fIno\fR" 4
 .IX Item "-mx86-used-note=no"
 .PD 0
@@ -1614,16 +1768,29 @@ with 01, 10 and 11 \s-1RC\s0 bits, respectively.
 .IX Item "-mintel64"
 .PD
 This option specifies that the assembler should accept only \s-1AMD64\s0 or
-Intel64 \s-1ISA\s0 in 64\-bit mode.  The default is to accept both.
+Intel64 \s-1ISA\s0 in 64\-bit mode.  The default is to accept common, Intel64
+only and \s-1AMD64\s0 ISAs.
 .IP "\fB\-O0 | \-O | \-O1 | \-O2 | \-Os\fR" 4
 .IX Item "-O0 | -O | -O1 | -O2 | -Os"
 Optimize instruction encoding with smaller instruction size.  \fB\-O\fR
 and \fB\-O1\fR encode 64\-bit register load instructions with 64\-bit
 immediate as 32\-bit register load instructions with 31\-bit or 32\-bits
-immediates and encode 64\-bit register clearing instructions with 32\-bit
-register clearing instructions.  \fB\-O2\fR includes \fB\-O1\fR
-optimization plus encodes 256\-bit and 512\-bit vector register clearing
-instructions with 128\-bit vector register clearing instructions.
+immediates, encode 64\-bit register clearing instructions with 32\-bit
+register clearing instructions, encode 256\-bit/512\-bit \s-1VEX/EVEX\s0 vector
+register clearing instructions with 128\-bit \s-1VEX\s0 vector register
+clearing instructions, encode 128\-bit/256\-bit \s-1EVEX\s0 vector
+register load/store instructions with \s-1VEX\s0 vector register load/store
+instructions, and encode 128\-bit/256\-bit \s-1EVEX\s0 packed integer logical
+instructions with 128\-bit/256\-bit \s-1VEX\s0 packed integer logical.
+.Sp
+\&\fB\-O2\fR includes \fB\-O1\fR optimization plus encodes
+256\-bit/512\-bit \s-1EVEX\s0 vector register clearing instructions with 128\-bit
+\&\s-1EVEX\s0 vector register clearing instructions.  In 64\-bit mode \s-1VEX\s0 encoded
+instructions with commutative source operands will also have their
+source operands swapped if this allows using the 2\-byte \s-1VEX\s0 prefix form
+instead of the 3\-byte one.  Certain forms of \s-1AND\s0 as well as \s-1OR\s0 with the
+same (register) operand specified twice will also be changed to \s-1TEST.\s0
+.Sp
 \&\fB\-Os\fR includes \fB\-O2\fR optimization plus encodes 16\-bit, 32\-bit
 and 64\-bit register tests with immediate as 8\-bit register test with
 immediate.  \fB\-O0\fR turns off this optimization.
@@ -2478,6 +2645,26 @@ required to materialize symbol addresses. (default)
 .IP "\fB\-mno\-relax\fR" 4
 .IX Item "-mno-relax"
 Don't do linker relaxations.
+.IP "\fB\-march\-attr\fR" 4
+.IX Item "-march-attr"
+Generate the default contents for the riscv elf attribute section if the
+\&.attribute directives are not set.  This section is used to record the
+information that a linker or runtime loader needs to check compatibility.
+This information includes \s-1ISA\s0 string, stack alignment requirement, unaligned
+memory accesses, and the major, minor and revision version of privileged
+specification.
+.IP "\fB\-mno\-arch\-attr\fR" 4
+.IX Item "-mno-arch-attr"
+Don't generate the default riscv elf attribute section if the .attribute
+directives are not set.
+.IP "\fB\-mcsr\-check\fR" 4
+.IX Item "-mcsr-check"
+Enable the \s-1CSR\s0 checking for the ISA-dependent \s-1CRS\s0 and the read-only \s-1CSR.\s0
+The ISA-dependent \s-1CSR\s0 are only valid when the specific \s-1ISA\s0 is set.  The
+read-only \s-1CSR\s0 can not be written by the \s-1CSR\s0 instructions.
+.IP "\fB\-mno\-csr\-check\fR" 4
+.IX Item "-mno-csr-check"
+Don't do \s-1CSR\s0 cheching.
 .PP
 See the info pages for documentation of the RX-specific options.
 .PP
@@ -2504,7 +2691,8 @@ Specify which s390 processor variant is the target, \fBg5\fR (or
 \&\fBarch3\fR), \fBg6\fR, \fBz900\fR (or \fBarch5\fR), \fBz990\fR (or
 \&\fBarch6\fR), \fBz9\-109\fR, \fBz9\-ec\fR (or \fBarch7\fR), \fBz10\fR (or
 \&\fBarch8\fR), \fBz196\fR (or \fBarch9\fR), \fBzEC12\fR (or \fBarch10\fR),
-\&\fBz13\fR (or \fBarch11\fR), or \fBz14\fR (or \fBarch12\fR).
+\&\fBz13\fR (or \fBarch11\fR), \fBz14\fR (or \fBarch12\fR), or \fBz15\fR
+(or \fBarch13\fR).
 .IP "\fB\-mregnames\fR" 4
 .IX Item "-mregnames"
 .PD 0
@@ -2673,62 +2861,65 @@ potentially be out of range.  In the absence of such jumps this option
 does not affect code size or performance.  The default is
 \&\fB\-\-trampolines\fR.
 .PP
-The following options are available when as is configured for
-a Z80 family processor.
-.IP "\fB\-z80\fR" 4
-.IX Item "-z80"
-Assemble for Z80 processor.
-.IP "\fB\-r800\fR" 4
-.IX Item "-r800"
-Assemble for R800 processor.
-.IP "\fB\-ignore\-undocumented\-instructions\fR" 4
-.IX Item "-ignore-undocumented-instructions"
-.PD 0
-.IP "\fB\-Wnud\fR" 4
-.IX Item "-Wnud"
-.PD
-Assemble undocumented Z80 instructions that also work on R800 without warning.
-.IP "\fB\-ignore\-unportable\-instructions\fR" 4
-.IX Item "-ignore-unportable-instructions"
-.PD 0
-.IP "\fB\-Wnup\fR" 4
-.IX Item "-Wnup"
-.PD
-Assemble all undocumented Z80 instructions without warning.
-.IP "\fB\-warn\-undocumented\-instructions\fR" 4
-.IX Item "-warn-undocumented-instructions"
-.PD 0
-.IP "\fB\-Wud\fR" 4
-.IX Item "-Wud"
-.PD
-Issue a warning for undocumented Z80 instructions that also work on R800.
-.IP "\fB\-warn\-unportable\-instructions\fR" 4
-.IX Item "-warn-unportable-instructions"
-.PD 0
-.IP "\fB\-Wup\fR" 4
-.IX Item "-Wup"
-.PD
-Issue a warning for undocumented Z80 instructions that do not work on R800.
-.IP "\fB\-forbid\-undocumented\-instructions\fR" 4
-.IX Item "-forbid-undocumented-instructions"
-.PD 0
-.IP "\fB\-Fud\fR" 4
-.IX Item "-Fud"
-.PD
-Treat all undocumented instructions as errors.
-.IP "\fB\-forbid\-unportable\-instructions\fR" 4
-.IX Item "-forbid-unportable-instructions"
-.PD 0
-.IP "\fB\-Fup\fR" 4
-.IX Item "-Fup"
-.PD
-Treat undocumented Z80 instructions that do not work on R800 as errors.
+The following options are available when as is configured for an
+Z80 processor.
+.PP
+\&\f(CW@chapter\fR Z80 Dependent Features
+.SS "Command-line Options"
+.IX Subsection "Command-line Options"
+.IP "\fB\-march=\fR\fI\s-1CPU\s0\fR\fB[\-\fR\fI\s-1EXT\s0\fR\fB...][+\fR\fI\s-1EXT\s0\fR\fB...]\fR" 4
+.IX Item "-march=CPU[-EXT...][+EXT...]"
+This option specifies the target processor. The assembler will issue
+an error message if an attempt is made to assemble an instruction which
+will not execute on the target processor. The following processor names
+are recognized:
+\&\f(CW\*(C`z80\*(C'\fR,
+\&\f(CW\*(C`z180\*(C'\fR,
+\&\f(CW\*(C`ez80\*(C'\fR,
+\&\f(CW\*(C`gbz80\*(C'\fR,
+\&\f(CW\*(C`z80n\*(C'\fR,
+\&\f(CW\*(C`r800\*(C'\fR.
+In addition to the basic instruction set, the assembler can be told to
+accept some extention mnemonics. For example,
+\&\f(CW\*(C`\-march=z180+sli+infc\*(C'\fR extends \fIz180\fR with \fI\s-1SLI\s0\fR instructions and
+\&\fI\s-1IN F,\s0(C)\fR. The following extentions are currently supported:
+\&\f(CW\*(C`full\*(C'\fR (all known instructions),
+\&\f(CW\*(C`adl\*(C'\fR (\s-1ADL CPU\s0 mode by default, eZ80 only),
+\&\f(CW\*(C`sli\*(C'\fR (instruction known as \fI\s-1SLI\s0\fR, \fI\s-1SLL\s0\fR or \fI\s-1SL1\s0\fR),
+\&\f(CW\*(C`xyhl\*(C'\fR (instructions with halves of index registers: \fI\s-1IXL\s0\fR, \fI\s-1IXH\s0\fR,
+\&\fI\s-1IYL\s0\fR, \fI\s-1IYH\s0\fR),
+\&\f(CW\*(C`xdcb\*(C'\fR (instructions like \fIRotOp (II+d),R\fR and \fIBitOp n,(II+d),R\fR),
+\&\f(CW\*(C`infc\*(C'\fR (instruction \fI\s-1IN F,\s0(C)\fR or \fI\s-1IN\s0 (C)\fR),
+\&\f(CW\*(C`outc0\*(C'\fR (instruction \fI\s-1OUT\s0 (C),0\fR).
+Note that rather than extending a basic instruction set, the extention
+mnemonics starting with \f(CW\*(C`\-\*(C'\fR revoke the respective functionality:
+\&\f(CW\*(C`\-march=z80\-full+xyhl\*(C'\fR first removes all default extentions and adds
+support for index registers halves only.
+.Sp
+If this option is not specified then \f(CW\*(C`\-march=z80+xyhl+infc\*(C'\fR is assumed.
+.IP "\fB\-local\-prefix=\fR\fIprefix\fR" 4
+.IX Item "-local-prefix=prefix"
+Mark all labels with specified prefix as local. But such label can be
+marked global explicitly in the code. This option do not change default
+local label prefix \f(CW\*(C`.L\*(C'\fR, it is just adds new one.
+.IP "\fB\-colonless\fR" 4
+.IX Item "-colonless"
+Accept colonless labels. All symbols at line begin are treated as labels.
+.IP "\fB\-sdcc\fR" 4
+.IX Item "-sdcc"
+Accept assembler code produced by \s-1SDCC.\s0
+.IP "\fB\-fp\-s=\fR\fI\s-1FORMAT\s0\fR" 4
+.IX Item "-fp-s=FORMAT"
+Single precision floating point numbers format. Default: ieee754 (32 bit).
+.IP "\fB\-fp\-d=\fR\fI\s-1FORMAT\s0\fR" 4
+.IX Item "-fp-d=FORMAT"
+Double precision floating point numbers format. Default: ieee754 (64 bit).
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
 \&\fIgcc\fR\|(1), \fIld\fR\|(1), and the Info entries for \fIbinutils\fR and \fIld\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

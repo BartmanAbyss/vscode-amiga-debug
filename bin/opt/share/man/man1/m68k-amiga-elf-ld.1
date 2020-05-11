@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "LD 1"
-.TH LD 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH LD 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -358,6 +358,46 @@ specified in the library.  If specified multiple times \f(CW\*(C`DT_DEPAUDIT\*(C
 will contain a colon separated list of audit interfaces to use.  This
 option is only meaningful on \s-1ELF\s0 platforms supporting the rtld-audit interface.
 The \-P option is provided for Solaris compatibility.
+.IP "\fB\-\-enable\-non\-contiguous\-regions\fR" 4
+.IX Item "--enable-non-contiguous-regions"
+This option avoids generating an error if an input section does not
+fit a matching output section. The linker tries to allocate the input
+section to subseque nt matching output sections, and generates an
+error only if no output section is large enough.  This is useful when
+several non-contiguous memory regions are available and the input
+section does not require a particular one.  The order in which input
+sections are evaluated does not change, for instance:
+.Sp
+.Vb 10
+\&          MEMORY {
+\&            MEM1 (rwx) : ORIGIN : 0x1000, LENGTH = 0x14
+\&            MEM2 (rwx) : ORIGIN : 0x1000, LENGTH = 0x40
+\&            MEM3 (rwx) : ORIGIN : 0x2000, LENGTH = 0x40
+\&          }
+\&          SECTIONS {
+\&            mem1 : { *(.data.*); } > MEM1
+\&            mem2 : { *(.data.*); } > MEM2
+\&            mem3 : { *(.data.*); } > MEM2
+\&          }
+\&        
+\&          with input sections:
+\&          .data.1: size 8
+\&          .data.2: size 0x10
+\&          .data.3: size 4
+\&        
+\&          results in .data.1 affected to mem1, and .data.2 and .data.3
+\&          affected to mem2, even though .data.3 would fit in mem3.
+.Ve
+.Sp
+This option is incompatible with \s-1INSERT\s0 statements because it changes
+the way input sections are mapped to output sections.
+.IP "\fB\-\-enable\-non\-contiguous\-regions\-warnings\fR" 4
+.IX Item "--enable-non-contiguous-regions-warnings"
+This option enables warnings when
+\&\f(CW\*(C`\-\-enable\-non\-contiguous\-regions\*(C'\fR allows possibly unexpected
+matches in sections mapping, potentially leading to silently
+discarding a section instead of failing because it does not fit any
+output region.
 .IP "\fB\-e\fR \fIentry\fR" 4
 .IX Item "-e entry"
 .PD 0
@@ -447,7 +487,7 @@ first check whether there is a definition in the shared object
 in the filter object.  The shared object \fIname\fR need not exist.
 Thus the shared object \fIname\fR may be used to provide an alternative
 implementation of certain functions, perhaps for debugging or for
-machine specific performance.
+machine-specific performance.
 .Sp
 This option may be specified more than once.  The \s-1DT_AUXILIARY\s0 entries
 will be created in the order in which they appear on the command line.
@@ -636,30 +676,38 @@ option is used:
 See \fBExpressions\fR for more information about expressions in linker
 scripts.
 .IP "\(bu" 4
-*<How \s-1GNU\s0 properties are merged.>
+How \s-1GNU\s0 properties are merged.
 .Sp
-When linker merges input .note.gnu.property sections into one output
-\&.note.gnu.property section, some properties are removed or updated,
-which are reported in the link map as
+When the linker merges input .note.gnu.property sections into one output
+\&.note.gnu.property section, some properties are removed or updated.
+These actions are reported in the link map.  For example:
 .Sp
 .Vb 1
 \&        Removed property 0xc0000002 to merge foo.o (0x1) and bar.o (not found)
 .Ve
 .Sp
-It indicates that property 0xc0000002 is removed from output when
+This indicates that property 0xc0000002 is removed from output when
 merging properties in  \fIfoo.o\fR, whose property 0xc0000002 value
 is 0x1, and \fIbar.o\fR, which doesn't have property 0xc0000002.
 .Sp
 .Vb 1
-\&        Updated property 0xc0000002 (0x1) to merge foo.o (0x1) and bar.o (0x1)
+\&        Updated property 0xc0010001 (0x1) to merge foo.o (0x1) and bar.o (0x1)
 .Ve
 .Sp
-It indicates that property 0xc0010001 value is updated to 0x1 in output
+This indicates that property 0xc0010001 value is updated to 0x1 in output
 when merging properties in  \fIfoo.o\fR, whose 0xc0010001 property value
 is 0x1, and \fIbar.o\fR, whose 0xc0010001 property value is 0x1.
 .RE
 .RS 4
 .RE
+.IP "\fB\-\-print\-map\-discarded\fR" 4
+.IX Item "--print-map-discarded"
+.PD 0
+.IP "\fB\-\-no\-print\-map\-discarded\fR" 4
+.IX Item "--no-print-map-discarded"
+.PD
+Print (or do not print) the list of discarded and garbage collected sections
+in the link map.  Enabled by default.
 .IP "\fB\-n\fR" 4
 .IX Item "-n"
 .PD 0
@@ -1000,6 +1048,25 @@ to a locally defined function, foo, via its \s-1GOT\s0 slot.
 \&\fBcall\-nop=prefix\-\fR\fIbyte\fR generates \f(CW\*(C`\f(CIbyte\f(CW call foo\*(C'\fR.
 \&\fBcall\-nop=suffix\-\fR\fIbyte\fR generates \f(CW\*(C`call foo \f(CIbyte\f(CW\*(C'\fR.
 Supported for i386 and x86_64.
+.IP "\fBcet\-report=none\fR" 4
+.IX Item "cet-report=none"
+.PD 0
+.IP "\fBcet\-report=warning\fR" 4
+.IX Item "cet-report=warning"
+.IP "\fBcet\-report=error\fR" 4
+.IX Item "cet-report=error"
+.PD
+Specify how to report the missing \s-1GNU_PROPERTY_X86_FEATURE_1_IBT\s0 and
+\&\s-1GNU_PROPERTY_X86_FEATURE_1_SHSTK\s0 properties in input .note.gnu.property
+section.  \fBcet\-report=none\fR, which is the default, will make the
+linker not report missing properties in input files.
+\&\fBcet\-report=warning\fR will make the linker issue a warning for
+missing properties in input files.  \fBcet\-report=error\fR will make
+the linker issue an error for missing properties in input files.
+Note that \fBibt\fR will turn off the missing
+\&\s-1GNU_PROPERTY_X86_FEATURE_1_IBT\s0 property report and \fBshstk\fR will
+turn off the missing \s-1GNU_PROPERTY_X86_FEATURE_1_SHSTK\s0 property report.
+Supported for Linux/i386 and Linux/x86_64.
 .IP "\fBcombreloc\fR" 4
 .IX Item "combreloc"
 .PD 0
@@ -1299,20 +1366,14 @@ libraries.
 When creating a shared library, bind references to global symbols to the
 definition within the shared library, if any.  Normally, it is possible
 for a program linked against a shared library to override the definition
-within the shared library.  This option can also be used with the
-\&\fB\-\-export\-dynamic\fR option, when creating a position independent
-executable, to bind references to global symbols to the definition within
-the executable.  This option is only meaningful on \s-1ELF\s0 platforms which
-support shared libraries and position independent executables.
+within the shared library.  This option is only meaningful on \s-1ELF\s0
+platforms which support shared libraries.
 .IP "\fB\-Bsymbolic\-functions\fR" 4
 .IX Item "-Bsymbolic-functions"
 When creating a shared library, bind references to global function
 symbols to the definition within the shared library, if any.
-This option can also be used with the \fB\-\-export\-dynamic\fR option,
-when creating a position independent executable, to bind references
-to global function symbols to the definition within the executable.
 This option is only meaningful on \s-1ELF\s0 platforms which support shared
-libraries and position independent executables.
+libraries.
 .IP "\fB\-\-dynamic\-list=\fR\fIdynamic-list-file\fR" 4
 .IX Item "--dynamic-list=dynamic-list-file"
 Specify the name of a dynamic list file to the linker.  This is
@@ -1455,7 +1516,7 @@ entry point code that is capable of processing these relocations.
 .IP "\fB\-\-embedded\-relocs\fR" 4
 .IX Item "--embedded-relocs"
 This option is similar to the \fB\-\-emit\-relocs\fR option except
-that the relocs are stored in a target specific section.  This option
+that the relocs are stored in a target-specific section.  This option
 is only supported by the \fB\s-1BFIN\s0\fR, \fB\s-1CR16\s0\fR and \fIM68K\fR
 targets.
 .IP "\fB\-\-disable\-multiple\-abs\-defs\fR" 4
@@ -1554,7 +1615,7 @@ parsable by tools.  Here is an example of an output:
 Print a summary of the command-line options on the standard output and exit.
 .IP "\fB\-\-target\-help\fR" 4
 .IX Item "--target-help"
-Print a summary of all target specific options on the standard output and exit.
+Print a summary of all target-specific options on the standard output and exit.
 .IP "\fB\-Map=\fR\fImapfile\fR" 4
 .IX Item "-Map=mapfile"
 Print a link map to the file \fImapfile\fR.  See the description of the
@@ -1713,7 +1774,7 @@ This option is ignored for \s-1SVR4\s0 compatibility.
 An option with machine dependent effects.
 This option is only supported on a few targets.
 .Sp
-On some platforms the \fB\-\-relax\fR option performs target specific,
+On some platforms the \fB\-\-relax\fR option performs target-specific,
 global optimizations that become possible when the linker resolves
 addressing in the program, such as relaxing address modes,
 synthesizing new instructions, selecting shorter version of current
@@ -1748,12 +1809,17 @@ line.  It overrides \fB\-s\fR and \fB\-S\fR.
 Add a directory to the runtime library search path.  This is used when
 linking an \s-1ELF\s0 executable with shared objects.  All \fB\-rpath\fR
 arguments are concatenated and passed to the runtime linker, which uses
-them to locate shared objects at runtime.  The \fB\-rpath\fR option is
-also used when locating shared objects which are needed by shared
-objects explicitly included in the link; see the description of the
-\&\fB\-rpath\-link\fR option.  If \fB\-rpath\fR is not used when linking an
-\&\s-1ELF\s0 executable, the contents of the environment variable
-\&\f(CW\*(C`LD_RUN_PATH\*(C'\fR will be used if it is defined.
+them to locate shared objects at runtime.
+.Sp
+The \fB\-rpath\fR option is also used when locating shared objects which
+are needed by shared objects explicitly included in the link; see the
+description of the \fB\-rpath\-link\fR option.  Searching \fB\-rpath\fR
+in this way is only supported by native linkers and cross linkers which
+have been configured with the \fB\-\-with\-sysroot\fR option.
+.Sp
+If \fB\-rpath\fR is not used when linking an \s-1ELF\s0 executable, the
+contents of the environment variable \f(CW\*(C`LD_RUN_PATH\*(C'\fR will be used if it
+is defined.
 .Sp
 The \fB\-rpath\fR option may also be used on SunOS.  By default, on
 SunOS, the linker will form a runtime search path out of all the
@@ -1827,8 +1893,18 @@ libraries needed by it. The \f(CW\*(C`DT_RPATH\*(C'\fR entries are ignored if
 .IP "7." 4
 The default directories, normally \fI/lib\fR and \fI/usr/lib\fR.
 .IP "8." 4
-For a native linker on an \s-1ELF\s0 system, if the file \fI/etc/ld.so.conf\fR
-exists, the list of directories found in that file.
+For a linker for a Linux system, if the file \fI/etc/ld.so.conf\fR
+exists, the list of directories found in that file.  Note: the path
+to this file is prefixed with the \f(CW\*(C`sysroot\*(C'\fR value, if that is
+defined, and then any \f(CW\*(C`prefix\*(C'\fR string if the linker was
+configured with the \fB\-\-prefix=<path>\fR option.
+.IP "9." 4
+For a native linker on a FreeBSD system, any directories specified by
+the \f(CW\*(C`_PATH_ELF_HINTS\*(C'\fR macro defined in the \fIelf\-hints.h\fR
+header file.
+.IP "10." 4
+Any directories specifed by a \f(CW\*(C`SEARCH_DIR\*(C'\fR command in the
+linker script being used.
 .RE
 .RS 4
 .Sp
@@ -2193,9 +2269,6 @@ internal references to \fIsymbol\fR are not resolved to
 \&          return f();
 \&        }
 .Ve
-.Sp
-Please keep in mind that with link-time optimization (\s-1LTO\s0) enabled, your whole
-program may be a translation unit.
 .IP "\fB\-\-eh\-frame\-hdr\fR" 4
 .IX Item "--eh-frame-hdr"
 .PD 0
@@ -2725,11 +2798,14 @@ of the \s-1PE\s0 file header:
 .IX Item "--high-entropy-va"
 Image is compatible with 64\-bit address space layout randomization
 (\s-1ASLR\s0).
+This option also implies \fB\-\-dynamicbase\fR and
+\&\fB\-\-enable\-reloc\-section\fR.
 .IP "\fB\-\-dynamicbase\fR" 4
 .IX Item "--dynamicbase"
 The image base address may be relocated using address space layout
 randomization (\s-1ASLR\s0).  This feature was introduced with \s-1MS\s0 Windows
 Vista for i386 \s-1PE\s0 targets.
+This option also implies \fB\-\-enable\-reloc\-section\fR.
 .IP "\fB\-\-forceinteg\fR" 4
 .IX Item "--forceinteg"
 Code integrity checks are enforced.
@@ -2767,6 +2843,10 @@ same sources are linked.  The option \fB\-\-no\-insert\-timestamp\fR
 can be used to insert a zero value for the timestamp, this ensuring
 that binaries produced from identical sources will compare
 identically.
+.IP "\fB\-\-enable\-reloc\-section\fR" 4
+.IX Item "--enable-reloc-section"
+Create the base relocation table, which is necessary if the image
+is loaded at a different image base than specified in the \s-1PE\s0 header.
 .PP
 The C6X uClinux target uses a binary format called \s-1DSBT\s0 to support shared
 libraries.  Each shared library in the system needs to have a unique index;
@@ -2855,6 +2935,66 @@ equivalent \f(CW\*(C`JALX\*(C'\fR instructions as the associated relocation is
 calculated.  By default or if \fB\-\-no\-ignore\-branch\-isa\fR is used
 a check is made causing the loss of an \s-1ISA\s0 mode transition to produce
 an error.
+.IP "\fB\-\-compact\-branches\fR" 4
+.IX Item "--compact-branches"
+.PD 0
+.IP "\fB\-\-no\-compact\-branches\fR" 4
+.IX Item "--no-compact-branches"
+.PD
+These options control the generation of compact instructions by the linker
+in the \s-1PLT\s0 entries for \s-1MIPS R6.\s0
+.PP
+For the pdp11\-aout target, three variants of the output format can be
+produced as selected by the following options.  The default variant
+for pdp11\-aout is the \fB\-\-omagic\fR option, whereas for other
+targets \fB\-\-nmagic\fR is the default.  The \fB\-\-imagic\fR option is
+defined only for the pdp11\-aout target, while the others are described
+here as they apply to the pdp11\-aout target.
+.IP "\fB\-N\fR" 4
+.IX Item "-N"
+.PD 0
+.IP "\fB\-\-omagic\fR" 4
+.IX Item "--omagic"
+.PD
+Mark the output as \f(CW\*(C`OMAGIC\*(C'\fR (0407) in the \fIa.out\fR header to
+indicate that the text segment is not to be write-protected and
+shared.  Since the text and data sections are both readable and
+writable, the data section is allocated immediately contiguous after
+the text segment.  This is the oldest format for \s-1PDP11\s0 executable
+programs and is the default for \fBld\fR on \s-1PDP11\s0 Unix systems
+from the beginning through 2.11BSD.
+.IP "\fB\-n\fR" 4
+.IX Item "-n"
+.PD 0
+.IP "\fB\-\-nmagic\fR" 4
+.IX Item "--nmagic"
+.PD
+Mark the output as \f(CW\*(C`NMAGIC\*(C'\fR (0410) in the \fIa.out\fR header to
+indicate that when the output file is executed, the text portion will
+be read-only and shareable among all processes executing the same
+file.  This involves moving the data areas up to the first possible 8K
+byte page boundary following the end of the text.  This option creates
+a \fIpure executable\fR format.
+.IP "\fB\-z\fR" 4
+.IX Item "-z"
+.PD 0
+.IP "\fB\-\-imagic\fR" 4
+.IX Item "--imagic"
+.PD
+Mark the output as \f(CW\*(C`IMAGIC\*(C'\fR (0411) in the \fIa.out\fR header to
+indicate that when the output file is executed, the program text and
+data areas will be loaded into separate address spaces using the split
+instruction and data space feature of the memory management unit in
+larger models of the \s-1PDP11.\s0  This doubles the address space available
+to the program.  The text segment is again pure, write-protected, and
+shareable.  The only difference in the output format between this
+option and the others, besides the magic number, is that both the text
+and data sections start at location 0.  The \fB\-z\fR option selected
+this format in 2.11BSD.  This option creates a \fIseparate
+executable\fR format.
+.IP "\fB\-\-no\-omagic\fR" 4
+.IX Item "--no-omagic"
+Equivalent to \fB\-\-nmagic\fR for pdp11\-aout.
 .SH "ENVIRONMENT"
 .IX Header "ENVIRONMENT"
 You can change the behaviour of \fBld\fR with the environment variables
@@ -2894,7 +3034,7 @@ the Info entries for \fIbinutils\fR and
 \&\fIld\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

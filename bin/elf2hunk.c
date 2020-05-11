@@ -14,10 +14,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <unistd.h>
+#ifndef _MSC_VER
+	#include <unistd.h>
+	#include <dirent.h>
+#endif
 #include <fcntl.h>
 #include <limits.h>
-#include <dirent.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,13 +29,14 @@
 #define F_PCREL         (1 << 2)
 #define F_BINARY        (1 << 3)
 
-#if defined(__GNUC__)&&defined(WIN32)
-#include <winsock2.h>
-#define mkdir(path, mode) mkdir(path)
+#ifdef _MSC_VER
+	#include <winsock2.h>
+	#pragma comment(lib, "ws2_32.lib")
+	#define mkdir(path, mode) mkdir(path)
 #else
-#include <arpa/inet.h>
-typedef uint32_t ULONG;
-typedef int      BOOL;
+	#include <arpa/inet.h>
+	typedef uint32_t ULONG;
+	typedef int      BOOL;
 #endif
 typedef uint8_t  UBYTE;
 typedef uint16_t UWORD;
@@ -170,6 +173,7 @@ typedef char *   STRPTR;
 
 #define PF_X            (1 << 0)
 
+#pragma pack(push)
 struct elfheader
 {
 	UBYTE ident[16];
@@ -186,7 +190,7 @@ struct elfheader
 	UWORD shentsize;
 	UWORD shnum;
 	UWORD shstrndx;
-} __attribute__((packed));
+};
 
 struct sheader
 {
@@ -200,7 +204,7 @@ struct sheader
 	ULONG info;
 	IPTR  addralign;
 	IPTR  entsize;
-} __attribute__((packed));
+};
 
 #define PT_LOAD 1
 
@@ -214,7 +218,7 @@ struct pheader
 	ULONG memsz;
 	ULONG flags;
 	ULONG align;
-} __attribute__((packed));
+};
 
 struct symbol
 {
@@ -224,7 +228,8 @@ struct symbol
 	UBYTE info;     /* What kind of symbol is this ? (global, variable, etc) */
 	UBYTE other;    /* undefined */
 	UWORD shindex;  /* In which section is the symbol defined ? */
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
 #define ELF_R_SYM(val)        ((val) >> 8)
 #define ELF_R_TYPE(val)       ((val) & 0xff)
@@ -248,7 +253,7 @@ struct relo
 	 /*#define SHNUM(i) \
 		 ((i) < SHN_LORESERVE ? (i) : (i) + (SHN_HIRESERVE + 1 - SHN_LORESERVE))*/
 
-		 /* m68k Machine's native values */
+/* m68k Machine's native values */
 #define AROS_ELF_CLASS ELFCLASS32
 #define AROS_ELF_DATA ELFDATA2MSB
 #define AROS_ELF_MACHINE EM_68K
@@ -274,14 +279,18 @@ static void set_error(int err)
 	errno = err;
 }
 
-#if defined(DEBUG) && DEBUG
+#if (defined(DEBUG) && DEBUG) || defined(_DEBUG)
 #define D(x)	x
 #define DB2(x)	x
 #else
 #define D(x)
 #define DB2(x)
 #endif
-#define bug(fmt,args...)	fprintf(stderr, fmt ,##args )
+#ifdef _MSC_VER
+	#define bug(fmt,...)	fprintf(stderr, fmt ,__VA_ARGS__ )
+#else
+	#define bug(fmt,args...)	fprintf(stderr, fmt ,##args )
+#endif
 
 static int must_swap = -1;
 
@@ -351,8 +360,7 @@ void sym_fixup(struct symbol *sym)
 static void *load_block(int file, ULONG offset, ULONG size)
 {
 	ULONG lsize = (size + sizeof(ULONG) - 1) / sizeof(ULONG);
-	D(bug("[ELF2HUNK] Load Block\n"));
-	D(bug("[ELF2HUNK] (size=%d)\n", (int)size));
+	D(bug("[ELF2HUNK] Load Block (size=%d)\n", (int)size));
 	void *block = malloc(lsize * sizeof(ULONG));
 	if(block) {
 		lseek(file, offset, SEEK_SET);
@@ -481,7 +489,7 @@ static int relocate
 	 * Ignore relocs if the target section has no allocation. that can happen
 	 * eg. with a .debug PROGBITS and a .rel.debug section
 	 */
-	D(bug("[ELF2HUNK] sh[%d].flags = 0x%x\n", (int)(shrel->info), (int)toreloc->flags));
+	D(bug("[ELF2HUNK] relocate(): sh[%d].flags = 0x%x, .size = %d\n", (int)(shrel->info), (int)toreloc->flags, (int)toreloc->size));
 	if(!(toreloc->flags & SHF_ALLOC))
 		return 1;
 
@@ -518,7 +526,7 @@ static int relocate
 		sym = symtab[ELF_R_SYM(rel->info)];
 		sym_fixup(&sym);
 		offset = rel->offset;
-		symname = (const char *)(hh[shsymtab->link]->data + sym.name);
+		symname = (const char *)((uintptr_t)hh[shsymtab->link]->data + sym.name);
 
 		if(sym.shindex != SHN_XINDEX)
 			shindex = sym.shindex;
@@ -592,13 +600,21 @@ static int relocate
 			return 0;
 		}
 
+		// skip relocations to empty sections
+		if(shid != ~0 && !hh[shid]) {
+			*(ULONG*)((uintptr_t)h->data + offset) = ~0;
+			h->relocs--;
+			continue;
+		}
+
 		if(eh->type == ET_EXEC) {
-			D(bug("ET_EXEC %x -= %x => %x\n", ntohl(*(ULONG *)(h->data + offset)), sh[shindex].addr, value));
 			value -= sh[shindex].addr;
-			*(ULONG *)(h->data + offset) = 0;
+			D(bug("ET_EXEC %x -= %x => %x\n", ntohl(*(ULONG *)((uintptr_t)h->data + offset)), sh[shindex].addr, value));
+			*(ULONG *)((uintptr_t)h->data + offset) = 0;
 		}
 		D(bug("[ELF2HUNK]   shid %d, offset 0x%x: base 0x%x\n", (int)shid, (int)offset, (int)value));
-		*(ULONG *)(h->data + offset) = htonl(value + ntohl(*(ULONG *)(h->data + offset)));
+		*(ULONG *)((uintptr_t)h->data + offset) = htonl(value + ntohl(*(ULONG *)((uintptr_t)h->data + offset)));
+		// SHN_ABS don't need relocation, we already modified it inplace
 		if(shid == ~0) {
 			h->relocs--;
 			continue;
@@ -656,7 +672,7 @@ int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkh
 		if(eh->type == ET_EXEC)
 			s.value -= sh[shid].addr;
 
-		name = (const char *)(hh[symtab->link]->data + s.name);
+		name = (const char *)((uintptr_t)hh[symtab->link]->data + s.name);
 		if(name[0] == '\0')
 			continue;
 		D(bug("\t0x%08x: %s\n", (int)s.value, name));
@@ -729,7 +745,7 @@ static int copy_to(int in, int out)
 
 int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 {
-	const __attribute__((unused)) char *names[3] = { "CODE", "DATA", "BSS" };
+	const char *names[3] = { "CODE", "DATA", "BSS" };
 	struct hunkheader **hh;
 	struct elfheader  eh;
 	struct sheader   *sh;
@@ -737,7 +753,7 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 	int symtab_shndx = -1;
 	int err;
 	ULONG  i;
-	BOOL   exec_hunk_seen __attribute__((unused)) = FALSE;
+	BOOL   exec_hunk_seen = FALSE;
 	ULONG  int_shnum;
 	int hunks = 0;
 
@@ -791,8 +807,8 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				   that only one symbol table per file is allowed. However, it
 				   also states that this may change in future... we already handle it.
 		*/
-		D(bug("sh[%d].type = 0x%08x, .offset = 0x%08x, .size = 0x%08x\n",
-			(int)i, (int)sh[i].type, (int)sh[i].offset, (int)sh[i].size));
+		D(bug("sh[%2d].type = 0x%08x, .offset = 0x%08x, .size = 0x%08x, .name = '%s'\n",
+			(int)i, (int)sh[i].type, (int)sh[i].offset, (int)sh[i].size, strtab[eh.shstrndx] ? (strtab[eh.shstrndx] + sh[i].name) : ""));
 		if(sh[i].type == SHT_SYMTAB || sh[i].type == SHT_STRTAB || sh[i].type == SHT_SYMTAB_SHNDX)
 		{
 			hh[i] = calloc(sizeof(struct hunkheader), 1);
@@ -809,9 +825,9 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				else
 					D(bug("[ELF2HUNK] file contains multiple symtab shndx tables. only using the first one\n"));
 			}
-		} else
+		} else {
 			/* Load the section in memory if needed, and make an hunk out of it */
-			if(sh[i].flags & SHF_ALLOC && sh[i].size > 0)
+			if((sh[i].flags & SHF_ALLOC) && sh[i].size > 0)
 			{
 				hh[i] = calloc(sizeof(struct hunkheader), 1);
 				hh[i]->size = sh[i].size;
@@ -833,9 +849,9 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				}
 
 				if(strtab[eh.shstrndx]) {
-					const char *nameext;
+					const char* nameext;
 
-					D(bug("section %d '%s'\n", sh[i].name, strtab[eh.shstrndx] + sh[i].name));
+					//D(bug("section %d '%s'\n", sh[i].name, strtab[eh.shstrndx] + sh[i].name));
 					nameext = strrchr(strtab[eh.shstrndx] + sh[i].name, '.');
 					if(nameext) {
 						if(strcmp(nameext, ".MEMF_CHIP") == 0) {
@@ -850,6 +866,7 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 					}
 				}
 			}
+		}
 	}
 
 	if(flags & F_PCREL) {
@@ -1045,6 +1062,7 @@ static BOOL valid_dir(const char *dir)
 	return TRUE;
 }
 
+#ifndef _MSC_VER
 static int copy_dir(const char *src, const char *dst, int flags)
 {
 	DIR *sdir;
@@ -1094,6 +1112,7 @@ static int copy_dir(const char *src, const char *dst, int flags)
 
 	return err;
 }
+#endif
 
 static int copy(const char *src, const char *dst, int flags)
 {
@@ -1110,11 +1129,13 @@ static int copy(const char *src, const char *dst, int flags)
 		mode = 0755;
 	}
 
+#ifndef _MSC_VER
 	if(S_ISDIR(mode)) {
 		unlink(dst);
 		mkdir(dst, mode);
 		return copy_dir(src, dst, flags);
 	}
+#endif
 
 	src_fd = open(src, O_RDONLY | O_BINARY);
 	if(src_fd < 0) {
@@ -1125,7 +1146,7 @@ static int copy(const char *src, const char *dst, int flags)
 	if(strcmp(dst, "-") == 0)
 		hunk_fd = 1; /* stdout */
 	else {
-		unlink(dst);
+		_unlink(dst);
 		hunk_fd = open(dst, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
 	}
 	if(hunk_fd < 0) {
@@ -1159,9 +1180,11 @@ int main(int argc, char **argv)
 	}
 
 	if(argc < 3) {
-		fprintf(stderr, "Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.\nModified 2018, Bartman/Abyss\n\n");
+		fprintf(stderr, "Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.\nModified 2018-2020, Bartman/Abyss\n\n");
 		fprintf(stderr, "Usage:\n%s file.elf file.hunk [-v] [-pcrel] [-bin]\n", argv[0]);
-		fprintf(stderr, "%s src-dir dest-dir\n", argv[0]);
+		#ifndef _MSC_VER
+			fprintf(stderr, "%s src-dir dest-dir\n", argv[0]);
+		#endif
 		fprintf(stderr, "\t-v: verbose\n");
 		fprintf(stderr, "\t-pcrel: PC-Relative: merge all sections\n");
 		fprintf(stderr, "\t-bin: PC-Relative: output binary instead of hunk (use with -pcrel)\n");

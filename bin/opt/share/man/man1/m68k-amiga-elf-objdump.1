@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "OBJDUMP 1"
-.TH OBJDUMP 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH OBJDUMP 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-objdump \- display information from object files.
+objdump \- display information from object files
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 objdump [\fB\-a\fR|\fB\-\-archive\-headers\fR]
@@ -155,6 +155,7 @@ objdump [\fB\-a\fR|\fB\-\-archive\-headers\fR]
         [\fB\-j\fR \fIsection\fR|\fB\-\-section=\fR\fIsection\fR]
         [\fB\-l\fR|\fB\-\-line\-numbers\fR]
         [\fB\-S\fR|\fB\-\-source\fR]
+        [\fB\-\-source\-comment\fR[=\fItext\fR]]
         [\fB\-m\fR \fImachine\fR|\fB\-\-architecture=\fR\fImachine\fR]
         [\fB\-M\fR \fIoptions\fR|\fB\-\-disassembler\-options=\fR\fIoptions\fR]
         [\fB\-p\fR|\fB\-\-private\-headers\fR]
@@ -164,6 +165,7 @@ objdump [\fB\-a\fR|\fB\-\-archive\-headers\fR]
         [\fB\-s\fR|\fB\-\-full\-contents\fR]
         [\fB\-W[lLiaprmfFsoRtUuTgAckK]\fR|
          \fB\-\-dwarf\fR[=rawline,=decodedline,=info,=abbrev,=pubnames,=aranges,=macro,=frames,=frames\-interp,=str,=loc,=Ranges,=pubtypes,=trace_info,=trace_abbrev,=trace_aranges,=gdb_index,=addr,=cu_index,=links,=follow\-links]]
+        [\fB\-\-ctf=\fR\fIsection\fR]
         [\fB\-G\fR|\fB\-\-stabs\fR]
         [\fB\-t\fR|\fB\-\-syms\fR]
         [\fB\-T\fR|\fB\-\-dynamic\-syms\fR]
@@ -171,16 +173,19 @@ objdump [\fB\-a\fR|\fB\-\-archive\-headers\fR]
         [\fB\-w\fR|\fB\-\-wide\fR]
         [\fB\-\-start\-address=\fR\fIaddress\fR]
         [\fB\-\-stop\-address=\fR\fIaddress\fR]
+        [\fB\-\-no\-addresses\fR]
         [\fB\-\-prefix\-addresses\fR]
         [\fB\-\-[no\-]show\-raw\-insn\fR]
         [\fB\-\-adjust\-vma=\fR\fIoffset\fR]
         [\fB\-\-dwarf\-depth=\fR\fIn\fR]
         [\fB\-\-dwarf\-start=\fR\fIn\fR]
+        [\fB\-\-ctf\-parent=\fR\fIsection\fR]
         [\fB\-\-no\-recurse\-limit\fR|\fB\-\-recurse\-limit\fR]
         [\fB\-\-special\-syms\fR]
         [\fB\-\-prefix=\fR\fIprefix\fR]
         [\fB\-\-prefix\-strip=\fR\fIlevel\fR]
         [\fB\-\-insn\-width=\fR\fIwidth\fR]
+        [\fB\-\-visualize\-jumps[=color|=extended\-color|=off]\fR
         [\fB\-V\fR|\fB\-\-version\fR]
         [\fB\-H\fR|\fB\-\-help\fR]
         \fIobjfile\fR...
@@ -210,18 +215,18 @@ If any of the \fIobjfile\fR files are archives, display the archive
 header information (in a format similar to \fBls \-l\fR).  Besides the
 information you could list with \fBar tv\fR, \fBobjdump \-a\fR shows
 the object file format of each archive member.
-.IP "\fB\-\-adjust\-vma=\fR\fIoffset\fR\fB \fR" 4
-.IX Item "--adjust-vma=offset "
+.IP "\fB\-\-adjust\-vma=\fR\fIoffset\fR" 4
+.IX Item "--adjust-vma=offset"
 When dumping information, first add \fIoffset\fR to all the section
 addresses.  This is useful if the section addresses do not correspond to
 the symbol table, which can happen when putting sections at particular
 addresses when using a format which can not represent section addresses,
 such as a.out.
-.IP "\fB\-b\fR \fIbfdname\fR\fB \fR" 4
-.IX Item "-b bfdname "
+.IP "\fB\-b\fR \fIbfdname\fR" 4
+.IX Item "-b bfdname"
 .PD 0
-.IP "\fB\-\-target=\fR\fIbfdname\fR\fB \fR" 4
-.IX Item "--target=bfdname "
+.IP "\fB\-\-target=\fR\fIbfdname\fR" 4
+.IX Item "--target=bfdname"
 .PD
 Specify that the object-code format for the object files is
 \&\fIbfdname\fR.  This option may not be necessary; \fIobjdump\fR can
@@ -277,7 +282,7 @@ possible and any bug reports about such an event will be rejected.
 .PD
 Display debugging information.  This attempts to parse \s-1STABS\s0
 debugging format information stored in the file and print it out using
-a C like syntax.  If no \s-1STABS\s0 debuging was found this option
+a C like syntax.  If no \s-1STABS\s0 debugging was found this option
 falls back on the \fB\-W\fR option to print any \s-1DWARF\s0 information in
 the file.
 .IP "\fB\-e\fR" 4
@@ -293,8 +298,8 @@ with ctags tool.
 .PD 0
 .IP "\fB\-\-disassemble\fR" 4
 .IX Item "--disassemble"
-.IP "\fB\-\-disassemble=\fR\fIsymbol\fR\fB \fR" 4
-.IX Item "--disassemble=symbol "
+.IP "\fB\-\-disassemble=\fR\fIsymbol\fR" 4
+.IX Item "--disassemble=symbol"
 .PD
 Display the assembler mnemonics for the machine instructions from the
 input file.  This option only disassembles those sections which are 
@@ -333,6 +338,11 @@ sections as if they were instructions.
 Note if the \fB\-\-dwarf=follow\-links\fR option has also been enabled
 then any symbol tables in linked debug info files will be read in and
 used when disassembling.
+.IP "\fB\-\-no\-addresses\fR" 4
+.IX Item "--no-addresses"
+When disassembling, don't print addresses on each line or for symbols
+and relocation offsets.  In combination with \fB\-\-no\-show\-raw\-insn\fR
+this may be useful for comparing compiler output.
 .IP "\fB\-\-prefix\-addresses\fR" 4
 .IX Item "--prefix-addresses"
 When disassembling, print the complete address on each line.  This is
@@ -412,11 +422,11 @@ Print a summary of the options to \fBobjdump\fR and exit.
 .PD
 Display a list showing all architectures and object formats available
 for specification with \fB\-b\fR or \fB\-m\fR.
-.IP "\fB\-j\fR \fIname\fR\fB \fR" 4
-.IX Item "-j name "
+.IP "\fB\-j\fR \fIname\fR" 4
+.IX Item "-j name"
 .PD 0
-.IP "\fB\-\-section=\fR\fIname\fR\fB \fR" 4
-.IX Item "--section=name "
+.IP "\fB\-\-section=\fR\fIname\fR" 4
+.IX Item "--section=name"
 .PD
 Display information only for section \fIname\fR.
 .IP "\fB\-l\fR" 4
@@ -428,11 +438,11 @@ Display information only for section \fIname\fR.
 Label the display (using debugging information) with the filename and
 source line numbers corresponding to the object code or relocs shown.
 Only useful with \fB\-d\fR, \fB\-D\fR, or \fB\-r\fR.
-.IP "\fB\-m\fR \fImachine\fR\fB \fR" 4
-.IX Item "-m machine "
+.IP "\fB\-m\fR \fImachine\fR" 4
+.IX Item "-m machine"
 .PD 0
-.IP "\fB\-\-architecture=\fR\fImachine\fR\fB \fR" 4
-.IX Item "--architecture=machine "
+.IP "\fB\-\-architecture=\fR\fImachine\fR" 4
+.IX Item "--architecture=machine"
 .PD
 Specify the architecture to use when disassembling object files.  This
 can be useful when disassembling object files which do not describe
@@ -445,11 +455,11 @@ instructions supported by the architecture specified by \fImachine\fR.
 If it is necessary to use this switch because the input file does not
 contain any architecture information, but it is also desired to
 disassemble all the instructions use \fB\-marm\fR.
-.IP "\fB\-M\fR \fIoptions\fR\fB \fR" 4
-.IX Item "-M options "
+.IP "\fB\-M\fR \fIoptions\fR" 4
+.IX Item "-M options"
 .PD 0
-.IP "\fB\-\-disassembler\-options=\fR\fIoptions\fR\fB \fR" 4
-.IX Item "--disassembler-options=options "
+.IP "\fB\-\-disassembler\-options=\fR\fIoptions\fR" 4
+.IX Item "--disassembler-options=options"
 .PD
 Pass target specific information to the disassembler.  Only supported on
 some targets.  If it is necessary to specify more than one
@@ -506,70 +516,70 @@ For the x86, some of the options duplicate functions of the \fB\-m\fR
 switch, but allow finer grained control.  Multiple selections from the
 following may be specified as a comma separated string.
 .RS 4
-.ie n .IP """x86\-64 """ 4
-.el .IP "\f(CWx86\-64 \fR" 4
-.IX Item "x86-64 "
+.ie n .IP """x86\-64""" 4
+.el .IP "\f(CWx86\-64\fR" 4
+.IX Item "x86-64"
 .PD 0
-.ie n .IP """i386 """ 4
-.el .IP "\f(CWi386 \fR" 4
-.IX Item "i386 "
-.ie n .IP """i8086 """ 4
-.el .IP "\f(CWi8086 \fR" 4
-.IX Item "i8086 "
+.ie n .IP """i386""" 4
+.el .IP "\f(CWi386\fR" 4
+.IX Item "i386"
+.ie n .IP """i8086""" 4
+.el .IP "\f(CWi8086\fR" 4
+.IX Item "i8086"
 .PD
 Select disassembly for the given architecture.
-.ie n .IP """intel """ 4
-.el .IP "\f(CWintel \fR" 4
-.IX Item "intel "
+.ie n .IP """intel""" 4
+.el .IP "\f(CWintel\fR" 4
+.IX Item "intel"
 .PD 0
-.ie n .IP """att """ 4
-.el .IP "\f(CWatt \fR" 4
-.IX Item "att "
+.ie n .IP """att""" 4
+.el .IP "\f(CWatt\fR" 4
+.IX Item "att"
 .PD
 Select between intel syntax mode and \s-1AT&T\s0 syntax mode.
-.ie n .IP """amd64 """ 4
-.el .IP "\f(CWamd64 \fR" 4
-.IX Item "amd64 "
+.ie n .IP """amd64""" 4
+.el .IP "\f(CWamd64\fR" 4
+.IX Item "amd64"
 .PD 0
-.ie n .IP """intel64 """ 4
-.el .IP "\f(CWintel64 \fR" 4
-.IX Item "intel64 "
+.ie n .IP """intel64""" 4
+.el .IP "\f(CWintel64\fR" 4
+.IX Item "intel64"
 .PD
 Select between \s-1AMD64 ISA\s0 and Intel64 \s-1ISA.\s0
-.ie n .IP """intel\-mnemonic """ 4
-.el .IP "\f(CWintel\-mnemonic \fR" 4
-.IX Item "intel-mnemonic "
+.ie n .IP """intel\-mnemonic""" 4
+.el .IP "\f(CWintel\-mnemonic\fR" 4
+.IX Item "intel-mnemonic"
 .PD 0
-.ie n .IP """att\-mnemonic """ 4
-.el .IP "\f(CWatt\-mnemonic \fR" 4
-.IX Item "att-mnemonic "
+.ie n .IP """att\-mnemonic""" 4
+.el .IP "\f(CWatt\-mnemonic\fR" 4
+.IX Item "att-mnemonic"
 .PD
 Select between intel mnemonic mode and \s-1AT&T\s0 mnemonic mode.
 Note: \f(CW\*(C`intel\-mnemonic\*(C'\fR implies \f(CW\*(C`intel\*(C'\fR and
 \&\f(CW\*(C`att\-mnemonic\*(C'\fR implies \f(CW\*(C`att\*(C'\fR.
-.ie n .IP """addr64 """ 4
-.el .IP "\f(CWaddr64 \fR" 4
-.IX Item "addr64 "
+.ie n .IP """addr64""" 4
+.el .IP "\f(CWaddr64\fR" 4
+.IX Item "addr64"
 .PD 0
-.ie n .IP """addr32 """ 4
-.el .IP "\f(CWaddr32 \fR" 4
-.IX Item "addr32 "
-.ie n .IP """addr16 """ 4
-.el .IP "\f(CWaddr16 \fR" 4
-.IX Item "addr16 "
-.ie n .IP """data32 """ 4
-.el .IP "\f(CWdata32 \fR" 4
-.IX Item "data32 "
-.ie n .IP """data16 """ 4
-.el .IP "\f(CWdata16 \fR" 4
-.IX Item "data16 "
+.ie n .IP """addr32""" 4
+.el .IP "\f(CWaddr32\fR" 4
+.IX Item "addr32"
+.ie n .IP """addr16""" 4
+.el .IP "\f(CWaddr16\fR" 4
+.IX Item "addr16"
+.ie n .IP """data32""" 4
+.el .IP "\f(CWdata32\fR" 4
+.IX Item "data32"
+.ie n .IP """data16""" 4
+.el .IP "\f(CWdata16\fR" 4
+.IX Item "data16"
 .PD
-Specify the default address size and operand size.  These four options
+Specify the default address size and operand size.  These five options
 will be overridden if \f(CW\*(C`x86\-64\*(C'\fR, \f(CW\*(C`i386\*(C'\fR or \f(CW\*(C`i8086\*(C'\fR
 appear later in the option string.
-.ie n .IP """suffix """ 4
-.el .IP "\f(CWsuffix \fR" 4
-.IX Item "suffix "
+.ie n .IP """suffix""" 4
+.el .IP "\f(CWsuffix\fR" 4
+.IX Item "suffix"
 When in \s-1AT&T\s0 mode, instructs the disassembler to print a mnemonic
 suffix even when the suffix could be inferred by the operands.
 .RE
@@ -608,57 +618,57 @@ For \s-1MIPS,\s0 this option controls the printing of instruction mnemonic
 names and register names in disassembled instructions.  Multiple
 selections from the following may be specified as a comma separated
 string, and invalid options are ignored:
-.ie n .IP """no\-aliases """ 4
-.el .IP "\f(CWno\-aliases \fR" 4
-.IX Item "no-aliases "
+.ie n .IP """no\-aliases""" 4
+.el .IP "\f(CWno\-aliases\fR" 4
+.IX Item "no-aliases"
 Print the 'raw' instruction mnemonic instead of some pseudo
 instruction mnemonic.  I.e., print 'daddu' or 'or' instead of 'move',
 \&'sll' instead of 'nop', etc.
-.ie n .IP """msa """ 4
-.el .IP "\f(CWmsa \fR" 4
-.IX Item "msa "
+.ie n .IP """msa""" 4
+.el .IP "\f(CWmsa\fR" 4
+.IX Item "msa"
 Disassemble \s-1MSA\s0 instructions.
-.ie n .IP """virt """ 4
-.el .IP "\f(CWvirt \fR" 4
-.IX Item "virt "
+.ie n .IP """virt""" 4
+.el .IP "\f(CWvirt\fR" 4
+.IX Item "virt"
 Disassemble the virtualization \s-1ASE\s0 instructions.
-.ie n .IP """xpa """ 4
-.el .IP "\f(CWxpa \fR" 4
-.IX Item "xpa "
+.ie n .IP """xpa""" 4
+.el .IP "\f(CWxpa\fR" 4
+.IX Item "xpa"
 Disassemble the eXtended Physical Address (\s-1XPA\s0) \s-1ASE\s0 instructions.
-.ie n .IP """gpr\-names=\fIABI\fP """ 4
-.el .IP "\f(CWgpr\-names=\f(CIABI\f(CW \fR" 4
-.IX Item "gpr-names=ABI "
+.ie n .IP """gpr\-names=\fIABI\fP""" 4
+.el .IP "\f(CWgpr\-names=\f(CIABI\f(CW\fR" 4
+.IX Item "gpr-names=ABI"
 Print \s-1GPR\s0 (general-purpose register) names as appropriate
 for the specified \s-1ABI.\s0  By default, \s-1GPR\s0 names are selected according to
 the \s-1ABI\s0 of the binary being disassembled.
-.ie n .IP """fpr\-names=\fIABI\fP """ 4
-.el .IP "\f(CWfpr\-names=\f(CIABI\f(CW \fR" 4
-.IX Item "fpr-names=ABI "
+.ie n .IP """fpr\-names=\fIABI\fP""" 4
+.el .IP "\f(CWfpr\-names=\f(CIABI\f(CW\fR" 4
+.IX Item "fpr-names=ABI"
 Print \s-1FPR\s0 (floating-point register) names as
 appropriate for the specified \s-1ABI.\s0  By default, \s-1FPR\s0 numbers are printed
 rather than names.
-.ie n .IP """cp0\-names=\fIARCH\fP """ 4
-.el .IP "\f(CWcp0\-names=\f(CIARCH\f(CW \fR" 4
-.IX Item "cp0-names=ARCH "
+.ie n .IP """cp0\-names=\fIARCH\fP""" 4
+.el .IP "\f(CWcp0\-names=\f(CIARCH\f(CW\fR" 4
+.IX Item "cp0-names=ARCH"
 Print \s-1CP0\s0 (system control coprocessor; coprocessor 0) register names
 as appropriate for the \s-1CPU\s0 or architecture specified by
 \&\fI\s-1ARCH\s0\fR.  By default, \s-1CP0\s0 register names are selected according to
 the architecture and \s-1CPU\s0 of the binary being disassembled.
-.ie n .IP """hwr\-names=\fIARCH\fP """ 4
-.el .IP "\f(CWhwr\-names=\f(CIARCH\f(CW \fR" 4
-.IX Item "hwr-names=ARCH "
+.ie n .IP """hwr\-names=\fIARCH\fP""" 4
+.el .IP "\f(CWhwr\-names=\f(CIARCH\f(CW\fR" 4
+.IX Item "hwr-names=ARCH"
 Print \s-1HWR\s0 (hardware register, used by the \f(CW\*(C`rdhwr\*(C'\fR instruction) names
 as appropriate for the \s-1CPU\s0 or architecture specified by
 \&\fI\s-1ARCH\s0\fR.  By default, \s-1HWR\s0 names are selected according to
 the architecture and \s-1CPU\s0 of the binary being disassembled.
-.ie n .IP """reg\-names=\fIABI\fP """ 4
-.el .IP "\f(CWreg\-names=\f(CIABI\f(CW \fR" 4
-.IX Item "reg-names=ABI "
+.ie n .IP """reg\-names=\fIABI\fP""" 4
+.el .IP "\f(CWreg\-names=\f(CIABI\f(CW\fR" 4
+.IX Item "reg-names=ABI"
 Print \s-1GPR\s0 and \s-1FPR\s0 names as appropriate for the selected \s-1ABI.\s0
-.ie n .IP """reg\-names=\fIARCH\fP """ 4
-.el .IP "\f(CWreg\-names=\f(CIARCH\f(CW \fR" 4
-.IX Item "reg-names=ARCH "
+.ie n .IP """reg\-names=\fIARCH\fP""" 4
+.el .IP "\f(CWreg\-names=\f(CIARCH\f(CW\fR" 4
+.IX Item "reg-names=ARCH"
 Print CPU-specific register names (\s-1CP0\s0 register and \s-1HWR\s0 names)
 as appropriate for the selected \s-1CPU\s0 or architecture.
 .RE
@@ -686,11 +696,11 @@ of the function being wrongly disassembled.
 Print information that is specific to the object file format.  The exact
 information printed depends upon the object file format.  For some
 object file formats, no additional information is printed.
-.IP "\fB\-P\fR \fIoptions\fR\fB \fR" 4
-.IX Item "-P options "
+.IP "\fB\-P\fR \fIoptions\fR" 4
+.IX Item "-P options"
 .PD 0
-.IP "\fB\-\-private=\fR\fIoptions\fR\fB \fR" 4
-.IX Item "--private=options "
+.IP "\fB\-\-private=\fR\fIoptions\fR" 4
+.IX Item "--private=options"
 .PD
 Print information that is specific to the object file format.  The
 argument \fIoptions\fR is a comma separated list that depends on the
@@ -698,43 +708,43 @@ format (the lists of options is displayed with the help).
 .Sp
 For \s-1XCOFF,\s0 the available options are:
 .RS 4
-.ie n .IP """header """ 4
-.el .IP "\f(CWheader \fR" 4
-.IX Item "header "
+.ie n .IP """header""" 4
+.el .IP "\f(CWheader\fR" 4
+.IX Item "header"
 .PD 0
-.ie n .IP """aout """ 4
-.el .IP "\f(CWaout \fR" 4
-.IX Item "aout "
-.ie n .IP """sections """ 4
-.el .IP "\f(CWsections \fR" 4
-.IX Item "sections "
-.ie n .IP """syms """ 4
-.el .IP "\f(CWsyms \fR" 4
-.IX Item "syms "
-.ie n .IP """relocs """ 4
-.el .IP "\f(CWrelocs \fR" 4
-.IX Item "relocs "
-.ie n .IP """lineno, """ 4
-.el .IP "\f(CWlineno, \fR" 4
-.IX Item "lineno, "
-.ie n .IP """loader """ 4
-.el .IP "\f(CWloader \fR" 4
-.IX Item "loader "
-.ie n .IP """except """ 4
-.el .IP "\f(CWexcept \fR" 4
-.IX Item "except "
-.ie n .IP """typchk """ 4
-.el .IP "\f(CWtypchk \fR" 4
-.IX Item "typchk "
-.ie n .IP """traceback """ 4
-.el .IP "\f(CWtraceback \fR" 4
-.IX Item "traceback "
-.ie n .IP """toc """ 4
-.el .IP "\f(CWtoc \fR" 4
-.IX Item "toc "
-.ie n .IP """ldinfo """ 4
-.el .IP "\f(CWldinfo \fR" 4
-.IX Item "ldinfo "
+.ie n .IP """aout""" 4
+.el .IP "\f(CWaout\fR" 4
+.IX Item "aout"
+.ie n .IP """sections""" 4
+.el .IP "\f(CWsections\fR" 4
+.IX Item "sections"
+.ie n .IP """syms""" 4
+.el .IP "\f(CWsyms\fR" 4
+.IX Item "syms"
+.ie n .IP """relocs""" 4
+.el .IP "\f(CWrelocs\fR" 4
+.IX Item "relocs"
+.ie n .IP """lineno,""" 4
+.el .IP "\f(CWlineno,\fR" 4
+.IX Item "lineno,"
+.ie n .IP """loader""" 4
+.el .IP "\f(CWloader\fR" 4
+.IX Item "loader"
+.ie n .IP """except""" 4
+.el .IP "\f(CWexcept\fR" 4
+.IX Item "except"
+.ie n .IP """typchk""" 4
+.el .IP "\f(CWtypchk\fR" 4
+.IX Item "typchk"
+.ie n .IP """traceback""" 4
+.el .IP "\f(CWtraceback\fR" 4
+.IX Item "traceback"
+.ie n .IP """toc""" 4
+.el .IP "\f(CWtoc\fR" 4
+.IX Item "toc"
+.ie n .IP """ldinfo""" 4
+.el .IP "\f(CWldinfo\fR" 4
+.IX Item "ldinfo"
 .RE
 .RS 4
 .PD
@@ -778,12 +788,19 @@ non-empty sections are displayed.
 .PD
 Display source code intermixed with disassembly, if possible.  Implies
 \&\fB\-d\fR.
-.IP "\fB\-\-prefix=\fR\fIprefix\fR\fB \fR" 4
-.IX Item "--prefix=prefix "
+.IP "\fB\-\-source\-comment[=\fR\fItxt\fR\fB]\fR" 4
+.IX Item "--source-comment[=txt]"
+Like the \fB\-S\fR option, but all source code lines are displayed
+with a prefix of \fItxt\fR.  Typically \fItxt\fR will be a comment
+string which can be used to distinguish the assembler code from the
+source code.  If \fItxt\fR is not provided then a default string of
+\&\fI\*(L"# \*(R"\fR (hash followed by a space), will be used.
+.IP "\fB\-\-prefix=\fR\fIprefix\fR" 4
+.IX Item "--prefix=prefix"
 Specify \fIprefix\fR to add to the absolute paths when used with
 \&\fB\-S\fR.
-.IP "\fB\-\-prefix\-strip=\fR\fIlevel\fR\fB \fR" 4
-.IX Item "--prefix-strip=level "
+.IP "\fB\-\-prefix\-strip=\fR\fIlevel\fR" 4
+.IX Item "--prefix-strip=level"
 Indicate how many initial directory names to strip off the hardwired
 absolute paths. It has no effect without \fB\-\-prefix=\fR\fIprefix\fR.
 .IP "\fB\-\-show\-raw\-insn\fR" 4
@@ -795,10 +812,21 @@ in symbolic form.  This is the default except when
 .IX Item "--no-show-raw-insn"
 When disassembling instructions, do not print the instruction bytes.
 This is the default when \fB\-\-prefix\-addresses\fR is used.
-.IP "\fB\-\-insn\-width=\fR\fIwidth\fR\fB \fR" 4
-.IX Item "--insn-width=width "
+.IP "\fB\-\-insn\-width=\fR\fIwidth\fR" 4
+.IX Item "--insn-width=width"
 Display \fIwidth\fR bytes on a single line when disassembling
 instructions.
+.IP "\fB\-\-visualize\-jumps[=color|=extended\-color|=off]\fR" 4
+.IX Item "--visualize-jumps[=color|=extended-color|=off]"
+Visualize jumps that stay inside a function by drawing \s-1ASCII\s0 art between
+the start and target addresses.  The optional \fB=color\fR argument
+adds color to the output using simple terminal colors.  Alternatively
+the \fB=extended\-color\fR argument will add color using 8bit
+colors, but these might not work on all terminals.
+.Sp
+If it is necessary to disable the \fBvisualize-jumps\fR option
+after it has previously been enabled then use
+\&\fBvisualize\-jumps=off\fR.
 .IP "\fB\-W[lLiaprmfFsoRtUuTgAckK]\fR" 4
 .IX Item "-W[lLiaprmfFsoRtUuTgAckK]"
 .PD 0
@@ -1052,6 +1080,15 @@ This can be used in conjunction with \fB\-\-dwarf\-depth\fR.
 .IP "\fB\-\-dwarf\-check\fR" 4
 .IX Item "--dwarf-check"
 Enable additional checks for consistency of Dwarf information.
+.IP "\fB\-\-ctf=\fR\fIsection\fR" 4
+.IX Item "--ctf=section"
+Display the contents of the specified \s-1CTF\s0 section.  \s-1CTF\s0 sections themselves
+contain many subsections, all of which are displayed in order.
+.IP "\fB\-\-ctf\-parent=\fR\fIsection\fR" 4
+.IX Item "--ctf-parent=section"
+Specify the name of another section from which the \s-1CTF\s0 dictionary can inherit
+types.  (If none is specified, we assume the \s-1CTF\s0 dictionary inherits types
+from the default-named member of the archive contained within this section.)
 .IP "\fB\-G\fR" 4
 .IX Item "-G"
 .PD 0
@@ -1065,12 +1102,12 @@ contents of the .stab and .stab.index and .stab.excl sections from an
 section.  In most other file formats, debugging symbol-table entries are
 interleaved with linkage symbols, and are visible in the \fB\-\-syms\fR
 output.
-.IP "\fB\-\-start\-address=\fR\fIaddress\fR\fB \fR" 4
-.IX Item "--start-address=address "
+.IP "\fB\-\-start\-address=\fR\fIaddress\fR" 4
+.IX Item "--start-address=address"
 Start displaying data at the specified address.  This affects the output
 of the \fB\-d\fR, \fB\-r\fR and \fB\-s\fR options.
-.IP "\fB\-\-stop\-address=\fR\fIaddress\fR\fB \fR" 4
-.IX Item "--stop-address=address "
+.IP "\fB\-\-stop\-address=\fR\fIaddress\fR" 4
+.IX Item "--stop-address=address"
 Stop displaying data at the specified address.  This affects the output
 of the \fB\-d\fR, \fB\-r\fR and \fB\-s\fR options.
 .IP "\fB\-t\fR" 4
@@ -1119,19 +1156,19 @@ the symbol's name is displayed.
 .Sp
 The flag characters are divided into 7 groups as follows:
 .RS 4
-.ie n .IP """l """ 4
-.el .IP "\f(CWl \fR" 4
-.IX Item "l "
+.ie n .IP """l""" 4
+.el .IP "\f(CWl\fR" 4
+.IX Item "l"
 .PD 0
-.ie n .IP """g """ 4
-.el .IP "\f(CWg \fR" 4
-.IX Item "g "
-.ie n .IP """u """ 4
-.el .IP "\f(CWu \fR" 4
-.IX Item "u "
-.ie n .IP """! """ 4
-.el .IP "\f(CW! \fR" 4
-.IX Item "! "
+.ie n .IP """g""" 4
+.el .IP "\f(CWg\fR" 4
+.IX Item "g"
+.ie n .IP """u""" 4
+.el .IP "\f(CWu\fR" 4
+.IX Item "u"
+.ie n .IP """!""" 4
+.el .IP "\f(CW!\fR" 4
+.IX Item "!"
 .PD
 The symbol is a local (l), global (g), unique global (u), neither
 global nor local (a space) or both global and local (!).  A
@@ -1141,51 +1178,51 @@ a bug if it is ever both local and global.  Unique global symbols are
 a \s-1GNU\s0 extension to the standard set of \s-1ELF\s0 symbol bindings.  For such
 a symbol the dynamic linker will make sure that in the entire process
 there is just one symbol with this name and type in use.
-.ie n .IP """w """ 4
-.el .IP "\f(CWw \fR" 4
-.IX Item "w "
+.ie n .IP """w""" 4
+.el .IP "\f(CWw\fR" 4
+.IX Item "w"
 The symbol is weak (w) or strong (a space).
-.ie n .IP """C """ 4
-.el .IP "\f(CWC \fR" 4
-.IX Item "C "
+.ie n .IP """C""" 4
+.el .IP "\f(CWC\fR" 4
+.IX Item "C"
 The symbol denotes a constructor (C) or an ordinary symbol (a space).
-.ie n .IP """W """ 4
-.el .IP "\f(CWW \fR" 4
-.IX Item "W "
+.ie n .IP """W""" 4
+.el .IP "\f(CWW\fR" 4
+.IX Item "W"
 The symbol is a warning (W) or a normal symbol (a space).  A warning
 symbol's name is a message to be displayed if the symbol following the
 warning symbol is ever referenced.
-.ie n .IP """I """ 4
-.el .IP "\f(CWI \fR" 4
-.IX Item "I "
+.ie n .IP """I""" 4
+.el .IP "\f(CWI\fR" 4
+.IX Item "I"
 .PD 0
-.ie n .IP """i """ 4
-.el .IP "\f(CWi \fR" 4
-.IX Item "i "
+.ie n .IP """i""" 4
+.el .IP "\f(CWi\fR" 4
+.IX Item "i"
 .PD
 The symbol is an indirect reference to another symbol (I), a function
 to be evaluated during reloc processing (i) or a normal symbol (a
 space).
-.ie n .IP """d """ 4
-.el .IP "\f(CWd \fR" 4
-.IX Item "d "
+.ie n .IP """d""" 4
+.el .IP "\f(CWd\fR" 4
+.IX Item "d"
 .PD 0
-.ie n .IP """D """ 4
-.el .IP "\f(CWD \fR" 4
-.IX Item "D "
+.ie n .IP """D""" 4
+.el .IP "\f(CWD\fR" 4
+.IX Item "D"
 .PD
 The symbol is a debugging symbol (d) or a dynamic symbol (D) or a
 normal symbol (a space).
-.ie n .IP """F """ 4
-.el .IP "\f(CWF \fR" 4
-.IX Item "F "
+.ie n .IP """F""" 4
+.el .IP "\f(CWF\fR" 4
+.IX Item "F"
 .PD 0
-.ie n .IP """f """ 4
-.el .IP "\f(CWf \fR" 4
-.IX Item "f "
-.ie n .IP """O """ 4
-.el .IP "\f(CWO \fR" 4
-.IX Item "O "
+.ie n .IP """f""" 4
+.el .IP "\f(CWf\fR" 4
+.IX Item "f"
+.ie n .IP """O""" 4
+.el .IP "\f(CWO\fR" 4
+.IX Item "O"
 .PD
 The symbol is the name of a function (F) or a file (f) or an object
 (O) or just a normal symbol (a space).
@@ -1265,7 +1302,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 \&\fInm\fR\|(1), \fIreadelf\fR\|(1), and the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

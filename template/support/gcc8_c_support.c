@@ -50,7 +50,6 @@ void KPrintF(const char* fmt, ...)
 	}
 }
 
-
 int main();
 
 extern void (*__preinit_array_start[])() __attribute__((weak));

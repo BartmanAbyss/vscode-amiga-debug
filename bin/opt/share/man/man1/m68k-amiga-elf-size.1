@@ -129,13 +129,13 @@
 .\" ========================================================================
 .\"
 .IX Title "SIZE 1"
-.TH SIZE 1 "2019-03-14" "binutils-2.32.51" "GNU Development Tools"
+.TH SIZE 1 "2020-05-08" "binutils-2.34.50" "GNU Development Tools"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-size \- list section sizes and total size.
+size \- list section sizes and total size of binary files
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 size [\fB\-A\fR|\fB\-B\fR|\fB\-G\fR|\fB\-\-format=\fR\fIcompatibility\fR]
@@ -147,13 +147,13 @@ size [\fB\-A\fR|\fB\-B\fR|\fB\-G\fR|\fB\-\-format=\fR\fIcompatibility\fR]
      [\fIobjfile\fR...]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
-The \s-1GNU\s0 \fBsize\fR utility lists the section sizes\-\-\-and the total
-size\-\-\-for each of the object or archive files \fIobjfile\fR in its
-argument list.  By default, one line of output is generated for each
-object file or each module in an archive.
+The \s-1GNU\s0 \fBsize\fR utility lists the section sizes and the total
+size for each of the binary files \fIobjfile\fR on its argument list.
+By default, one line of output is generated for each file or each
+module if the file is an archive.
 .PP
-\&\fIobjfile\fR... are the object files to be examined.
-If none are specified, the file \f(CW\*(C`a.out\*(C'\fR will be used.
+\&\fIobjfile\fR... are the files to be examined.  If none are
+specified, the file \f(CW\*(C`a.out\*(C'\fR will be used instead.
 .SH "OPTIONS"
 .IX Header "OPTIONS"
 The command-line options have the following meanings:
@@ -164,8 +164,8 @@ The command-line options have the following meanings:
 .IX Item "-B"
 .IP "\fB\-G\fR" 4
 .IX Item "-G"
-.IP "\fB\-\-format=\fR\fIcompatibility\fR\fB \fR" 4
-.IX Item "--format=compatibility "
+.IP "\fB\-\-format=\fR\fIcompatibility\fR" 4
+.IX Item "--format=compatibility"
 .PD
 Using one of these options, you can choose whether the output from \s-1GNU\s0
 \&\fBsize\fR resembles output from System V \fBsize\fR (using \fB\-A\fR,
@@ -232,8 +232,8 @@ Show a summary of acceptable arguments and options.
 .IX Item "-o"
 .IP "\fB\-x\fR" 4
 .IX Item "-x"
-.IP "\fB\-\-radix=\fR\fInumber\fR\fB \fR" 4
-.IX Item "--radix=number "
+.IP "\fB\-\-radix=\fR\fInumber\fR" 4
+.IX Item "--radix=number"
 .PD
 Using one of these options, you can control whether the size of each
 section is given in decimal (\fB\-d\fR, or \fB\-\-radix=10\fR); octal
@@ -253,8 +253,8 @@ or \s-1GNU\s0 format these are included in the bss size.
 .IX Item "--totals"
 .PD
 Show totals of all objects listed (Berkeley or \s-1GNU\s0 format mode only).
-.IP "\fB\-\-target=\fR\fIbfdname\fR\fB \fR" 4
-.IX Item "--target=bfdname "
+.IP "\fB\-\-target=\fR\fIbfdname\fR" 4
+.IX Item "--target=bfdname"
 Specify that the object-code format for \fIobjfile\fR is
 \&\fIbfdname\fR.  This option may not be necessary; \fBsize\fR can
 automatically recognize many formats.
@@ -283,7 +283,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 \&\fIar\fR\|(1), \fIobjdump\fR\|(1), \fIreadelf\fR\|(1), and the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (c) 1991\-2019 Free Software Foundation, Inc.
+Copyright (c) 1991\-2020 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.3

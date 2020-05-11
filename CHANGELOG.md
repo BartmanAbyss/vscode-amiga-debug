@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.9.0
+- updated to GCC 10.1, binutils 2.34 and GDB 9.1
+- elf2hunk now built with Microsoft Visual C++ 2019
+
 ## 0.8.1
 - fix prototypes in string.h
 
