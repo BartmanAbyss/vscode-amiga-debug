@@ -7,9 +7,9 @@ Name             Origin             Length             Attributes
 Linker script and memory map
 
 Address of section .text set to 0x0
-LOAD C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
-LOAD C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
-LOAD C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+LOAD C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
+LOAD C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
+LOAD C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
 LOAD obj/gcc8_a_support.o
                 [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x80000000))
                 0x0000000080000074                . = (SEGMENT_START ("text-segment", 0x80000000) + SIZEOF_HEADERS)
@@ -72,16 +72,16 @@ LOAD obj/gcc8_a_support.o
 .text           0x0000000000000000      0x7a8
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  .text.unlikely
-                0x0000000000000000       0x74 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+                0x0000000000000000       0x74 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
                 0x0000000000000000                _start
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
- .text.startup  0x0000000000000074      0x340 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .text.startup  0x0000000000000074      0x340 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
                 0x0000000000000074                main
  *(.text.hot .text.hot.*)
  *(SORT_BY_NAME(.text.sorted.*))
  *(.text .stub .text.* .gnu.linkonce.t.*)
- .text          0x00000000000003b4      0x2e8 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .text          0x00000000000003b4      0x2e8 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
                 0x000000000000052e                strlen
                 0x0000000000000542                memset
                 0x0000000000000610                memcpy
@@ -103,7 +103,7 @@ LOAD obj/gcc8_a_support.o
 
 .rodata         0x00000000000007a8      0x112
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x00000000000007a8      0x112 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .rodata        0x00000000000007a8      0x112 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
                 0x00000000000007a8                incbin_colors_start
                 0x0000000000000828                incbin_colors_end
 
@@ -199,7 +199,7 @@ LOAD obj/gcc8_a_support.o
 
 .data           0x00000000000028bc        0x0
  *(.data .data.* .gnu.linkonce.d.*)
- .data          0x00000000000028bc        0x0 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .data          0x00000000000028bc        0x0 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
  .data          0x00000000000028bc        0x0 obj/gcc8_a_support.o
 
 .data1
@@ -212,7 +212,7 @@ LOAD obj/gcc8_a_support.o
 .bss            0x00000000000028bc       0x28
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
- .bss           0x00000000000028bc       0x26 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .bss           0x00000000000028bc       0x26 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
  *fill*         0x00000000000028e2        0x2 
  .bss           0x00000000000028e4        0x0 obj/gcc8_a_support.o
  *(COMMON)
@@ -244,10 +244,10 @@ LOAD obj/gcc8_a_support.o
 
 .comment        0x0000000000000000       0x12
  *(.comment)
- .comment       0x0000000000000000       0x12 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
                                          0x13 (size before relaxing)
- .comment       0x0000000000000012       0x13 C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
- .comment       0x0000000000000012       0x13 C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+ .comment       0x0000000000000012       0x13 C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
+ .comment       0x0000000000000012       0x13 C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
 
 .gnu.build.attributes
  *(.gnu.build.attributes .gnu.build.attributes.*)
@@ -267,7 +267,7 @@ LOAD obj/gcc8_a_support.o
 .debug_aranges  0x0000000000000000       0x50
  *(.debug_aranges)
  .debug_aranges
-                0x0000000000000000       0x30 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+                0x0000000000000000       0x30 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
  .debug_aranges
                 0x0000000000000030       0x20 obj/gcc8_a_support.o
 
@@ -276,41 +276,41 @@ LOAD obj/gcc8_a_support.o
 
 .debug_info     0x0000000000000000     0x50d6
  *(.debug_info .gnu.linkonce.wi.*)
- .debug_info    0x0000000000000000      0xc89 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
- .debug_info    0x0000000000000c89     0x3dcc C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
+ .debug_info    0x0000000000000000      0xc89 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
+ .debug_info    0x0000000000000c89     0x3dcc C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
                 0x0000000000000c89                main.c.20ba3837
- .debug_info    0x0000000000004a55      0x65b C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+ .debug_info    0x0000000000004a55      0x65b C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
                 0x0000000000004a55                gcc8_c_support.c.90f89dfa
  .debug_info    0x00000000000050b0       0x26 obj/gcc8_a_support.o
 
 .debug_abbrev   0x0000000000000000      0x48c
  *(.debug_abbrev)
- .debug_abbrev  0x0000000000000000      0x117 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
- .debug_abbrev  0x0000000000000117      0x239 C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
- .debug_abbrev  0x0000000000000350      0x128 C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+ .debug_abbrev  0x0000000000000000      0x117 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
+ .debug_abbrev  0x0000000000000117      0x239 C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
+ .debug_abbrev  0x0000000000000350      0x128 C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
  .debug_abbrev  0x0000000000000478       0x14 obj/gcc8_a_support.o
 
 .debug_line     0x0000000000000000     0x1ead
  *(.debug_line .debug_line.* .debug_line_end)
- .debug_line    0x0000000000000000     0x17fd C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
- .debug_line    0x00000000000017fd      0x46c C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
- .debug_line    0x0000000000001c69      0x154 C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+ .debug_line    0x0000000000000000     0x17fd C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
+ .debug_line    0x00000000000017fd      0x46c C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
+ .debug_line    0x0000000000001c69      0x154 C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
  .debug_line    0x0000000000001dbd       0xf0 obj/gcc8_a_support.o
 
 .debug_frame    0x0000000000000000      0x244
  *(.debug_frame)
- .debug_frame   0x0000000000000000      0x244 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .debug_frame   0x0000000000000000      0x244 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
 
 .debug_str      0x0000000000000000      0x219
  *(.debug_str)
- .debug_str     0x0000000000000000        0x0 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
- .debug_str     0x0000000000000000      0x111 C:\Users\bwodok\AppData\Local\Temp\ccnYv5so.debug.temp.o
- .debug_str     0x0000000000000111       0x5c C:\Users\bwodok\AppData\Local\Temp\ccaqLLtt.debug.temp.o
+ .debug_str     0x0000000000000000        0x0 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
+ .debug_str     0x0000000000000000      0x111 C:\Users\bwodok\AppData\Local\Temp\ccuBkWNu.debug.temp.o
+ .debug_str     0x0000000000000111       0x5c C:\Users\bwodok\AppData\Local\Temp\ccurNUqy.debug.temp.o
  .debug_str     0x000000000000016d       0xac obj/gcc8_a_support.o
 
 .debug_loc      0x0000000000000000      0x66d
  *(.debug_loc)
- .debug_loc     0x0000000000000000      0x66d C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .debug_loc     0x0000000000000000      0x66d C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -332,7 +332,7 @@ LOAD obj/gcc8_a_support.o
 
 .debug_ranges   0x0000000000000000       0xa8
  *(.debug_ranges)
- .debug_ranges  0x0000000000000000       0xa8 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.zPgzJe.ltrans0.ltrans.o
+ .debug_ranges  0x0000000000000000       0xa8 C:\Users\bwodok\AppData\Local\Temp\a.mingw.elf.PnSlwN.ltrans0.ltrans.o
 
 .debug_macro
  *(.debug_macro)

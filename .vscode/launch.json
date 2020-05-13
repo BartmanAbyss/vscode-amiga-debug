@@ -18,16 +18,18 @@
 			"preLaunchTask": "npm: watch"
 		},
 		{
-			"name": "Launch Tests",
+			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test" ],
-			"stopOnEntry": false,
-			"sourceMaps": true,
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+			],
 			"outFiles": [
-				"${workspaceRoot}/out/**/*.js"
-			]
+				"${workspaceFolder}/out/test/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}"
 		} 
 	]
 }

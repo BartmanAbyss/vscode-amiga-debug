@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+//import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -205,7 +205,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 				const regNode = this.registerMap[index];
 				if (regNode) { regNode.setValue(value); }
 			});
-			this._onDidChangeTreeData.fire();
+			this._onDidChangeTreeData.fire(undefined);
 		});
 	}
 
@@ -230,7 +230,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 		});
 
 		this.loaded = true;
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public updateRegisterValues(values: RegisterValue[]) {
@@ -239,7 +239,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 			node.setValue(reg.value);
 		});
 
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public getChildren(element?: TreeNode): vscode.ProviderResult<TreeNode[]> {
@@ -260,14 +260,14 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 		this.loaded = false;
 		this.registers = [];
 		this.registerMap = {};
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public debugSessionStarted() {
 		this.loaded = false;
 		this.registers = [];
 		this.registerMap = {};
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public debugStopped() {
