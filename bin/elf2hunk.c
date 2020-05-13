@@ -1,5 +1,5 @@
 /*
-	Copyright © 1995-2017, The AROS Development Team. All rights reserved.
+	Copyright ï¿½ 1995-2017, The AROS Development Team. All rights reserved.
 	Modified 2018-19, Bartman/Abyss
 	$Id$
 */
@@ -29,7 +29,7 @@
 #define F_PCREL         (1 << 2)
 #define F_BINARY        (1 << 3)
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(WIN32)
 	#include <winsock2.h>
 	#pragma comment(lib, "ws2_32.lib")
 	#define mkdir(path, mode) mkdir(path)

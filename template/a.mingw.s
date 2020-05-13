@@ -87,7 +87,7 @@ int main() {
   8c:	0000 28de 
 
 	// We will use the graphics library only to locate and restore the system copper list once we are through.
-	GfxBase = (struct GfxBase *)OpenLibrary("graphics.library",0);
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library",0);
   90:	43f9 0000 0871 	lea 871 <incbin_colors_end+0x49>,a1
   96:	7000           	moveq #0,d0
   98:	4eae fdd8      	jsr -552(a6)
@@ -97,7 +97,7 @@ int main() {
 		Exit(0);
 
 	// used for printing
-	DOSBase = (struct DosLibrary*)OpenLibrary("dos.library", 0);
+	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
   a6:	2c79 0000 28d6 	movea.l 28d6 <SysBase>,a6
   ac:	43f9 0000 0882 	lea 882 <incbin_colors_end+0x5a>,a1
   b2:	7000           	moveq #0,d0
@@ -367,7 +367,7 @@ inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}
  384:	2c79 0000 28ce 	movea.l 28ce <DOSBase>,a6
  38a:	7200           	moveq #0,d1
  38c:	4eae ff70      	jsr -144(a6)
-	DOSBase = (struct DosLibrary*)OpenLibrary("dos.library", 0);
+	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
  390:	2c79 0000 28d6 	movea.l 28d6 <SysBase>,a6
  396:	43f9 0000 0882 	lea 882 <incbin_colors_end+0x5a>,a1
  39c:	7000           	moveq #0,d0

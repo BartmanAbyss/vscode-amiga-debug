@@ -1,6 +1,6 @@
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-**One-stop Visual Code Extention to compile and debug Amiga C/C++ programs compiled by the bundled gcc 8.3.0 in WinUAE.**
+**One-stop Visual Code Extention to compile and debug Amiga C/C++ programs compiled by the bundled gcc 10.1 in WinUAE.**
 
 ## Overview
 This extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500. It supports C and C++, however no standard library is available.
@@ -37,23 +37,23 @@ This extension is based in part on Marcel Ball's [Cortex-Debug](https://github.c
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 
-Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
+Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8+. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
 
 This extension contains binaries of:
-- modified [GCC 8.3.0](https://github.com/BartmanAbyss/gcc/tree/amiga-8_3_0)
-  - Copyright (C) 2018 Free Software Foundation, Inc.
+- modified [GCC 10.1.0](https://github.com/BartmanAbyss/gcc)
+  - Copyright (C) 2020 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU Binutils 2.32.51.20190311](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2019 Free Software Foundation, Inc.
+- modified [GNU Binutils 2.34.50.20200508](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2020 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
   - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-- modified [GNU gdb (GDB) 8.3.50.20190311-git](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2019 Free Software Foundation, Inc.
+- modified [GNU gdb (GDB) 10.0.50.20200508-git](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2020 Free Software Foundation, Inc.
   - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
 - modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
 - modified elf2hunk (source included)
   - Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.
-  - Modified 2018-2019, Bartman/Abyss
+  - Modified 2018-2020, Bartman/Abyss
 - GNU Make 4.2.1
   - Copyright (C) 1988-2016 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -66,57 +66,73 @@ This extension contains binaries of:
 Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
 Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
 
-Here are the command-lines used to compile the external tools (MinGW on WSL):
+Here are the command-lines used to compile the external tools:
+
+### MinGW on WSL (Ubuntu 18.04)
+```
+apt install build-essential flex bison expect dejagnu texinfo mingw-w64
+```
 
 ### Binutils
 ```
-mkdir -p build-binutils-2.32
-cd build-binutils-2.32
-../binutils-2.32/configure --disable-multilib --disable-nls --enable-lto --prefix=/opt/amiga/8.3.0 --target=m68k-amiga-elf --host=x86_64-w64-mingw32
+mkdir -p build-binutils-2.34
+cd build-binutils-2.34
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-2.34/configure --disable-multilib --disable-nls --enable-lto --prefix=/opt/amiga/10.1.0 --target=m68k-amiga-elf --host=x86_64-w64-mingw32
 make -j6
 sudo make install
 ```
 
 ### GDB
 ```
+mkdir build-binutils-gdb
 cd build-binutils-gdb
-../binutils-gdb/configure --prefix=/opt/amiga/8.3.0 --target=m68k-amiga-elf --disable-werror --host=x86_64-w64-mingw32
-make
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/opt/amiga/10.1.0 --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
+make -j6
+sudo make install
+sudo strip /opt/amiga/10.1.0/bin/*.exe
+sudo strip /opt/amiga/10.1.0/m68k-amiga-elf/bin/*.exe
 ```
 
 ### GCC
 ```
-cd gcc-8.3.0
+cd gcc
 ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-8.3.0
-cd build-gcc-8.3.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-8.3.0/configure \
-    --target=m68k-amiga-elf \
-    --disable-nls \
-    --enable-languages=c,c++ \
-    --enable-lto \
-    --prefix=/opt/amiga/8.3.0 \
-    --disable-libssp \
-    --disable-gcov \
-    --disable-multilib \
-    --disable-threads \
-    --with-cpu=68000 \
-    --disable-libsanitizer \
-    --disable-libada \
-    --disable-libgomp \
-    --disable-libvtv \
-    --disable-nls \
-    --disable-clocale \
-    --enable-static \
-    --host=x86_64-w64-mingw32
+mkdir -p build-gcc-10.1.0
+cd build-gcc-10.1.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
+  --target=m68k-amiga-elf \
+  --disable-nls \
+  --enable-languages=c,c++ \
+  --enable-lto \
+  --prefix=/opt/amiga/10.1.0 \
+  --disable-libssp \
+  --disable-gcov \
+  --disable-multilib \
+  --disable-threads \
+  --with-cpu=68000 \
+  --disable-libsanitizer \
+  --disable-libada \
+  --disable-libgomp \
+  --disable-libvtv \
+  --disable-nls \
+  --disable-clocale \
+  --host=x86_64-w64-mingw32 \
+  --enable-static
+make all-gcc -j6
+sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
+mv gcc/Makefile.tmp gcc/Makefile
+gcc/gcc-cross.exe -dumpspecs >gcc/specs
 make all-gcc -j6
 sudo make install-gcc
+sudo strip /opt/amiga/10.1.0/bin/*.exe
+sudo strip /opt/amiga/10.1.0/m68k-amiga-elf/bin/*.exe
+sudo strip /opt/amiga/10.1.0/libexec/gcc/m68k-amiga-elf/10.1.0/*.exe
 ```
 
 ### elf2hunk
 ```
-gcc -o elf2hunk -DDEBUG=0 elf2hunk.c
+LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf2hunk -DDEBUG=0 elf2hunk.c -lws2_32
 ```
 
 ## Known Issues
