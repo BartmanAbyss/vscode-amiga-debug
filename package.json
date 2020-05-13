@@ -224,7 +224,7 @@
 		"vscode-test": "^1.3.0"
 	},
 	"dependencies": {
-		"vscode-debugadapter": "1.34.0",
-		"vscode-debugprotocol": "1.34.0"
+		"vscode-debugadapter": "^1.40.0",
+		"vscode-debugprotocol": "^1.40.0"
 	}
 }

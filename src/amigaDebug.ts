@@ -316,19 +316,19 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendResponse(response);
 				break;
 			case 'read-memory':
-				this.readMemoryRequest(response, args['address'], args['length']);
+				this.customReadMemoryRequest(response, args['address'], args['length']);
 				break;
 			case 'write-memory':
-				this.writeMemoryRequest(response, args['address'], args['data']);
+				this.customWriteMemoryRequest(response, args['address'], args['data']);
 				break;
 			case 'read-registers':
-				this.readRegistersRequest(response);
+				this.customReadRegistersRequest(response);
 				break;
 			case 'read-register-list':
-				this.readRegisterListRequest(response);
+				this.customReadRegisterListRequest(response);
 				break;
 			case 'disassemble':
-				this.disassembleRequest(response, args);
+				this.customDisassembleRequest(response, args);
 				break;
 			case 'execute-command':
 				let cmd = args['command'] as string;
@@ -352,7 +352,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected async disassembleRequest(response: DebugProtocol.Response, args: any): Promise<void> {
+	protected async customDisassembleRequest(response: DebugProtocol.Response, args: any): Promise<void> {
 		if (args.function) {
 			const funcInfo = await this.getDisassemblyForFunction(args.function, args.file);
 			if(funcInfo) {
@@ -381,7 +381,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected readMemoryRequest(response: DebugProtocol.Response, startAddress: number, length: number) {
+	protected customReadMemoryRequest(response: DebugProtocol.Response, startAddress: number, length: number) {
 		const address = hexFormat(startAddress, 8);
 		this.miDebugger.sendCommand(`data-read-memory-bytes ${address} ${length}`).then((node) => {
 			const startAddress2 = node.resultRecords.results[0][1][0][0][1];
@@ -400,7 +400,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected writeMemoryRequest(response: DebugProtocol.Response, startAddress: number, data: string) {
+	protected customWriteMemoryRequest(response: DebugProtocol.Response, startAddress: number, data: string) {
 		const address = hexFormat(startAddress, 8);
 		this.miDebugger.sendCommand(`data-write-memory-bytes ${address} ${data}`).then((node) => {
 			this.sendResponse(response);
@@ -410,7 +410,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected readRegistersRequest(response: DebugProtocol.Response) {
+	protected customReadRegistersRequest(response: DebugProtocol.Response) {
 		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x').then((node) => {
 			if (node.resultRecords.resultClass === 'done') {
 				const rv = node.resultRecords.results[0][1];
@@ -433,7 +433,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected readRegisterListRequest(response: DebugProtocol.Response) {
+	protected customReadRegisterListRequest(response: DebugProtocol.Response) {
 		this.miDebugger.sendCommand('data-list-register-names').then((node) => {
 			if (node.resultRecords.resultClass === 'done') {
 				let registerNames;
