@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 0.9.1
+- added function-level profiling: during a debugging session, press "pause", then press the circle button on the right of the debug toolbar, and 1 frame will be profiled.
+
 ## 0.9.0
 - updated to GCC 10.1, binutils 2.34 and GDB 9.1
 - elf2hunk now built with Microsoft Visual C++ 2019

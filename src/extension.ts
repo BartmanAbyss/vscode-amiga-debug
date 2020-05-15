@@ -1,16 +1,16 @@
 'use strict';
 
-import * as vscode from 'vscode';
 import { AmigaDebugSession } from './amigaDebug';
+
+import * as fs from 'fs';
 import * as Net from 'net';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as vscode from 'vscode';
 
-import { RegisterTreeProvider, TreeNode as RTreeNode, RecordType as RRecordType, BaseNode as RBaseNode, RegisterNode } from './registers';
-import { MemoryContentProvider } from './memory_content_provider';
 import { DisassemblyContentProvider } from './disassembly_content_provider';
-import { SymbolInformation, SymbolScope, NumberFormat } from './symbols';
-
+import { MemoryContentProvider } from './memory_content_provider';
+import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
+import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 
 /*
  * Set the following compile time flag to true if the
@@ -44,7 +44,8 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.examineMemory', this.examineMemory.bind(this)),
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
-			vscode.commands.registerCommand('amiga.bin-path', () => { return path.join(this.extensionPath, 'bin'); }),
+			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
+			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
@@ -172,8 +173,12 @@ class AmigaDebugExtension {
 			{ matchOnDescription: true, ignoreFocusOut: true }
 		).then((result) => {
 			const force = result!.label === 'Forced';
-			vscode.debug.activeDebugSession!.customRequest('set-force-disassembly', { force: force });
+			vscode.debug.activeDebugSession!.customRequest('set-force-disassembly', { force });
 		}, (error) => { });
+	}
+
+	private startProfile() {
+		vscode.debug.activeDebugSession!.customRequest('start-profile', { });
 	}
 
 	private examineMemory() {
@@ -223,14 +228,10 @@ class AmigaDebugExtension {
 								vscode.window.showErrorMessage(`Failed to examine memory: ${error}`);
 							});
 					},
-					(error) => {
-
-					}
+					(error) => { }
 				);
 			},
-			(error) => {
-
-			}
+			(error) => { }
 		);
 	}
 
@@ -316,16 +317,16 @@ class AmigaConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * Massage a debug configuration just before a debug session is being launched,
 	 * e.g. add all missing attributes to the debug configuration.
 	 */
-	resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
+	public resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
-			return vscode.window.showInformationMessage("Cannot find a launch.json config").then(_ => {
+			return vscode.window.showInformationMessage("Cannot find a launch.json config").then((_) => {
 				return undefined;	// abort launch
 			});
 		}
 
 		if (!config.program) {
-			return vscode.window.showInformationMessage("Cannot find a program to debug").then(_ => {
+			return vscode.window.showInformationMessage("Cannot find a program to debug").then((_) => {
 				return undefined;	// abort launch
 			});
 		}

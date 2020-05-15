@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "0.9.0",
+	"version": "0.9.1-preview2",
 	"engines": {
 		"vscode": "^1.34.0"
 	},
@@ -56,8 +56,7 @@
 			{
 				"category": "amiga",
 				"command": "amiga.startProfile",
-				"title": "Start Profiling",
-				"icon": "$(circle-outline)"
+				"title": "Profile"
 			}
 		],
 		"languages": [
@@ -204,6 +203,10 @@
 			]
 		}
 	},
+	"extensionDependencies": [
+		"ms-vscode.vscode-js-profile-table",
+		"ms-vscode.vscode-js-profile-flame"
+	],
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",

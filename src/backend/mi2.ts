@@ -26,14 +26,14 @@ function couldBeOutput(line: string) {
 const trace = false;
 
 export class MI2 extends EventEmitter implements IBackend {
-	public printCalls: boolean;
+//	public printCalls: boolean;
 	public debugOutput: boolean;
 	public procEnv: any;
 	protected currentToken: number = 1;
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
 	protected buffer: string = "";
 	protected errbuf: string = "";
-	protected process: ChildProcess.ChildProcess;
+	public process: ChildProcess.ChildProcess;
 	protected stream;
 
 	// accumulate stream records and pass them to the next handler
@@ -56,8 +56,8 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.process.on("exit", (() => { this.emit("quit"); }).bind(this));
 			this.process.on("error", ((err) => { this.emit("launcherror", err); }).bind(this));
 
-			const asyncPromise = this.sendCommand("gdb-set target-async on", true);
-			const promises :Thenable<any>[] = commands.map((c) => this.sendCommand(c));
+			const asyncPromise = this.sendCommand("gdb-set mi-async on", true);
+			const promises: Array<Thenable<any>> = commands.map((c) => this.sendCommand(c));
 			promises.push(asyncPromise);
 
 			const sectionsPromise = this.getSections().then((sections) => {
@@ -85,7 +85,7 @@ export class MI2 extends EventEmitter implements IBackend {
 			const to = setTimeout(() => { process.kill(-proc.pid); resolve(true); }, 1000);
 			this.process.on("exit", (code) => { clearTimeout(to); });
 			const killAndExit = async () => {
-				await this.sendCommand('interpreter-exec console "kill"');
+				await this.sendUserInput('kill');
 				await this.sendCommand("gdb-exit");
 				resolve(true);
 			};
@@ -333,7 +333,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public async getSections(): Promise<Section[]> {
-		const node = await this.sendCommand('interpreter-exec console "info file"');
+		const node = await this.sendUserInput('info file');
 		const ret: Section[] = [];
 		if (node) {
 			const sectionRegex = /0x([0-9a-fA-F]+) - +0x([0-9a-fA-F]+) is (.*)/;
@@ -430,7 +430,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public sendRaw(raw: string) {
-		if (this.printCalls) {
+		if (trace) {
 			this.log("log", "=> " + raw);
 		}
 		this.process.stdin.write(raw + "\n");

@@ -30,6 +30,7 @@ export enum SymbolScope {
 
 export interface SymbolInformation {
 	address: number;
+	base: number; // comes from relocation
 	length: number;
 	name: string;
 	section: string;

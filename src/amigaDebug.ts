@@ -5,10 +5,12 @@ import { Breakpoint, IBackend, MIError, Section, Variable, VariableObject } from
 import { expandValue, isExpandable } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
+import { Profiler, SourceMap } from './backend/profile';
 import { hexFormat } from './utils';
 
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 
@@ -58,6 +60,7 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 }
 
 let winuae: childProcess.ChildProcess;
+let gdb: childProcess.ChildProcess;
 
 export class AmigaDebugSession extends LoggingDebugSession {
 	protected variableHandles = new Handles<string | VariableObject | ExtendedVariable>(VAR_HANDLES_START);
@@ -117,6 +120,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): Promise<void> {
 		logger.setup(Logger.LogLevel.Warn, false);
+		//logger.setup(Logger.LogLevel.Verbose, false);
 
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
@@ -224,7 +228,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
-		this.symbolTable.loadSymbols();
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
 
@@ -250,11 +253,20 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.debugReady = false;
 		this.stopped = false;
 
-		// kill leftover WinUAE process
-		if(winuae !== undefined)
+		// kill leftover WinUAE & GDB process
+		if(winuae !== undefined) {
 			winuae.kill();
+			winuae = undefined;
+		}
+		if(gdb !== undefined) {
+			gdb.kill();
+			gdb = undefined;
+		}
+
+		// launch WinUAE
 		winuae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
 
+		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
 		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
@@ -273,6 +285,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 
 		this.miDebugger.once('debug-ready', () => {
+			gdb = this.miDebugger.process;
 			this.debugReady = true;
 		});
 		const commands = [
@@ -280,6 +293,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			'interpreter-exec console "target remote localhost:2345"'
 		];
 
+		// launch GDB and connect to WinUAE
 		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
@@ -345,6 +359,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					this.sendErrorResponse(response, 110, 'Unable to execute command');
 				});
 				break;
+			case 'start-profile':
+				this.customStartProfileRequest(response, true);
+				break;
 			default:
 				response.body = { error: 'Invalid command.' };
 				this.sendResponse(response);
@@ -363,7 +380,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 			return;
 		} else if (args.startAddress !== undefined) {
-			let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress);
+			let funcInfo = this.symbolTable.getFunctionAtAddress(args.startAddress, true);
 			if (funcInfo) {
 				funcInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file || undefined);
 				if(funcInfo) {
@@ -408,6 +425,61 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			response.body = { error };
 			this.sendErrorResponse(response, 114, `Unable to write memory: ${error.toString()}`);
 		});
+	}
+
+	protected async customStartProfileRequest(response: DebugProtocol.Response, autoStop: boolean) {
+		try {
+			if(autoStop && !this.stopped) {
+				// GDB reports stopping of target after a while
+				const oldListenersStop = this.miDebugger.listeners("signal-stop");
+				const oldListenersRun = this.miDebugger.listeners("running");
+				this.miDebugger.removeAllListeners("signal-stop");
+				this.miDebugger.removeAllListeners("running");
+				this.miDebugger.once("signal-stop", async () => {
+					// try again after target execution has stopped
+					await this.customStartProfileRequest(response, false);
+					this.miDebugger.continue(this.currentThreadId);
+				});
+				this.miDebugger.once("running", async () => {
+					for(const l of oldListenersStop) {
+						// @ts-ignore
+						this.miDebugger.addListener("signal-stop", l);
+					}
+					for(const l of oldListenersRun) {
+						// @ts-ignore
+						this.miDebugger.addListener("running", l);
+					}
+				});
+				await this.miDebugger.interrupt(this.currentThreadId);
+				return;
+			}
+			const tmp = path.join(os.tmpdir(), `amiga-profile-${new Date().getTime()}`);
+			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
+			await this.miDebugger.sendUserInput(`monitor profile ${tmpQuoted}`);
+
+			const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+			const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
+
+			// read profile file
+			const profileBuffer = fs.readFileSync(tmp);
+			const profileArray = new Uint32Array(profileBuffer.buffer, profileBuffer.byteOffset, profileBuffer.length / Uint32Array.BYTES_PER_ELEMENT);
+			const codeSize = profileArray.length * 2;
+			fs.unlinkSync(tmp);
+
+			// resolve and generate output
+			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", codeSize);
+			const profile = new Profiler(sourceMap, this.symbolTable, profileArray);
+			fs.writeFileSync(tmp + ".cpuprofile", profile.profileFunction());
+
+			// open output
+			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".cpuprofile"));
+
+			//await this.miDebugger.continue(this.currentThreadId);
+			this.sendResponse(response);
+		} catch (error) {
+			response.body = { error };
+			this.sendErrorResponse(response, 114, `Unable to start profiling: ${error.toString()}`);
+		}
 	}
 
 	protected customReadRegistersRequest(response: DebugProtocol.Response) {
@@ -477,6 +549,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendEvent(new OutputEvent(msg, type));
 	}
 
+	// events from miDebugger
 	protected handleRunning(info: MINode) {
 		this.stopped = false;
 		this.sendEvent(new ContinuedEvent(this.currentThreadId));
@@ -726,10 +799,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
 		if (!this.stopped) {
-			response.body = { threads: [] };
+			response.body = { threads: [ new Thread(1, 'Dummy') ] }; // dummy thread, otherwise "pause" doesn't work
 			this.sendResponse(response);
-		}
-		try {
+		} else try {
 			const threadIdNode = await this.miDebugger.sendCommand('thread-list-ids');
 			const threadIds: number[] = threadIdNode.result('thread-ids').map((ti) => parseInt(ti[1]));
 			const currentThread = threadIdNode.result('current-thread-id');
@@ -852,6 +924,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
+		//this.handleMsg("log", `configurationDoneRequest: stopped = ${this.stopped}\n`);
 		await this.miDebugger.continue(this.currentThreadId);
 		this.sendResponse(response);
 	}
@@ -983,7 +1056,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.ContinueArguments): void {
+	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): void {
 		this.miDebugger.interrupt(args.threadId).then((done) => {
 			this.sendResponse(response);
 		}, (msg) => {

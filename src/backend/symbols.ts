@@ -28,9 +28,7 @@ export class SymbolTable {
 	constructor(private objdumpPath: string, private executable: string) {
 		this.symbols = [];
 		this.sections = new Map();
-	}
 
-	public loadSymbols() {
 		try {
 			const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
 			const output = objdump.stdout.toString();
@@ -59,6 +57,7 @@ export class SymbolTable {
 
 					this.symbols.push({
 						address: parseInt(match[1], 16),
+						base: 0,
 						type,
 						scope,
 						section: match[9].trim(),
@@ -73,7 +72,6 @@ export class SymbolTable {
 		} catch (e) { }
 	}
 
-	// only call once
 	public relocate(sections: Section[]) {
 		this.sections = new Map();
 		sections.forEach((section) => {
@@ -83,13 +81,18 @@ export class SymbolTable {
 		this.symbols.forEach((symbol) => {
 			const section = this.sections.get(symbol.section);
 			if(section) {
-				symbol.address += section.address;
+				symbol.base = section.address;
 			}
 		});
 	}
 
-	public getFunctionAtAddress(address: number): SymbolInformation | null {
-		const matches = this.symbols.filter((s) => s.type === SymbolType.Function && s.address <= address && (s.address + s.length) > address);
+	public getFunctionAtAddress(address: number, relocated: boolean): SymbolInformation | null {
+		const matches = this.symbols.filter((s) => {
+			let symAddress = s.address;
+			if(relocated)
+				symAddress += s.base;
+			return s.type === SymbolType.Function && symAddress <= address && (symAddress + s.length) > address;
+		});
 		if (!matches || matches.length === 0) { return null; }
 
 		return matches[0];

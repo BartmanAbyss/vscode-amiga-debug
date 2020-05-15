@@ -7,6 +7,7 @@ bin/dh0/runme.exe
 bin/*.uae
 bin/configuration.*
 bin/*.ini
+bin/winuaebootlog.txt
 template/obj8mingw
 template/obj
 template/*.elf
