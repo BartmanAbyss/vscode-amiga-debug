@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "0.9.1-preview2",
+	"version": "0.9.1-preview3",
 	"engines": {
 		"vscode": "^1.34.0"
 	},
