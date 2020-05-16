@@ -1,10 +1,17 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { buildModel } from './client/model';
+import { buildModel, ILocation, IProfileModel } from './client/model';
+import { ProfileCodeLensProvider } from './profile_codelens_provider';
+import { LensCollection } from './lens_collection';
 
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
+const decimalFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 2,
+	minimumFractionDigits: 2,
+});
+
+const integerFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 0,
+});
 
 import { promises as fs } from 'fs';
 import { randomBytes } from 'crypto';
@@ -17,132 +24,88 @@ export const bundlePage = async (bundleFile: string, constants: { [key: string]:
 		.join('\n');
 
 	const html = `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
+	<html lang="en">
+	<head>
+	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	  <meta http-equiv="Content-Security-Policy" content="script-src 'nonce-${nonce}' 'unsafe-eval'">
-      <title>Custom Editor: ${bundleFile}</title>
-    </head>
-    <body>
-      <script type="text/javascript" nonce="${nonce}">(() => {
-        ${constantDecls}
-        ${bundle}
-      })();</script>
-    </body>
-    </html>
+	  <title>Custom Editor: ${bundleFile}</title>
+	</head>
+	<body>
+	  <script type="text/javascript" nonce="${nonce}">(() => {
+		${constantDecls}
+		${bundle}
+	  })();</script>
+	</body>
+	</html>
   	`;
 
 	return html;
 };
 
 export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
-
-	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new ProfileEditorProvider(context);
-		const providerRegistration = vscode.window.registerCustomEditorProvider(ProfileEditorProvider.viewType, provider);
-		return providerRegistration;
+	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
 	}
 
-	private static readonly viewType = 'amiga.profile.table';
-
-	private static readonly scratchCharacters = ['😸', '😹', '😺', '😻', '😼', '😽', '😾', '🙀', '😿', '🐱'];
-
-	constructor(private readonly context: vscode.ExtensionContext) { }
-
-	/**
-	 * Called when our custom editor is opened.
-	 *
-	 *
-	 */
 	public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
-		webviewPanel.webview.html = await this.getHtmlForWebview(document);
+		const model = buildModel(JSON.parse(document.getText()));
+		webviewPanel.webview.html = await bundlePage(path.join(this.context.extensionPath, 'out', 'client.bundle.js'), {
+			MODEL: model,
+		});
+		this.lenses.registerLenses(this.createLensCollection(model));
+	}
 
-		function updateWebview() {
-			webviewPanel.webview.postMessage({
-				type: 'update',
-				text: document.getText(),
-			});
-		}
+	private createLensCollection(model: IProfileModel) {
+		interface LensData { self: number; agg: number; ticks: number; }
 
-		// Hook up event handlers so that we can synchronize the webview with the text document.
-		//
-		// The text document acts as our model, so we have to sync change in the document to our
-		// editor and sync changes in the editor back to the document.
-		// 
-		// Remember that a single text document can also be shared between multiple custom
-		// editors (this happens for example when you split a custom editor)
-
-		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
-			if (e.document.uri.toString() === document.uri.toString()) {
-				updateWebview();
+		const lenses = new LensCollection<LensData>(dto => {
+			let title: string;
+			if (dto.self > 10 || dto.agg > 10) {
+				title =
+					`${decimalFormat.format(dto.self / 1000)}ms Self Time, ` +
+					`${decimalFormat.format(dto.agg / 1000)}ms Total`;
+			} else if (dto.ticks) {
+				title = `${integerFormat.format(dto.ticks)} Ticks`;
+			} else {
+				return;
 			}
+
+			return { command: '', title };
 		});
 
-		// Make sure we get rid of the listener when our editor is closed.
-		webviewPanel.onDidDispose(() => {
-			changeDocumentSubscription.dispose();
+		const merge = (location: ILocation) => (existing?: LensData) => ({
+			ticks: (existing?.ticks || 0) + location.ticks,
+			self: (existing?.self || 0) + location.selfTime,
+			agg: (existing?.agg || 0) + location.aggregateTime,
 		});
 
-		// Receive message from the webview.
-		webviewPanel.webview.onDidReceiveMessage((e) => {
-			switch (e.type) {
-				case 'add':
-					//this.addNewScratch(document);
-					return;
+		for (const location of model.locations || []) {
+			const mergeFn = merge(location);
+			lenses.set(
+				location.callFrame.url,
+				new vscode.Position(
+					Math.max(0, location.callFrame.lineNumber),
+					Math.max(0, location.callFrame.columnNumber),
+				),
+				mergeFn,
+			);
 
-				case 'delete':
-					//this.deleteScratch(document, e.id);
-					return;
+			const src = location.src;
+			if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+				continue;
 			}
-		});
 
-		updateWebview();
-	}
-
-	/**
-	 * Get the static html used for the editor webviews.
-	 */
-	private async getHtmlForWebview(document: vscode.TextDocument): Promise<string> {
-		return bundlePage(path.join(this.context.extensionPath, 'out', 'client.bundle.js'), {
-			MODEL: buildModel(JSON.parse(document.getText())),
-		  });
-	}
-
-
-	/**
-	 * Try to get a current document as json text.
-	 */
-	private getDocumentAsJson(document: vscode.TextDocument): any {
-		const text = document.getText();
-		if (text.trim().length === 0) {
-			return {};
+			lenses.set(
+				src.source.path.toLowerCase().replace(/\\/g, '/'),
+				new vscode.Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
+				mergeFn,
+			);
 		}
 
-		try {
-			return JSON.parse(text);
-		} catch {
-			throw new Error('Could not get document as json. Content is not valid json');
-		}
-	}
-
-	/**
-	 * Write out the json to a given document.
-	 */
-	private updateTextDocument(document: vscode.TextDocument, json: any) {
-		const edit = new vscode.WorkspaceEdit();
-
-		// Just replace the entire document every time for this example extension.
-		// A more complete extension should compute minimal edits instead.
-		edit.replace(
-			document.uri,
-			new vscode.Range(0, 0, document.lineCount, 0),
-			JSON.stringify(json, null, 2));
-
-		return vscode.workspace.applyEdit(edit);
+		return lenses;
 	}
 }

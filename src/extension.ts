@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { MemoryContentProvider } from './memory_content_provider';
+import { ProfileCodeLensProvider} from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
@@ -36,6 +37,8 @@ class AmigaDebugExtension {
 		//vscode.workspace.getConfiguration().update("C_Cpp.default.includePath", `${extensionPath}\\bin\\opt\\m68k-amiga-elf\\sys-include`, false);
 		vscode.workspace.getConfiguration().update("C_Cpp.default.compilerPath", `${this.extensionPath}\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe`, false);
 
+		const lenses = new ProfileCodeLensProvider();
+
 		context.subscriptions.push(
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
@@ -58,7 +61,8 @@ class AmigaDebugExtension {
 				if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); }
 			}),
 			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
-			ProfileEditorProvider.register(context)
+			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses)),
+			vscode.languages.registerCodeLensProvider('*', lenses)
 		);
 	}
 

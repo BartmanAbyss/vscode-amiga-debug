@@ -229,7 +229,7 @@ export class Profiler {
 		timeDeltas.push(0);
 
 		const out: Profile = { nodes, startTime, endTime, samples, timeDeltas };
-		return JSON.stringify(out);
+		return JSON.stringify(out, null, 2);
 	}
 
 	public profileAsm(): string {

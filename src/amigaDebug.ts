@@ -464,7 +464,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const profileBuffer = fs.readFileSync(tmp);
 			const profileArray = new Uint32Array(profileBuffer.buffer, profileBuffer.byteOffset, profileBuffer.length / Uint32Array.BYTES_PER_ELEMENT);
 			const codeSize = profileArray.length * 2;
-			fs.unlinkSync(tmp);
+			//fs.unlinkSync(tmp);
 
 			// resolve and generate output
 			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", codeSize);
