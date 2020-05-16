@@ -1,3 +1,4 @@
+import * as assert from 'assert';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -10,8 +11,24 @@ export interface SourceLine {
 	line: number;
 }
 
+export interface CallFrame {
+	frames: SourceLine[];
+}
+
+function getCallFrameKey(callFrame: CallFrame): string {
+	let key = "";
+	for(let j = 0; j < callFrame.frames.length; j++) {
+		if(j > 0)
+			key += ':';
+		key += callFrame.frames[j].func;
+		if(j < callFrame.frames.length - 1)
+			key += `(${callFrame.frames[j].file},${callFrame.frames[j].line})`;
+	}
+	return key;
+}
+
 export class SourceMap {
-	public uniqueLines: SourceLine[] = [];
+	public uniqueLines: CallFrame[] = [];
 	public lines: number[] = []; // index into uniqueLines
 
 	constructor(private addr2linePath: string, private executable: string, private codeSize: number) {
@@ -23,21 +40,39 @@ export class SourceMap {
 			const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
 			fs.writeFileSync(tmp, str);
 
-			const objdump = childProcess.spawnSync(this.addr2linePath, ['--functions', `--exe=${this.executable}`, `@${tmp}`]);
-			const outputs = objdump.stdout.toString().split('\n');
+			const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`]);
+			const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
 			const uniqueLinesMap: Map<string, number> = new Map();
-			for(let i = 0; i < outputs.length; i += 2) {
-				const func = outputs[i];
-				const output = outputs[i + 1];
-				let value = uniqueLinesMap.get(output);
-				if(value === undefined) {
+			let addr = 0;
+			let i = 0;
+
+			const getCallFrame = () => {
+				const frames: SourceLine[] = [];
+				while(!outputs[i].startsWith('0x')) {
+					const func = outputs[i++];
+					const output = outputs[i++];
 					const split = output.lastIndexOf(':');
 					const file = output.substr(0, split);
 					const line = parseInt(output.substr(split + 1));
-					value = this.uniqueLines.push({ func, file, line }) - 1;
-					uniqueLinesMap.set(output, value);
+					frames.unshift({ func, file, line });
+				}
+				return { frames };
+			};
+
+			while(i < outputs.length) {
+				assert.equal(outputs[i].startsWith('0x'), true);
+				assert.equal(parseInt(outputs[i].substr(2), 16), addr);
+				i++;
+
+				const callFrame = getCallFrame();
+				const key = getCallFrameKey(callFrame);
+				let value = uniqueLinesMap.get(key);
+				if(value === undefined) {
+					value = this.uniqueLines.push(callFrame) - 1;
+					uniqueLinesMap.set(key, value);
 				}
 				this.lines.push(value);
+				addr += 2;
 			}
 			fs.unlinkSync(tmp);
 		} catch(e) { }
@@ -104,9 +139,10 @@ export class Profiler {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
 	}
 
-	private profileCommon(cyclesPerLocation: number[], sourceLocations: SourceLine[]): string {
+	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): string {
 		// generate JSON .cpuprofile
 		const nodes: ProfileNode[] = [];
+		const nodeMap: Map<string, ProfileNode> = new Map();
 		const samples: number[] = [];
 		const timeDeltas: number[] = [];
 		const startTime = 0;
@@ -114,8 +150,42 @@ export class Profiler {
 		let nextNodeId = 1;
 		let nextLocationId = 0;
 
+		const getNodeKey = (callFrame: CallFrame, depth: number): string => {
+			let key = "";
+			for(let i = 0; i < depth; i++)
+				key += callFrame.frames[i].func + ":";
+			return key;
+		};
+
+		const getNode = (callFrame: CallFrame, depth: number): ProfileNode => {
+			const key = getNodeKey(callFrame, depth);
+			let node = nodeMap.get(key);
+			if(node === undefined) {
+				const pp = getNode(callFrame, depth - 1);
+				const fr = callFrame.frames[depth - 1];
+				node = {
+					id: nextNodeId++,
+					callFrame: {
+						scriptId: fr.file,
+						functionName: fr.func,
+						url: "file:///" + fr.file.replace(/\\/g, "/"),
+						lineNumber: fr.line - 1,
+						columnNumber: 0
+					},
+					children: [],
+					locationId: nextLocationId++,
+					positionTicks: []
+				};
+				pp.children.push(node.id);
+				nodes.push(node);
+				nodeMap.set(key, node);
+			}
+
+			return node;
+		};
+
 		// add root node
-		nodes.push({
+		const rootNode: ProfileNode = {
 			id: nextNodeId++,
 			callFrame: {
 				functionName: "(root)",
@@ -127,8 +197,10 @@ export class Profiler {
 			hitCount: 0,
 			children: [],
 			locationId: nextLocationId++
-		});
-		samples.push(nodes[0].id);
+		};
+		nodes.push(rootNode);
+		samples.push(rootNode.id);
+		nodeMap.set("", rootNode);
 
 		const cyclesPerMicroSecond = 7.093790;
 
@@ -137,32 +209,19 @@ export class Profiler {
 				continue;
 
 			const ticks = (cyclesPerLocation[i] / cyclesPerMicroSecond) | 0;
+			const loc = sourceLocations[i];
+			const fr = sourceLocations[i].frames[sourceLocations[i].frames.length - 1];
 
 			const tick: ProfilePositionTick = {
-				line: sourceLocations[i].line,
+				line: fr.line,
 				ticks,
 				startLocationId: nextLocationId++,
 				endLocationId: nextLocationId++
 			};
 
-			const node: ProfileNode = {
-				id: nextNodeId++,
-				callFrame: {
-					scriptId: sourceLocations[i].file,
-					functionName: sourceLocations[i].func,
-					url: "file:///" + sourceLocations[i].file.replace(/\\/g, "/"),
-					lineNumber: sourceLocations[i].line - 1,
-					columnNumber: 0
-				},
-				hitCount: ticks,
-				locationId: nextLocationId++,
-				positionTicks: [
-					tick
-				]
-			};
-
-			nodes[0].children.push(node.id); // add to root node
-			nodes.push(node);
+			const node = getNode(loc, loc.frames.length - 1);
+			node.hitCount = ticks;
+			node.positionTicks.push(tick);
 			samples.push(node.id);
 			timeDeltas.push(ticks);
 			endTime += ticks;
@@ -175,40 +234,42 @@ export class Profiler {
 
 	public profileAsm(): string {
 		const cyclesPerInstr: number[] = [];
-		const locations: SourceLine[] = [];
+		const locations: CallFrame[] = [];
 		for(let i = 0; i < this.profileArray.length; i++) {
 			cyclesPerInstr.push(this.profileArray[i]);
-			locations.push({
+			locations.push({ frames: [ {
 				file: `profile_offset=${(i*4).toString(16)},instr_offset=${(i*2).toString(16)}`,
 				line: 1
-			});
+			}]});
 		}
 
 		return this.profileCommon(cyclesPerInstr, locations);
 	}
 
 	public profileLine(): string {
-		const cyclesPerLine = new Array<number>(this.sourceMap.lines.length).fill(0);
+		/*const cyclesPerLine = new Array<number>(this.sourceMap.lines.length).fill(0);
 		for(let i = 0; i < this.profileArray.length; i++) {
 			cyclesPerLine[this.sourceMap.lines[i]] += this.profileArray[i];
 		}
 
-		return this.profileCommon(cyclesPerLine, this.sourceMap.uniqueLines);
+		return this.profileCommon(cyclesPerLine, this.sourceMap.uniqueLines);*/
+		return "";
 	}
 
 	public profileFunction(): string {
 		const functionMap: Map<string, number> = new Map();
 		const cyclesPerFunction: number[] = [];
-		const locations: SourceLine[] = [];
+		const locations: CallFrame[] = [];
 		for(let i = 0; i < this.profileArray.length; i++) {
 			if(this.profileArray[i] === 0)
 				continue;
-			const line = this.sourceMap.uniqueLines[this.sourceMap.lines[i]];
-			let functionId = functionMap.get(line.func);
+			const callFrame = this.sourceMap.uniqueLines[this.sourceMap.lines[i]];
+			const key = getCallFrameKey(callFrame);
+			let functionId = functionMap.get(key);
 			if(functionId === undefined) {
-				functionId = locations.push(line) - 1;
+				functionId = locations.push(callFrame) - 1;
 				cyclesPerFunction.push(0);
-				functionMap.set(line.func, functionId);
+				functionMap.set(key, functionId);
 			}
 			cyclesPerFunction[functionId] += this.profileArray[i];
 		}
