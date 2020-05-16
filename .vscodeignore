@@ -3,8 +3,9 @@
 out/test/**
 src/**
 .gitignore
-**/tsconfig.json
-**/tslint.json
+**/tsconfig*.json
+**/tslint*.json
+**/webpack*.js
 **/*.map
 **/*.ts
 bin/winuae.ini
