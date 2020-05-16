@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { MemoryContentProvider } from './memory_content_provider';
+import { ProfileEditorProvider } from './profile_editor_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 
@@ -56,7 +57,8 @@ class AmigaDebugExtension {
 			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
 				if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); }
 			}),
-			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider())
+			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
+			ProfileEditorProvider.register(context)
 		);
 	}
 
@@ -308,7 +310,8 @@ export function activate(context: vscode.ExtensionContext) {
 	const extension = new AmigaDebugExtension(context);
 }
 
-export function deactivate() { }
+export function deactivate() {
+}
 
 class AmigaConfigurationProvider implements vscode.DebugConfigurationProvider {
 	private server?: Net.Server;

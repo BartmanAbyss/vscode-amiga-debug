@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -60,8 +59,8 @@ export class SourceMap {
 			};
 
 			while(i < outputs.length) {
-				assert.equal(outputs[i].startsWith('0x'), true);
-				assert.equal(parseInt(outputs[i].substr(2), 16), addr);
+				//assert.equal(outputs[i].startsWith('0x'), true);
+				//assert.equal(parseInt(outputs[i].substr(2), 16), addr);
 				i++;
 
 				const callFrame = getCallFrame();
@@ -196,7 +195,8 @@ export class Profiler {
 			},
 			hitCount: 0,
 			children: [],
-			locationId: nextLocationId++
+			locationId: nextLocationId++,
+			positionTicks: []
 		};
 		nodes.push(rootNode);
 		samples.push(rootNode.id);
@@ -219,7 +219,7 @@ export class Profiler {
 				endLocationId: nextLocationId++
 			};
 
-			const node = getNode(loc, loc.frames.length - 1);
+			const node = getNode(loc, loc.frames.length);
 			node.hitCount = ticks;
 			node.positionTicks.push(tick);
 			samples.push(node.id);

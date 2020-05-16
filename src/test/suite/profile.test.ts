@@ -17,8 +17,8 @@ suite("Profiler", () => {
 		const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, 'a.mingw.elf'));
 
 		const profile = new Profiler(sourceMap, symbolTable, profileArray);
-		//fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.asm.cpuprofile'), profile.profileAsm());
-		//fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.line.cpuprofile'), profile.profileLine());
-		fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.func.cpuprofile'), profile.profileFunction());
+		//fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.asm.amigaprofile'), profile.profileAsm());
+		//fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.line.amigaprofile'), profile.profileLine());
+		fs.writeFileSync(path.join(testDataDir, 'amiga-profile-1589535143558.func.amigaprofile'), profile.profileFunction());
 	});
 });

@@ -6,9 +6,9 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "0.9.1-preview3",
+	"version": "0.9.1-preview4",
 	"engines": {
-		"vscode": "^1.34.0"
+		"vscode": "^1.45.1"
 	},
 	"categories": [
 		"Debuggers"
@@ -16,7 +16,8 @@
 	"activationEvents": [
 		"onDebug",
 		"onCommand:amiga.bin-path",
-		"onCommand:amiga.initProject"
+		"onCommand:amiga.initProject",
+		"onCustomEditor:amiga.profile.table"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -90,6 +91,18 @@
 				"language": "amiga.memoryview",
 				"scopeName": "source.amiga-memoryview",
 				"path": "./syntaxes/amiga-memoryview.json"
+			}
+		],
+		"customEditors": [
+			{
+				"viewType": "amiga.profile.table",
+				"displayName": "CPU Profile Table Visualizer",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "*.amigaprofile"
+					}
+				]
 			}
 		],
 		"breakpoints": [
@@ -203,14 +216,14 @@
 			]
 		}
 	},
-	"extensionDependencies": [
-		"ms-vscode.vscode-js-profile-table",
-		"ms-vscode.vscode-js-profile-flame"
-	],
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
+		"compile": "concurrently -r \"npm:compile:*\"",
+		"compile:ext": "tsc -p ./",
+		"compile:client": "webpack --output-path='./out'",
+		"watch": "concurrently -r \"npm:watch:*\"",
+		"watch:ext": "tsc -watch -p ./",
+		"watch:client": "webpack --output-path='./out' --watch",
 		"pretest": "npm run compile",
 		"test": "node ./out/test/runTest.js"
 	},
@@ -218,16 +231,26 @@
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.10",
-		"@types/vscode": "^1.34.0",
+		"@types/vscode": "^1.45.1",
+		"concurrently": "^5.1.0",
+		"css-loader": "^3.4.2",
+		"devtools-protocol": "0.0.748504",
 		"glob": "^7.1.6",
 		"mocha": "^7.1.2",
+		"preact": "^10.3.4",
+		"preact-virtual-list": "^0.3.1",
+		"raw-loader": "^4.0.0",
+		"style-loader": "^1.1.3",
+		"svg-inline-loader": "^0.8.2",
+		"ts-loader": "^6.2.1",
 		"tslint": "^5.20.1",
 		"typescript": "^3.9.2",
 		"vscode-debugadapter-testsupport": "^1.40.3",
-		"vscode-test": "^1.3.0"
+		"vscode-test": "^1.3.0",
+		"webpack": "^4.42.0",
+		"webpack-cli": "^3.3.11"
 	},
 	"dependencies": {
-		"assert": "^2.0.0",
 		"vscode-debugadapter": "^1.40.0",
 		"vscode-debugprotocol": "^1.40.0"
 	}

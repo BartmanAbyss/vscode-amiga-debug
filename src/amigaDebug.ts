@@ -469,10 +469,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			// resolve and generate output
 			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", codeSize);
 			const profile = new Profiler(sourceMap, this.symbolTable, profileArray);
-			fs.writeFileSync(tmp + ".cpuprofile", profile.profileFunction());
+			fs.writeFileSync(tmp + ".amigaprofile", profile.profileFunction());
 
 			// open output
-			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".cpuprofile"));
+			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"));
 
 			//await this.miDebugger.continue(this.currentThreadId);
 			this.sendResponse(response);
