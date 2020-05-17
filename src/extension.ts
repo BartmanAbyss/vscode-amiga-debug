@@ -61,7 +61,7 @@ class AmigaDebugExtension {
 				if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); }
 			}),
 			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
-			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses)),
+			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
 			vscode.languages.registerCodeLensProvider('*', lenses),
 			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear()
 		  ),

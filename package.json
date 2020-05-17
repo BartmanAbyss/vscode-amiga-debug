@@ -96,7 +96,7 @@
 		"customEditors": [
 			{
 				"viewType": "amiga.profile.table",
-				"displayName": "CPU Profile Table Visualizer",
+				"displayName": "Amiga Profile Visualizer",
 				"priority": "default",
 				"selector": [
 					{
