@@ -59,11 +59,11 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
 			const lenses: CodeLens[] = [];
 			for (const lens of collection.getLensesForFile(file)) {
 				lenses.push(
-					lens/*,
+					lens,
 					new CodeLens(lens.range, {
 						title: 'Clear',
-						command: 'extension.jsProfileVisualizer.table.clearCodeLenses',
-					}),*/
+						command: 'extension.amiga.profile.clearCodeLenses',
+					})
 				);
 			}
 

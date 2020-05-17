@@ -62,7 +62,9 @@ class AmigaDebugExtension {
 			}),
 			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
 			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses)),
-			vscode.languages.registerCodeLensProvider('*', lenses)
+			vscode.languages.registerCodeLensProvider('*', lenses),
+			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear()
+		  ),
 		);
 	}
 

@@ -91,7 +91,7 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 	private createLensCollection(model: IProfileModel) {
 		interface LensData { self: number; agg: number; ticks: number; }
 
-		const lenses = new LensCollection<LensData>(dto => {
+		const lenses = new LensCollection<LensData>((dto) => {
 			let title: string;
 			if (dto.self > 0 || dto.agg > 0) {
 				title = `${decimalFormat.format(dto.self / 200)}% Self Time, ${decimalFormat.format(dto.agg / 200)}% Total`;

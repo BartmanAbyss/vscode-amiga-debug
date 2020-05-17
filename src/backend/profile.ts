@@ -164,7 +164,7 @@ export class Profiler {
 				lineNumber: callFrame.line,
 				columnNumber: 0
 			};
-		}
+		};
 
 		const getNode = (callFrame: CallFrame, depth: number): ProfileNode => {
 			const key = getNodeKey(callFrame, depth);
