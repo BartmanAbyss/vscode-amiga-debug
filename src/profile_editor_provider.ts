@@ -1,3 +1,4 @@
+import { Protocol as Cdp } from 'devtools-protocol';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { buildModel, ILocation, IProfileModel } from './client/model';
@@ -15,6 +16,7 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 
 import { promises as fs } from 'fs';
 import { randomBytes } from 'crypto';
+import { ISourceLocation } from './client/location-mapping';
 
 export const bundlePage = async (bundleFile: string, constants: { [key: string]: unknown }) => {
 	const bundle = await fs.readFile(bundleFile, 'utf-8');
@@ -43,6 +45,25 @@ export const bundlePage = async (bundleFile: string, constants: { [key: string]:
 	return html;
 };
 
+const showPosition = async (
+	doc: vscode.TextDocument,
+	lineNumber: number,
+	columnNumber: number,
+	viewColumn?: vscode.ViewColumn,
+) => {
+	const pos = new vscode.Position(Math.max(0, lineNumber - 1), Math.max(0, columnNumber - 1));
+	await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
+};
+
+const showPositionInFile = async (
+	location: ISourceLocation,
+	viewColumn?: vscode.ViewColumn,
+) => {
+	const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(location.source.path.replace(/\//g, '\\')));
+	await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
+	return true;
+};
+
 export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
 	}
@@ -57,6 +78,14 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 			MODEL: model,
 		});
 		this.lenses.registerLenses(this.createLensCollection(model));
+
+		webviewPanel.webview.onDidReceiveMessage((message) => {
+			switch (message.type) {
+				case 'openDocument':
+					showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
+					return;
+			}
+		});
 	}
 
 	private createLensCollection(model: IProfileModel) {
@@ -64,10 +93,8 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 
 		const lenses = new LensCollection<LensData>(dto => {
 			let title: string;
-			if (dto.self > 10 || dto.agg > 10) {
-				title =
-					`${decimalFormat.format(dto.self / 1000)}ms Self Time, ` +
-					`${decimalFormat.format(dto.agg / 1000)}ms Total`;
+			if (dto.self > 0 || dto.agg > 0) {
+				title = `${decimalFormat.format(dto.self / 200)}% Self Time, ${decimalFormat.format(dto.agg / 200)}% Total`;
 			} else if (dto.ticks) {
 				title = `${integerFormat.format(dto.ticks)} Ticks`;
 			} else {
@@ -85,14 +112,14 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 
 		for (const location of model.locations || []) {
 			const mergeFn = merge(location);
-			lenses.set(
+/*			lenses.set(
 				location.callFrame.url,
 				new vscode.Position(
 					Math.max(0, location.callFrame.lineNumber),
 					Math.max(0, location.callFrame.columnNumber),
 				),
 				mergeFn,
-			);
+			);*/
 
 			const src = location.src;
 			if (!src || src.source.sourceReference !== 0 || !src.source.path) {

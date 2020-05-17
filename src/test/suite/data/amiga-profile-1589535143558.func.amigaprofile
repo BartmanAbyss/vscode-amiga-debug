@@ -1,0 +1,96 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "callFrame": {
+        "functionName": "(root)",
+        "scriptId": "0",
+        "url": "",
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      "hitCount": 0,
+      "children": [
+        2,
+        5
+      ],
+      "locationId": 0,
+      "positionTicks": []
+    },
+    {
+      "id": 2,
+      "callFrame": {
+        "scriptId": "C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "functionName": "main",
+        "url": "file:///C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "lineNumber": 153,
+        "columnNumber": 0
+      },
+      "children": [
+        3,
+        4
+      ],
+      "locationId": 3,
+      "positionTicks": [],
+      "hitCount": 12
+    },
+    {
+      "id": 3,
+      "callFrame": {
+        "scriptId": "C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "functionName": "WaitVbl (inlined)",
+        "url": "file:///C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "lineNumber": 47,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 4,
+      "positionTicks": [],
+      "hitCount": 19922
+    },
+    {
+      "id": 4,
+      "callFrame": {
+        "scriptId": "C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "functionName": "MouseLeft (inlined)",
+        "url": "file:///C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "lineNumber": 126,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 9,
+      "positionTicks": [],
+      "hitCount": 3
+    },
+    {
+      "id": 5,
+      "callFrame": {
+        "scriptId": "C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "functionName": "interruptHandler",
+        "url": "file:///C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/main.c",
+        "lineNumber": 133,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 12,
+      "positionTicks": [],
+      "hitCount": 23
+    }
+  ],
+  "startTime": 0,
+  "endTime": 19960,
+  "samples": [
+    1,
+    3,
+    2,
+    4,
+    5
+  ],
+  "timeDeltas": [
+    19922,
+    12,
+    3,
+    23,
+    0
+  ]
+}

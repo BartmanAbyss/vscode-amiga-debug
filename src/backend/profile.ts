@@ -156,6 +156,16 @@ export class Profiler {
 			return key;
 		};
 
+		const getCallFrame = (callFrame: SourceLine) => {
+			return {
+				scriptId: callFrame.file,
+				functionName: callFrame.func,
+				url: "file:///" + callFrame.file.replace(/\\/g, "/"),
+				lineNumber: callFrame.line,
+				columnNumber: 0
+			};
+		}
+
 		const getNode = (callFrame: CallFrame, depth: number): ProfileNode => {
 			const key = getNodeKey(callFrame, depth);
 			let node = nodeMap.get(key);
@@ -164,13 +174,7 @@ export class Profiler {
 				const fr = callFrame.frames[depth - 1];
 				node = {
 					id: nextNodeId++,
-					callFrame: {
-						scriptId: fr.file,
-						functionName: fr.func,
-						url: "file:///" + fr.file.replace(/\\/g, "/"),
-						lineNumber: fr.line - 1,
-						columnNumber: 0
-					},
+					callFrame: getCallFrame(fr),
 					children: [],
 					locationId: nextLocationId++,
 					positionTicks: []
@@ -220,8 +224,12 @@ export class Profiler {
 			};
 
 			const node = getNode(loc, loc.frames.length);
+			if(loc.frames.length === 1)
+				node.callFrame = getCallFrame(fr);
+			else
+				node.callFrame.functionName += " (inlined)";
 			node.hitCount = ticks;
-			node.positionTicks.push(tick);
+			//node.positionTicks.push(tick);
 			samples.push(node.id);
 			timeDeltas.push(ticks);
 			endTime += ticks;

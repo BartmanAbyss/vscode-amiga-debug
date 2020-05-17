@@ -172,12 +172,12 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
 			// code the tick refers to
 			startLocationId: getLocationIdFor({
 				...node.callFrame,
-				lineNumber: tick.line - 1,
+				lineNumber: tick.line,
 				columnNumber: 0,
 			}),
 			endLocationId: getLocationIdFor({
 				...node.callFrame,
-				lineNumber: tick.line,
+				lineNumber: tick.line + 1,
 				columnNumber: 0,
 			}),
 		}));
