@@ -78,6 +78,16 @@ export class SourceMap {
 	}
 }
 
+export class UnwindTable {
+	constructor(private objdumpPath: string, private executable: string) {
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.executable], { maxBuffer: 10*1024*1024 });
+		if(objdump.status !== 0)
+			throw objdump.error;
+		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		console.log('hallo');
+	}
+}
+
 /**
  * A parsed .cpuprofile which can be generated from
  * chrome or https://nodejs.org/api/inspector.html#inspector_cpu_profiler

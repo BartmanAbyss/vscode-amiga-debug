@@ -2,13 +2,16 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
-import { Profiler, SourceMap } from '../../backend/profile';
+import { Profiler, SourceMap, UnwindTable } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
 const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
 
 suite("Profiler", () => {
+	test("unwind", () => {
+		const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, 'test.elf'));
+	});
 	test("test.mingw.elf", () => {
 		const profileBuffer = fs.readFileSync(path.join(testDataDir, 'amiga-profile-1589535143558'));
 		const profileArray = new Uint32Array(profileBuffer.buffer, profileBuffer.byteOffset, profileBuffer.length / Uint32Array.BYTES_PER_ELEMENT);
