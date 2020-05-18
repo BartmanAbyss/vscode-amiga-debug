@@ -38,11 +38,11 @@ inline int mulsw(short a, short b) {
     asm("mulsw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline unsigned int divuw(unsigned short a, unsigned short b) {
+inline unsigned short divuw(unsigned int a, unsigned short b) {
     asm("divuw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline int divsw(short a, short b) {
+inline short divsw(int a, short b) {
     asm("divsw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
