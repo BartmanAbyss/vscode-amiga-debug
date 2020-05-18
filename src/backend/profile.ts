@@ -79,12 +79,104 @@ export class SourceMap {
 }
 
 export class UnwindTable {
+	private getCodeSize() {
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--headers', this.executable]);
+		if(objdump.status !== 0)
+			throw objdump.error;
+
+		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		for(const l of outputs) {
+			if(l.indexOf(".text") !== -1) {
+				return parseInt(l.substr(18, 8), 16);
+			}
+		}
+
+		throw new Error("can't get size of .text section");
+	}
+
+	public unwind: Uint16Array;
+
 	constructor(private objdumpPath: string, private executable: string) {
+		const codeSize = this.getCodeSize();
+		const unwind = new Array(codeSize >> 1).fill(-1);
+
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.executable], { maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
 			throw objdump.error;
 		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
-		console.log('hallo');
+		const locStart = 0;
+		let cfaStart = -1;
+		let raStart = -1;
+		let line = 0;
+
+		const cieMap: Map<number, number> = new Map();
+
+		const parseHeader = () => {
+			if(outputs[line] === "")
+				return;
+			const l = outputs[line++];
+			cfaStart = l.indexOf("CFA");
+			raStart = l.indexOf("ra");
+		};
+
+		const parseLine = () => {
+			const l = outputs[line++];
+			const loc = parseInt(l.substr(locStart, 8), 16);
+			const cfa = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
+			const ra = l.substr(raStart, l.indexOf(" ", raStart) - raStart);
+			if(!cfa.startsWith("r15+") || !ra.startsWith("c-"))
+				throw new Error("error parsing UnwindTable");
+			const unw = parseInt(cfa.substr(4)) - parseInt(ra.substr(2));
+			return { loc, unw };
+		};
+
+		const parseCIE = () => {
+			const addr = parseInt(outputs[line++].substr(0, 8), 16);
+			parseHeader();
+			// only 1 entry
+			const { loc, unw } = parseLine();
+			cieMap.set(addr, unw);
+
+			if(outputs[line] !== "")
+				throw new Error("CIE with multiple entries not supported");
+		};
+
+		const parseFDE = () => {
+			const match = outputs[line++].match(/[0-9a-f]{8} [0-9a-f]{8} [0-9a-f]{8} FDE cie=([0-9a-f]{8}) pc=([0-9a-f]{8})\.\.([0-9a-f]{8})/);
+			const cie = parseInt(match[1], 16);
+			const pcStart = parseInt(match[2], 16);
+			const pcEnd = parseInt(match[3], 16);
+			parseHeader();
+			let def = cieMap.get(cie);
+			if(def === undefined)
+				throw new Error("unknown CIE reference");
+
+			let pc = pcStart;
+			while(line < outputs.length && outputs[line] !== "") {
+				const { loc, unw } = parseLine();
+				while(pc < loc) {
+					unwind[pc >> 1] = def;
+					pc += 2;
+				}
+				pc = loc;
+				def = unw;
+			}
+			while(pc < pcEnd) {
+				unwind[pc >> 1] = def;
+				pc++;
+			}
+		};
+
+		while(line < outputs.length) {
+			if(outputs[line].match(/[0-9a-f]{8} [0-9a-f]{8} [0-9a-f]{8} CIE/))
+				parseCIE();
+			else if(outputs[line].match(/[0-9a-f]{8} [0-9a-f]{8} [0-9a-f]{8} FDE/))
+				parseFDE();
+			else
+				line++;
+		}
+		console.log(JSON.stringify(unwind, null, 2));
+		this.unwind = new Uint16Array(unwind);
 	}
 }
 

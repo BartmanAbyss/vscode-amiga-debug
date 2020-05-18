@@ -425,7 +425,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		if (command.startsWith("-")) {
 			return this.sendCommand(command.substr(1));
 		} else {
-			return this.sendCommand(`interpreter-exec console "${command}"`);
+			return this.sendCommand(`interpreter-exec console "${command.replace(/\"/g, "\\\"")}"`);
 		}
 	}
 

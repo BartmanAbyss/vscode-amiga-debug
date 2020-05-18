@@ -1,22 +1,21 @@
-import * as vscode from 'vscode';
-import { BreakpointEvent, ContinuedEvent, DebugSession, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { Breakpoint, IBackend, MIError, Section, Variable, VariableObject } from './backend/backend';
-import { expandValue, isExpandable } from './backend/gdb_expansion';
-import { MI2 } from './backend/mi2';
-import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap } from './backend/profile';
-import { hexFormat } from './utils';
-
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
-
-import { resolve } from 'url';
+import * as vscode from 'vscode';
+import { ContinuedEvent, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { Breakpoint, MIError, Variable, VariableObject } from './backend/backend';
+import { expandValue } from './backend/gdb_expansion';
+import { MI2 } from './backend/mi2';
+import { MINode } from './backend/mi_parse';
+import { Profiler, SourceMap, UnwindTable } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
-import { DisassemblyInstruction, NumberFormat, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
+import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
+import { hexFormat } from './utils';
+
+
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
@@ -453,12 +452,20 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				await this.miDebugger.interrupt(this.currentThreadId);
 				return;
 			}
-			const tmp = path.join(os.tmpdir(), `amiga-profile-${new Date().getTime()}`);
-			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
-			await this.miDebugger.sendUserInput(`monitor profile ${tmpQuoted}`);
 
 			const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 			const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
+			const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+			const tmp = path.join(os.tmpdir(), `amiga-profile-${new Date().getTime()}`);
+
+			// write unwind table for WinUAE
+			const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf");
+			fs.writeFileSync(tmp + ".unwind", unwind.unwind);
+
+			// path to profile file
+			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
+			await this.miDebugger.sendUserInput(`monitor profile "${tmpQuoted}.unwind" "${tmpQuoted}"`);
+			//fs.unlinkSync(tmp + ".unwind");
 
 			// read profile file
 			const profileBuffer = fs.readFileSync(tmp);
