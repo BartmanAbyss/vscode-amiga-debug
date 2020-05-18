@@ -1,0 +1,1211 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "callFrame": {
+        "functionName": "(root)",
+        "scriptId": "0",
+        "url": "",
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      "hitCount": 0,
+      "children": [
+        2,
+        3,
+        4,
+        8,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        32,
+        33,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        70
+      ],
+      "locationId": 0,
+      "positionTicks": []
+    },
+    {
+      "id": 2,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "functionName": "pnkWaitVbl",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "lineNumber": 174,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 3,
+      "positionTicks": [],
+      "hitCount": 1075
+    },
+    {
+      "id": 3,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "functionName": "pnkRandom",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "lineNumber": 259,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 6,
+      "positionTicks": [],
+      "hitCount": 127
+    },
+    {
+      "id": 4,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "functionName": "pnkBlit",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.c",
+        "lineNumber": 456,
+        "columnNumber": 0
+      },
+      "children": [
+        5,
+        6,
+        7
+      ],
+      "locationId": 9,
+      "positionTicks": [],
+      "hitCount": 6167
+    },
+    {
+      "id": 5,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\pnk/pnkSystem.h",
+        "functionName": "pnkMuluw (inlined)",
+        "url": "file:///z:/pinkooo/pnk/pnkSystem.h",
+        "lineNumber": 241,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 12,
+      "positionTicks": [],
+      "hitCount": 86
+    },
+    {
+      "id": 6,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\pnk/pnkSystem.h",
+        "functionName": "pnkMulsw (inlined)",
+        "url": "file:///z:/pinkooo/pnk/pnkSystem.h",
+        "lineNumber": 246,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 15,
+      "positionTicks": [],
+      "hitCount": 104
+    },
+    {
+      "id": 7,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\pnk/pnkSystem.h",
+        "functionName": "pnkWaitBlt (inlined)",
+        "url": "file:///z:/pinkooo/pnk/pnkSystem.h",
+        "lineNumber": 365,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 18,
+      "positionTicks": [],
+      "hitCount": 104
+    },
+    {
+      "id": 8,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/main.c",
+        "functionName": "interruptHandler",
+        "url": "file:///Z:/pinkooo/bitshmup/main.c",
+        "lineNumber": 36,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 21,
+      "positionTicks": [],
+      "hitCount": 76
+    },
+    {
+      "id": 9,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/main.c",
+        "functionName": "main",
+        "url": "file:///Z:/pinkooo/bitshmup/main.c",
+        "lineNumber": 157,
+        "columnNumber": 0
+      },
+      "children": [
+        10,
+        11
+      ],
+      "locationId": 24,
+      "positionTicks": [],
+      "hitCount": 21
+    },
+    {
+      "id": 10,
+      "callFrame": {
+        "scriptId": "Z:\\pinkooo\\bitshmup/../pnk/pnkSystem.h",
+        "functionName": "pnkMouseRight (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.h",
+        "lineNumber": 193,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 27,
+      "positionTicks": [],
+      "hitCount": 2
+    },
+    {
+      "id": 11,
+      "callFrame": {
+        "scriptId": "Z:\\pinkooo\\bitshmup/../pnk/pnkSystem.h",
+        "functionName": "pnkMouseLeft (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.h",
+        "lineNumber": 192,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 30,
+      "positionTicks": [],
+      "hitCount": 3
+    },
+    {
+      "id": 12,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/../shared/copper.c",
+        "functionName": "copSetCopperList",
+        "url": "file:///Z:/pinkooo/bitshmup/../shared/copper.c",
+        "lineNumber": 42,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 33,
+      "positionTicks": [],
+      "hitCount": 9
+    },
+    {
+      "id": 13,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerDmaWait",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1575,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 36,
+      "positionTicks": [],
+      "hitCount": 429
+    },
+    {
+      "id": 14,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerProcessAmigaVoicesEnableDma",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1596,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 39,
+      "positionTicks": [],
+      "hitCount": 7
+    },
+    {
+      "id": 15,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerProcessAmigaVoices",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1645,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 42,
+      "positionTicks": [],
+      "hitCount": 216
+    },
+    {
+      "id": 16,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerProcessAmigaVoicesLoop",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1672,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 45,
+      "positionTicks": [],
+      "hitCount": 263
+    },
+    {
+      "id": 17,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtInstrumentInstanceProcesStep",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 751,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 48,
+      "positionTicks": [],
+      "hitCount": 162
+    },
+    {
+      "id": 18,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerProcessVoices",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 2089,
+        "columnNumber": 0
+      },
+      "children": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "locationId": 51,
+      "positionTicks": [],
+      "hitCount": 352
+    },
+    {
+      "id": 19,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtAdsrProcess (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 277,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 54,
+      "positionTicks": [],
+      "hitCount": 70
+    },
+    {
+      "id": 20,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtSetPaulaNoteData (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 2011,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 57,
+      "positionTicks": [],
+      "hitCount": 83
+    },
+    {
+      "id": 21,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "muluw (inlined) (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 77,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 60,
+      "positionTicks": [],
+      "hitCount": 30
+    },
+    {
+      "id": 22,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtProcessSampleLoop (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1881,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 65,
+      "positionTicks": [],
+      "hitCount": 36
+    },
+    {
+      "id": 23,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtInstrumentInstanceGetNote (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 416,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 68,
+      "positionTicks": [],
+      "hitCount": 50
+    },
+    {
+      "id": 24,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "Vibrato8BitProcess (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 378,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 71,
+      "positionTicks": [],
+      "hitCount": 81
+    },
+    {
+      "id": 25,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "functionName": "prtPlayerTick",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/replayer.c",
+        "lineNumber": 1855,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 74,
+      "positionTicks": [],
+      "hitCount": 28
+    },
+    {
+      "id": 26,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/input.c",
+        "functionName": "inputGetStick",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/input.c",
+        "lineNumber": 4,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 77,
+      "positionTicks": [],
+      "hitCount": 177
+    },
+    {
+      "id": 27,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/p2.c",
+        "functionName": "p2IntegrateVel",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/p2.c",
+        "lineNumber": 36,
+        "columnNumber": 0
+      },
+      "children": [
+        28
+      ],
+      "locationId": 80,
+      "positionTicks": [],
+      "hitCount": 49
+    },
+    {
+      "id": 28,
+      "callFrame": {
+        "scriptId": "Z:\\pinkooo\\bitshmup/../pnk/pnkSystem.h",
+        "functionName": "pnkMulsw (inlined)",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/pnkSystem.h",
+        "lineNumber": 246,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 83,
+      "positionTicks": [],
+      "hitCount": 7
+    },
+    {
+      "id": 29,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/engine/p2.c",
+        "functionName": "p2WorldTick",
+        "url": "file:///Z:/pinkooo/bitshmup/src/engine/p2.c",
+        "lineNumber": 77,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 86,
+      "positionTicks": [],
+      "hitCount": 49
+    },
+    {
+      "id": 30,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "processExplosion",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 902,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 89,
+      "positionTicks": [],
+      "hitCount": 23
+    },
+    {
+      "id": 31,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "processEnemyshoot",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 928,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 92,
+      "positionTicks": [],
+      "hitCount": 44
+    },
+    {
+      "id": 32,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "processCapturePlayer",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 841,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 95,
+      "positionTicks": [],
+      "hitCount": 18
+    },
+    {
+      "id": 33,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "processEnemy",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 551,
+        "columnNumber": 0
+      },
+      "children": [
+        34,
+        35
+      ],
+      "locationId": 98,
+      "positionTicks": [],
+      "hitCount": 1967
+    },
+    {
+      "id": 34,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\bitshmup\\src\\engine/colcache.h",
+        "functionName": "ColCacheInit (inlined)",
+        "url": "file:///z:/pinkooo/bitshmup/src/engine/colcache.h",
+        "lineNumber": 42,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 101,
+      "positionTicks": [],
+      "hitCount": 761
+    },
+    {
+      "id": 35,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\bitshmup\\src\\engine/colcache.h",
+        "functionName": "ColCacheInsert (inlined)",
+        "url": "file:///z:/pinkooo/bitshmup/src/engine/colcache.h",
+        "lineNumber": 62,
+        "columnNumber": 0
+      },
+      "children": [
+        36
+      ],
+      "locationId": 104,
+      "positionTicks": [],
+      "hitCount": 1073
+    },
+    {
+      "id": 36,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\bitshmup\\src\\engine/colcache.h",
+        "functionName": "ColCacheGetSlot (inlined)",
+        "url": "file:///z:/pinkooo/bitshmup/src/engine/colcache.h",
+        "lineNumber": 53,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 105,
+      "positionTicks": [],
+      "hitCount": 758
+    },
+    {
+      "id": 37,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "tick",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 952,
+        "columnNumber": 0
+      },
+      "children": [
+        69
+      ],
+      "locationId": 110,
+      "positionTicks": [],
+      "hitCount": 298
+    },
+    {
+      "id": 38,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "enemyTestHit",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 883,
+        "columnNumber": 0
+      },
+      "children": [
+        39,
+        40
+      ],
+      "locationId": 113,
+      "positionTicks": [],
+      "hitCount": 33
+    },
+    {
+      "id": 39,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\bitshmup\\src\\engine/colcache.h",
+        "functionName": "ColCacheGetSlot (inlined)",
+        "url": "file:///z:/pinkooo/bitshmup/src/engine/colcache.h",
+        "lineNumber": 53,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 116,
+      "positionTicks": [],
+      "hitCount": 18
+    },
+    {
+      "id": 40,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\bitshmup\\src\\engine/colcache.h",
+        "functionName": "ColCacheGetNumItems (inlined)",
+        "url": "file:///z:/pinkooo/bitshmup/src/engine/colcache.h",
+        "lineNumber": 23,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 119,
+      "positionTicks": [],
+      "hitCount": 6
+    },
+    {
+      "id": 41,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "functionName": "enemyGetNum",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/enemy.c",
+        "lineNumber": 899,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 122,
+      "positionTicks": [],
+      "hitCount": 6
+    },
+    {
+      "id": 42,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "setImage",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 215,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 125,
+      "positionTicks": [],
+      "hitCount": 34
+    },
+    {
+      "id": 43,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "processMove",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 385,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 128,
+      "positionTicks": [],
+      "hitCount": 77
+    },
+    {
+      "id": 44,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "motionCallback",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 499,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 131,
+      "positionTicks": [],
+      "hitCount": 35
+    },
+    {
+      "id": 45,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "processCapture",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 223,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 134,
+      "positionTicks": [],
+      "hitCount": 14
+    },
+    {
+      "id": 46,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "testPlayerHit",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 151,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 137,
+      "positionTicks": [],
+      "hitCount": 67
+    },
+    {
+      "id": 47,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "processShoot",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 454,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 140,
+      "positionTicks": [],
+      "hitCount": 29
+    },
+    {
+      "id": 48,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "processShoots",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 175,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 143,
+      "positionTicks": [],
+      "hitCount": 93
+    },
+    {
+      "id": 49,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "processStates",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 327,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 146,
+      "positionTicks": [],
+      "hitCount": 57
+    },
+    {
+      "id": 50,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/player.c",
+        "functionName": "playerGetNumLifes",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/player.c",
+        "lineNumber": 605,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 149,
+      "positionTicks": [],
+      "hitCount": 12
+    },
+    {
+      "id": 51,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "getCurrentBuffer",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 299,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 152,
+      "positionTicks": [],
+      "hitCount": 33
+    },
+    {
+      "id": 52,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processStars",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1450,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 155,
+      "positionTicks": [],
+      "hitCount": 1783
+    },
+    {
+      "id": 53,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processIngameData",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1642,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 158,
+      "positionTicks": [],
+      "hitCount": 31
+    },
+    {
+      "id": 54,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "printMaxLine",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1606,
+        "columnNumber": 0
+      },
+      "children": [
+        55
+      ],
+      "locationId": 161,
+      "positionTicks": [],
+      "hitCount": 8
+    },
+    {
+      "id": 55,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\pnk/pnksystem.h",
+        "functionName": "pnkGetLine (inlined)",
+        "url": "file:///z:/pinkooo/pnk/pnksystem.h",
+        "lineNumber": 211,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 164,
+      "positionTicks": [],
+      "hitCount": 10
+    },
+    {
+      "id": 56,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "swapBuffer",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 308,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 167,
+      "positionTicks": [],
+      "hitCount": 26
+    },
+    {
+      "id": 57,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "bltHud",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1810,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 170,
+      "positionTicks": [],
+      "hitCount": 104
+    },
+    {
+      "id": 58,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "blitSprites",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1655,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 173,
+      "positionTicks": [],
+      "hitCount": 1782
+    },
+    {
+      "id": 59,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processHudScore",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 479,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 176,
+      "positionTicks": [],
+      "hitCount": 34
+    },
+    {
+      "id": 60,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processBeam",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1698,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 179,
+      "positionTicks": [],
+      "hitCount": 32
+    },
+    {
+      "id": 61,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "ingameGetRound",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 187,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 182,
+      "positionTicks": [],
+      "hitCount": 21
+    },
+    {
+      "id": 62,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processScoreSprites",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1759,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 185,
+      "positionTicks": [],
+      "hitCount": 30
+    },
+    {
+      "id": 63,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processHudBottom",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 514,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 188,
+      "positionTicks": [],
+      "hitCount": 52
+    },
+    {
+      "id": 64,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processBonus",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1777,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 191,
+      "positionTicks": [],
+      "hitCount": 18
+    },
+    {
+      "id": 65,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processStateIngame",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1399,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 194,
+      "positionTicks": [],
+      "hitCount": 27
+    },
+    {
+      "id": 66,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processState",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 1413,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 197,
+      "positionTicks": [],
+      "hitCount": 45
+    },
+    {
+      "id": 67,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processHudMiddle",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 543,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 200,
+      "positionTicks": [],
+      "hitCount": 59
+    },
+    {
+      "id": 68,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "functionName": "processHud",
+        "url": "file:///Z:/pinkooo/bitshmup/src/game/ingameInit.c",
+        "lineNumber": 607,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 203,
+      "positionTicks": [],
+      "hitCount": 51
+    },
+    {
+      "id": 69,
+      "callFrame": {
+        "scriptId": "z:\\pinkooo\\pnk/pnksystem.h",
+        "functionName": "pnkWaitBlt (inlined)",
+        "url": "file:///z:/pinkooo/pnk/pnksystem.h",
+        "lineNumber": 365,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 206,
+      "positionTicks": [],
+      "hitCount": 10
+    },
+    {
+      "id": 70,
+      "callFrame": {
+        "scriptId": "Z:/pinkooo/bitshmup/../pnk/gcc8_a_support.s",
+        "functionName": "__mulsi3",
+        "url": "file:///Z:/pinkooo/bitshmup/../pnk/gcc8_a_support.s",
+        "lineNumber": 38,
+        "columnNumber": 0
+      },
+      "children": [],
+      "locationId": 209,
+      "positionTicks": [],
+      "hitCount": 517
+    }
+  ],
+  "startTime": 0,
+  "endTime": 19993,
+  "samples": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    36,
+    35,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+  ],
+  "timeDeltas": [
+    1075,
+    127,
+    6167,
+    86,
+    104,
+    104,
+    76,
+    21,
+    2,
+    3,
+    9,
+    429,
+    7,
+    216,
+    263,
+    162,
+    352,
+    70,
+    83,
+    34,
+    30,
+    36,
+    50,
+    81,
+    28,
+    177,
+    49,
+    7,
+    49,
+    23,
+    44,
+    18,
+    1967,
+    761,
+    758,
+    1073,
+    298,
+    33,
+    18,
+    6,
+    6,
+    34,
+    77,
+    35,
+    14,
+    67,
+    29,
+    93,
+    57,
+    12,
+    33,
+    1783,
+    31,
+    8,
+    10,
+    26,
+    104,
+    1782,
+    34,
+    32,
+    21,
+    30,
+    52,
+    18,
+    27,
+    45,
+    59,
+    51,
+    10,
+    517,
+    0
+  ]
+}
