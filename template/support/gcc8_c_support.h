@@ -6,6 +6,7 @@
 
 void *memcpy (void *, const void *, unsigned long);
 void *memset (void *, int, unsigned long);
+void *memmove (void *, const void *, unsigned long);
 unsigned long strlen (const char *);
 void warpmode(int on); // bool on/off
 void KPrintF(const char* fmt, ...); // output to debugger

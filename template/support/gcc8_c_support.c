@@ -28,6 +28,23 @@ void* memcpy(void *dest, const void *src, unsigned long len)
 	return dest;
 }
 
+__attribute__((optimize("no-tree-loop-distribute-patterns"))) 
+void* memmove(void *dest, const void *src, unsigned long len)
+{
+	char *d = dest;
+	const char *s = src;
+	if (d < s) {
+		while (len--)
+			*d++ = *s++;
+	} else {
+		const char *lasts = s + (len - 1);
+		char *lastd = d + (len - 1);
+		while (len--)
+			*lastd-- = *lasts--;
+	}
+	return dest;
+}
+
 // vbcc
 typedef unsigned char *va_list;
 #define va_start(ap, lastarg) ((ap)=(va_list)(&lastarg+1)) 
