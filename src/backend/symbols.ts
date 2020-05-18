@@ -29,47 +29,45 @@ export class SymbolTable {
 		this.symbols = [];
 		this.sections = new Map();
 
-		try {
-			const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
-			const output = objdump.stdout.toString();
-			const lines = output.split('\n');
-			let currentFile: string | null = null;
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
+		const output = objdump.stdout.toString();
+		const lines = output.split('\n');
+		let currentFile: string | null = null;
 
-			for (const line of lines) {
-				const match = line.match(SYMBOL_REGEX);
-				if (match) {
-					if (match[7] === 'd' && match[8] === 'f') {
-						currentFile = match[11].trim();
-					}
-					const type = TYPE_MAP[match[8]];
-					let scope = SCOPE_MAP[match[2]];
-					let name = match[11].trim();
-					let hidden = false;
-
-					if (name.startsWith('.hidden')) {
-						name = name.substring(7).trim();
-						hidden = true;
-					}
-
-					// fix for LTO
-					if(scope === SymbolScope.Local && (!currentFile || currentFile === "<artificial>"))
-						scope = SymbolScope.Global;
-
-					this.symbols.push({
-						address: parseInt(match[1], 16),
-						base: 0,
-						type,
-						scope,
-						section: match[9].trim(),
-						length: parseInt(match[10], 16),
-						name,
-						lines: null,
-						file: scope === SymbolScope.Local ? currentFile : null,
-						hidden
-					});
+		for (const line of lines) {
+			const match = line.match(SYMBOL_REGEX);
+			if (match) {
+				if (match[7] === 'd' && match[8] === 'f') {
+					currentFile = match[11].trim();
 				}
+				const type = TYPE_MAP[match[8]];
+				let scope = SCOPE_MAP[match[2]];
+				let name = match[11].trim();
+				let hidden = false;
+
+				if (name.startsWith('.hidden')) {
+					name = name.substring(7).trim();
+					hidden = true;
+				}
+
+				// fix for LTO
+				if(scope === SymbolScope.Local && (!currentFile || currentFile === "<artificial>"))
+					scope = SymbolScope.Global;
+
+				this.symbols.push({
+					address: parseInt(match[1], 16),
+					base: 0,
+					type,
+					scope,
+					section: match[9].trim(),
+					length: parseInt(match[10], 16),
+					name,
+					lines: null,
+					file: scope === SymbolScope.Local ? currentFile : null,
+					hidden
+				});
 			}
-		} catch (e) { }
+		}
 	}
 
 	public relocate(sections: Section[]) {

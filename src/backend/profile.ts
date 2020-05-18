@@ -31,50 +31,50 @@ export class SourceMap {
 	public lines: number[] = []; // index into uniqueLines
 
 	constructor(private addr2linePath: string, private executable: string, private codeSize: number) {
-		try {
-			let str: string = "";
-			for(let i = 0; i < this.codeSize; i += 2) {
-				str += i.toString(16) + ' ';
+		let str: string = "";
+		for(let i = 0; i < this.codeSize; i += 2) {
+			str += i.toString(16) + ' ';
+		}
+		const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
+		fs.writeFileSync(tmp, str);
+
+		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 10*1024*1024 });
+		if(objdump.status !== 0)
+			throw objdump.error;
+		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		const uniqueLinesMap: Map<string, number> = new Map();
+		let addr = 0;
+		let i = 0;
+
+		const getCallFrame = () => {
+			const frames: SourceLine[] = [];
+			while(i < outputs.length && outputs[i] !== "" && !outputs[i].startsWith('0x')) {
+				const func = outputs[i++];
+				const output = outputs[i++];
+				const split = output.lastIndexOf(':');
+				const file = output.substr(0, split);
+				const line = parseInt(output.substr(split + 1));
+				frames.unshift({ func, file, line });
 			}
-			const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
-			fs.writeFileSync(tmp, str);
+			return { frames };
+		};
 
-			const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`]);
-			const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
-			const uniqueLinesMap: Map<string, number> = new Map();
-			let addr = 0;
-			let i = 0;
+		while(i < outputs.length) {
+			//assert.equal(outputs[i].startsWith('0x'), true);
+			//assert.equal(parseInt(outputs[i].substr(2), 16), addr);
+			i++;
 
-			const getCallFrame = () => {
-				const frames: SourceLine[] = [];
-				while(!outputs[i].startsWith('0x')) {
-					const func = outputs[i++];
-					const output = outputs[i++];
-					const split = output.lastIndexOf(':');
-					const file = output.substr(0, split);
-					const line = parseInt(output.substr(split + 1));
-					frames.unshift({ func, file, line });
-				}
-				return { frames };
-			};
-
-			while(i < outputs.length) {
-				//assert.equal(outputs[i].startsWith('0x'), true);
-				//assert.equal(parseInt(outputs[i].substr(2), 16), addr);
-				i++;
-
-				const callFrame = getCallFrame();
-				const key = getCallFrameKey(callFrame);
-				let value = uniqueLinesMap.get(key);
-				if(value === undefined) {
-					value = this.uniqueLines.push(callFrame) - 1;
-					uniqueLinesMap.set(key, value);
-				}
-				this.lines.push(value);
-				addr += 2;
+			const callFrame = getCallFrame();
+			const key = getCallFrameKey(callFrame);
+			let value = uniqueLinesMap.get(key);
+			if(value === undefined) {
+				value = this.uniqueLines.push(callFrame) - 1;
+				uniqueLinesMap.set(key, value);
 			}
-			fs.unlinkSync(tmp);
-		} catch(e) { }
+			this.lines.push(value);
+			addr += 2;
+		}
+		fs.unlinkSync(tmp);
 	}
 }
 
