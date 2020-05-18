@@ -29,14 +29,20 @@ void KPrintF(const char* fmt, ...); // output to debugger
 	extern const void* incbin_ ## name ## _end;\
     const void* name = &incbin_ ## name ## _start;
 
-inline unsigned int muluw(unsigned short b,unsigned short c) {
-    unsigned short a;
-    asm("muluw %2,%0":"=d"(a): "0"(c),"d"(b): "cc");
+inline unsigned int muluw(unsigned short a, unsigned short b) {
+    asm("muluw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline int mulsw(short b,short c) {
-    int a;
-    asm("mulsw %2,%0":"=d"(a): "0"(c),"d"(b): "cc");
+inline int mulsw(short a, short b) {
+    asm("mulsw %1,%0":"+d"(a): "mid"(b): "cc");
+    return a;
+}
+inline unsigned int divuw(unsigned short a, unsigned short b) {
+    asm("divuw %1,%0":"+d"(a): "mid"(b): "cc");
+    return a;
+}
+inline int divsw(short a, short b) {
+    asm("divsw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
 

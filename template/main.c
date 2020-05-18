@@ -127,7 +127,7 @@ inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}
 inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
 
 // DEMO - INCBIN
-volatile int frameCounter = 0;
+volatile short frameCounter = 0;
 INCBIN(colors, "colors.bin")
 
 static __attribute__((interrupt)) void interruptHandler() {
