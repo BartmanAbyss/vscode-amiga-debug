@@ -14,6 +14,7 @@ bin/dh0/runme.exe
 bin/configuration.*
 bin/*.uae
 bin/*.ini
+**/*.dmp
 template/obj8mingw
 template/obj
 template/*.elf

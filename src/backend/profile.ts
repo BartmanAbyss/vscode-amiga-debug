@@ -78,6 +78,13 @@ export class SourceMap {
 	}
 }
 
+interface Unwind {
+	cfaReg: number;
+	cfaOfs: number;
+	r13: number;
+	ra: number;
+}
+
 export class UnwindTable {
 	private getCodeSize() {
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--headers', this.executable]);
@@ -94,11 +101,23 @@ export class UnwindTable {
 		throw new Error("can't get size of .text section");
 	}
 
-	public unwind: Uint16Array;
+	// for every possible code location
+	//   struct unwind {
+	//     uint16_t cfa; // (cfaReg << 12) | (u.cfaOfs)
+	//     int16_t r13; // ofs from cfa
+	//     int16_t ra; // ofs from cfa
+	//   }
+	public unwind: Int16Array;
 
 	constructor(private objdumpPath: string, private executable: string) {
 		const codeSize = this.getCodeSize();
-		const unwind = new Array(codeSize >> 1).fill(-1);
+		const invalidUnwind: Unwind= {
+			cfaOfs: -1,
+			cfaReg: -1,
+			r13: -1,
+			ra: -1
+		};
+		const unwind: Unwind[] = new Array(codeSize).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.executable], { maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
@@ -107,35 +126,48 @@ export class UnwindTable {
 		const locStart = 0;
 		let cfaStart = -1;
 		let raStart = -1;
+		let r13Start = -1;
 		let line = 0;
 
-		const cieMap: Map<number, number> = new Map();
+		const cieMap: Map<number, Unwind> = new Map();
 
 		const parseHeader = () => {
 			if(outputs[line] === "")
 				return;
 			const l = outputs[line++];
 			cfaStart = l.indexOf("CFA");
+			r13Start = l.indexOf("r13");
 			raStart = l.indexOf("ra");
 		};
 
-		const parseLine = () => {
+		const parseLine = (): { loc: number, unwind: Unwind } => {
 			const l = outputs[line++];
 			const loc = parseInt(l.substr(locStart, 8), 16);
-			const cfa = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
-			const ra = l.substr(raStart, l.indexOf(" ", raStart) - raStart);
-			if(!cfa.startsWith("r15+") || !ra.startsWith("c-"))
-				throw new Error("error parsing UnwindTable");
-			const unw = parseInt(cfa.substr(4)) - parseInt(ra.substr(2));
-			return { loc, unw };
+			const cfaStr = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
+			const r13Str = l.substr(r13Start, l.indexOf(" ", r13Start) - r13Start);
+			const raStr = l.substr(raStart, l.indexOf(" ", raStart) - raStart);
+			const cfaMatch = cfaStr.match(/r([0-9]+)\+([0-9]+)/);
+			const cfaReg = parseInt(cfaMatch[1]);
+			const cfaOfs = parseInt(cfaMatch[2]);
+			const r13 = (() => {
+				if(r13Str.startsWith("c-"))
+					return parseInt(r13Str.substr(1));
+				else
+					return -1;
+			})();
+
+			if(!(cfaReg === 13 || cfaReg === 15) || !raStr.startsWith("c-"))
+				throw new Error(`error parsing UnwindTable in line ${line}: ${l}`);
+			const ra = parseInt(raStr.substr(1));
+			return { loc, unwind: { cfaReg, cfaOfs, r13, ra } };
 		};
 
 		const parseCIE = () => {
 			const addr = parseInt(outputs[line++].substr(0, 8), 16);
 			parseHeader();
 			// only 1 entry
-			const { loc, unw } = parseLine();
-			cieMap.set(addr, unw);
+			const { loc, unwind } = parseLine();
+			cieMap.set(addr, unwind);
 
 			if(outputs[line] !== "")
 				throw new Error("CIE with multiple entries not supported");
@@ -147,24 +179,24 @@ export class UnwindTable {
 			const pcStart = parseInt(match[2], 16);
 			const pcEnd = parseInt(match[3], 16);
 			parseHeader();
-			let def = cieMap.get(cie);
-			if(def === undefined)
+			let unw = cieMap.get(cie);
+			if(unw.cfaReg === undefined)
 				throw new Error("unknown CIE reference");
 
 			let pc = pcStart;
 			while(line < outputs.length && outputs[line] !== "") {
-				const { loc, unw } = parseLine();
-				while(pc < loc) {
-					unwind[pc >> 1] = def;
+				const next = parseLine();
+				while(pc < next.loc) {
+					unwind[pc >> 1] = unw;
 					pc += 2;
 				}
-				pc = loc;
-				def = unw;
+				pc = next.loc;
+				unw = next.unwind;
 			}
 			while(pc < pcEnd) {
-				unwind[pc >> 1] = def;
-				pc++;
-			}
+				unwind[pc >> 1] = unw;
+				pc += 2;
+		}
 		};
 
 		while(line < outputs.length) {
@@ -175,8 +207,15 @@ export class UnwindTable {
 			else
 				line++;
 		}
-		console.log(JSON.stringify(unwind, null, 2));
-		this.unwind = new Uint16Array(unwind);
+		this.unwind = new Int16Array(unwind.length * 3);
+		let i = 0;
+		for(const u of unwind) {
+			this.unwind[i++] = (u.cfaReg << 12) | (u.cfaOfs);
+			this.unwind[i++] = u.r13;
+			this.unwind[i++] = u.ra;
+		}
+		//console.log(JSON.stringify(unwind, null, 2));
+		//console.log(JSON.stringify(this.unwind, null, 2));
 	}
 }
 
@@ -326,10 +365,10 @@ export class Profiler {
 			};
 
 			const node = getNode(loc, loc.frames.length);
-			if(loc.frames.length === 1)
+			/*if(loc.frames.length === 1)
 				node.callFrame = getCallFrame(fr);
 			else
-				node.callFrame.functionName += " (inlined)";
+				node.callFrame.functionName += " (inlined)";*/
 			node.hitCount = ticks;
 			//node.positionTicks.push(tick);
 			samples.push(node.id);
@@ -343,7 +382,7 @@ export class Profiler {
 	}
 
 	public profileAsm(): string {
-		const cyclesPerInstr: number[] = [];
+		/*const cyclesPerInstr: number[] = [];
 		const locations: CallFrame[] = [];
 		for(let i = 0; i < this.profileArray.length; i++) {
 			cyclesPerInstr.push(this.profileArray[i]);
@@ -353,7 +392,8 @@ export class Profiler {
 			}]});
 		}
 
-		return this.profileCommon(cyclesPerInstr, locations);
+		return this.profileCommon(cyclesPerInstr, locations);*/
+		return "";
 	}
 
 	public profileLine(): string {
@@ -370,20 +410,93 @@ export class Profiler {
 		const functionMap: Map<string, number> = new Map();
 		const cyclesPerFunction: number[] = [];
 		const locations: CallFrame[] = [];
-		for(let i = 0; i < this.profileArray.length; i++) {
-			if(this.profileArray[i] === 0)
-				continue;
-			const callFrame = this.sourceMap.uniqueLines[this.sourceMap.lines[i]];
-			const key = getCallFrameKey(callFrame);
-			let functionId = functionMap.get(key);
-			if(functionId === undefined) {
-				functionId = locations.push(callFrame) - 1;
-				cyclesPerFunction.push(0);
-				functionMap.set(key, functionId);
+
+		const callstack: CallFrame = { frames: [] };
+		const lastCallstack: CallFrame = { frames: [] };
+		for(const p of this.profileArray) {
+			if(p < 0xffff0000) {
+				let pc = p;
+				if(callstack.frames.length)
+					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
+				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+				for(let i = l.frames.length - 1; i >= 0; i--) {
+					callstack.frames.unshift( { ...l.frames[i] });
+					if(i !== 0)
+						callstack.frames[0].func += " (inlined)";
+				}
+			} else {
+				if(callstack.frames.length === 1 && lastCallstack.frames.length > 1 && callstack[0] === lastCallstack[lastCallstack.frames.length - 1]) // glitches in unwind
+					callstack.frames = [...lastCallstack.frames];
+
+				const key = getCallFrameKey(callstack);
+				let functionId = functionMap.get(key);
+				if(functionId === undefined) {
+					const callstackCopy = { frames: [...callstack.frames] };
+					functionId = locations.push(callstackCopy) - 1;
+					cyclesPerFunction.push(0);
+					functionMap.set(key, functionId);
+				}
+				cyclesPerFunction[functionId] += ((0xffffffff - p) | 0);
+
+				lastCallstack.frames = [...callstack.frames];
+				callstack.frames.length = 0;
 			}
-			cyclesPerFunction[functionId] += this.profileArray[i];
 		}
 
 		return this.profileCommon(cyclesPerFunction, locations);
 	}
+}
+
+export class Profiler2 {
+	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
+	}
+
+	public profileFunctionTxt(): string {
+		let output: string = "";
+		let callstack: string[] = [];
+		let lastCallstack: string[] = [];
+		for(const p of this.profileArray) {
+			if(p < 0xffff0000) {
+				let pc = p;
+				if(callstack.length)
+					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
+				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+				for(let i = l.frames.length - 1; i >= 0; i--)
+					callstack.unshift(l.frames[i].func + (i !== 0 ? " (inlined)" : ""));
+				callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
+			} else {
+				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
+					callstack = [...lastCallstack];
+				output += callstack.join(';') + ' ' + ((0xffffffff - p) | 0) + '\n';
+				lastCallstack = [...callstack];
+				callstack.length = 0;
+			}
+		}
+		return output;
+	}
+
+	public profileFunction(): string {
+		let output: string = "";
+		let callstack: string[] = [];
+		let lastCallstack: string[] = [];
+		for(const p of this.profileArray) {
+			if(p < 0xffff0000) {
+				let pc = p;
+				if(callstack.length)
+					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
+				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+				for(let i = l.frames.length - 1; i >= 0; i--)
+					callstack.unshift(l.frames[i].func + (i !== 0 ? " (inlined)" : ""));
+				callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
+			} else {
+				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
+					callstack = [...lastCallstack];
+				output += callstack.join(';') + ' ' + ((0xffffffff - p) | 0) + '\n';
+				lastCallstack = [...callstack];
+				callstack.length = 0;
+			}
+		}
+		return output;
+	}
+
 }

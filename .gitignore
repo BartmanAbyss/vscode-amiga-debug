@@ -2,6 +2,7 @@ out
 node_modules
 .vscode-test/
 *.vsix
+*.dmp
 bin/winuae.ini
 bin/dh0/runme.exe
 bin/*.uae
@@ -13,3 +14,5 @@ template/obj
 template/*.elf
 template/a.mingw.*
 template/.vscode/settings.json
+src/test/suite/data/private
+src/test/suite/data/output

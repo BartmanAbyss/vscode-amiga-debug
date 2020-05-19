@@ -10,12 +10,10 @@ import { Breakpoint, MIError, Variable, VariableObject } from './backend/backend
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap, UnwindTable } from './backend/profile';
+import { Profiler, SourceMap, UnwindTable, Profiler2 } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
-
-
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
@@ -475,8 +473,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 			// resolve and generate output
 			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", codeSize);
-			const profile = new Profiler(sourceMap, this.symbolTable, profileArray);
-			fs.writeFileSync(tmp + ".amigaprofile", profile.profileFunction());
+			const profiler = new Profiler(sourceMap, this.symbolTable, profileArray);
+			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileFunction());
+
+			const profiler2 = new Profiler2(sourceMap, this.symbolTable, profileArray);
+			fs.writeFileSync(tmp + ".txt", profiler2.profileFunction());
 
 			// open output
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"));

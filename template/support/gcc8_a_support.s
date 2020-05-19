@@ -30,11 +30,13 @@
 	.macro PICCALL addr
 	jbsr	\addr
 	.endm
- 
+
+	.cfi_sections .debug_frame
 	.text
 	FUNC(__mulsi3)
 	.globl	SYM (__mulsi3)
 SYM (__mulsi3):
+	.cfi_startproc
 	movew	sp@(4), d0	/* x0 -> d0 */
 	muluw	sp@(10), d0	/* x0*y1 */
 	movew	sp@(6), d1	/* x1 -> d1 */
@@ -45,14 +47,16 @@ SYM (__mulsi3):
 	movew	sp@(6), d1	/* x1 -> d1 */
 	muluw	sp@(10), d1	/* x1*y1 */
 	addl	d1, d0
-
 	rts
+	.cfi_endproc
 
 	.text
 	FUNC(__udivsi3)
 	.globl	SYM (__udivsi3)
 SYM (__udivsi3):
+	.cfi_startproc
 	movel	d2, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	sp@(12), d1	/* d1 = divisor */
 	movel	sp@(8), d0	/* d0 = dividend */
 
@@ -94,13 +98,17 @@ SYM (__udivsi3):
 5:	subql	IMM (1), d0	/* adjust quotient */
 
 6:	movel	sp@+, d2
+	.cfi_adjust_cfa_offset -4
 	rts
+	.cfi_endproc
 
 	.text
 	FUNC(__divsi3)
 	.globl	SYM (__divsi3)
 SYM (__divsi3):
+	.cfi_startproc
 	movel	d2, sp@-
+	.cfi_adjust_cfa_offset 4
 
 	moveq	IMM (1), d2	/* sign of result stored in d2 (=1 or =-1) */
 	movel	sp@(12), d1	/* d1 = divisor */
@@ -122,47 +130,65 @@ SYM (__divsi3):
 	negl	d0
 
 3:	movel	sp@+, d2
+	.cfi_adjust_cfa_offset -4
 	rts
+	.cfi_endproc
 
 	.text
 	FUNC(__modsi3)
 	.globl	SYM (__modsi3)
 SYM (__modsi3):
+	.cfi_startproc
 	movel	sp@(8), d1	/* d1 = divisor */
 	movel	sp@(4), d0	/* d0 = dividend */
 	movel	d1, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	d0, sp@-
+	.cfi_adjust_cfa_offset 4
 	PICCALL	SYM (__divsi3)
 	addql	IMM (8), sp
+	.cfi_adjust_cfa_offset -8
 	movel	sp@(8), d1	/* d1 = divisor */
 	movel	d1, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	d0, sp@-
+	.cfi_adjust_cfa_offset 4
 	PICCALL	SYM (__mulsi3)	/* d0 = (a/b)*b */
 	addql	IMM (8), sp
+	.cfi_adjust_cfa_offset -8
 	movel	sp@(4), d1	/* d1 = dividend */
 	subl	d0, d1		/* d1 = a - (a/b)*b */
 	movel	d1, d0
 	rts
+	.cfi_endproc
 
 	.text
 	FUNC(__umodsi3)
 	.globl	SYM (__umodsi3)
 SYM (__umodsi3):
+	.cfi_startproc
 	movel	sp@(8), d1	/* d1 = divisor */
 	movel	sp@(4), d0	/* d0 = dividend */
 	movel	d1, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	d0, sp@-
+	.cfi_adjust_cfa_offset 4
 	PICCALL	SYM (__udivsi3)
 	addql	IMM (8), sp
+	.cfi_adjust_cfa_offset -8
 	movel	sp@(8), d1	/* d1 = divisor */
 	movel	d1, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	d0, sp@-
+	.cfi_adjust_cfa_offset 4
 	PICCALL	SYM (__mulsi3)	/* d0 = (a/b)*b */
 	addql	IMM (8), sp
+	.cfi_adjust_cfa_offset -8
 	movel	sp@(4), d1	/* d1 = dividend */
 	subl	d0, d1		/* d1 = a - (a/b)*b */
 	movel	d1, d0
 	rts
+	.cfi_endproc
 
 	
 	.text
@@ -170,16 +196,22 @@ SYM (__umodsi3):
 	.globl	SYM (KPutCharX)
 
 SYM(KPutCharX):
+	.cfi_startproc
     move.l  a6, -(sp)
+	.cfi_adjust_cfa_offset 4
     move.l  4.w, a6
     jsr     -0x204(a6)
     movea.l (sp)+, a6
+	.cfi_adjust_cfa_offset -4
     rts
+	.cfi_endproc
 
 	.text
 	FUNC(PutChar)
 	.globl	SYM (PutChar)
 
 SYM(PutChar):
+	.cfi_startproc
 	move.b d0, (a3)+
 	rts
+	.cfi_endproc

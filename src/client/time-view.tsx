@@ -248,8 +248,21 @@ const TimeViewRow: FunctionComponent<{
 		[vscode, node],
 	);
 
-	const onToggleExpand = useCallback(() => {
-		onExpandChange(toggleInSet(expanded, node));
+	const onToggleExpand = useCallback((event) => {
+		if(event.shiftKey) {
+			const nextExpanded = new Set(expanded);
+			const expandChildren = (n: IGraphNode) => {
+				for (const child of Object.values(n.children)) {
+					nextExpanded.add(child);
+					expandChildren(child);
+				}
+			};
+			nextExpanded.add(node);
+			expandChildren(node);
+			onExpandChange(nextExpanded);
+		} else {
+			onExpandChange(toggleInSet(expanded, node));
+		}
 	}, [expanded, onExpandChange, node]);
 
 	const onKeyDown = useCallback(
