@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
 	mode: 'development',
-	devtool: 'eval',
+	devtool: 'eval-cheap-module-source-map',
 	entry: "./src/client/client.tsx",
 	output: {
 		filename: "client.bundle.js",

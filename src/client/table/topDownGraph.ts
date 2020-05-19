@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from './model';
+import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from '../model';
 
 export class TopDownNode implements IGraphNode {
 	public static root() {

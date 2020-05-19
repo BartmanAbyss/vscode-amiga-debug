@@ -4,14 +4,14 @@
 import { h, render, FunctionComponent } from 'preact';
 import { useCallback, useContext } from 'preact/hooks';
 import styles from './client.css';
-import { ToggleButton } from './toggle-button';
-import { VsCodeApi } from './vscodeApi';
+//import { ToggleButton } from './toggle-button';
+//import { VsCodeApi } from './vscodeApi';
 //import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
-import { cpuProfileLayoutFactory } from './layout';
+import { cpuProfileLayoutFactory } from './table/layout';
 import { IProfileModel, IGraphNode } from './model';
 //import { createBottomUpGraph } from './bottomUpGraph';
-import { createTopDownGraph } from './topDownGraph';
-import { TimeView } from './time-view';
+import { createTopDownGraph } from './table/topDownGraph';
+import { TimeView } from './table/time-view';
 
 declare const MODEL: IProfileModel;
 

@@ -13,10 +13,10 @@ import {
 	useRef,
 	useEffect,
 } from 'preact/hooks';
-import { VsCodeApi } from './vscodeApi';
-import { ILocation, IGraphNode } from './model';
+import { VsCodeApi } from '../vscodeApi';
+import { ILocation, IGraphNode } from '../model';
 import { classes } from './util';
-import { IOpenDocumentMessage } from './types';
+import { IOpenDocumentMessage } from '../types';
 import { addToSet, removeFromSet, toggleInSet } from './array';
 import * as ChevronDown from './icons/chevron-down.svg';
 import * as ChevronRight from './icons/chevron-right.svg';

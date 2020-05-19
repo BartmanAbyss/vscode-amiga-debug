@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 import { h, FunctionComponent, Fragment, ComponentType } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
-import { richFilter, RichFilterComponent } from '../client/rich-filter';
+import { richFilter, RichFilterComponent } from './rich-filter';
 import styles from './layout.css';
 import { IDataSource } from './datasource';
 
