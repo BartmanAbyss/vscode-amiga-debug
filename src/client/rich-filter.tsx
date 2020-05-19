@@ -9,7 +9,7 @@ import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './rich-filter.css';
-import { evaluate, IDataSource } from '../ql';
+import { IDataSource } from './datasource';
 
 /**
  * Filter that the RichFilter returns,
@@ -58,23 +58,9 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!text.includes('query()')) {
-      const filter = compileFilter({ text, caseSensitive, regex });
-      onChange(data.data.filter(d => getDefaultFilterText(d).some(filter)));
-      return;
-    }
-
-    try {
-      onChange(
-        evaluate({
-          expression: text,
-          dataSources: { query: data },
-        }),
-      );
-      setError(undefined);
-    } catch (e) {
-      setError(e.message);
-    }
+    const filter = compileFilter({ text, caseSensitive, regex });
+    onChange(data.data.filter(d => getDefaultFilterText(d).some(filter)));
+    return;
   }, [regex, caseSensitive, text]);
 
   return (

@@ -5,7 +5,7 @@ import { h, FunctionComponent, Fragment, ComponentType } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
 import { richFilter, RichFilterComponent } from '../client/rich-filter';
 import styles from './layout.css';
-import { IDataSource } from '../ql';
+import { IDataSource } from './datasource';
 
 export interface IBodyProps<T> {
   data: ReadonlyArray<T>;
@@ -38,7 +38,7 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
           data={data}
           getDefaultFilterText={getDefaultFilterText}
           onChange={setFilteredData}
-          placeholder="Filter functions or files, or start a query()"
+          placeholder="Filter functions or files"
           foot={footer}
         />
       </div>
