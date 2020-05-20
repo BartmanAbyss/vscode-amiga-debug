@@ -75,6 +75,7 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 		};
 		const model = buildModel(JSON.parse(document.getText()));
 		webviewPanel.webview.html = await bundlePage(path.join(this.context.extensionPath, 'out', 'client.bundle.js'), {
+			DOCUMENT: document.getText(),
 			MODEL: model,
 		});
 		this.lenses.registerLenses(this.createLensCollection(model));

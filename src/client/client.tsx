@@ -23,6 +23,25 @@ const CpuProfileLayout = cpuProfileLayoutFactory<IGraphNode>();
 const container = document.createElement('div');
 container.classList.add(styles.wrapper);
 document.body.appendChild(container);
+
+// SPEEDSCOPE
+import { createAppStore } from './speedscope/store';
+import { Provider } from './speedscope/lib/preact-redux';
+import { ApplicationContainer } from './speedscope/views/application-container';
+
+const lastStore: any = (window as any)['store'];
+const store = createAppStore(lastStore ? lastStore.getState() : {});
+(window as any)['store'] = store;
+
+render(
+	<Provider store={store}>
+		<ApplicationContainer />
+	</Provider>,
+	container
+);
+
+// TABLE
+/*
 render(
 	<CpuProfileLayout
 		data={{
@@ -47,3 +66,4 @@ render(
 	/>,
 	container,
 );
+*/
