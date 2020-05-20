@@ -47,7 +47,7 @@ export function createAppStore(
 ): redux.Store<ApplicationState> {
   const hashParams = getHashParams()
 
-  const loading = canUseXHR && hashParams.profileURL != null
+  const loading = true // canUseXHR && hashParams.profileURL != null
 
   const reducer: Reducer<ApplicationState> = redux.combineReducers({
     profileGroup,
