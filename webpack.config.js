@@ -1,6 +1,6 @@
-module.exports = {
-	mode: 'development',
-	devtool: 'inline-source-map',
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+
+var config = {
 	entry: "./src/client/client.tsx",
 	target: 'electron-renderer',
 	output: {
@@ -35,5 +35,19 @@ module.exports = {
 				loader: 'svg-inline-loader',
 			}
 		],
+	},
+	plugins: [
+        new CleanWebpackPlugin(),
+    ]
+};
+
+module.exports = (env, argv) => {
+	if (argv.mode === 'development') {
+		config.devtool = 'inline-source-map';
 	}
+
+	if (argv.mode === 'production') {
+	}
+
+	return config;
 };

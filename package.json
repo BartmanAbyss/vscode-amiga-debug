@@ -217,14 +217,14 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "concurrently -r \"npm:compile:ext\" \"webpack --mode=production\"",
 		"compile": "concurrently -r \"npm:compile:*\"",
 		"compile:ext": "tsc -p ./",
-		"compile:client": "webpack --output-path='./out'",
+		"compile:client": "webpack --mode=development",
 		"watch": "concurrently -r \"npm:watch:*\"",
 		"watch:ext": "tsc -watch -p ./",
-		"watch:client": "webpack --output-path='./out' --watch",
-		"pretest": "npm run compile",
+		"watch:client": "webpack --mode=development",
+		"pretest": "npm run compile:ext",
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
@@ -233,6 +233,7 @@
 		"@types/node": "^13.11.10",
 		"@types/vscode": "^1.45.1",
 		"aphrodite": "^2.4.0",
+		"clean-webpack-plugin": "^3.0.0",
 		"concurrently": "^5.1.0",
 		"css-loader": "^3.4.2",
 		"devtools-protocol": "0.0.748504",
