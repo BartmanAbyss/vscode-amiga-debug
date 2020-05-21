@@ -1,5 +1,3 @@
-import * as pako from 'pako'
-
 export interface ProfileDataSource {
   name(): Promise<string>
   readAsArrayBuffer(): Promise<ArrayBuffer>
@@ -31,14 +29,7 @@ export class MaybeCompressedDataReader implements ProfileDataSource {
     private namePromise: Promise<string>,
     maybeCompressedDataPromise: Promise<ArrayBuffer>,
   ) {
-    this.uncompressedData = maybeCompressedDataPromise.then(async (fileData: ArrayBuffer) => {
-      try {
-        const result = pako.inflate(new Uint8Array(fileData)).buffer
-        return result
-      } catch (e) {
-        return fileData
-      }
-    })
+    this.uncompressedData = maybeCompressedDataPromise
   }
 
   async name(): Promise<string> {

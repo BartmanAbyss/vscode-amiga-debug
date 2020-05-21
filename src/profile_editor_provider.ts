@@ -18,8 +18,7 @@ import { promises as fs } from 'fs';
 import { randomBytes } from 'crypto';
 import { ISourceLocation } from './client/location-mapping';
 
-export const bundlePage = async (bundleFile: string, constants: { [key: string]: unknown }) => {
-	const bundle = await fs.readFile(bundleFile, 'utf-8');
+export const bundlePage = async (webview: vscode.Webview, bundlePath: string, constants: { [key: string]: unknown }) => {
 	const nonce = randomBytes(16).toString('hex');
 	const constantDecls = Object.keys(constants)
 		.map((key) => `const ${key} = ${JSON.stringify(constants[key])};`)
@@ -30,14 +29,13 @@ export const bundlePage = async (bundleFile: string, constants: { [key: string]:
 	<head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <meta http-equiv="Content-Security-Policy" content="script-src 'nonce-${nonce}' 'unsafe-eval'">
-	  <title>Custom Editor: ${bundleFile}</title>
+	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
+	  <title>Custom Editor: ${bundlePath}</title>
+	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
 	<body>
-	  <script type="text/javascript" nonce="${nonce}">(() => {
-		${constantDecls}
-		${bundle}
-	  })();</script>
+	  <script type="text/javascript" nonce="${nonce}">${constantDecls}</script>
+	  <script type="text/javascript" id="app-bundle" src="client.bundle.js"></script>
 	</body>
 	</html>
   	`;
@@ -74,7 +72,7 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 			enableScripts: true,
 		};
 		const model = buildModel(JSON.parse(document.getText()));
-		webviewPanel.webview.html = await bundlePage(path.join(this.context.extensionPath, 'out', 'client.bundle.js'), {
+		webviewPanel.webview.html = await bundlePage(webviewPanel.webview, path.join(this.context.extensionPath, 'out'), {
 			DOCUMENT: document.getText(),
 			MODEL: model,
 		});

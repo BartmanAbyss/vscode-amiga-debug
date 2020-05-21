@@ -12,7 +12,7 @@ import {h} from 'preact'
 import * as redux from 'redux'
 import {createContext, ComponentChildren} from 'preact'
 import {Dispatch, Action} from './typed-redux'
-import {useMemo, useState, useContext, useCallback} from 'preact/hooks'
+import {useLayoutEffect, useState, useContext, useCallback} from 'preact/hooks'
 
 const PreactRedux = createContext<redux.Store<any> | null>(null)
 
@@ -47,7 +47,7 @@ export function useSelector<T, U>(selector: (t: T) => U): U {
   const store = useStore<T>()
   const [value, setValue] = useState(() => selector(store.getState()))
 
-  useMemo(() => {
+  useLayoutEffect(() => {
     return store.subscribe(() => {
       setValue(selector(store.getState()))
     })

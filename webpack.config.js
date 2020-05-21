@@ -1,12 +1,11 @@
-const path = require('path');
-const webpack = require('webpack');
-
 module.exports = {
 	mode: 'development',
-	devtool: 'eval-source-map',
+	devtool: 'inline-source-map',
 	entry: "./src/client/client.tsx",
+	target: 'electron-renderer',
 	output: {
-		filename: "client.bundle.js"
+		filename: "client.bundle.js",
+		chunkFilename: "client.bundle.[id].js"
 	},
 	resolve: {
 		extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
@@ -36,10 +35,5 @@ module.exports = {
 				loader: 'svg-inline-loader',
 			}
 		],
-	},
-	plugins: [
-		new webpack.optimize.LimitChunkCountPlugin({
-			maxChunks: 1
-		})
-	]
+	}
 };
