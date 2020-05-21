@@ -4,6 +4,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 
 ## 0.9.1
 - added function-level profiling: during a debugging session, press "pause", then press the circle button on the right of the debug toolbar, and 1 frame will be profiled.
+- updated to latest 64-bit WinUAE
 
 ## 0.9.0
 - updated to GCC 10.1, binutils 2.34 and GDB 9.1
