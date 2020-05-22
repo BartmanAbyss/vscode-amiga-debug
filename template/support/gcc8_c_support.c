@@ -102,9 +102,44 @@ void warpmode(int on) // bool
 	long(*UaeConf)(long mode, int index, const char* param, int param_len, char* outbuf, int outbuf_len);
 	UaeConf = (long(*)(long, int, const char*, int, char*, int))0xf0ff60;
     if(*((UWORD *)UaeConf) == 0x4eb9 || *((UWORD *)UaeConf) == 0xa00e) {
-
 		char outbuf;
 		UaeConf(82, -1, on ? "warp true" : "warp false", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
 	}
+}
+
+static void debug_cmd(unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4)
+{
+	long(*UaeLib)(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
+	UaeLib = (long(*)(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int))0xf0ff60;
+    if(*((UWORD *)UaeLib) == 0x4eb9 || *((UWORD *)UaeLib) == 0xa00e) {
+		UaeLib(88, arg1, arg2, arg3, arg4);
+	}
+}
+
+enum barto_cmd {
+	barto_cmd_clear,
+	barto_cmd_rect,
+	barto_cmd_filled_rect,
+	barto_cmd_text,
+};
+
+void debug_clear()
+{
+	debug_cmd(barto_cmd_clear, 0, 0, 0);
+}
+
+void debug_rect(short left, short top, short right, short bottom, unsigned int color)
+{
+	debug_cmd(barto_cmd_rect, (((unsigned int)left) << 16) | ((unsigned int)top), (((unsigned int)right) << 16) | ((unsigned int)bottom), color);
+}
+
+void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color)
+{
+	debug_cmd(barto_cmd_filled_rect, (((unsigned int)left) << 16) | ((unsigned int)top), (((unsigned int)right) << 16) | ((unsigned int)bottom), color);
+}
+
+void debug_text(short left, short top, const char* text, unsigned int color)
+{
+	debug_cmd(barto_cmd_text, (((unsigned int)left) << 16) | ((unsigned int)top), (unsigned int)text, color);
 }

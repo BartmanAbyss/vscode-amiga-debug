@@ -186,8 +186,14 @@ int main() {
 
 	while(!MouseLeft()) {
 		WaitVbl();
+		int f = frameCounter & 63;
 		// DEMO - set colors from INCBIN (contains 64 colors)
-		hw->color[0] = ((UWORD*)colors)[frameCounter & 63];
+		hw->color[0] = ((UWORD*)colors)[f];
+
+		// WinUAE debug overlay test
+		debug_clear();
+		debug_filled_rect(0, 0, f + 64, f+64, 0x00ffffff); // 0x00RRGGBB
+		debug_text(f, f, "HALLO", 0x00ff00ff);
 	}
 
 	// END

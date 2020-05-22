@@ -11,6 +11,12 @@ unsigned long strlen (const char *);
 void warpmode(int on); // bool on/off
 void KPrintF(const char* fmt, ...); // output to debugger
 
+// WinUAE debug overlay, coordinates are PAL-based (0,0)-(768,576)
+void debug_clear();
+void debug_rect(short left, short top, short right, short bottom, unsigned int color);
+void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color);
+void debug_text(short left, short top, const char* text, unsigned int color);
+
 #define INCBIN(name, file) \
     __asm__(".pushsection .rodata\n" \
             ".global incbin_" #name "_start\n" \
