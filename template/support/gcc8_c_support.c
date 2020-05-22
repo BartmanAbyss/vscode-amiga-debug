@@ -58,7 +58,7 @@ void KPrintF(const char* fmt, ...)
 	va_list vl;
 	va_start(vl, fmt);
     long(*UaeDbgLog)(long mode, const char* string) = (long(*)(long, const char*))0xf0ff60;
-    if(*((UWORD *)UaeDbgLog) == 0x4eb9) {
+    if(*((UWORD *)UaeDbgLog) == 0x4eb9 || *((UWORD *)UaeDbgLog) == 0xa00e) {
 		char temp[128];
 		RawDoFmt((CONST_STRPTR)fmt, vl, PutChar, temp);
 		UaeDbgLog(86, temp);
@@ -101,7 +101,8 @@ void warpmode(int on) // bool
 {
 	long(*UaeConf)(long mode, int index, const char* param, int param_len, char* outbuf, int outbuf_len);
 	UaeConf = (long(*)(long, int, const char*, int, char*, int))0xf0ff60;
-    if(*((UWORD *)UaeConf) == 0x4eb9) {
+    if(*((UWORD *)UaeDbgLog) == 0x4eb9 || *((UWORD *)UaeDbgLog) == 0xa00e) {
+
 		char outbuf;
 		UaeConf(82, -1, on ? "warp true" : "warp false", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
