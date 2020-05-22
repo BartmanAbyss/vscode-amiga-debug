@@ -15,14 +15,14 @@ import {
 } from 'preact/hooks';
 import { VsCodeApi } from '../vscodeApi';
 import { ILocation, IGraphNode } from '../model';
-import { classes } from './util';
+import { classes } from '../util';
 import { IOpenDocumentMessage } from '../types';
-import { addToSet, removeFromSet, toggleInSet } from './array';
-import * as ChevronDown from './icons/chevron-down.svg';
-import * as ChevronRight from './icons/chevron-right.svg';
-import { Icon } from './icons';
+import { addToSet, removeFromSet, toggleInSet } from '../array';
+import * as ChevronDown from '../icons/chevron-down.svg';
+import * as ChevronRight from '../icons/chevron-right.svg';
+import { Icon } from '../icons';
 import VirtualList from 'preact-virtual-list';
-import { getLocationText, decimalFormat } from './display';
+import { getLocationText, decimalFormat } from '../display';
 
 type SortFn = (node: ILocation) => number;
 

@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ILocation } from '../model';
+import { ILocation } from './model';
 
 /**
  * Gets the human-readable label for the given location.

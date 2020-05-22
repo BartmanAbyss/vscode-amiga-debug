@@ -15,6 +15,8 @@ type CpuProfileLayoutComponent<T> = FunctionComponent<{
   data: IDataSource<T>;
   getDefaultFilterText: (value: T) => ReadonlyArray<string>;
   body: ComponentType<IBodyProps<T>>;
+  flexBasis?: number,
+  flexGrow?: number;
   filterFooter?: ComponentType<{}>;
 }>;
 
@@ -25,6 +27,8 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
   data,
   getDefaultFilterText,
   body: RowBody,
+  flexBasis = 0,
+  flexGrow = 1,
   filterFooter: FilterFooter,
 }) => {
   const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
@@ -42,7 +46,7 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
           foot={footer}
         />
       </div>
-      <div className={styles.rows}>
+      <div className={styles.rows} style={{flexBasis: `${flexBasis}px`, flexGrow}}>
         <RowBody data={filteredData} />
       </div>
     </Fragment>

@@ -8,7 +8,7 @@ import { createContext } from 'preact';
  * VS Code API exposed to webviews.
  */
 export interface IVscodeApi<T = unknown> {
-  getState(): T;
+  getState(): T | undefined;
   setState(s: T): T;
   postMessage<M>(message: M): void;
 }

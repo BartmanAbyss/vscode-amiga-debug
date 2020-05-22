@@ -39,7 +39,6 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	  	${constantDecls}
 	  	${bundle}
 	  </script>
-	  <script type="text/javascript" id="app-bundle" src="client.bundle.js"></script>
 	</body>
 	</html>
   	`;

@@ -34,7 +34,12 @@ var config = {
 			{
 				test: /\.svg$/,
 				loader: 'svg-inline-loader',
-			}
+			},
+			{
+			  test: /\.(vert|frag)$/,
+			  loader: 'raw-loader',
+			},
+	  
 		],
 	},
 	plugins: [

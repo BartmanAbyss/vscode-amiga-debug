@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { useState, useEffect } from 'preact/hooks';
-import { parseVariables } from '../vscodeApi';
+import { parseVariables } from './vscodeApi';
 
 /**
  * Uses CSS variables from the body.
