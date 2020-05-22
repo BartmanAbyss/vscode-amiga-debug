@@ -26,7 +26,7 @@ function test_profile(base: string, elf: string) {
 
 	const profilerSpeedscope = new ProfilerSpeedscope(sourceMap, symbolTable, profileArray);
 	fs.writeFileSync(path.join(testOutDir, base) + '.speedscope.json', profilerSpeedscope.profileFunction());
-*/	
+*/
 }
 
 suite("Profiler", () => {
