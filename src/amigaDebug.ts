@@ -10,7 +10,7 @@ import { Breakpoint, MIError, Variable, VariableObject } from './backend/backend
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap, UnwindTable, Profiler2 } from './backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfilerTxt } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
@@ -476,7 +476,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const profiler = new Profiler(sourceMap, this.symbolTable, profileArray);
 			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileFunction());
 
-			const profiler2 = new Profiler2(sourceMap, this.symbolTable, profileArray);
+			const profiler2 = new ProfilerTxt(sourceMap, this.symbolTable, profileArray);
 			fs.writeFileSync(tmp + ".txt", profiler2.profileFunction());
 
 			// open output

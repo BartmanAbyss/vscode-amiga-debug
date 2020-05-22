@@ -1,7 +1,7 @@
 import {StyleSheet} from 'aphrodite'
 
 export enum FontFamily {
-  MONOSPACE = '"Source Code Pro", Courier, monospace',
+  MONOSPACE = 'Consolas, Courier, monospace',
 }
 
 export enum FontSize {

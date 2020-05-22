@@ -447,32 +447,8 @@ export class Profiler {
 	}
 }
 
-export class Profiler2 {
+export class ProfilerTxt {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
-	}
-
-	public profileFunctionTxt(): string {
-		let output: string = "";
-		let callstack: string[] = [];
-		let lastCallstack: string[] = [];
-		for(const p of this.profileArray) {
-			if(p < 0xffff0000) {
-				let pc = p;
-				if(callstack.length)
-					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
-				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
-				for(let i = l.frames.length - 1; i >= 0; i--)
-					callstack.unshift(l.frames[i].func + (i !== 0 ? " (inlined)" : ""));
-				callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
-			} else {
-				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
-					callstack = [...lastCallstack];
-				output += callstack.join(';') + ' ' + ((0xffffffff - p) | 0) + '\n';
-				lastCallstack = [...callstack];
-				callstack.length = 0;
-			}
-		}
-		return output;
 	}
 
 	public profileFunction(): string {
@@ -487,7 +463,7 @@ export class Profiler2 {
 				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
 				for(let i = l.frames.length - 1; i >= 0; i--)
 					callstack.unshift(l.frames[i].func + (i !== 0 ? " (inlined)" : ""));
-				callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
+				//callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
 			} else {
 				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
 					callstack = [...lastCallstack];
@@ -498,5 +474,71 @@ export class Profiler2 {
 		}
 		return output;
 	}
+}
 
+import { FileFormat } from '../client/speedscope/lib/file-format-spec';
+
+export class ProfilerSpeedscope {
+	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
+	}
+
+	public profileFunction(): string {
+		const frames: FileFormat.Frame[] = [];
+		const samples: number[][] = [];
+		const weights: number[] = [];
+		const framesMap: Map<string, number> = new Map();
+		const getFrame = (sourceLine: SourceLine, inlined: boolean): number => {
+			const key = sourceLine.func + '|' + sourceLine.file + '|' + sourceLine.line;
+			let n = framesMap.get(key);
+			if(n === undefined) {
+				n = frames.push({
+					name: sourceLine.func + (inlined ? " (inlined)" : ""),
+					file: sourceLine.file,
+					line: sourceLine.line
+				}) - 1;
+				framesMap.set(key, n);
+			}
+			return n;
+		};
+
+		let callstack: number[] = [];
+		let lastCallstack: number[] = [];
+		for(const p of this.profileArray) {
+			if(p < 0xffff0000) {
+				let pc = p;
+				if(callstack.length)
+					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
+				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+				for(let i = l.frames.length - 1; i >= 0; i--)
+					callstack.unshift(getFrame(l.frames[i], i !== 0));
+			} else {
+				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
+					callstack = [...lastCallstack];
+				samples.push([...callstack]);
+				weights.push((0xffffffff - p) | 0);
+				lastCallstack = [...callstack];
+				callstack.length = 0;
+			}
+		}
+		const profile: FileFormat.SampledProfile = {
+			type: FileFormat.ProfileType.SAMPLED,
+			name: '', // TODO
+			unit: 'none', // TODO
+			startValue: 0,
+			endValue: 100000, // TODO
+			samples,
+			weights
+		};
+		const out: FileFormat.File = {
+			$schema: 'https://www.speedscope.app/file-format-schema.json',
+			shared: {
+				frames
+			},
+			profiles: [
+				profile
+			],
+			exporter: "amiga-debug"
+		};
+		return JSON.stringify(out, null, 2);
+	}
 }

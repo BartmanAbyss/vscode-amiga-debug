@@ -6,7 +6,6 @@ import {StyleSheet, css} from 'aphrodite'
 import {Sizes, Colors, FontFamily, FontSize, Duration} from './style'
 
 interface ToolbarProps extends ApplicationProps {
-  browseForFile(): void
   saveFile(): void
 }
 
@@ -100,11 +99,6 @@ function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
 }
 
 function ToolbarRightContent(props: ToolbarProps) {
-  const importFile = (
-    <div className={css(style.toolbarTab)} onClick={props.browseForFile}>
-      <span className={css(style.emoji)}>⤵️</span>Import
-    </div>
-  )
   const help = (
     <div className={css(style.toolbarTab)}>
       <a
@@ -124,7 +118,6 @@ function ToolbarRightContent(props: ToolbarProps) {
           <span className={css(style.emoji)}>⤴️</span>Export
         </div>
       )}
-      {importFile}
       {help}
     </div>
   )

@@ -615,7 +615,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     ev.preventDefault()
     this.frameHadWheelEvent = true
 
-    const isZoom = ev.metaKey || ev.ctrlKey
+    const isZoom = true || ev.metaKey || ev.ctrlKey
 
     let deltaY = ev.deltaY
     let deltaX = ev.deltaX
@@ -625,14 +625,14 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     }
 
     if (isZoom && this.interactionLock !== 'pan') {
-      let multiplier = 1 + deltaY / 100
+      let multiplier = 1 + deltaY / 500
 
       // On Chrome & Firefox, pinch-to-zoom maps to
       // WheelEvent + Ctrl Key. We'll accelerate it in
       // this case, since it feels a bit sluggish otherwise.
-      if (ev.ctrlKey) {
+/*      if (ev.ctrlKey) {
         multiplier = 1 + deltaY / 40
-      }
+      }*/
 
       multiplier = clamp(multiplier, 0.1, 10.0)
 
@@ -648,31 +648,26 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     if (!this.container) return
     const {width, height} = this.container.getBoundingClientRect()
 
-    if (ev.key === '=' || ev.key === '+') {
+    if (ev.key === '=' || ev.key === '+' || ev.key == 'ArrowUp') {
       this.zoom(new Vec2(width / 2, height / 2), 0.5)
       ev.preventDefault()
-    } else if (ev.key === '-' || ev.key === '_') {
+    } else if (ev.key === '-' || ev.key === '_' || ev.key == 'ArrowDown') {
       this.zoom(new Vec2(width / 2, height / 2), 2)
       ev.preventDefault()
     }
 
     if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return
 
-    // NOTE: We intentionally use ev.code rather than ev.key for
-    // WASD in order to have the keys retain the same layout even
-    // if the keyboard layout is not QWERTY.
-    //
-    // See: https://github.com/jlfwong/speedscope/pull/184
     if (ev.key === '0') {
       this.zoom(new Vec2(width / 2, height / 2), 1e9)
-    } else if (ev.key === 'ArrowRight' || ev.code === 'KeyD') {
+    } else if (ev.key === 'ArrowRight') {
       this.pan(new Vec2(100, 0))
-    } else if (ev.key === 'ArrowLeft' || ev.code === 'KeyA') {
+    } else if (ev.key === 'ArrowLeft') {
       this.pan(new Vec2(-100, 0))
-    } else if (ev.key === 'ArrowUp' || ev.code === 'KeyW') {
-      this.pan(new Vec2(0, -100))
-    } else if (ev.key === 'ArrowDown' || ev.code === 'KeyS') {
-      this.pan(new Vec2(0, 100))
+    } else if (ev.key === 'PageUp') {
+      this.pan(new Vec2(-width * 0.9, 0))
+    } else if (ev.key === 'PageDown') {
+      this.pan(new Vec2(width * 0.9, 0))
     } else if (ev.key === 'Escape') {
       this.props.onNodeSelect(null)
       this.renderCanvas()

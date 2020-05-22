@@ -33,7 +33,7 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	  <title>Custom Editor: ${bundlePath}</title>
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
-	<body>
+	<body style="padding:0">
 	  <script type="text/javascript" nonce="${nonce}">${constantDecls}</script>
 	  <script type="text/javascript" id="app-bundle" src="client.bundle.js"></script>
 	</body>
@@ -71,12 +71,13 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
-		const model = buildModel(JSON.parse(document.getText()));
+		//const model = buildModel(JSON.parse(document.getText()));
+		const profile = JSON.parse(document.getText());
 		webviewPanel.webview.html = await bundlePage(webviewPanel.webview, path.join(this.context.extensionPath, 'dist'), {
-			DOCUMENT: document.getText(),
-			MODEL: model,
+			DOCUMENT: profile,
+			//MODEL: model,
 		});
-		this.lenses.registerLenses(this.createLensCollection(model));
+		//this.lenses.registerLenses(this.createLensCollection(model));
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
