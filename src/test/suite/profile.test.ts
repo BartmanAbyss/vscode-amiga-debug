@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
-import { Profiler, ProfilerTxt, ProfilerSpeedscope, SourceMap, UnwindTable } from '../../backend/profile';
+import { Profiler, SourceMap, UnwindTable } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
@@ -21,11 +21,12 @@ function test_profile(base: string, elf: string) {
 	//fs.writeFileSync(path.join(testOutDir, base + '.line.amigaprofile'), profile.profileLine());
 	fs.writeFileSync(path.join(testOutDir, base + '.func.amigaprofile'), profiler.profileFunction());
 
-	const profilerTxt = new ProfilerTxt(sourceMap, symbolTable, profileArray);
+/*	const profilerTxt = new ProfilerTxt(sourceMap, symbolTable, profileArray);
 	fs.writeFileSync(path.join(testOutDir, base) + '.txt', profilerTxt.profileFunction());
 
 	const profilerSpeedscope = new ProfilerSpeedscope(sourceMap, symbolTable, profileArray);
 	fs.writeFileSync(path.join(testOutDir, base) + '.speedscope.json', profilerSpeedscope.profileFunction());
+*/	
 }
 
 suite("Profiler", () => {

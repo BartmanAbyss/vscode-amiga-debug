@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 import { h, render, FunctionComponent } from 'preact';
 import { useCallback, useContext } from 'preact/hooks';
-/*import styles from './client.css';
+import styles from './client.css';
 //import { ToggleButton } from './toggle-button';
 //import { VsCodeApi } from './vscodeApi';
 //import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
@@ -19,12 +19,12 @@ declare const MODEL: IProfileModel;
 const graph = createTopDownGraph(MODEL);
 
 const CpuProfileLayout = cpuProfileLayoutFactory<IGraphNode>();
-*/
-//const container = document.createElement('div');
-//container.classList.add(styles.wrapper);
-//document.body.appendChild(container);
 
-// SPEEDSCOPE
+const container = document.createElement('div');
+container.classList.add(styles.wrapper);
+document.body.appendChild(container);
+
+/*// SPEEDSCOPE
 import { createAppStore } from './speedscope/store';
 import { Provider } from './speedscope/lib/preact-redux';
 import { ApplicationContainer } from './speedscope/views/application-container';
@@ -37,11 +37,11 @@ render(
 	<Provider store={store}>
 		<ApplicationContainer />
 	</Provider>,
-	document.body
+	container
 );
-
+*/
 // TABLE
-/*
+
 render(
 	<CpuProfileLayout
 		data={{
@@ -66,4 +66,3 @@ render(
 	/>,
 	container,
 );
-*/

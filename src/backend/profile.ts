@@ -476,7 +476,7 @@ export class ProfilerTxt {
 	}
 }
 
-import { FileFormat } from '../client/speedscope/lib/file-format-spec';
+/*import { FileFormat } from '../client/speedscope/lib/file-format-spec';
 
 export class ProfilerSpeedscope {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
@@ -542,3 +542,4 @@ export class ProfilerSpeedscope {
 		return JSON.stringify(out, null, 2);
 	}
 }
+*/

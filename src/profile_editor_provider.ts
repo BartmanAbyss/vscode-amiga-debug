@@ -19,6 +19,7 @@ import { randomBytes } from 'crypto';
 import { ISourceLocation } from './client/location-mapping';
 
 export const bundlePage = async (webview: vscode.Webview, bundlePath: string, constants: { [key: string]: unknown }) => {
+	const bundle = await fs.readFile(path.join(bundlePath, 'client.bundle.js'), 'utf-8');
 	const nonce = randomBytes(16).toString('hex');
 	const constantDecls = Object.keys(constants)
 		.map((key) => `const ${key} = ${JSON.stringify(constants[key])};`)
@@ -33,8 +34,11 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	  <title>Custom Editor: ${bundlePath}</title>
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
-	<body style="padding:0">
-	  <script type="text/javascript" nonce="${nonce}">${constantDecls}</script>
+	<body>
+	  <script type="text/javascript" nonce="${nonce}">
+	  	${constantDecls}
+	  	${bundle}
+	  </script>
 	  <script type="text/javascript" id="app-bundle" src="client.bundle.js"></script>
 	</body>
 	</html>
@@ -71,13 +75,13 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
-		//const model = buildModel(JSON.parse(document.getText()));
+		const model = buildModel(JSON.parse(document.getText()));
 		const profile = JSON.parse(document.getText());
 		webviewPanel.webview.html = await bundlePage(webviewPanel.webview, path.join(this.context.extensionPath, 'dist'), {
-			DOCUMENT: profile,
-			//MODEL: model,
+			//DOCUMENT: profile,
+			MODEL: model,
 		});
-		//this.lenses.registerLenses(this.createLensCollection(model));
+		this.lenses.registerLenses(this.createLensCollection(model));
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
