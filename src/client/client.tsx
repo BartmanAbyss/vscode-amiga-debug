@@ -24,7 +24,7 @@ const container = document.createElement('div');
 container.classList.add(styles.wrapper);
 document.body.appendChild(container);
 
-// SPEEDSCOPE
+/*// SPEEDSCOPE
 import { createAppStore } from './speedscope/store';
 import { Provider } from './speedscope/lib/preact-redux';
 import { ApplicationContainer } from './speedscope/views/application-container';
@@ -39,9 +39,9 @@ render(
 	</Provider>,
 	container
 );
-
+*/
 // TABLE
-/*
+
 render(
 	<CpuProfileLayout
 		data={{
@@ -66,4 +66,3 @@ render(
 	/>,
 	container,
 );
-*/

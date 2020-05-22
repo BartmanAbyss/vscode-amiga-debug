@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 var config = {
@@ -37,7 +38,10 @@ var config = {
 		],
 	},
 	plugins: [
-        new CleanWebpackPlugin(),
+		new webpack.optimize.LimitChunkCountPlugin({
+			maxChunks: 1
+		}),
+		new CleanWebpackPlugin(),
     ]
 };
 

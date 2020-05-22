@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "0.9.1-preview6",
+	"version": "0.9.1-preview7",
 	"engines": {
 		"vscode": "^1.45.1"
 	},
@@ -223,7 +223,7 @@
 		"compile:client": "webpack --mode=development",
 		"watch": "concurrently -r \"npm:watch:*\"",
 		"watch:ext": "tsc -watch -p ./",
-		"watch:client": "webpack --mode=development",
+		"watch:client": "webpack --watch --mode=development",
 		"pretest": "npm run compile:ext",
 		"test": "node ./out/test/runTest.js"
 	},
