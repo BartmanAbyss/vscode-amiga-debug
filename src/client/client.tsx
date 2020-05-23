@@ -34,65 +34,38 @@ const FlameGraphWrapper: FunctionComponent<{ data: ReadonlyArray<LocationAccesso
 	return <FlameGraph model={MODEL} columns={filtered} />;
 };
 
-const Body: FunctionComponent<{}> = () => {
-	return <Fragment>
-		{FlameGraphWrapper}
-		{TimeView}
-	</Fragment>;
-};
-
-const CpuProfileLayoutTable = cpuProfileLayoutFactory<IGraphNode>();
-const CpuProfileLayoutFlame = cpuProfileLayoutFactory<LocationAccessor>();
+const CpuProfileLayout = cpuProfileLayoutFactory();
 
 const container = document.createElement('div');
 container.classList.add(styles.wrapper);
 document.body.appendChild(container);
 
-/*// SPEEDSCOPE
-import { createAppStore } from './speedscope/store';
-import { Provider } from './speedscope/lib/preact-redux';
-import { ApplicationContainer } from './speedscope/views/application-container';
-
-const lastStore: any = (window as any)['store'];
-const store = createAppStore(lastStore ? lastStore.getState() : {});
-(window as any)['store'] = store;
-
-render(
-	<Provider store={store}>
-		<ApplicationContainer />
-	</Provider>,
-	container
-);
-*/
-
-// FLAME
+// FLAME+TABLE
 render(
 	<Fragment>
-		<CpuProfileLayoutFlame
-		data={{
-			data: LocationAccessor.rootAccessors(columns),
-			getChildren: 'return node.children',
-			properties: {
-			function: 'node.callFrame.functionName',
-			url: 'node.callFrame.url',
-			line: '(node.src ? node.src.lineNumber : node.callFrame.lineNumber)',
-			path: '(node.src ? node.src.relativePath : node.callFrame.url)',
-			selfTime: 'node.selfTime',
-			totalTime: 'node.aggregateTime',
-			id: 'node.id',
-			},
-		}}
-		getDefaultFilterText={(node) => [
-			node.callFrame.functionName,
-			node.callFrame.url,
-			node.src?.source.path ?? '',
-		]}
-		body={FlameGraphWrapper}
-		flexBasis={maxY}
-		flexGrow={0}
-		/>
-		<CpuProfileLayoutTable
-			data={{
+		<CpuProfileLayout
+			dataFlame={{
+				data: LocationAccessor.rootAccessors(columns),
+				getChildren: 'return node.children',
+				properties: {
+					function: 'node.callFrame.functionName',
+					url: 'node.callFrame.url',
+					line: '(node.src ? node.src.lineNumber : node.callFrame.lineNumber)',
+					path: '(node.src ? node.src.relativePath : node.callFrame.url)',
+					selfTime: 'node.selfTime',
+					totalTime: 'node.aggregateTime',
+					id: 'node.id',
+				},
+			}}
+			getDefaultFilterTextFlame={(node) => [
+				node.callFrame.functionName,
+				node.callFrame.url,
+				node.src?.source.path ?? '',
+			]}
+			bodyFlame={FlameGraphWrapper}
+			flameHeight={maxY}
+
+			dataTable={{
 				data: Object.values(graph.children),
 				properties: {
 					function: 'node.callFrame.functionName',
@@ -105,19 +78,16 @@ render(
 				},
 				getChildren: 'return Object.values(node.children)',
 			}}
-			getDefaultFilterText={(node) => [
+			getDefaultFilterTextTable={(node) => [
 				node.callFrame.functionName,
 				node.callFrame.url,
 				node.src?.source.path ?? '',
 			]}
-			body={TimeView}
-			flexBasis={0}
-			flexGrow={1}
+			bodyTable={TimeView}
 		/>,
 	</Fragment>,
 	container,
   );
-  
 
 // TABLE
 /*render(
