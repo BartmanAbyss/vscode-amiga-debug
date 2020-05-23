@@ -14,11 +14,13 @@ import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { buildColumns, LocationAccessor } from './flame/stacks';
 
 declare const MODEL: IProfileModel;
+MODEL.duration = 20000; // DMA TEST
 const columns = buildColumns(MODEL);
 
-let maxY = 0;
+// calc max. height of flamegraph
+let maxY = (FlameConstants.BoxHeight) * 2 + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 padding
 for(const col of columns) {
-	const y = (FlameConstants.BoxHeight) * (col.rows.length + 1) + FlameConstants.TimelineHeight; // + 1 for padding
+	const y = (FlameConstants.BoxHeight) * (col.rows.length + 2) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 padding
 	maxY = Math.max(maxY, y);
 }
 

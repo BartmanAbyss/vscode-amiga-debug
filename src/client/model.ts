@@ -63,6 +63,7 @@ export interface IProfileModel {
 	timeDeltas: ReadonlyArray<number>;
 	rootPath?: string;
 	duration: number;
+	dmaRecords?: number[]; // BARTO
 }
 
 /**
@@ -200,6 +201,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			timeDeltas: profile.timeDeltas || [],
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
+			dmaRecords: profile.dmaRecords
 		};
 	}
 
@@ -281,5 +283,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		timeDeltas: profile.timeDeltas || [],
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
+		dmaRecords: profile.dmaRecords
 	};
 };

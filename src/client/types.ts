@@ -48,6 +48,7 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
   $vscode?: IJsDebugAnnotations;
   nodes: IProfileNode[];
+  dmaRecords?: number[]; // BARTO
 }
 
 /**

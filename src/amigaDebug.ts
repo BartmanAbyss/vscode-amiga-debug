@@ -10,7 +10,7 @@ import { Breakpoint, MIError, Variable, VariableObject } from './backend/backend
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap, UnwindTable, ProfilerTxt } from './backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfileFile } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
@@ -466,18 +466,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			//fs.unlinkSync(tmp + ".unwind");
 
 			// read profile file
-			const profileBuffer = fs.readFileSync(tmp);
-			const profileArray = new Uint32Array(profileBuffer.buffer, profileBuffer.byteOffset, profileBuffer.length / Uint32Array.BYTES_PER_ELEMENT);
-			const codeSize = profileArray.length * 2;
+			const profileFile = new ProfileFile(tmp);
 			//fs.unlinkSync(tmp);
 
 			// resolve and generate output
-			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", codeSize);
-			const profiler = new Profiler(sourceMap, this.symbolTable, profileArray);
+			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", unwind.codeSize);
+			const profiler = new Profiler(sourceMap, this.symbolTable, profileFile);
 			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileFunction());
-
-			const profiler2 = new ProfilerTxt(sourceMap, this.symbolTable, profileArray);
-			fs.writeFileSync(tmp + ".txt", profiler2.profileFunction());
 
 			// open output
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"));

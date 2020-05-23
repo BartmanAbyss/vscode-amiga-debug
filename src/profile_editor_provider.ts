@@ -35,10 +35,10 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
 	<body>
-	  <script type="text/javascript" nonce="${nonce}">
+	  <script type="text/javascript" nonce="${nonce}">(() => {
 	  	${constantDecls}
 	  	${bundle}
-	  </script>
+	  })();</script>
 	</body>
 	</html>
   	`;

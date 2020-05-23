@@ -4,6 +4,8 @@
 // pixels, and then the graph ID followed by a categorization (model's Category)
 in vec4 boxes;
 
+in vec4 colors;
+
 // (x1, y1, x2, y2) bounds of the canvas in pixels
 uniform vec4 bounds;
 
@@ -47,7 +49,8 @@ void main() {
   } else if (categorization == 0) {
     v_color = vec4(0.6, 0.6, 0.6, 1);
   } else {
-    v_color = vec4(0.9, float(color_hash & 255) / 512.0, float((color_hash >> 8) & 255) / 600.0, 1);
+    //v_color = vec4(0.9, float(color_hash & 255) / 512.0, float((color_hash >> 8) & 255) / 600.0, 1);
+    v_color = colors;
   }
 
   if (hovered == graph_id) {

@@ -108,16 +108,17 @@ export class UnwindTable {
 	//     int16_t ra; // ofs from cfa
 	//   }
 	public unwind: Int16Array;
+	public codeSize: number;
 
 	constructor(private objdumpPath: string, private executable: string) {
-		const codeSize = this.getCodeSize();
+		this.codeSize = this.getCodeSize();
 		const invalidUnwind: Unwind= {
 			cfaOfs: -1,
 			cfaReg: -1,
 			r13: -1,
 			ra: -1
 		};
-		const unwind: Unwind[] = new Array(codeSize).fill(invalidUnwind);
+		const unwind: Unwind[] = new Array(this.codeSize).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.executable], { maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
@@ -239,6 +240,10 @@ export interface Profile {
 	timeDeltas: number[];
 }
 
+export interface AmigaProfile extends Profile {
+	dmaRecords: number[];
+}
+
 export interface ProfilePositionTick {
 	line: number;
 	ticks: number;
@@ -275,11 +280,26 @@ export interface ProfileNode {
 	positionTicks?: ProfilePositionTick[];
 }
 
+export class ProfileFile {
+	public dmaArray: Uint8Array;
+	public profileArray: Uint32Array;
+
+	public static NR_DMA_REC_HPOS = 228;
+	public static NR_DMA_REC_VPOS = 313;
+
+	constructor(private filename: string) {
+		const buffer = fs.readFileSync(filename);
+		const dmaLen = ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS;
+		this.dmaArray = new Uint8Array(buffer.buffer, 0, dmaLen);
+		this.profileArray = new Uint32Array(buffer.buffer, dmaLen, (buffer.length - dmaLen) / Uint32Array.BYTES_PER_ELEMENT);
+	}
+}
+
 export class Profiler {
-	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
+	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileFile: ProfileFile) {
 	}
 
-	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): string {
+	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): Profile {
 		// generate JSON .cpuprofile
 		const nodes: ProfileNode[] = [];
 		const nodeMap: Map<string, ProfileNode> = new Map();
@@ -378,7 +398,7 @@ export class Profiler {
 		timeDeltas.push(0);
 
 		const out: Profile = { nodes, startTime, endTime, samples, timeDeltas };
-		return JSON.stringify(out, null, 2);
+		return out;
 	}
 
 	public profileAsm(): string {
@@ -413,7 +433,7 @@ export class Profiler {
 
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
-		for(const p of this.profileArray) {
+		for(const p of this.profileFile.profileArray) {
 			if(p < 0xffff0000) {
 				let pc = p;
 				if(callstack.frames.length)
@@ -443,11 +463,12 @@ export class Profiler {
 			}
 		}
 
-		return this.profileCommon(cyclesPerFunction, locations);
+		const out: AmigaProfile = { ...this.profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(this.profileFile.dmaArray) };
+		return JSON.stringify(out/*, null, 2*/);
 	}
 }
 
-export class ProfilerTxt {
+/*export class ProfilerTxt {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
 	}
 
@@ -476,7 +497,7 @@ export class ProfilerTxt {
 	}
 }
 
-/*import { FileFormat } from '../client/speedscope/lib/file-format-spec';
+import { FileFormat } from '../client/speedscope/lib/file-format-spec';
 
 export class ProfilerSpeedscope {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {

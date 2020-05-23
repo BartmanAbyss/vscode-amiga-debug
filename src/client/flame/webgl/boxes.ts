@@ -73,59 +73,72 @@ export const setupGl = ({
   );
 
   const boxAttributeLocation = gl.getAttribLocation(boxProgram, 'boxes');
-  const boxBuffer = gl.createVertexArray();
+  const colorAttributeLocation = gl.getAttribLocation(boxProgram, 'colors');
 
   let vertexCount = 0;
   const setBoxes = (boxes: ReadonlyArray<IBox>) => {
-    const boxesBuffer = gl.createBuffer();
+    const boxBuffer = gl.createBuffer();
+    const colorBuffer = gl.createBuffer();
 
     vertexCount = boxes.length * 6;
     const positions = new Float32Array(vertexCount * 4);
+    const colors = new Uint32Array(vertexCount);
 
     let k = 0;
+    let c = 0;
     for (const box of boxes) {
       // top left:
       positions[k++] = box.x1;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
 
       // top right:
       positions[k++] = box.x2;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
 
       // bottom left:
       positions[k++] = box.x1;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
 
       // bottom left (triangle 2):
       positions[k++] = box.x1;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
 
       // top right (triangle 2):
       positions[k++] = box.x2;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
 
       // bottom right:
       positions[k++] = box.x2;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
       positions[k++] = box.loc.category;
+      colors[c++] = box.color | 0;
     }
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, boxesBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, boxBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    gl.bindVertexArray(boxBuffer);
     gl.enableVertexAttribArray(boxAttributeLocation);
     gl.vertexAttribPointer(boxAttributeLocation, 4, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(colorAttributeLocation);
+    gl.vertexAttribPointer(colorAttributeLocation, 4, gl.UNSIGNED_BYTE, true, 0, 0);
   };
 
   /**

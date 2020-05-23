@@ -3,7 +3,6 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 var config = {
 	entry: "./src/client/client.tsx",
-	target: 'electron-renderer',
 	output: {
 		filename: "client.bundle.js",
 		chunkFilename: "client.bundle.[id].js"
@@ -52,7 +51,8 @@ var config = {
 
 module.exports = (env, argv) => {
 	if (argv.mode === 'development') {
-		config.devtool = 'inline-source-map';
+		//config.devtool = 'inline-source-map'; // doesn't work with source in HTML
+		config.devtool = 'eval-source-map';
 	}
 
 	if (argv.mode === 'production') {

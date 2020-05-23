@@ -29,13 +29,28 @@ export const enum Constants {
 	ExtraYBuffer = 30,
 }
 
+// murmur3's 32-bit finalizer, which we use as a simple and fast hash function:
+function hash(n: number) {
+	n ^= n >> 16;
+	n *= 2246822507;
+	n ^= n >> 13;
+	n *= 3266489909;
+	n ^= n >> 16;
+	return n;
+}
+
 const pickColor = (location: IColumnLocation): number => {
 	if (location.category === Category.System) {
 		return -1;
 	}
 
-	const hash = location.graphId * 5381; // djb2's prime, just some bogus stuff
-	return hash & 0xff;
+	const colorHash = hash(location.graphId);
+	const r = (0.9 * 255) | 0;
+	const g = ((colorHash & 255) / 2) | 0;
+	const b = (((colorHash >> 8) & 255) / 2.353) | 0;
+	// 0xAABBGGRR
+	const color = 0xff000000 | ((b & 255) << 16) | ((g & 255) << 8) | ((r & 255) << 0);
+	return color;
 };
 
 export interface IBox {
@@ -62,7 +77,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				getBoxInRowColumn(columns, boxes, x, y)!.x2 = col.x2;
 			} else {
-				const y1 = Constants.BoxHeight * y + Constants.TimelineHeight;
+				const y1 = Constants.BoxHeight * (y + 1) + Constants.TimelineHeight; // +1: make room for dmaRecords
 				const y2 = y1 + Constants.BoxHeight;
 				boxes.set(loc.graphId, {
 					column: x,
@@ -86,6 +101,77 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 		boxById: boxes,
 		maxY,
 	};
+};
+
+const buildDmaBoxes = (dmaRecords: number[]) => {
+	if(dmaRecords === undefined)
+		return [];
+
+	// 0xAABBGGRR
+	const dmaColors = [
+		0,
+		0xff444444, // DMARECORD_REFRESH 1
+		0xff4253a2, // DMARECORD_CPU 2
+		0xff00eeee, // DMARECORD_COPPER 3
+		0xff0000ff, // DMARECORD_AUDIO 4
+		0xff888800, // DMARECORD_BLITTER 5
+		0xffff0000, // DMARECORD_BITPLANE 6
+		0xffff00ff, // DMARECORD_SPRITE 7
+		0xffffffff, // DMARECORD_DISK 8
+	];
+	const dmaNames = [
+		'',
+		'Refresh',
+		'CPU',
+		'Copper',
+		'Audio',
+		'Blitter',
+		'Bitplane',
+		'Sprite',
+		'Disk'
+	];
+
+	const cyclesPerMicroSecond = 7.093790;
+	const colorClocksPerMicroSecond = cyclesPerMicroSecond / 2;
+	const duration = cyclesPerMicroSecond * 20000;
+	const boxes: IBox[] = [];
+	for(let i = 0; i < dmaRecords.length; i++) {
+		const dma = dmaRecords[i];
+		if(dma === 0 || dma >= dmaColors.length)
+			continue;
+
+		const x1 = i * colorClocksPerMicroSecond / duration;
+		const x2 = (i + 1) * colorClocksPerMicroSecond / duration;
+		const y1 = 0 + Constants.TimelineHeight;
+		const y2 = y1 + Constants.BoxHeight;
+		boxes.push({
+			column: 0,
+			row: 0,
+			x1,
+			x2,
+			y1,
+			y2,
+			level: 0,
+			text: dmaNames[dma],
+			color: dmaColors[dma],
+			loc: {
+				graphId: 100000 + i,
+				selfTime: -1,
+				aggregateTime: -1,
+				id: 0,
+				ticks: 0,
+				category: Category.User,
+				callFrame: {
+					functionName: 'DMA: ' + dmaNames[dma],
+					scriptId: '',
+					url: '',
+					lineNumber: 0,
+					columnNumber: 0
+				}
+			},
+		});
+	}
+	return boxes;
 };
 
 export interface IBounds {
@@ -175,17 +261,16 @@ export const FlameGraph: FunctionComponent<{
 	const cssVariables = useCssVariables();
 
 	const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
+	const dmaBoxes = useMemo(() => buildDmaBoxes(model.dmaRecords), [model]);
 	const clampX = useMemo(
 		() => ({
-			minX: columns[0]?.x1 ?? 0,
-			maxX: columns[columns.length - 1]?.x2 ?? 0,
+			minX: 0, //columns[0]?.x1 ?? 0,
+			maxX: 1, //columns[columns.length - 1]?.x2 ?? 0,
 		}),
 		[columns],
 	);
 	const clampY = Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer);
-	const [focused, setFocused] = useState<IBox | undefined>(
-		rawBoxes.boxById.get(prevState?.focusedId ?? -1),
-	);
+	const [focused, setFocused] = useState<IBox | undefined>(rawBoxes.boxById.get(prevState?.focusedId ?? -1));
 	const [bounds, setBounds] = useState<IBounds>(prevState?.bounds ?? { ...clampX, y: 0, level: 0 });
 
 	const gl = useMemo(
@@ -199,7 +284,7 @@ export const FlameGraph: FunctionComponent<{
 			}),
 		[glCanvas.current],
 	);
-	useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values()]), [rawBoxes]);
+	useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values(), ...dmaBoxes]), [rawBoxes, dmaBoxes]);
 	useEffect(() => gl?.setBounds(bounds, canvasSize, dpr), [bounds, canvasSize]);
 	useEffect(() => gl?.setFocusColor(cssVariables.focusBorder), [cssVariables]);
 	useEffect(() => gl?.setFocused(focused?.loc.graphId), [focused]);
@@ -260,29 +345,29 @@ export const FlameGraph: FunctionComponent<{
 		webContext.beginPath();
 		webContext.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
 
-		for (const box of rawBoxes.boxById.values()) {
+		const doBox = (box: IBox) => {
 			if (box.y2 < bounds.y) {
-				continue;
+				return;
 			}
 
 			if (box.y1 > bounds.y + canvasSize.height) {
-				continue;
+				return;
 			}
 
 			const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
 			const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
 			if (x1 > canvasSize.width) {
-				continue;
+				return;
 			}
 
 			const x2 = (box.x2 - bounds.minX) * xScale;
 			if (x2 < 0) {
-				continue;
+				return;
 			}
 
 			const width = x2 - x1;
 			if (width < 10) {
-				continue;
+				return;
 			}
 
 			textCache.drawText(
@@ -293,11 +378,17 @@ export const FlameGraph: FunctionComponent<{
 				width - 6,
 				Constants.BoxHeight,
 			);
-		}
+		};
+
+		for (const box of rawBoxes.boxById.values())
+			doBox(box);
+
+		for(const box of dmaBoxes)
+			doBox(box);
 
 		webContext.clip();
 		webContext.restore();
-	}, [webContext, bounds, rawBoxes, canvasSize, cssVariables]);
+	}, [webContext, bounds, rawBoxes, dmaBoxes, canvasSize, cssVariables]);
 
 	// Re-render the zoom indicator when bounds change
 	useEffect(() => {
@@ -466,15 +557,25 @@ export const FlameGraph: FunctionComponent<{
 			}
 
 			const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
+
+			// dmaRecord
+			if(fromTop < Constants.TimelineHeight + 1 * Constants.TimelineHeight) {
+				const box = Math.abs(binarySearch(dmaBoxes, (b) => b.x2 - x)) - 1;
+				if (!dmaBoxes[box] || dmaBoxes[box].x1 > x) {
+					return;
+				}
+				return dmaBoxes[box];
+			}
+
 			const col = Math.abs(binarySearch(columns, c => c.x2 - x)) - 1;
 			if (!columns[col] || columns[col].x1 > x) {
 				return;
 			}
 
-			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight);
+			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight) - 1; // -1: dmaRecord
 			return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
 		},
-		[webCanvas, bounds, columns, rawBoxes],
+		[webCanvas, bounds, columns, rawBoxes, dmaBoxes],
 	);
 
 	// Listen for drag events on the window when it's running
@@ -788,14 +889,20 @@ const Tooltip: FunctionComponent<{
 						</dd>
 					</Fragment>
 				)}
-				<dt className={styles.time}>Self Time</dt>
-				<dd className={styles.time}>{decimalFormat.format(location.selfTime / 200)}%</dd>
-				<dt className={styles.time}>Aggregate Time</dt>
-				<dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 200)}%</dd>
+				{location.selfTime >= 0 && location.aggregateTime >= 0 && (
+					<Fragment>
+						<dt className={styles.time}>Self Time</dt>
+						<dd className={styles.time}>{decimalFormat.format(location.selfTime / 200)}%</dd>
+						<dt className={styles.time}>Aggregate Time</dt>
+						<dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 200)}%</dd>
+					</Fragment>
+				)}
 			</dl>
-			<div className={styles.hint}>
-				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
-			</div>
+			{label && (
+				<div className={styles.hint}>
+					Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
+				</div>
+			)}
 		</div>
 	);
 };
