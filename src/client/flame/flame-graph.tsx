@@ -20,10 +20,10 @@ import { setupGl } from './webgl/boxes';
 import { IColumn, IColumnLocation } from './stacks';
 
 export const enum Constants {
-	BoxHeight = 20,
+	BoxHeight = 16,
 	TextColor = '#fff',
 	BoxColor = '#000',
-	TimelineHeight = 22,
+	TimelineHeight = 18,
 	TimelineLabelSpacing = 200,
 	MinWindow = 0.005,
 	ExtraYBuffer = 30,
@@ -225,7 +225,7 @@ export const FlameGraph: FunctionComponent<{
 	const textCache = useMemo(
 		() =>
 			new TextCache(
-				`${Constants.BoxHeight / 1.9}px ${cssVariables['editor-font-family']}`,
+				`${Constants.BoxHeight / 1.5}px ${cssVariables['editor-font-family']}`,
 				Constants.TextColor,
 				dpr,
 			),
@@ -289,7 +289,7 @@ export const FlameGraph: FunctionComponent<{
 				webContext,
 				box.text,
 				x1 + 3,
-				box.y1 - bounds.y + 3,
+				box.y1 - bounds.y + 5,
 				width - 6,
 				Constants.BoxHeight,
 			);
@@ -761,7 +761,6 @@ const Tooltip: FunctionComponent<{
 	src: HighlightSource;
 }> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
 	const label = getLocationText(location);
-	const above = lowerY + 300 > canvasHeight && lowerY > canvasHeight / 2;
 
 	const file = label?.split(/\\|\//g).pop();
 	return (
@@ -771,8 +770,8 @@ const Tooltip: FunctionComponent<{
 			aria-atomic={true}
 			style={{
 				left: clamp(0, canvasWidth * left + 10, canvasWidth - 400),
-				top: above ? 'initial' : lowerY + 10,
-				bottom: above ? upperY + 10 : 'initial',
+				top: lowerY + 10,
+				bottom: 'initial',
 			}}
 		>
 			<dl>

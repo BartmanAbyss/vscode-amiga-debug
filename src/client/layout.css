@@ -17,7 +17,7 @@
 .rows {
 /*  flex-basis: 0px;*/
 /*  flex-grow: 1;*/
-  overflow: hidden;
+/*  overflow: hidden;*/ /* messes up tooltips */
   display: flex;
   flex-direction: column;
   position: relative;

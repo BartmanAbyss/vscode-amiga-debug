@@ -1,4 +1,5 @@
 .tooltip {
+  z-index: 99999;
   position: absolute;
   box-sizing: border-box;
   width: 400px;
