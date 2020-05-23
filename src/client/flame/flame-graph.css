@@ -1,8 +1,8 @@
 .tooltip {
-  z-index: 99999;
+  z-index: 100;
   position: absolute;
   box-sizing: border-box;
-  width: 400px;
+/*  width: 400px;*/
   padding: 5px;
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);

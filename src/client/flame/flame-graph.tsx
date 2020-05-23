@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { h, FunctionComponent, Fragment } from 'preact';
+import { createPortal } from 'preact/compat';
 import { IProfileModel, ILocation, Category } from '../model';
 import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
 import { useWindowSize } from '../useWindowSize';
@@ -130,46 +131,52 @@ const buildDmaBoxes = (dmaRecords: number[]) => {
 		'Sprite',
 		'Disk'
 	];
+	// from profile.ts
+	const NR_DMA_REC_HPOS = 228;
+	const NR_DMA_REC_VPOS = 313;
 
 	const cyclesPerMicroSecond = 7.093790;
 	const colorClocksPerMicroSecond = cyclesPerMicroSecond / 2;
 	const duration = cyclesPerMicroSecond * 20000;
 	const boxes: IBox[] = [];
-	for(let i = 0; i < dmaRecords.length; i++) {
-		const dma = dmaRecords[i];
-		if(dma === 0 || dma >= dmaColors.length)
-			continue;
+	let i = 0;
+	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+			const dma = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dma === 0 || dma >= dmaColors.length)
+				continue;
 
-		const x1 = i * colorClocksPerMicroSecond / duration;
-		const x2 = (i + 1) * colorClocksPerMicroSecond / duration;
-		const y1 = 0 + Constants.TimelineHeight;
-		const y2 = y1 + Constants.BoxHeight;
-		boxes.push({
-			column: 0,
-			row: 0,
-			x1,
-			x2,
-			y1,
-			y2,
-			level: 0,
-			text: dmaNames[dma],
-			color: dmaColors[dma],
-			loc: {
-				graphId: 100000 + i,
-				selfTime: -1,
-				aggregateTime: -1,
-				id: 0,
-				ticks: 0,
-				category: Category.User,
-				callFrame: {
-					functionName: 'DMA: ' + dmaNames[dma],
-					scriptId: '',
-					url: '',
-					lineNumber: 0,
-					columnNumber: 0
-				}
-			},
-		});
+			const x1 = i * colorClocksPerMicroSecond / duration;
+			const x2 = (i + 1) * colorClocksPerMicroSecond / duration;
+			const y1 = 0 + Constants.TimelineHeight;
+			const y2 = y1 + Constants.BoxHeight;
+			boxes.push({
+				column: 0,
+				row: 0,
+				x1,
+				x2,
+				y1,
+				y2,
+				level: 0,
+				text: dmaNames[dma],
+				color: dmaColors[dma],
+				loc: {
+					graphId: 100000 + i,
+					selfTime: -1,
+					aggregateTime: -1,
+					id: 0,
+					ticks: 0,
+					category: Category.User,
+					callFrame: {
+						functionName: dmaNames[dma],
+						scriptId: '#dma',
+						url: '',
+						lineNumber: y,
+						columnNumber: x
+					}
+				},
+			});
+		}
 	}
 	return boxes;
 };
@@ -781,15 +788,15 @@ export const FlameGraph: FunctionComponent<{
 				}}
 			/>
 			{hovered && (
-				<Tooltip
-					canvasWidth={canvasSize.width}
-					canvasHeight={canvasSize.height}
-					left={(hovered.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
-					upperY={canvasSize.height - hovered.box.y1 + bounds.y}
-					lowerY={hovered.box.y2 - bounds.y}
-					src={hovered.src}
-					location={hovered.box.loc}
-				/>
+				createPortal(
+					<Tooltip
+						canvasRect={webCanvas.current.getBoundingClientRect()}
+						left={(hovered.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
+						upperY={canvasSize.height - hovered.box.y1 + bounds.y}
+						lowerY={hovered.box.y2 - bounds.y}
+						src={hovered.src}
+						location={hovered.box.loc}
+					/>, document.body)
 			)}
 		</Fragment>
 	);
@@ -853,15 +860,15 @@ const DragHandle: FunctionComponent<{
 };
 
 const Tooltip: FunctionComponent<{
-	canvasWidth: number;
-	canvasHeight: number;
+	canvasRect: DOMRect;
 	left: number;
 	upperY: number;
 	lowerY: number;
 	location: ILocation;
 	src: HighlightSource;
-}> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
+}> = ({ left, lowerY, upperY, src, location, canvasRect }) => {
 	const label = getLocationText(location);
+	const isDma = location.callFrame.scriptId === '#dma';
 
 	const file = label?.split(/\\|\//g).pop();
 	return (
@@ -869,34 +876,38 @@ const Tooltip: FunctionComponent<{
 			className={styles.tooltip}
 			aria-live="polite"
 			aria-atomic={true}
-			style={{
-				left: clamp(0, canvasWidth * left + 10, canvasWidth - 400),
-				top: lowerY + 10,
-				bottom: 'initial',
-			}}
+			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '160px' : '400px' }}
 		>
 			<dl>
-				<dt>Function</dt>
-				<dd className={styles.function}>{location.callFrame.functionName}</dd>
-				{label && (
-					<Fragment>
-						<dt>File</dt>
-						<dd
-							aria-label={file}
-							className={classes(styles.label, location.src && styles.clickable)}
-						>
-							<MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
-						</dd>
-					</Fragment>
-				)}
-				{location.selfTime >= 0 && location.aggregateTime >= 0 && (
-					<Fragment>
+				{isDma
+				? <Fragment>
+						<dt>DMA Request</dt>
+						<dd className={styles.function}>{location.callFrame.functionName}</dd>
+					<dt className={styles.time}>Line</dt>
+					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
+					<dt className={styles.time}>Color Clock</dt>
+					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
+				</Fragment>
+				: <Fragment>
+						<dt>Function</dt>
+						<dd className={styles.function}>{location.callFrame.functionName}</dd>
+						{label && (
+							<Fragment>
+								<dt>File</dt>
+								<dd
+									aria-label={file}
+									className={classes(styles.label, location.src && styles.clickable)}
+								>
+									<MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
+								</dd>
+							</Fragment>
+						)}
 						<dt className={styles.time}>Self Time</dt>
 						<dd className={styles.time}>{decimalFormat.format(location.selfTime / 200)}%</dd>
 						<dt className={styles.time}>Aggregate Time</dt>
 						<dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 200)}%</dd>
 					</Fragment>
-				)}
+				}
 			</dl>
 			{label && (
 				<div className={styles.hint}>
