@@ -679,7 +679,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
 		const createBreakpoints = async (shouldContinue: boolean) => {
-			const normalizedPath = normalizePath(args.source.path || "");
+			const normalizedPath = args.source.path || "";
 			this.debugReady = true;
 			const currentBreakpoints = (this.breakpointMap.get(normalizedPath) || [])
 				.filter((bp) => bp.line !== undefined)
@@ -754,7 +754,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					if (args.breakpoints) {
 						args.breakpoints.forEach((brk) => {
 							all.push(this.miDebugger.addBreakPoint({
-								file: unnormalizePath(args.source.path || ""),
+								file: args.source.path || "",
 								line: brk.line,
 								condition: brk.condition,
 								countCondition: brk.hitCondition
@@ -850,7 +850,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				let file;
 				let disassemble = this.forceDisassembly || element.file === undefined;
 				if (!disassemble) {
-					file = normalizePath(element.file);
+					file = element.file;
 					disassemble = !(await this.checkFileExists(file));
 				}
 				if (!disassemble && this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
@@ -1081,7 +1081,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			let assemblyMode = this.forceDisassembly;
 			if (!assemblyMode) {
 				const frame = await this.miDebugger.getFrame(args.threadId, 0);
-				assemblyMode = frame.file === undefined || !(await this.checkFileExists(normalizePath(frame.file)));
+				assemblyMode = frame.file === undefined || !(await this.checkFileExists(frame.file));
 
 				if (this.activeEditorPath && this.activeEditorPath.startsWith('disassembly:///')) {
 					const symbolInfo = this.symbolTable.getFunctionByName(frame.function, frame.fileName);
@@ -1280,13 +1280,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const lineAsmInsn = MINode.valueOf(srcAndAsmLine, "line_asm_insn");
 				let source = "";
 
-				const normalizedPath = normalizePath(fullname);
-				if(await this.checkFileExists(normalizedPath)) {
-					if(!fileCache.has(normalizedPath)) {
-						const data = await readFile(normalizedPath);
-						fileCache.set(normalizedPath, data.toString().replace("\r", "").split("\n"));
+				if(await this.checkFileExists(fullname)) {
+					if(!fileCache.has(fullname)) {
+						const data = await readFile(fullname);
+						fileCache.set(fullname, data.toString().replace("\r", "").split("\n"));
 					}
-					const sourceLines = fileCache.get(normalizedPath);
+					const sourceLines = fileCache.get(fullname);
 					if(line < sourceLines.length + 1)
 						source = sourceLines[line - 1];
 				}
@@ -1536,36 +1535,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	private createSource(filePath: string): Source {
 		return new Source(path.basename(filePath), filePath);
 	}
-}
-
-// gdb(cygwin)->windows
-function normalizePath(filePath: string): string {
-	return filePath; // not needed with MinGW
-
-	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
-		return filePath;
-
-	let converted = filePath.replace(/\/+/g, path.sep);
-	if(converted.toLowerCase().startsWith('\\cygdrive\\'))
-		converted = converted[10] + ':' + converted.substr(11);
-	if(converted.length > 0 && converted[0] === '\\')
-		converted = 'c:\\cygwin64' + converted;
-	return converted;
-}
-
-// windows->gdb(cygwin)
-function unnormalizePath(filePath: string): string {
-	return filePath; // not needed with MinGW
-
-	if(filePath.startsWith('disassembly:') || filePath.startsWith('examinememory:'))
-		return filePath;
-
-	let converted = filePath.replace(/\\+/g, '/');
-	if(converted.toLowerCase().startsWith('c:/cygwin64'))
-		converted = converted.substr(11 /* "c:/cygwin64" */);
-	else if(converted.length > 2 && converted[1] === ':')
-		converted = '/cygdrive/' + converted[0] + '/' + converted.substr(2);
-	return converted;
 }
 
 function prettyStringArray(strings) {
