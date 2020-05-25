@@ -5,6 +5,7 @@
 import { h, FunctionComponent, Fragment } from 'preact';
 import { createPortal } from 'preact/compat';
 import { IProfileModel, ILocation, Category } from '../model';
+import { dmaTypes } from '../dma'
 import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
 import { useWindowSize } from '../useWindowSize';
 import styles from './flame-graph.css';
@@ -104,50 +105,35 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 	};
 };
 
-const buildDmaBoxes = (dmaRecords: number[]) => {
+const buildDmaBoxes = (model: IProfileModel) => {
+	const dmaRecords = model.dmaRecords;
 	if(dmaRecords === undefined)
 		return [];
 
-	// 0xAABBGGRR
-	const dmaColors = [
-		0,
-		0xff444444, // DMARECORD_REFRESH 1
-		0xff4253a2, // DMARECORD_CPU 2
-		0xff00eeee, // DMARECORD_COPPER 3
-		0xff0000ff, // DMARECORD_AUDIO 4
-		0xff888800, // DMARECORD_BLITTER 5
-		0xffff0000, // DMARECORD_BITPLANE 6
-		0xffff00ff, // DMARECORD_SPRITE 7
-		0xffffffff, // DMARECORD_DISK 8
-	];
-	const dmaNames = [
-		'',
-		'Refresh',
-		'CPU',
-		'Copper',
-		'Audio',
-		'Blitter',
-		'Bitplane',
-		'Sprite',
-		'Disk'
-	];
 	// from profile.ts
 	const NR_DMA_REC_HPOS = 228;
 	const NR_DMA_REC_VPOS = 313;
 
 	const cyclesPerMicroSecond = 7.093790;
 	const colorClocksPerMicroSecond = cyclesPerMicroSecond / 2;
-	const duration = cyclesPerMicroSecond * 20000;
+	const duration = colorClocksPerMicroSecond * 20000 * (20000 / model.duration);
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
 			const dma = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dma === 0 || dma >= dmaColors.length)
+			const dmaType = dma & 0xf;
+			const dmaSubtype = dma >>> 4;
+			if(dma === 0 || dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
-			const x1 = i * colorClocksPerMicroSecond / duration;
-			const x2 = (i + 1) * colorClocksPerMicroSecond / duration;
+			let text = dmaTypes[dmaType].name;
+			if(dmaTypes[dmaType].subtypes[dmaSubtype].name !== undefined)
+				text += ' (' + dmaTypes[dmaType].subtypes[dmaSubtype].name + ')';
+			const color = dmaTypes[dmaType].subtypes[dmaSubtype].color;
+
+			const x1 = i / duration;
+			const x2 = (i + 1)  / duration;
 			const y1 = 0 + Constants.TimelineHeight;
 			const y2 = y1 + Constants.BoxHeight;
 			boxes.push({
@@ -158,8 +144,8 @@ const buildDmaBoxes = (dmaRecords: number[]) => {
 				y1,
 				y2,
 				level: 0,
-				text: dmaNames[dma],
-				color: dmaColors[dma],
+				text,
+				color,
 				loc: {
 					graphId: 100000 + i,
 					selfTime: -1,
@@ -168,7 +154,7 @@ const buildDmaBoxes = (dmaRecords: number[]) => {
 					ticks: 0,
 					category: Category.User,
 					callFrame: {
-						functionName: dmaNames[dma],
+						functionName: text,
 						scriptId: '#dma',
 						url: '',
 						lineNumber: y,
@@ -268,7 +254,7 @@ export const FlameGraph: FunctionComponent<{
 	const cssVariables = useCssVariables();
 
 	const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
-	const dmaBoxes = useMemo(() => buildDmaBoxes(model.dmaRecords), [model]);
+	const dmaBoxes = useMemo(() => buildDmaBoxes(model), [model]);
 	const clampX = useMemo(
 		() => ({
 			minX: 0, //columns[0]?.x1 ?? 0,
@@ -876,7 +862,7 @@ const Tooltip: FunctionComponent<{
 			className={styles.tooltip}
 			aria-live="polite"
 			aria-atomic={true}
-			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '160px' : '400px' }}
+			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '200px' : '400px' }}
 		>
 			<dl>
 				{isDma

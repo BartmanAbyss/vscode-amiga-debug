@@ -1,3 +1,6 @@
+// client MUST NOT import anything else than interfaces!
+// otherwise 'fs' will be imported, which is not available in WebViews
+
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
@@ -63,7 +66,7 @@ export interface IProfileModel {
 	timeDeltas: ReadonlyArray<number>;
 	rootPath?: string;
 	duration: number;
-	dmaRecords?: number[]; // BARTO
+	dmaRecords?: number[]; // BARTO - see dma.ts
 }
 
 /**

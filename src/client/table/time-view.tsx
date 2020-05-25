@@ -303,19 +303,19 @@ const TimeViewRow: FunctionComponent<{
 			aria-expanded={expanded.has(node)}
 		>
 			<div className={styles.duration} aria-labelledby="self-time-header">
-				<ImpactBar impact={node.selfTime / root.selfTime} />
+				<ImpactBar impact={node.selfTime / 20000} />
 				{decimalFormat.format(node.selfTime / 200)}%
 			</div>
 			<div className={styles.duration} aria-labelledby="total-time-header">
-				<ImpactBar impact={node.aggregateTime / root.aggregateTime} />
+				<ImpactBar impact={node.aggregateTime / 20000} />
 				{decimalFormat.format(node.aggregateTime / 200)}%
 			</div>
 			{!location ? (
 				<div
-					className={classes(styles.location, styles.virtual)}
+					className={styles.location}
 					style={{ marginLeft: depth * 15 }}
 				>
-					{expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
+					{expand} <span className={styles.fn} dangerouslySetInnerHTML={{__html: node.callFrame.functionName}}></span>
 				</div>
 			) : (
 				<div className={styles.location} style={{ marginLeft: depth * 15 }}>

@@ -14,7 +14,7 @@ import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { buildColumns, LocationAccessor } from './flame/stacks';
 
 declare const MODEL: IProfileModel;
-MODEL.duration = 20000; // DMA TEST
+MODEL.duration = Math.max(20000, MODEL.duration); // DMA TEST
 const columns = buildColumns(MODEL);
 
 // calc max. height of flamegraph
