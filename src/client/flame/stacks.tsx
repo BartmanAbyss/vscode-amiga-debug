@@ -140,7 +140,7 @@ export const buildColumns = (model: IProfileModel) => {
 
 	// 1. Build initial columns
 	let timeOffset = 0;
-	for (let i = 1; i < model.samples.length - 1; i++) {
+	for (let i = 1; i < model.samples.length; i++) {
 		const root = model.nodes[model.samples[i]];
 		const selfTime = model.timeDeltas[i - 1];
 		const rows = [

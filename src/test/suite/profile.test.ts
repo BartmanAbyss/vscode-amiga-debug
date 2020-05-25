@@ -18,7 +18,7 @@ function test_profile(base: string, elf: string) {
 	const profiler = new Profiler(sourceMap, symbolTable, profileFile);
 	//fs.writeFileSync(path.join(testOutDir, base + '.asm.amigaprofile'), profile.profileAsm());
 	//fs.writeFileSync(path.join(testOutDir, base + '.line.amigaprofile'), profile.profileLine());
-	fs.writeFileSync(path.join(testOutDir, base + '.func.amigaprofile'), profiler.profileFunction());
+	fs.writeFileSync(path.join(testOutDir, base + '.amigaprofile'), profiler.profileFunction());
 
 /*	const profilerTxt = new ProfilerTxt(sourceMap, symbolTable, profileArray);
 	fs.writeFileSync(path.join(testOutDir, base) + '.txt', profilerTxt.profileFunction());
@@ -37,6 +37,9 @@ suite("Profiler", () => {
 	});
 	test("test.elf", () => {
 		test_profile('amiga-profile-1590239270728', 'test.elf');
+	});
+	test("test2.elf", () => {
+		test_profile('amiga-profile-1590418304029', 'test2.elf');
 	});
 	test("bitshmup.elf", () => {
 		//test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
