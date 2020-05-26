@@ -9,7 +9,7 @@ import { dmaTypes } from '../dma'
 import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
 import { useWindowSize } from '../useWindowSize';
 import styles from './flame-graph.css';
-import { getLocationText, decimalFormat } from '../display';
+import { getLocationText, formatValue, DisplayUnit } from '../display';
 import { classes } from '../util';
 import { VsCodeApi, IVscodeApi } from '../vscodeApi';
 import { IOpenDocumentMessage } from '../types';
@@ -197,11 +197,6 @@ const enum HighlightSource {
 
 const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
 
-const timelineFormat = new Intl.NumberFormat(undefined, {
-	maximumSignificantDigits: 3,
-	minimumSignificantDigits: 3,
-});
-
 const dpr = window.devicePixelRatio || 1;
 
 const getBoxInRowColumn = (
@@ -239,7 +234,8 @@ const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 export const FlameGraph: FunctionComponent<{
 	columns: ReadonlyArray<IColumn>;
 	model: IProfileModel;
-}> = ({ columns, model }) => {
+	displayUnit: DisplayUnit;
+}> = ({ columns, model, displayUnit }) => {
 	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
@@ -406,7 +402,7 @@ export const FlameGraph: FunctionComponent<{
 			const time = (i / labels) * timeRange + timeStart;
 			const x = i * spacing;
 			webContext.fillText(
-				`${timelineFormat.format(time / 200)}%`,
+				`${formatValue(time, displayUnit)}`,
 				Math.max(40, x - 3),
 				Constants.TimelineHeight / 2,
 			);
@@ -416,7 +412,7 @@ export const FlameGraph: FunctionComponent<{
 
 		webContext.stroke();
 		webContext.textAlign = 'left';
-	}, [webContext, model, canvasSize, bounds, cssVariables]);
+	}, [webContext, model, canvasSize, bounds, cssVariables, displayUnit]);
 
 	// Update the canvas size when the window size changes, and on initial render
 	useEffect(() => {
@@ -782,6 +778,7 @@ export const FlameGraph: FunctionComponent<{
 						lowerY={hovered.box.y2 - bounds.y}
 						src={hovered.src}
 						location={hovered.box.loc}
+						displayUnit={displayUnit}
 					/>, document.body)
 			)}
 		</Fragment>
@@ -852,7 +849,8 @@ const Tooltip: FunctionComponent<{
 	lowerY: number;
 	location: ILocation;
 	src: HighlightSource;
-}> = ({ left, lowerY, upperY, src, location, canvasRect }) => {
+	displayUnit: DisplayUnit;
+}> = ({ left, lowerY, upperY, src, location, canvasRect, displayUnit }) => {
 	const label = getLocationText(location);
 	const isDma = location.callFrame.scriptId === '#dma';
 
@@ -889,9 +887,9 @@ const Tooltip: FunctionComponent<{
 							</Fragment>
 						)}
 						<dt className={styles.time}>Self Time</dt>
-						<dd className={styles.time}>{decimalFormat.format(location.selfTime / 200)}%</dd>
+						<dd className={styles.time}>{formatValue(location.selfTime, displayUnit)}</dd>
 						<dt className={styles.time}>Aggregate Time</dt>
-						<dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 200)}%</dd>
+						<dd className={styles.time}>{formatValue(location.aggregateTime, displayUnit)}</dd>
 					</Fragment>
 				}
 			</dl>

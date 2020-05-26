@@ -12,6 +12,7 @@ import { createTopDownGraph } from './table/topDownGraph';
 import { TimeView } from './table/time-view';
 import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { buildColumns, LocationAccessor } from './flame/stacks';
+import { DisplayUnit } from './display';
 
 declare const MODEL: IProfileModel;
 MODEL.duration = Math.max(20000, MODEL.duration); // DMA TEST
@@ -27,11 +28,11 @@ for(const col of columns) {
 //const graph = createBottomUpGraph(MODEL);
 const graph = createTopDownGraph(MODEL);
 
-const FlameGraphWrapper: FunctionComponent<{ data: ReadonlyArray<LocationAccessor> }> = ({
-	data,
+const FlameGraphWrapper: FunctionComponent<{ data: ReadonlyArray<LocationAccessor>, displayUnit: DisplayUnit }> = ({
+	data, displayUnit
 }) => {
 	const filtered = useMemo(() => LocationAccessor.getFilteredColumns(columns, data), [data]);
-	return <FlameGraph model={MODEL} columns={filtered} />;
+	return <FlameGraph model={MODEL} columns={filtered} displayUnit={displayUnit} />;
 };
 
 const CpuProfileLayout = cpuProfileLayoutFactory();
@@ -44,6 +45,8 @@ document.body.appendChild(container);
 render(
 	<Fragment>
 		<CpuProfileLayout
+			displayUnit={DisplayUnit.Lines}
+
 			dataFlame={{
 				data: LocationAccessor.rootAccessors(columns),
 				getChildren: 'return node.children',

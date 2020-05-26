@@ -11,6 +11,8 @@ import styles from './layout.css';
 import { IDataSource } from './datasource';
 import { IGraphNode } from './model';
 import { LocationAccessor } from './flame/stacks';
+import { DisplayUnit } from './display';
+import { UnitSelect } from './unit-select';
 
 /**
  * Filter that the RichFilter returns,
@@ -40,9 +42,12 @@ const compileFilter = (fn: IRichFilter): ((input: string) => boolean) => {
 
 export interface IBodyProps<T> {
 	data: ReadonlyArray<T>;
+	displayUnit: DisplayUnit;
 }
 
 type CpuProfileLayoutComponent = FunctionComponent<{
+	displayUnit: DisplayUnit;
+
 	dataFlame: IDataSource<LocationAccessor>;
 	getDefaultFilterTextFlame: (value: LocationAccessor) => ReadonlyArray<string>;
 	bodyFlame: ComponentType<IBodyProps<LocationAccessor>>;
@@ -58,6 +63,8 @@ type CpuProfileLayoutComponent = FunctionComponent<{
  * Base layout component to display CPU-profile related info.
  */
 export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
+	displayUnit,
+
 	dataTable,
 	getDefaultFilterTextTable,
 	bodyTable: BodyTable,
@@ -73,6 +80,7 @@ export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
 	const [text, setFilter] = useState('');
+	const [displayUnit2, setDisplayUnit] = useState(displayUnit);
 
 	useEffect(() => {
 		const filter = compileFilter({ text, caseSensitive, regex });
@@ -103,16 +111,20 @@ export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
 									checked={regex}
 									onChange={setRegex}
 								/>
+								<UnitSelect
+									value={displayUnit2}
+									onChange={setDisplayUnit}
+								/>
 							</Fragment>
 						}
 					/>
 				</div>
 			</div>
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
-				<BodyFlame data={filteredDataFlame} />
+				<BodyFlame data={filteredDataFlame} displayUnit={displayUnit2} />
 			</div>
 			<div className={styles.rows} style={{flexBasis: 0, flexGrow: 1}}>
-				<BodyTable data={filteredDataTable} />
+				<BodyTable data={filteredDataTable} displayUnit={displayUnit2} />
 			</div>
 		</Fragment>
 	);

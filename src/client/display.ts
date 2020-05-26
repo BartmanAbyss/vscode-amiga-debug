@@ -8,27 +8,52 @@ import { ILocation } from './model';
  * Gets the human-readable label for the given location.
  */
 export const getLocationText = (location: ILocation) => {
-  if (!location.callFrame.url) {
-    return; // 'virtual' frames like (program) or (idle)
-  }
+	if (!location.callFrame.url) {
+		return; // 'virtual' frames like (program) or (idle)
+	}
 
-  if (!location.src?.source.path) {
-    let text = `${location.callFrame.url}`;
-    if (location.callFrame.lineNumber >= 0) {
-      text += `:${location.callFrame.lineNumber}`;
-    }
+	if (!location.src?.source.path) {
+		let text = `${location.callFrame.url}`;
+		if (location.callFrame.lineNumber >= 0) {
+			text += `:${location.callFrame.lineNumber}`;
+		}
 
-    return text;
-  }
+		return text;
+	}
 
-  if (location.src.relativePath) {
-    return `${location.src.relativePath}:${location.src.lineNumber}`;
-  }
+	if (location.src.relativePath) {
+		return `${location.src.relativePath}:${location.src.lineNumber}`;
+	}
 
-  return `${location.src.source.path}:${location.src.lineNumber}`;
+	return `${location.src.source.path}:${location.src.lineNumber}`;
 };
 
-export const decimalFormat = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
+export enum DisplayUnit {
+	Microseconds,
+	Cycles,
+	Lines,
+	PercentFrame,
+	Bytes,
+	Percent
+}
+
+const decimalFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 2,
+	minimumFractionDigits: 2,
 });
+
+const integerFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 0
+});
+
+
+export const formatValue = (value: number, unit: DisplayUnit) => {
+	const cyclesPerMicroSecond = 7.093790;
+	switch(unit) {
+	case DisplayUnit.Microseconds: return integerFormat.format(value) + 'µs';
+	case DisplayUnit.Cycles: return integerFormat.format(value * cyclesPerMicroSecond) + 'cy';
+	case DisplayUnit.Lines: return decimalFormat.format(value / 200 * 312.5 / 100) + 'li';
+	case DisplayUnit.PercentFrame: return decimalFormat.format(value / 200) + '%';
+	default: return decimalFormat.format(value);
+	}
+};

@@ -22,7 +22,7 @@ import * as ChevronDown from '../icons/chevron-down.svg';
 import * as ChevronRight from '../icons/chevron-right.svg';
 import { Icon } from '../icons';
 import VirtualList from 'preact-virtual-list';
-import { getLocationText, decimalFormat } from '../display';
+import { getLocationText, formatValue, DisplayUnit } from '../display';
 
 type SortFn = (node: ILocation) => number;
 
@@ -42,7 +42,8 @@ const getGlobalUniqueId = (node: IGraphNode) => {
 
 export const TimeView: FunctionComponent<{
 	data: ReadonlyArray<IGraphNode>;
-}> = ({ data }) => {
+	displayUnit: DisplayUnit;
+}> = ({ data, displayUnit }) => {
 	const listRef = useRef<{ base: HTMLElement }>();
 	const [sortFn, setSort] = useState<SortFn | undefined>(() => aggTime);
 	const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
@@ -168,9 +169,10 @@ export const TimeView: FunctionComponent<{
 				expanded={expanded}
 				onExpandChange={setExpanded}
 				onFocus={setFocused}
+				displayUnit={displayUnit}
 			/>
 		),
-		[expanded, setExpanded, onKeyDown],
+		[expanded, setExpanded, onKeyDown, displayUnit],
 	);
 
 	return (
@@ -227,6 +229,7 @@ const TimeViewRow: FunctionComponent<{
 	onExpandChange: (expanded: ReadonlySet<IGraphNode>) => void;
 	onKeyDown?: (evt: KeyboardEvent, node: IGraphNode) => void;
 	onFocus?: (node: IGraphNode) => void;
+	displayUnit: DisplayUnit;
 }> = ({
 	node,
 	depth,
@@ -235,6 +238,7 @@ const TimeViewRow: FunctionComponent<{
 	onKeyDown: onKeyDownRaw,
 	onFocus: onFocusRaw,
 	onExpandChange,
+	displayUnit,
 }) => {
 	const vscode = useContext(VsCodeApi);
 	const onClick = useCallback(
@@ -304,11 +308,11 @@ const TimeViewRow: FunctionComponent<{
 		>
 			<div className={styles.duration} aria-labelledby="self-time-header">
 				<ImpactBar impact={node.selfTime / 20000} />
-				{decimalFormat.format(node.selfTime / 200)}%
+				{formatValue(node.selfTime, displayUnit)}
 			</div>
 			<div className={styles.duration} aria-labelledby="total-time-header">
 				<ImpactBar impact={node.aggregateTime / 20000} />
-				{decimalFormat.format(node.aggregateTime / 200)}%
+				{formatValue(node.aggregateTime, displayUnit)}
 			</div>
 			{!location ? (
 				<div

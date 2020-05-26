@@ -1,0 +1,8 @@
+.unit_select {
+  font-family: var(--vscode-font-family);
+  font-weight: var(--vscode-editor-font-weight);
+  font-size: var(--vscode-editor-font-size);
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  border: none;
+}
