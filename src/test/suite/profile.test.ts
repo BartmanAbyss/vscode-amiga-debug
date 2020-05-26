@@ -1,7 +1,5 @@
-import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as process from 'process';
 import { Profiler, SourceMap, UnwindTable, ProfileFile } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
 

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { SymbolTable } from './symbols';
+import { ICpuProfileRaw, IProfileNode } from '../client/types';
 
 export interface SourceLine {
 	func?: string;
@@ -197,7 +198,7 @@ export class UnwindTable {
 			while(pc < pcEnd) {
 				unwind[pc >> 1] = unw;
 				pc += 2;
-		}
+			}
 		};
 
 		while(line < outputs.length) {
@@ -220,66 +221,6 @@ export class UnwindTable {
 	}
 }
 
-/**
- * A parsed .cpuprofile which can be generated from
- * chrome or https://nodejs.org/api/inspector.html#inspector_cpu_profiler
- *
- * https://chromedevtools.github.io/devtools-protocol/tot/Profiler#type-Profile
- */
-export interface Profile {
-	// The list of profile nodes. First item is the root node.
-	nodes: ProfileNode[];
-	// Profiling start timestamp in microseconds.
-	startTime: number;
-	// Profiling end timestamp in microseconds.
-	endTime: number;
-	// Ids of samples top nodes.
-	samples: number[];
-	// Time intervals between adjacent samples in microseconds.
-	// The first delta is relative to the profile startTime.
-	timeDeltas: number[];
-}
-
-export interface AmigaProfile extends Profile {
-	dmaRecords: number[];
-}
-
-export interface ProfilePositionTick {
-	line: number;
-	ticks: number;
-	startLocationId?: number;
-	endLocationId?: number;
-}
-
-/**
- * Profile node. Holds callsite information, execution statistics and child nodes.
- * https://chromedevtools.github.io/devtools-protocol/tot/Profiler#type-ProfileNode
- */
-export interface ProfileNode {
-	// Unique id of the node.
-	id: number;
-	// Runtime.CallFrame
-	// Function location
-	callFrame: {
-		// JavaScript function name.
-		functionName?: string;
-		// JavaScript script id.
-		scriptId: string;
-		// JavaScript script name or url.
-		url: string;
-		// JavaScript script line number (0-based).
-		lineNumber: number;
-		// JavaScript script column number (0-based).
-		columnNumber: number;
-	};
-	// Number of samples where this node was on top of the call stack.
-	hitCount?: number;
-	// Child node ids.
-	children?: number[];
-	locationId?: number;
-	positionTicks?: ProfilePositionTick[];
-}
-
 export class ProfileFile {
 	public dmaArray: Uint8Array;
 	public profileArray: Uint32Array;
@@ -299,10 +240,10 @@ export class Profiler {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileFile: ProfileFile) {
 	}
 
-	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): Profile {
+	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): ICpuProfileRaw {
 		// generate JSON .cpuprofile
-		const nodes: ProfileNode[] = [];
-		const nodeMap: Map<string, ProfileNode> = new Map();
+		const nodes: IProfileNode[] = [];
+		const nodeMap: Map<string, IProfileNode> = new Map();
 		const samples: number[] = [];
 		const timeDeltas: number[] = [];
 		const startTime = 0;
@@ -327,7 +268,7 @@ export class Profiler {
 			};
 		};
 
-		const getNode = (callFrame: CallFrame, depth: number): ProfileNode => {
+		const getNode = (callFrame: CallFrame, depth: number): IProfileNode => {
 			const key = getNodeKey(callFrame, depth);
 			let node = nodeMap.get(key);
 			if(node === undefined) {
@@ -349,7 +290,7 @@ export class Profiler {
 		};
 
 		// add root node
-		const rootNode: ProfileNode = {
+		const rootNode: IProfileNode = {
 			id: nextNodeId++,
 			callFrame: {
 				functionName: "(root)",
@@ -373,22 +314,18 @@ export class Profiler {
 			if(cyclesPerLocation[i] === 0)
 				continue;
 
-			const ticks = (cyclesPerLocation[i] / cyclesPerMicroSecond) | 0;
+			const ticks = cyclesPerLocation[i] / cyclesPerMicroSecond;
 			const loc = sourceLocations[i];
 			const fr = sourceLocations[i].frames[sourceLocations[i].frames.length - 1];
 
-			const tick: ProfilePositionTick = {
+			/*const tick: typeof rootNode.positionTicks[0] = {
 				line: fr.line,
 				ticks,
 				startLocationId: nextLocationId++,
 				endLocationId: nextLocationId++
-			};
+			};*/
 
 			const node = getNode(loc, loc.frames.length);
-			/*if(loc.frames.length === 1)
-				node.callFrame = getCallFrame(fr);
-			else
-				node.callFrame.functionName += " (inlined)";*/
 			node.hitCount = ticks;
 			//node.positionTicks.push(tick);
 			samples.push(node.id);
@@ -397,33 +334,8 @@ export class Profiler {
 		}
 		timeDeltas.push(0);
 
-		const out: Profile = { nodes, startTime, endTime, samples, timeDeltas };
+		const out: ICpuProfileRaw = { nodes, startTime, endTime, samples, timeDeltas };
 		return out;
-	}
-
-	public profileAsm(): string {
-		/*const cyclesPerInstr: number[] = [];
-		const locations: CallFrame[] = [];
-		for(let i = 0; i < this.profileArray.length; i++) {
-			cyclesPerInstr.push(this.profileArray[i]);
-			locations.push({ frames: [ {
-				file: `profile_offset=${(i*4).toString(16)},instr_offset=${(i*2).toString(16)}`,
-				line: 1
-			}]});
-		}
-
-		return this.profileCommon(cyclesPerInstr, locations);*/
-		return "";
-	}
-
-	public profileLine(): string {
-		/*const cyclesPerLine = new Array<number>(this.sourceMap.lines.length).fill(0);
-		for(let i = 0; i < this.profileArray.length; i++) {
-			cyclesPerLine[this.sourceMap.lines[i]] += this.profileArray[i];
-		}
-
-		return this.profileCommon(cyclesPerLine, this.sourceMap.uniqueLines);*/
-		return "";
 	}
 
 	public profileFunction(): string {
@@ -463,104 +375,7 @@ export class Profiler {
 			}
 		}
 
-		const out: AmigaProfile = { ...this.profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(this.profileFile.dmaArray) };
+		const out: ICpuProfileRaw = { ...this.profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(this.profileFile.dmaArray) };
 		return JSON.stringify(out/*, null, 2*/);
 	}
 }
-
-/*export class ProfilerTxt {
-	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
-	}
-
-	public profileFunction(): string {
-		let output: string = "";
-		let callstack: string[] = [];
-		let lastCallstack: string[] = [];
-		for(const p of this.profileArray) {
-			if(p < 0xffff0000) {
-				let pc = p;
-				if(callstack.length)
-					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
-				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
-				for(let i = l.frames.length - 1; i >= 0; i--)
-					callstack.unshift(l.frames[i].func + (i !== 0 ? " (inlined)" : ""));
-				//callstack.unshift(p.toString(16).padStart(8, '0') + "=>");
-			} else {
-				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
-					callstack = [...lastCallstack];
-				output += callstack.join(';') + ' ' + ((0xffffffff - p) | 0) + '\n';
-				lastCallstack = [...callstack];
-				callstack.length = 0;
-			}
-		}
-		return output;
-	}
-}
-
-import { FileFormat } from '../client/speedscope/lib/file-format-spec';
-
-export class ProfilerSpeedscope {
-	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileArray: Uint32Array) {
-	}
-
-	public profileFunction(): string {
-		const frames: FileFormat.Frame[] = [];
-		const samples: number[][] = [];
-		const weights: number[] = [];
-		const framesMap: Map<string, number> = new Map();
-		const getFrame = (sourceLine: SourceLine, inlined: boolean): number => {
-			const key = sourceLine.func + '|' + sourceLine.file + '|' + sourceLine.line;
-			let n = framesMap.get(key);
-			if(n === undefined) {
-				n = frames.push({
-					name: sourceLine.func + (inlined ? " (inlined)" : ""),
-					file: sourceLine.file,
-					line: sourceLine.line
-				}) - 1;
-				framesMap.set(key, n);
-			}
-			return n;
-		};
-
-		let callstack: number[] = [];
-		let lastCallstack: number[] = [];
-		for(const p of this.profileArray) {
-			if(p < 0xffff0000) {
-				let pc = p;
-				if(callstack.length)
-					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
-				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
-				for(let i = l.frames.length - 1; i >= 0; i--)
-					callstack.unshift(getFrame(l.frames[i], i !== 0));
-			} else {
-				if(callstack.length === 1 && lastCallstack.length > 1 && callstack[0] === lastCallstack[lastCallstack.length - 1]) // glitches in unwind
-					callstack = [...lastCallstack];
-				samples.push([...callstack]);
-				weights.push((0xffffffff - p) | 0);
-				lastCallstack = [...callstack];
-				callstack.length = 0;
-			}
-		}
-		const profile: FileFormat.SampledProfile = {
-			type: FileFormat.ProfileType.SAMPLED,
-			name: '', // TODO
-			unit: 'none', // TODO
-			startValue: 0,
-			endValue: 100000, // TODO
-			samples,
-			weights
-		};
-		const out: FileFormat.File = {
-			$schema: 'https://www.speedscope.app/file-format-schema.json',
-			shared: {
-				frames
-			},
-			profiles: [
-				profile
-			],
-			exporter: "amiga-debug"
-		};
-		return JSON.stringify(out, null, 2);
-	}
-}
-*/
