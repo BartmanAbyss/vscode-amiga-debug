@@ -7,6 +7,16 @@ import { Section } from './backend';
 
 const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg\ !])([w\ ])([C\ ])([W\ ])([I\ ])([dD\ ])([FfO\ ])\s([^\s]+)\s([0-9a-f]+)\s(.*)\r?$/;
 
+// [1] = Idx
+// [2] = Name
+// [3] = Size
+// [4] = VMA
+// [5] = LMA
+// [6] = File off
+// [7] = Algn
+const SECTION_REGEX1 = /^\s+([0-9]+)\s(\S+)\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+2\*\*([0-9])$/;
+const SECTION_REGEX2 = /^\s+\w+(, \w+)*$/;
+
 const TYPE_MAP: { [id: string]: SymbolType } = {
 	'F': SymbolType.Function,
 	'f': SymbolType.File,
@@ -23,15 +33,44 @@ const SCOPE_MAP: { [id: string]: SymbolScope } = {
 
 export class SymbolTable {
 	private symbols: SymbolInformation[];
-	private sections: Map<string, Section> = new Map();
+	private sections: Section[];
 
 	constructor(private objdumpPath: string, private executable: string) {
-		this.symbols = [];
-		this.sections = new Map();
+		this.processSections();
+		this.processSymbols();
+	}
 
+	private processSections() {
+		this.sections = [];
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--section-headers', this.executable]);
+		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		for(let i = 0; i < lines.length; i++) {
+			const match1 = lines[i].match(SECTION_REGEX1);
+			if(match1) {
+				const flags = lines[++i].trim().split(', ');
+				this.sections.push({
+					name: match1[2],
+					address: 0,
+					size: parseInt(match1[3], 16),
+					vma: parseInt(match1[4], 16),
+					lma: parseInt(match1[5], 16),
+					fileOffset: parseInt(match1[6], 16),
+					align: 2**parseInt(match1[7]),
+					flags
+				});
+			}
+		}
+		//console.log(JSON.stringify(this.sections, null, 2));
+	}
+
+	public getSections() {
+		return this.sections;
+	}
+
+	private processSymbols() {
+		this.symbols = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
-		const output = objdump.stdout.toString();
-		const lines = output.split('\n');
+		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
 		let currentFile: string | null = null;
 
 		for (const line of lines) {
@@ -70,14 +109,14 @@ export class SymbolTable {
 		}
 	}
 
-	public relocate(sections: Section[]) {
-		this.sections = new Map();
-		sections.forEach((section) => {
-			this.sections.set(section.name, section);
+	public relocate(relocatedSections: Section[]) {
+		relocatedSections.forEach((relocatedSection) => {
+			const section = this.sections.find((s) => s.name === relocatedSection.name);
+			section.address = relocatedSection.address;
 		});
 
 		this.symbols.forEach((symbol) => {
-			const section = this.sections.get(symbol.section);
+			const section = this.sections.find((s) => s.name === symbol.section);
 			if(section) {
 				symbol.base = section.address;
 			}

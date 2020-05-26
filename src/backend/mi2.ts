@@ -343,7 +343,7 @@ export class MI2 extends EventEmitter implements IBackend {
 					ret.push({
 						name: match[3],
 						address: parseInt(match[1], 16),
-						length: parseInt(match[2], 16) - parseInt(match[1], 16)
+						size: parseInt(match[2], 16) - parseInt(match[1], 16)
 					});
 				}
 			});

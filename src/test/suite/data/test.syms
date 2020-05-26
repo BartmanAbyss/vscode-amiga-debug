@@ -1,0 +1,137 @@
+
+test.elf:     file format elf32-m68k
+
+SYMBOL TABLE:
+00000000 l    d  .text	00000000 .text
+000007a8 l    d  .rodata	00000000 .rodata
+000028bc l    d  .data	00000000 .data
+000028bc l    d  .bss	00000000 .bss
+00000000 l    d  .comment	00000000 .comment
+00000000 l    d  .debug_aranges	00000000 .debug_aranges
+00000000 l    d  .debug_info	00000000 .debug_info
+00000000 l    d  .debug_abbrev	00000000 .debug_abbrev
+00000000 l    d  .debug_line	00000000 .debug_line
+00000000 l    d  .debug_frame	00000000 .debug_frame
+00000000 l    d  .debug_str	00000000 .debug_str
+00000000 l    d  .debug_loc	00000000 .debug_loc
+00000000 l    d  .debug_ranges	00000000 .debug_ranges
+00000000 l    df *ABS*	00000000 <artificial>
+000003b4 l     F .text	00000046 WaitVbl
+000003fa l     F .text	0000002a interruptHandler
+000028de l     O .bss	00000004 hw
+000028da l     O .bss	00000004 frameCounter
+00000424 l     F .text	00000068 KPrintF
+000028d6 l     O .bss	00000004 SysBase
+0000048c l     F .text	000000a2 warpmode.part.0
+000028d2 l     O .bss	00000004 GfxBase
+000028ce l     O .bss	00000004 DOSBase
+000028bc l     O .bss	00000004 ActiView
+000028c0 l     O .bss	00000002 SystemADKCON
+000028c4 l     O .bss	00000002 SystemInts
+000028c2 l     O .bss	00000002 SystemDMA
+000028ca l     O .bss	00000004 VBR
+000028c6 l     O .bss	00000004 SystemIrq
+00000000 l    df *ABS*	00000000 main.c
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000c88 l       .debug_info	00000000 
+00000000 l    df *ABS*	00000000 gcc8_c_support.c
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00004a52 l       .debug_info	00000000 
+00000000 l    df *ABS*	00000000 
+000028ba l       .data	00000000 __fini_array_end
+000028ba l       .data	00000000 __fini_array_start
+000028ba l       .data	00000000 __init_array_end
+000028ba l       .data	00000000 __preinit_array_end
+000028ba l       .data	00000000 __init_array_start
+000028ba l       .data	00000000 __preinit_array_start
+00000610 g     F .text	0000008c memcpy
+000006be g     F .text	00000000 __udivsi3
+00000828 g     O .rodata	00000000 incbin_colors_end
+00000c88  w      .debug_info	00000000 main.c.01e87860
+0000076c g     F .text	00000000 __umodsi3
+00000000 g     F .text	00000074 _start
+0000069c g     F .text	00000000 __mulsi3
+00004a52  w      .debug_info	00000000 gcc8_c_support.c.966f5270
+000028bc g       .bss	00000000 __bss_start
+00000542 g     F .text	000000ce memset
+00000074 g     F .text	00000340 main
+00000796 g     F .text	00000000 KPutCharX
+0000071a g     F .text	00000000 __divsi3
+000007a4 g     F .text	00000000 PutChar
+000007a8 g     O .rodata	00000000 incbin_colors_start
+000028bc g       .data	00000000 _edata
+000028e4 g       .bss	00000000 _end
+00000744 g     F .text	00000000 __modsi3
+0000052e g     F .text	00000014 strlen
+
+

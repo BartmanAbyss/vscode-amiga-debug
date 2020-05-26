@@ -457,7 +457,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const tmp = path.join(os.tmpdir(), `amiga-profile-${new Date().getTime()}`);
 
 			// write unwind table for WinUAE
-			const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf");
+			const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);
 			fs.writeFileSync(tmp + ".unwind", unwind.unwind);
 
 			// path to profile file
@@ -470,9 +470,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			//fs.unlinkSync(tmp);
 
 			// resolve and generate output
-			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", unwind.codeSize);
-			const profiler = new Profiler(sourceMap, this.symbolTable, profileFile);
-			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileFunction());
+			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
+			const profiler = new Profiler(sourceMap, this.symbolTable);
+			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile));
 
 			// open output
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"));

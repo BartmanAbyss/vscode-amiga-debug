@@ -31,15 +31,17 @@ export class SourceMap {
 	public uniqueLines: CallFrame[] = [];
 	public lines: number[] = []; // index into uniqueLines
 
-	constructor(private addr2linePath: string, private executable: string, private codeSize: number) {
+	constructor(private addr2linePath: string, private executable: string, private symbols: SymbolTable) {
+		const textSection = symbols.getSections().find((section) => section.name === '.text');
 		let str: string = "";
-		for(let i = 0; i < this.codeSize; i += 2) {
+		for(let i = textSection.vma; i < textSection.vma + textSection.size; i += 2) {
 			str += i.toString(16) + ' ';
 		}
 		const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
 		fs.writeFileSync(tmp, str);
 
 		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 10*1024*1024 });
+		fs.unlinkSync(tmp);
 		if(objdump.status !== 0)
 			throw objdump.error;
 		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
@@ -75,7 +77,6 @@ export class SourceMap {
 			this.lines.push(value);
 			addr += 2;
 		}
-		fs.unlinkSync(tmp);
 	}
 }
 
@@ -87,21 +88,6 @@ interface Unwind {
 }
 
 export class UnwindTable {
-	private getCodeSize() {
-		const objdump = childProcess.spawnSync(this.objdumpPath, ['--headers', this.executable]);
-		if(objdump.status !== 0)
-			throw objdump.error;
-
-		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
-		for(const l of outputs) {
-			if(l.indexOf(".text") !== -1) {
-				return parseInt(l.substr(18, 8), 16);
-			}
-		}
-
-		throw new Error("can't get size of .text section");
-	}
-
 	// for every possible code location
 	//   struct unwind {
 	//     uint16_t cfa; // (cfaReg << 12) | (u.cfaOfs)
@@ -111,8 +97,9 @@ export class UnwindTable {
 	public unwind: Int16Array;
 	public codeSize: number;
 
-	constructor(private objdumpPath: string, private executable: string) {
-		this.codeSize = this.getCodeSize();
+	constructor(private objdumpPath: string, private executable: string, private symbols: SymbolTable) {
+		const textSection = symbols.getSections().find((section) => section.name === '.text');
+		this.codeSize = textSection.size;
 		const invalidUnwind: Unwind= {
 			cfaOfs: -1,
 			cfaReg: -1,
@@ -237,10 +224,10 @@ export class ProfileFile {
 }
 
 export class Profiler {
-	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private profileFile: ProfileFile) {
+	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable) {
 	}
 
-	private profileCommon(cyclesPerLocation: number[], sourceLocations: CallFrame[]): ICpuProfileRaw {
+	private profileCommon(weightPerLocation: number[], sourceLocations: CallFrame[]): ICpuProfileRaw {
 		// generate JSON .cpuprofile
 		const nodes: IProfileNode[] = [];
 		const nodeMap: Map<string, IProfileNode> = new Map();
@@ -308,13 +295,11 @@ export class Profiler {
 		samples.push(rootNode.id);
 		nodeMap.set("", rootNode);
 
-		const cyclesPerMicroSecond = 7.093790;
-
-		for(let i = 0; i < cyclesPerLocation.length; i++) {
-			if(cyclesPerLocation[i] === 0)
+		for(let i = 0; i < weightPerLocation.length; i++) {
+			if(weightPerLocation[i] === 0)
 				continue;
 
-			const ticks = cyclesPerLocation[i] / cyclesPerMicroSecond;
+			const ticks = weightPerLocation[i];
 			const loc = sourceLocations[i];
 			const fr = sourceLocations[i].frames[sourceLocations[i].frames.length - 1];
 
@@ -338,14 +323,16 @@ export class Profiler {
 		return out;
 	}
 
-	public profileFunction(): string {
+	public profileTime(profileFile: ProfileFile): string {
 		const functionMap: Map<string, number> = new Map();
 		const cyclesPerFunction: number[] = [];
 		const locations: CallFrame[] = [];
 
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
-		for(const p of this.profileFile.profileArray) {
+		const cyclesPerMicrosecond = 7.093790;
+
+		for(const p of profileFile.profileArray) {
 			if(p < 0xffff0000) {
 				let pc = p;
 				if(callstack.frames.length)
@@ -368,14 +355,18 @@ export class Profiler {
 					cyclesPerFunction.push(0);
 					functionMap.set(key, functionId);
 				}
-				cyclesPerFunction[functionId] += ((0xffffffff - p) | 0);
+				cyclesPerFunction[functionId] += (0xffffffff - p) / cyclesPerMicrosecond;
 
 				lastCallstack.frames = [...callstack.frames];
 				callstack.frames.length = 0;
 			}
 		}
 
-		const out: ICpuProfileRaw = { ...this.profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(this.profileFile.dmaArray) };
+		const out: ICpuProfileRaw = { ...this.profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(profileFile.dmaArray) };
 		return JSON.stringify(out/*, null, 2*/);
+	}
+
+	public profileSize() {
+		return '';
 	}
 }

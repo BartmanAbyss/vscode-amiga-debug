@@ -4,7 +4,12 @@ import { MINode } from './mi_parse';
 export interface Section {
 	name: string;
 	address: number;
-	length: number;
+	size: number;
+	vma?: number;
+	lma?: number;
+	fileOffset?: number;
+	align?: number;
+	flags?: string[];
 }
 
 export interface Breakpoint {

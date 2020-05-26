@@ -9,29 +9,25 @@ const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
 
 function test_profile(base: string, elf: string) {
 	const profileFile = new ProfileFile(path.join(testDataDir, base));
-	const codeSize = fs.statSync(path.join(testDataDir, base) + '.unwind')['size'] >> 1;
-	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), codeSize);
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
+	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
 
-	const profiler = new Profiler(sourceMap, symbolTable, profileFile);
-	//fs.writeFileSync(path.join(testOutDir, base + '.asm.amigaprofile'), profile.profileAsm());
-	//fs.writeFileSync(path.join(testOutDir, base + '.line.amigaprofile'), profile.profileLine());
-	fs.writeFileSync(path.join(testOutDir, base + '.amigaprofile'), profiler.profileFunction());
+	const profiler = new Profiler(sourceMap, symbolTable);
+	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), profiler.profileTime(profileFile));
+	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile'), profiler.profileSize());
+}
 
-/*	const profilerTxt = new ProfilerTxt(sourceMap, symbolTable, profileArray);
-	fs.writeFileSync(path.join(testOutDir, base) + '.txt', profilerTxt.profileFunction());
-
-	const profilerSpeedscope = new ProfilerSpeedscope(sourceMap, symbolTable, profileArray);
-	fs.writeFileSync(path.join(testOutDir, base) + '.speedscope.json', profilerSpeedscope.profileFunction());
-*/
+function test_unwind(elf: string) {
+	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
+	const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf), symbolTable);
 }
 
 suite("Profiler", () => {
 	test("unwind test.elf", () => {
-		const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, 'test.elf'));
+		test_unwind('test.elf');
 	});
 	test("unwind bitshmup.elf", () => {
-		const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, 'private/bitshmup.elf'));
+		test_unwind('private/bitshmup.elf');
 	});
 	test("test.elf", () => {
 		test_profile('amiga-profile-1590239270728', 'test.elf');
