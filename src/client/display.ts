@@ -34,6 +34,7 @@ export enum DisplayUnit {
 	Lines,
 	PercentFrame,
 	Bytes,
+	BytesHex,
 	Percent
 }
 
@@ -46,6 +47,20 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 0
 });
 
+export const dataName = (unit: DisplayUnit) => {
+	switch(unit) {
+		case DisplayUnit.Microseconds:
+		case DisplayUnit.Cycles:
+		case DisplayUnit.Lines:
+		case DisplayUnit.PercentFrame:
+			return 'Time';
+		case DisplayUnit.Bytes:
+		case DisplayUnit.BytesHex:
+			return 'Size';
+		default: 
+			return '???';
+	}
+}
 
 export const formatValue = (value: number, unit: DisplayUnit) => {
 	const cyclesPerMicroSecond = 7.093790;
@@ -54,6 +69,8 @@ export const formatValue = (value: number, unit: DisplayUnit) => {
 	case DisplayUnit.Cycles: return integerFormat.format(value) + 'cy';
 	case DisplayUnit.Lines: return decimalFormat.format(value / cyclesPerMicroSecond / 200 * 312.5 / 100) + 'li';
 	case DisplayUnit.PercentFrame: return decimalFormat.format(value / cyclesPerMicroSecond / 200) + '%';
+	case DisplayUnit.Bytes: return integerFormat.format(Math.round(value)) + 'b';
+	case DisplayUnit.BytesHex: return '$' + Math.round(value).toString(16);
 	default: return decimalFormat.format(value);
 	}
 };

@@ -15,7 +15,8 @@ import { buildColumns, LocationAccessor } from './flame/stacks';
 import { DisplayUnit } from './display';
 
 declare const MODEL: IProfileModel;
-MODEL.duration = Math.max(7_093_790 / 50, MODEL.duration); // DMA TEST
+if(MODEL.dmaRecords)
+	MODEL.duration = Math.max(7_093_790 / 50, MODEL.duration); // DMA TEST
 const columns = buildColumns(MODEL);
 
 // calc max. height of flamegraph
@@ -45,7 +46,7 @@ document.body.appendChild(container);
 render(
 	<Fragment>
 		<CpuProfileLayout
-			displayUnit={DisplayUnit.Lines}
+			displayUnit={MODEL.dmaRecords ? DisplayUnit.Lines : DisplayUnit.Bytes}
 
 			dataFlame={{
 				data: LocationAccessor.rootAccessors(columns),

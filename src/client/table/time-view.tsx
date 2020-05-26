@@ -22,7 +22,7 @@ import * as ChevronDown from '../icons/chevron-down.svg';
 import * as ChevronRight from '../icons/chevron-right.svg';
 import { Icon } from '../icons';
 import VirtualList from 'preact-virtual-list';
-import { getLocationText, formatValue, DisplayUnit } from '../display';
+import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
 
 type SortFn = (node: ILocation) => number;
 
@@ -177,7 +177,7 @@ export const TimeView: FunctionComponent<{
 
 	return (
 		<Fragment>
-			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} />
+			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} />
 			<VirtualList
 				ref={listRef}
 				className={styles.rows}
@@ -193,7 +193,8 @@ export const TimeView: FunctionComponent<{
 const TimeViewHeader: FunctionComponent<{
 	sortFn: SortFn | undefined;
 	onChangeSort: (newFn: () => SortFn | undefined) => void;
-}> = ({ sortFn, onChangeSort }) => (
+	displayUnit: DisplayUnit
+}> = ({ sortFn, onChangeSort, displayUnit }) => (
 	<div className={styles.row}>
 		<div
 			id="self-time-header"
@@ -204,7 +205,7 @@ const TimeViewHeader: FunctionComponent<{
 			])}
 		>
 			{sortFn === selfTime && <Icon i={ChevronDown} />}
-			Self Time
+			Self {dataName(displayUnit)}
 		</div>
 		<div
 			id="total-time-header"
@@ -215,7 +216,7 @@ const TimeViewHeader: FunctionComponent<{
 			])}
 		>
 			{sortFn === aggTime && <Icon i={ChevronDown} />}
-			Total Time
+			Total {dataName(displayUnit)}
 		</div>
 		<div className={styles.heading}>File</div>
 	</div>

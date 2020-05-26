@@ -32,15 +32,15 @@ const SCOPE_MAP: { [id: string]: SymbolScope } = {
 };
 
 export class SymbolTable {
-	private symbols: SymbolInformation[];
-	private sections: Section[];
+	public symbols: SymbolInformation[];
+	public sections: Section[];
 
 	constructor(private objdumpPath: string, private executable: string) {
-		this.processSections();
-		this.processSymbols();
+		this.getSections();
+		this.getSymbols();
 	}
 
-	private processSections() {
+	private getSections() {
 		this.sections = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--section-headers', this.executable]);
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
@@ -63,11 +63,7 @@ export class SymbolTable {
 		//console.log(JSON.stringify(this.sections, null, 2));
 	}
 
-	public getSections() {
-		return this.sections;
-	}
-
-	private processSymbols() {
+	private getSymbols() {
 		this.symbols = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
@@ -99,7 +95,7 @@ export class SymbolTable {
 					type,
 					scope,
 					section: match[9].trim(),
-					length: parseInt(match[10], 16),
+					size: parseInt(match[10], 16),
 					name,
 					lines: null,
 					file: scope === SymbolScope.Local ? currentFile : null,
@@ -128,7 +124,7 @@ export class SymbolTable {
 			let symAddress = s.address;
 			if(relocated)
 				symAddress += s.base;
-			return s.type === SymbolType.Function && symAddress <= address && (symAddress + s.length) > address;
+			return s.type === SymbolType.Function && symAddress <= address && (symAddress + s.size) > address;
 		});
 		if (!matches || matches.length === 0) { return null; }
 

@@ -1254,7 +1254,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (symbol.lines) { return symbol; }
 
-		symbol.lines = await this.getDisassemblyForAddresses(symbol.address, symbol.length);
+		symbol.lines = await this.getDisassemblyForAddresses(symbol.address, symbol.size);
 		return symbol;
 	}
 

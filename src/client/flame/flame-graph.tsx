@@ -9,7 +9,7 @@ import { dmaTypes } from '../dma'
 import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
 import { useWindowSize } from '../useWindowSize';
 import styles from './flame-graph.css';
-import { getLocationText, formatValue, DisplayUnit } from '../display';
+import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
 import { classes } from '../util';
 import { VsCodeApi, IVscodeApi } from '../vscodeApi';
 import { IOpenDocumentMessage } from '../types';
@@ -884,9 +884,9 @@ const Tooltip: FunctionComponent<{
 								</dd>
 							</Fragment>
 						)}
-						<dt className={styles.time}>Self Time</dt>
+						<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
 						<dd className={styles.time}>{formatValue(location.selfTime, displayUnit)}</dd>
-						<dt className={styles.time}>Aggregate Time</dt>
+						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
 						<dd className={styles.time}>{formatValue(location.aggregateTime, displayUnit)}</dd>
 					</Fragment>
 				}

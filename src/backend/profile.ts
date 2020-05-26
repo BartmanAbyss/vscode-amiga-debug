@@ -30,11 +30,15 @@ function getCallFrameKey(callFrame: CallFrame): string {
 export class SourceMap {
 	public uniqueLines: CallFrame[] = [];
 	public lines: number[] = []; // index into uniqueLines
+	public codeStart: number;
+	public codeSize: number;
 
 	constructor(private addr2linePath: string, private executable: string, private symbols: SymbolTable) {
-		const textSection = symbols.getSections().find((section) => section.name === '.text');
+		const textSection = symbols.sections.find((section) => section.name === '.text');
+		this.codeStart = textSection.vma;
+		this.codeSize = textSection.size;
 		let str: string = "";
-		for(let i = textSection.vma; i < textSection.vma + textSection.size; i += 2) {
+		for(let i = this.codeStart; i < this.codeStart + this.codeSize; i += 2) {
 			str += i.toString(16) + ' ';
 		}
 		const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
@@ -98,7 +102,7 @@ export class UnwindTable {
 	public codeSize: number;
 
 	constructor(private objdumpPath: string, private executable: string, private symbols: SymbolTable) {
-		const textSection = symbols.getSections().find((section) => section.name === '.text');
+		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeSize = textSection.size;
 		const invalidUnwind: Unwind= {
 			cfaOfs: -1,
@@ -249,7 +253,7 @@ export class Profiler {
 			return {
 				scriptId: callFrame.file,
 				functionName: callFrame.func,
-				url: "file:///" + callFrame.file.replace(/\\/g, "/"),
+				url: callFrame.file !== "" ? "file:///" + callFrame.file.replace(/\\/g, "/") : "",
 				lineNumber: callFrame.line,
 				columnNumber: 0
 			};
@@ -366,6 +370,41 @@ export class Profiler {
 	}
 
 	public profileSize() {
-		return '';
+		const sizePerFunction: number[] = [];
+		const locations: CallFrame[] = [];
+
+		for(const section of this.symbolTable.sections) {
+			if(!section.flags.includes('LOAD'))
+				continue;
+
+			if(section.name === '.text') {
+				for(const line of this.sourceMap.lines) {
+					const l = this.sourceMap.uniqueLines[line];
+					const callstack: CallFrame = { frames: [] };
+					for(let i = 0; i < l.frames.length; i++) {
+						callstack.frames.push({ ...l.frames[i] });
+						if(i !== 0)
+							callstack.frames[callstack.frames.length - 1].func += " (inlined)";
+					}
+
+					// section node
+					callstack.frames.unshift({
+						func: ".text",
+						file: '',
+						line: 0
+					});
+					locations.push(callstack);
+					sizePerFunction.push(2);
+				}
+			} else {
+				// TODO
+				for(const symbol of this.symbolTable.symbols.filter((sym) => sym.section === section.name && sym.size > 0)) {
+				//	symbol.address
+				}
+			}
+		}
+
+		const out: ICpuProfileRaw = this.profileCommon(sizePerFunction, locations);
+		return JSON.stringify(out, null, 2);
 	}
 }

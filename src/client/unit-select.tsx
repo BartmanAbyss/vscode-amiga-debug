@@ -29,6 +29,7 @@ export const UnitSelect: FunctionComponent<{
 			<option value={DisplayUnit[DisplayUnit.Lines]}>Rasterlines</option>
 			<option value={DisplayUnit[DisplayUnit.PercentFrame]}>% of Frame</option>
 			<option value={DisplayUnit[DisplayUnit.Bytes]}>Bytes</option>
+			<option value={DisplayUnit[DisplayUnit.BytesHex]}>Bytes (Hex)</option>
 			<option value={DisplayUnit[DisplayUnit.Percent]}>Percent</option>
 		</select>
 	);

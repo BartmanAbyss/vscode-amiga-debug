@@ -31,7 +31,7 @@ export enum SymbolScope {
 export interface SymbolInformation {
 	address: number;
 	base: number; // comes from relocation
-	length: number;
+	size: number;
 	name: string;
 	section: string;
 	type: SymbolType;

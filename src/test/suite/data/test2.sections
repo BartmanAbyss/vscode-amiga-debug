@@ -1,0 +1,31 @@
+
+test2.elf:     file format elf32-m68k
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000b6c  00000000  00000000  00002000  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .rodata       00000118  00000b6c  00000b6c  00002b6c  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  2 .data         00000000  00002c84  00002c84  00002c84  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000024  00002c84  00002c84  00002c84  2**2
+                  ALLOC
+  4 .comment      00000012  00000000  00000000  00002c84  2**0
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000050  00000000  00000000  00002c98  2**3
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_info   0000582c  00000000  00000000  00002ce8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_abbrev 000004f3  00000000  00000000  00008514  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_line   00002778  00000000  00000000  00008a07  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  9 .debug_frame  000003e8  00000000  00000000  0000b180  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_str    0000021e  00000000  00000000  0000b568  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .debug_loc    00000d77  00000000  00000000  0000b786  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_ranges 000002d0  00000000  00000000  0000c4fd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS

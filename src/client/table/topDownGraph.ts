@@ -207,32 +207,37 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
  */
 export const createTopDownGraph = (model: IProfileModel) => {
 	const root = TopDownNode.root();
-	const cpuRoot = new TopDownNode({
-		selfTime: 0,
-		aggregateTime: 0,
-		id: 0,
-		ticks: 0,
-		category: Category.User,
-		callFrame: {
-			functionName: "CPU",
-			scriptId: '#dma',
-			url: '',
-			lineNumber: 0,
-			columnNumber: 0
-		}
-	}, root);
-	root.childrenSize++;
-	root.children[0] = cpuRoot;
+	let cpuRoot = root;
+	if(model.dmaRecords) {
+		cpuRoot = new TopDownNode({
+			selfTime: 0,
+			aggregateTime: 0,
+			id: 0,
+			ticks: 0,
+			category: Category.User,
+			callFrame: {
+				functionName: "CPU",
+				scriptId: '#dma',
+				url: '',
+				lineNumber: 0,
+				columnNumber: 0
+			}
+		}, root);
+		root.childrenSize++;
+		root.children[0] = cpuRoot;
+	}
 	for(const ch of model.nodes[0].children) {
 		const node = model.nodes[ch];
 		processNode(cpuRoot, node, model);
 		cpuRoot.selfTime += node.aggregateTime;
 		cpuRoot.aggregateTime += node.aggregateTime;
 	}
-	//root.selfTime = cpuRoot.selfTime;
-	root.aggregateTime = cpuRoot.aggregateTime;
+	if(model.dmaRecords) {
+		//root.selfTime = cpuRoot.selfTime;
+		root.aggregateTime = cpuRoot.aggregateTime;
 
-	processDmaNodes(root, model);
+		processDmaNodes(root, model);
+	}
 
 	return root;
 };
