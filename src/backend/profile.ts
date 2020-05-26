@@ -330,7 +330,6 @@ export class Profiler {
 
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
-		const cyclesPerMicrosecond = 7.093790;
 
 		for(const p of profileFile.profileArray) {
 			if(p < 0xffff0000) {
@@ -355,7 +354,7 @@ export class Profiler {
 					cyclesPerFunction.push(0);
 					functionMap.set(key, functionId);
 				}
-				cyclesPerFunction[functionId] += (0xffffffff - p) / cyclesPerMicrosecond;
+				cyclesPerFunction[functionId] += (0xffffffff - p) | 0;
 
 				lastCallstack.frames = [...callstack.frames];
 				callstack.frames.length = 0;

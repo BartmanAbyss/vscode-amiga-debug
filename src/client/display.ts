@@ -50,10 +50,10 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 export const formatValue = (value: number, unit: DisplayUnit) => {
 	const cyclesPerMicroSecond = 7.093790;
 	switch(unit) {
-	case DisplayUnit.Microseconds: return integerFormat.format(value) + 'µs';
-	case DisplayUnit.Cycles: return integerFormat.format(value * cyclesPerMicroSecond) + 'cy';
-	case DisplayUnit.Lines: return decimalFormat.format(value / 200 * 312.5 / 100) + 'li';
-	case DisplayUnit.PercentFrame: return decimalFormat.format(value / 200) + '%';
+	case DisplayUnit.Microseconds: return integerFormat.format(value / cyclesPerMicroSecond) + 'µs';
+	case DisplayUnit.Cycles: return integerFormat.format(value) + 'cy';
+	case DisplayUnit.Lines: return decimalFormat.format(value / cyclesPerMicroSecond / 200 * 312.5 / 100) + 'li';
+	case DisplayUnit.PercentFrame: return decimalFormat.format(value / cyclesPerMicroSecond / 200) + '%';
 	default: return decimalFormat.format(value);
 	}
 };

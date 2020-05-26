@@ -114,9 +114,7 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	const NR_DMA_REC_HPOS = 228;
 	const NR_DMA_REC_VPOS = 313;
 
-	const cyclesPerMicroSecond = 7.093790;
-	const colorClocksPerMicroSecond = cyclesPerMicroSecond / 2;
-	const duration = colorClocksPerMicroSecond * 20000 * (20000 / model.duration);
+	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
@@ -132,8 +130,8 @@ const buildDmaBoxes = (model: IProfileModel) => {
 				text += ' (' + dmaTypes[dmaType].subtypes[dmaSubtype].name + ')';
 			const color = dmaTypes[dmaType].subtypes[dmaSubtype].color;
 
-			const x1 = i / duration;
-			const x2 = (i + 1)  / duration;
+			const x1 = i * 2 / duration;
+			const x2 = (i + 1) * 2 / duration;
 			const y1 = 0 + Constants.TimelineHeight;
 			const y2 = y1 + Constants.BoxHeight;
 			boxes.push({

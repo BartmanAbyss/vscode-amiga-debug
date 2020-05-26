@@ -15,7 +15,7 @@ import { buildColumns, LocationAccessor } from './flame/stacks';
 import { DisplayUnit } from './display';
 
 declare const MODEL: IProfileModel;
-MODEL.duration = Math.max(20000, MODEL.duration); // DMA TEST
+MODEL.duration = Math.max(7_093_790 / 50, MODEL.duration); // DMA TEST
 const columns = buildColumns(MODEL);
 
 // calc max. height of flamegraph
