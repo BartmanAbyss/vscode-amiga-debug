@@ -297,6 +297,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
+		console.log(command);
 		switch (command) {
 			case 'set-force-disassembly':
 				response.body = { success: true };
@@ -338,7 +339,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case 'read-register-list':
 				this.customReadRegisterListRequest(response);
 				break;
-			case 'disassemble':
+			case 'amiga-disassemble':
 				this.customDisassembleRequest(response, args);
 				break;
 			case 'execute-command':
@@ -1254,7 +1255,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (symbol.lines) { return symbol; }
 
-		symbol.lines = await this.getDisassemblyForAddresses(symbol.address, symbol.size);
+		symbol.lines = await this.getDisassemblyForAddresses(symbol.base + symbol.address, symbol.size);
 		return symbol;
 	}
 

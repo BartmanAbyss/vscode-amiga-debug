@@ -366,11 +366,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		if (trace) {
 			this.log("stderr", "evalExpression");
 		}
-		return new Promise((resolve, reject) => {
-			this.sendCommand("data-evaluate-expression " + name).then((result) => {
-				resolve(result);
-			}, reject);
-		});
+		return this.sendCommand("data-evaluate-expression " + name, true);
 	}
 
 	public async varCreate(expression: string, name: string = "-"): Promise<VariableObject> {
@@ -442,7 +438,8 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.handlers[sel] = (node: MINode) => {
 				if (node && node.resultRecords && node.resultRecords.resultClass === "error") {
 					if (suppressFailure) {
-						this.log("stderr", `WARNING: Error executing command '${command}'`);
+						if(trace)
+							this.log("stderr", `WARNING: Error executing command '${command}'`);
 						resolve(node);
 					} else {
 						reject(new MIError(node.result("msg") || "Internal error", command));

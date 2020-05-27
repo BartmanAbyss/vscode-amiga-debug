@@ -17,7 +17,7 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
 				args = { file: parts[0], function: parts[1] };
 			}
 
-			vscode.debug.activeDebugSession!.customRequest('disassemble', args).then((data) => {
+			vscode.debug.activeDebugSession!.customRequest('amiga-disassemble', args).then((data) => {
 				const lines: SourceLineWithDisassembly[] = data.lines;
 
 				let output = '';
