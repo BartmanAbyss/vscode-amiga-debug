@@ -871,7 +871,7 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
 				</Fragment>
 				: <Fragment>
-						<dt>Function</dt>
+						<dt>{dataName(displayUnit) === 'Time' ? 'Function' : 'Symbol'}</dt>
 						<dd className={styles.function}>{location.callFrame.functionName}</dd>
 						{label && (
 							<Fragment>

@@ -60,10 +60,13 @@ export class SymbolTable {
 				});
 			}
 		}
-		//console.log(JSON.stringify(this.sections, null, 2));
+		//console.log(this.sections);
 	}
 
 	private getSymbols() {
+		if(this.sections.length === 0)
+			throw new Error("call getSections() before getSymbols()!");
+
 		this.symbols = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
@@ -89,12 +92,17 @@ export class SymbolTable {
 				if(scope === SymbolScope.Local && (!currentFile || currentFile === "<artificial>"))
 					scope = SymbolScope.Global;
 
+				const sectionName = match[9].trim();
+				const section = this.sections.find((s) => s.name === sectionName);
+				if(sectionName !== "*ABS*" && section === undefined)
+					throw new Error(`Section ${sectionName} not found. Symbol: ${name}`);
+
 				this.symbols.push({
-					address: parseInt(match[1], 16),
+					address: parseInt(match[1], 16) - section?.lma,
 					base: 0,
 					type,
 					scope,
-					section: match[9].trim(),
+					section: sectionName,
 					size: parseInt(match[10], 16),
 					name,
 					lines: null,
@@ -114,7 +122,7 @@ export class SymbolTable {
 		this.symbols.forEach((symbol) => {
 			const section = this.sections.find((s) => s.name === symbol.section);
 			if(section) {
-				symbol.base = section.address;
+				symbol.base = section.address - section.vma;
 			}
 		});
 	}

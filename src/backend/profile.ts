@@ -253,7 +253,7 @@ export class Profiler {
 			return {
 				scriptId: callFrame.file,
 				functionName: callFrame.func,
-				url: callFrame.file !== "" ? "file:///" + callFrame.file.replace(/\\/g, "/") : "",
+				url: callFrame.file.includes(':') ? "file:///" + callFrame.file.replace(/\\/g, "/") : callFrame.file,
 				lineNumber: callFrame.line,
 				columnNumber: 0
 			};
@@ -369,7 +369,15 @@ export class Profiler {
 		return JSON.stringify(out/*, null, 2*/);
 	}
 
-	public profileSize() {
+	public profileSize(objdumpPath: string, elfPath: string) {
+		interface DataSymbol {
+			callstack: CallFrame;
+			address: number;
+			size: number;
+		};
+		type SymbolMap = DataSymbol[];
+		const sectionMap: Map<string, SymbolMap> = new Map();
+
 		const sizePerFunction: number[] = [];
 		const locations: CallFrame[] = [];
 
@@ -397,13 +405,124 @@ export class Profiler {
 					sizePerFunction.push(2);
 				}
 			} else {
-				// TODO
-				for(const symbol of this.symbolTable.symbols.filter((sym) => sym.section === section.name && sym.size > 0)) {
-				//	symbol.address
+				const symbols: SymbolMap = [];
+				for(const symbol of this.symbolTable.symbols.filter((sym) => sym.section === section.name && sym.size > 0).sort((a, b) => a.address - b.address)) {
+					const callstack: CallFrame = {
+						frames: [
+							{
+								func: section.name,
+								file: section.name,
+								line: 0
+							},
+							{
+								func: symbol.name,
+								file: section.name,
+								line: symbol.address
+							}
+						]
+					};
+					symbols.push({
+						callstack,
+						address: symbol.address,
+						size: symbol.size
+					});
 				}
+				sectionMap.set(section.name, symbols);
 			}
 		}
 
+		// for unknown symbols, try to infer usage from relocations
+		const objdump = childProcess.spawnSync(objdumpPath, ['--reloc', '--section=.text', elfPath], { maxBuffer: 10*1024*1024 });
+		if(objdump.status !== 0)
+			throw objdump.error;
+		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		for(const line of outputs) {
+			// 00000006 R_68K_32          __preinit_array_end
+			// 0000022c R_68K_32          .rodata+0x00000112
+			const match = line.match(/^([0-9a-f]{8})\s\S+\s+(\..+)$/);
+			if(match) {
+				const addr = parseInt(match[1], 16);
+				let section = match[2];
+				let offset = 0;
+				const add = section.indexOf('+0x');
+				if(add !== -1) {
+					offset = parseInt(section.substr(add + 3), 16);
+					section = section.substr(0, add);
+				}
+				// ignore relocations to known symbols
+				const sectionSymbols = sectionMap.get(section);
+				if(sectionSymbols === undefined)
+					continue;
+
+				if(sectionSymbols.find((sym) => offset >= sym.address && offset < sym.address + sym.size))
+					continue;
+
+				const sourceLine = this.sourceMap.uniqueLines[this.sourceMap.lines[addr >> 1]];
+				const sourceFrame = { ...sourceLine.frames[sourceLine.frames.length - 1] };
+				sourceFrame.func = `${section}+\$${offset.toString(16)} (${sourceFrame.func})`;
+				const callstack: CallFrame = {
+					frames: [
+						{
+							func: section,
+							file: section,
+							line: 0
+						},
+						sourceFrame
+					]
+				};
+				sectionSymbols.push({
+					callstack,
+					address: offset,
+					size: 0
+				});
+			}
+		}
+
+		for(const sectionName of sectionMap.keys()) {
+			const sectionSymbols = sectionMap.get(sectionName).sort((a, b) => a.address - b.address);
+			const section = this.symbolTable.sections.find((sec) => sec.name === sectionName);
+			let lastEmptySymbol: DataSymbol = null;
+			let lastSymbol: DataSymbol = null;
+			// guess size of reloc-referenced symbols
+			for(const symbol of sectionSymbols) {
+				if(lastSymbol && symbol.address === lastSymbol.address) {
+					if(lastSymbol.callstack.frames[lastSymbol.callstack.frames.length - 1].func !== symbol.callstack.frames[symbol.callstack.frames.length - 1].func)
+						lastSymbol.callstack.frames[lastSymbol.callstack.frames.length - 1].func += ", " + symbol.callstack.frames[symbol.callstack.frames.length - 1].func;
+					continue;
+				}
+				if(lastEmptySymbol) {
+					lastEmptySymbol.size = symbol.address - lastEmptySymbol.address;
+					lastEmptySymbol = null;
+				}
+				if(symbol.size === 0)
+					lastEmptySymbol = symbol;
+				lastSymbol = symbol;
+			}
+			if(lastEmptySymbol)
+				lastEmptySymbol.size = section.size - lastEmptySymbol.address;
+
+			// add symbols to profile
+			let lastAddress = section.lma;
+			lastSymbol = null;
+			for(const symbol of sectionSymbols) {
+				if(lastSymbol && lastSymbol.address === symbol.address)
+					continue;
+				if(symbol.size === 0)
+					continue;
+				if(symbol.address > lastAddress) { // gap (unknown symbol)
+					locations.push({ frames: [ { func: section.name, file: section.name, line: lastAddress } ] });
+					sizePerFunction.push(symbol.address - lastAddress);
+				}
+				locations.push(symbol.callstack);
+				sizePerFunction.push(symbol.size);
+				lastAddress = symbol.address + symbol.size;
+				lastSymbol = symbol;
+			}
+			if(lastAddress < section.size) {
+				locations.push({ frames: [ { func: section.name, file: section.name, line: lastAddress } ] });
+				sizePerFunction.push(section.size - lastAddress);
+			}
+		}
 		const out: ICpuProfileRaw = this.profileCommon(sizePerFunction, locations);
 		return JSON.stringify(out, null, 2);
 	}

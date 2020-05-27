@@ -27,6 +27,7 @@ void debug_text(short left, short top, const char* text, unsigned int color);
             \
             ".global incbin_" #name "_end\n" \
             ".type incbin_" #name "_end, @object\n" \
+            ".size incbin_" #name "_start, incbin_" #name "_end - incbin_" #name "_start\n" \
             ".balign 1\n" \
             "incbin_" #name "_end:\n" \
             ".byte 0\n" \
