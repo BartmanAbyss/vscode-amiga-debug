@@ -43,6 +43,8 @@ export class SymbolTable {
 	private getSections() {
 		this.sections = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--section-headers', this.executable]);
+		if(objdump.status !== 0)
+			throw objdump.error;
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
 		for(let i = 0; i < lines.length; i++) {
 			const match1 = lines[i].match(SECTION_REGEX1);
@@ -69,6 +71,8 @@ export class SymbolTable {
 
 		this.symbols = [];
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', this.executable]);
+		if(objdump.status !== 0)
+			throw objdump.error;
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
 		let currentFile: string | null = null;
 

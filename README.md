@@ -1,9 +1,9 @@
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-**One-stop Visual Code Extention to compile and debug Amiga C/C++ programs compiled by the bundled gcc 10.1 in WinUAE.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 10.1 with the bundled WinUAE.**
 
 ## Overview
-This extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500. It supports C and C++, however no standard library is available.
+This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
 
 ## Quick-start
 0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
@@ -11,6 +11,7 @@ This extension will help you to quickly develop demos, intros, games, etc. for t
 2. From the command palette <kbd>Ctrl+Shift+P</kbd> select `Amiga: Init Project`
 3. Open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
 3. Hit <kbd>F5</kbd> to build and run a minimal sample project
+4. If you prefer C++ instead of C, just rename `main.c` to `main.cpp`
 
 ## Features
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
@@ -22,23 +23,41 @@ This extension will help you to quickly develop demos, intros, games, etc. for t
 - Output to debug console from WinUAE
 - WinUAE warp-launch (turbo-boot)
 - WinUAE warp-mode control from your Amiga project
+- WinUAE debug overlay, full control from your Amiga project
+- Frame Profiler: function-level + DMA cycles profiling
+- Size Profiler: profile the size of your executable by functions, data and references
+- Terminal window with access to the build tools
 
 ## How-to-use
 - `Amiga: View Memory`, `Amiga: Set Force Disassembly`, `Amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
 - Use the command `Amiga: Open Terminal` to open a shell with the environment set to use the included tools like `elf2hunk`, `gcc`, `gnumake` etc. (e.g. `gnumake clean`)
+- Frame Profiler: function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled.
+- Size Profiler: profile the size of your executable: right-click an ELF file in the Explorer, and select `Amiga: Profile File Size`
+- WinUAE debug overlay: see debug_* calls in template project's main.c
 - WinUAE: 
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
 
 ## Credits
-Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
+- Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
+- Testing by [Pink/Abyss](https://soundcloud.com/pink_abyss)
+
+## Already Used in these productions
+- [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
+- [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
+- [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
+- [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
-This extension is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
+Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 
+Profiler visualizer is based in part on Microsoft's [vscode-js-profile-visualizer](https://github.com/microsoft/vscode-js-profile-visualizer) extension.
+
 Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8+. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
+
+Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
 
 This extension contains binaries of:
 - modified [GCC 10.1.0](https://github.com/BartmanAbyss/gcc)
@@ -136,8 +155,8 @@ sudo strip /opt/amiga/10.1.0/libexec/gcc/m68k-amiga-elf/10.1.0/*.exe
 LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf2hunk -DDEBUG=0 elf2hunk.c -lws2_32
 ```
 
-## Known Issues
-* finish package.json fertigmachen. Configs, settings, ...
+## Known Issues/TODOs
+* finish package.json. Configs, settings, ...
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.

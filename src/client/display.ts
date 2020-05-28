@@ -56,13 +56,14 @@ export const dataName = (unit: DisplayUnit) => {
 			return 'Time';
 		case DisplayUnit.Bytes:
 		case DisplayUnit.BytesHex:
+		case DisplayUnit.Percent:
 			return 'Size';
-		default: 
+		default:
 			return '???';
 	}
 }
 
-export const formatValue = (value: number, unit: DisplayUnit) => {
+export const formatValue = (value: number, total: number, unit: DisplayUnit) => {
 	const cyclesPerMicroSecond = 7.093790;
 	switch(unit) {
 	case DisplayUnit.Microseconds: return integerFormat.format(value / cyclesPerMicroSecond) + 'µs';
@@ -71,6 +72,7 @@ export const formatValue = (value: number, unit: DisplayUnit) => {
 	case DisplayUnit.PercentFrame: return decimalFormat.format(value / cyclesPerMicroSecond / 200) + '%';
 	case DisplayUnit.Bytes: return integerFormat.format(Math.round(value)) + 'b';
 	case DisplayUnit.BytesHex: return '$' + Math.round(value).toString(16);
+	case DisplayUnit.Percent: return decimalFormat.format(value / total * 100) + '%';
 	default: return decimalFormat.format(value);
 	}
 };

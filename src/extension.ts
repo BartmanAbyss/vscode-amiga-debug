@@ -4,6 +4,7 @@ import { AmigaDebugSession } from './amigaDebug';
 
 import * as fs from 'fs';
 import * as Net from 'net';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -13,6 +14,8 @@ import { ProfileCodeLensProvider} from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
+import { SymbolTable } from './backend/symbols';
+import { SourceMap, Profiler } from './backend/profile';
 
 /*
  * Set the following compile time flag to true if the
@@ -52,6 +55,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
+			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
@@ -206,6 +210,25 @@ class AmigaDebugExtension {
 
 	private startProfile() {
 		vscode.debug.activeDebugSession!.customRequest('start-profile', { });
+	}
+
+	private async profileSize(uri: vscode.Uri) {
+		if(uri.scheme !== 'file') {
+			vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
+			return;
+		}
+		const binPath = path.join(this.extensionPath, 'bin/opt/bin');
+
+		try {
+			const symbolTable = new SymbolTable(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath);
+			const sourceMap = new SourceMap(path.join(binPath, 'm68k-amiga-elf-addr2line.exe'), uri.fsPath, symbolTable);
+			const profiler = new Profiler(sourceMap, symbolTable);
+			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
+			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
+			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp));
+		} catch(error) {
+			vscode.window.showErrorMessage(`Error during size profiling: ${error.message}`);
+		}
 	}
 
 	private examineMemory() {

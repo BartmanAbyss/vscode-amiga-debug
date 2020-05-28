@@ -21,7 +21,7 @@ import { addToSet, removeFromSet, toggleInSet } from '../array';
 import * as ChevronDown from '../icons/chevron-down.svg';
 import * as ChevronRight from '../icons/chevron-right.svg';
 import { Icon } from '../icons';
-import VirtualList from 'preact-virtual-list';
+//import VirtualList from 'preact-virtual-list';
 import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
 
 type SortFn = (node: ILocation) => number;
@@ -159,7 +159,8 @@ export const TimeView: FunctionComponent<{
 		});
 	}, [focused]);
 
-	const renderRow = useCallback(
+	// had some strange jerking during scrolling
+/*	const renderRow = useCallback(
 		(row: NodeAtDepth) => (
 			<TimeViewRow
 				onKeyDown={onKeyDown}
@@ -175,17 +176,34 @@ export const TimeView: FunctionComponent<{
 		[expanded, setExpanded, onKeyDown, displayUnit],
 	);
 
+	<VirtualList
+		ref={listRef}
+		className={styles.rows}
+		data={rendered}
+		renderRow={renderRow}
+		rowHeight={25}
+		overscanCount={10}
+	/>
+*/
+
+
 	return (
 		<Fragment>
 			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} />
-			<VirtualList
-				ref={listRef}
-				className={styles.rows}
-				data={rendered}
-				renderRow={renderRow}
-				rowHeight={25}
-				overscanCount={10}
-			/>
+			<div className={styles.rows}>
+				{rendered.map((row) => (
+					<TimeViewRow
+						onKeyDown={onKeyDown}
+						node={row.node}
+						depth={row.depth}
+						position={row.position}
+						expanded={expanded}
+						onExpandChange={setExpanded}
+						onFocus={setFocused}
+						displayUnit={displayUnit}
+					/>
+				))}
+			</div>
 		</Fragment>
 	);
 };
@@ -200,9 +218,7 @@ const TimeViewHeader: FunctionComponent<{
 			id="self-time-header"
 			className={classes(styles.heading, styles.timing)}
 			aria-sort={sortFn === selfTime ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [
-				sortFn,
-			])}
+			onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [sortFn])}
 		>
 			{sortFn === selfTime && <Icon i={ChevronDown} />}
 			Self {dataName(displayUnit)}
@@ -211,9 +227,7 @@ const TimeViewHeader: FunctionComponent<{
 			id="total-time-header"
 			className={classes(styles.heading, styles.timing)}
 			aria-sort={sortFn === aggTime ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [
-				sortFn,
-			])}
+			onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [sortFn])}
 		>
 			{sortFn === aggTime && <Icon i={ChevronDown} />}
 			Total {dataName(displayUnit)}
@@ -288,7 +302,7 @@ const TimeViewRow: FunctionComponent<{
 
 	const location = getLocationText(node);
 	const expand = (
-		<span className={styles.expander}>
+		<span className={styles.expander} onClick={onToggleExpand}>
 			{node.childrenSize > 0 ? <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} /> : null}
 		</span>
 	);
@@ -299,7 +313,6 @@ const TimeViewRow: FunctionComponent<{
 			data-row-id={getGlobalUniqueId(node)}
 			onKeyDown={onKeyDown}
 			onFocus={onFocus}
-			onClick={onToggleExpand}
 			tabIndex={0}
 			role="treeitem"
 			aria-posinset={position}
@@ -308,12 +321,12 @@ const TimeViewRow: FunctionComponent<{
 			aria-expanded={expanded.has(node)}
 		>
 			<div className={styles.duration} aria-labelledby="self-time-header">
-				<ImpactBar impact={node.selfTime / 20000} />
-				{formatValue(node.selfTime, displayUnit)}
+				<ImpactBar impact={node.selfTime / root.aggregateTime} />
+				{formatValue(node.selfTime, root.aggregateTime, displayUnit)}
 			</div>
 			<div className={styles.duration} aria-labelledby="total-time-header">
-				<ImpactBar impact={node.aggregateTime / 20000} />
-				{formatValue(node.aggregateTime, displayUnit)}
+				<ImpactBar impact={node.aggregateTime / root.aggregateTime} />
+				{formatValue(node.aggregateTime, root.aggregateTime, displayUnit)}
 			</div>
 			{!location ? (
 				<div

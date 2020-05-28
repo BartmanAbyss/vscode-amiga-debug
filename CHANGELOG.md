@@ -3,10 +3,13 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.0.0
-- added function-level + DMA profiling: during a debugging session, press the "Profile" button on the right of the debug toolbar, and 1 frame will be profiled.
+- added function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled.
+- added ELF file size profiling: right-click an ELF file in the explorer, and select `Amiga: Profile File Size`
 - added WinUAE debug overlays. See template project for debug_* function calls for an example
 - updated to latest 64-bit WinUAE
 - added command `Amiga: Open Terminal`
+- fixed disassembly
+- improved `INCBIN` macro to correctly report binary size to the size profiler.
 
 ## 0.9.0
 - updated to GCC 10.1, binutils 2.34 and GDB 9.1

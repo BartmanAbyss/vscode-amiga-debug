@@ -400,7 +400,7 @@ export const FlameGraph: FunctionComponent<{
 			const time = (i / labels) * timeRange + timeStart;
 			const x = i * spacing;
 			webContext.fillText(
-				`${formatValue(time, displayUnit)}`,
+				`${formatValue(time, model.duration, displayUnit)}`,
 				Math.max(40, x - 3),
 				Constants.TimelineHeight / 2,
 			);
@@ -777,6 +777,7 @@ export const FlameGraph: FunctionComponent<{
 						src={hovered.src}
 						location={hovered.box.loc}
 						displayUnit={displayUnit}
+						model={model}
 					/>, document.body)
 			)}
 		</Fragment>
@@ -848,7 +849,8 @@ const Tooltip: FunctionComponent<{
 	location: ILocation;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
-}> = ({ left, lowerY, upperY, src, location, canvasRect, displayUnit }) => {
+	model: IProfileModel;
+}> = ({ left, lowerY, upperY, src, location, canvasRect, displayUnit, model }) => {
 	const label = getLocationText(location);
 	const isDma = location.callFrame.scriptId === '#dma';
 
@@ -884,10 +886,12 @@ const Tooltip: FunctionComponent<{
 								</dd>
 							</Fragment>
 						)}
+						<dt className={styles.time}>Total {dataName(displayUnit)}</dt>
+						<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, model.duration, displayUnit)}</dd>
 						<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.selfTime, displayUnit)}</dd>
+						<dd className={styles.time}>{formatValue(location.selfTime, model.duration, displayUnit)}</dd>
 						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.aggregateTime, displayUnit)}</dd>
+						<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
 					</Fragment>
 				}
 			</dl>

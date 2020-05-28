@@ -46,7 +46,7 @@ document.body.appendChild(container);
 render(
 	<Fragment>
 		<CpuProfileLayout
-			displayUnit={MODEL.dmaRecords ? DisplayUnit.Lines : DisplayUnit.Bytes}
+			displayUnit={MODEL.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes}
 
 			dataFlame={{
 				data: LocationAccessor.rootAccessors(columns),
@@ -88,7 +88,7 @@ render(
 				node.src?.source.path ?? '',
 			]}
 			bodyTable={TimeView}
-		/>,
+		/>
 	</Fragment>,
 	container,
 );

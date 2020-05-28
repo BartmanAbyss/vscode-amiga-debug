@@ -411,7 +411,7 @@ export class Profiler {
 						frames: [
 							{
 								func: section.name,
-								file: section.name,
+								file: '',
 								line: 0
 							},
 							{
@@ -464,7 +464,7 @@ export class Profiler {
 					frames: [
 						{
 							func: section,
-							file: section,
+							file: '',
 							line: 0
 						},
 						sourceFrame
@@ -510,7 +510,7 @@ export class Profiler {
 				if(symbol.size === 0)
 					continue;
 				if(symbol.address > lastAddress) { // gap (unknown symbol)
-					locations.push({ frames: [ { func: section.name, file: section.name, line: lastAddress } ] });
+					locations.push({ frames: [ { func: section.name, file: '', line: lastAddress } ] });
 					sizePerFunction.push(symbol.address - lastAddress);
 				}
 				locations.push(symbol.callstack);
@@ -519,7 +519,7 @@ export class Profiler {
 				lastSymbol = symbol;
 			}
 			if(lastAddress < section.size) {
-				locations.push({ frames: [ { func: section.name, file: section.name, line: lastAddress } ] });
+				locations.push({ frames: [ { func: section.name, file: '', line: lastAddress } ] });
 				sizePerFunction.push(section.size - lastAddress);
 			}
 		}
