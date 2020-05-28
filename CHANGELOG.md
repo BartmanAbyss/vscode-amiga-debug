@@ -2,10 +2,11 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
-## 0.9.1
+## 1.0.0
 - added function-level + DMA profiling: during a debugging session, press the "Profile" button on the right of the debug toolbar, and 1 frame will be profiled.
 - added WinUAE debug overlays. See template project for debug_* function calls for an example
 - updated to latest 64-bit WinUAE
+- added command `Amiga: Open Terminal`
 
 ## 0.9.0
 - updated to GCC 10.1, binutils 2.34 and GDB 9.1

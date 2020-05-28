@@ -40,8 +40,11 @@ class AmigaDebugExtension {
 		const lenses = new ProfileCodeLensProvider();
 
 		context.subscriptions.push(
+			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
+
+			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
 			vscode.commands.registerCommand('amiga.registers.copyValue', this.registersCopyValue.bind(this)),
 			vscode.commands.registerCommand('amiga.registers.setFormat', this.registersSetFormat.bind(this)),
@@ -51,20 +54,23 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
+			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 
+			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
+			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
+			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => { if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); } }),
+			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
+
+			// debugger
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),
 			vscode.debug.onDidStartDebugSession(this.debugSessionStarted.bind(this)),
 			vscode.debug.onDidTerminateDebugSession(this.debugSessionTerminated.bind(this)),
-			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
-			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
-				if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); }
-			}),
 			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
-			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
+
+			// code lenses (from profiler)
 			vscode.languages.registerCodeLensProvider('*', lenses),
-			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear()
-		  ),
+			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear())
 		);
 	}
 
@@ -170,6 +176,19 @@ class AmigaDebugExtension {
 		} catch(err) {
 			vscode.window.showErrorMessage(`Failed to init project. ${err.toString()}`);
 		}
+	}
+
+	private terminal: vscode.Terminal = null;
+
+	private openTerminal() {
+		if (!this.terminal)
+			this.terminal = vscode.window.createTerminal({
+				name: 'Amiga',
+				env: {
+					path: `\${env:PATH};${this.extensionPath}\\bin;${this.extensionPath}\\bin\\opt\\bin`
+				}
+			});
+		this.terminal.show();
 	}
 
 	private setForceDisassembly() {

@@ -17,6 +17,7 @@
 		"onDebug",
 		"onCommand:amiga.bin-path",
 		"onCommand:amiga.initProject",
+		"onCommand:amiga.terminal",
 		"onCustomEditor:amiga.profile.table"
 	],
 	"main": "./out/extension.js",
@@ -35,29 +36,34 @@
 				"title": "Set Value Format"
 			},
 			{
-				"category": "amiga",
+				"category": "Amiga",
 				"command": "amiga.examineMemory",
 				"title": "View Memory"
 			},
 			{
-				"category": "amiga",
+				"category": "Amiga",
 				"command": "amiga.viewDisassembly",
 				"title": "View Disassembly (Function)"
 			},
 			{
-				"category": "amiga",
+				"category": "Amiga",
 				"command": "amiga.setForceDisassembly",
 				"title": "Set Force Disassembly"
 			},
 			{
-				"category": "amiga",
+				"category": "Amiga",
 				"command": "amiga.initProject",
-				"title": "Init Amiga Project"
+				"title": "Init Project"
 			},
 			{
-				"category": "amiga",
+				"category": "Amiga",
 				"command": "amiga.startProfile",
-				"title": "Profile"
+				"title": "Start Frame Profiler"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.terminal",
+				"title": "Open Terminal"
 			}
 		],
 		"languages": [

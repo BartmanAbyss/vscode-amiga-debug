@@ -24,7 +24,8 @@ This extension will help you to quickly develop demos, intros, games, etc. for t
 - WinUAE warp-mode control from your Amiga project
 
 ## How-to-use
-- `amiga: View Memory`, `amiga: Set Force Disassembly`, `amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
+- `Amiga: View Memory`, `Amiga: Set Force Disassembly`, `Amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
+- Use the command `Amiga: Open Terminal` to open a shell with the environment set to use the included tools like `elf2hunk`, `gcc`, `gnumake` etc. (e.g. `gnumake clean`)
 - WinUAE: 
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
