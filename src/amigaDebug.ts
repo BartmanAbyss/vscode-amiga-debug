@@ -297,7 +297,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
-		console.log(command);
 		switch (command) {
 			case 'set-force-disassembly':
 				response.body = { success: true };

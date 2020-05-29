@@ -979,7 +979,7 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				break;
 			}
 
-			D(bug("\tHunk #%d, %s, lsize=%d\n", hh[i]->hunk, names[hh[i]->type - HUNK_CODE], (int)(hh[i]->size + 4) / 4));
+			D(bug("\tHunk #%d, %s, lsize=%d %s%s\n", hh[i]->hunk, names[hh[i]->type - HUNK_CODE], (int)(hh[i]->size + 4) / 4, (count & HUNKF_CHIP) ? "HUNKF_CHIP " : "", (count & HUNKF_FAST) ? "HUNKF_FAST" : ""));
 			wlong(hunk_fd, count);
 
 			if((count & HUNKF_MEMFLAGS) == HUNKF_MEMFLAGS)

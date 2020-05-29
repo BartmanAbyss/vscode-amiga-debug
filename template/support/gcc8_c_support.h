@@ -4,6 +4,8 @@
 	extern "C" {
 #endif
 
+#define offsetof(st, m) __builtin_offsetof(st, m)
+
 void *memcpy (void *, const void *, unsigned long);
 void *memset (void *, int, unsigned long);
 void *memmove (void *, const void *, unsigned long);
@@ -17,8 +19,10 @@ void debug_rect(short left, short top, short right, short bottom, unsigned int c
 void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color);
 void debug_text(short left, short top, const char* text, unsigned int color);
 
-#define INCBIN(name, file) \
-    __asm__(".pushsection .rodata\n" \
+#define INCBIN(name, file) INCBIN_SECTION(name, file, ".rodata", "")
+#define INCBIN_CHIP(name, file) INCBIN_SECTION(name, file, ".INCBIN.MEMF_CHIP", "aw")
+#define INCBIN_SECTION(name, file, section, flags) \
+    __asm__(".pushsection " #section ", " #flags "\n" \
             ".global incbin_" #name "_start\n" \
             ".type incbin_" #name "_start, @object\n" \
             ".balign 2\n" \
