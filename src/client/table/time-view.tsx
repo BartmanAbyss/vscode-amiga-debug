@@ -64,13 +64,13 @@ export const TimeView: FunctionComponent<{
 	const sorted = useMemo(
 		() => {
 			const filterFn = compileFilter(filter);
-			const getDefaultFilterTextTable = (node: IGraphNode) => [
+			const getFilterText = (node: IGraphNode) => [
 				node.callFrame.functionName,
 				node.callFrame.url,
 				node.src?.source.path ?? '',
 			];
 
-			const filtered = data.filter((d) => getDefaultFilterTextTable(d).some(filterFn));
+			const filtered = data.filter((d) => getFilterText(d).some(filterFn));
 			return (sortFn ? filtered.slice().sort((a, b) => sortFn(b) - sortFn(a)) : filtered);
 		},
 		[data, filter, sortFn],

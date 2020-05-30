@@ -2,25 +2,25 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
+import { Fragment, FunctionComponent, h } from 'preact';
 import { createPortal } from 'preact/compat';
-import { IProfileModel, ILocation, Category } from '../model';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { binarySearch } from '../array';
+import { dataName, DisplayUnit, formatValue, getLocationText } from '../display';
 import { dmaTypes } from '../dma';
-import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
-import { useWindowSize } from '../useWindowSize';
-import styles from './flame-graph.css';
-import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
-import { classes } from '../util';
-import { VsCodeApi, IVscodeApi } from '../vscodeApi';
+import { compileFilter, IRichFilter } from '../filter';
+import { MiddleOut } from '../middleOutCompression';
+import { Category, ILocation, IProfileModel } from '../model';
 import { IOpenDocumentMessage } from '../types';
 import { useCssVariables } from '../useCssVariables';
 import { useLazyEffect } from '../useLazyEffect';
+import { useWindowSize } from '../useWindowSize';
+import { classes } from '../util';
+import { IVscodeApi, VsCodeApi } from '../vscodeApi';
+import styles from './flame-graph.css';
+import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
-import { MiddleOut } from '../middleOutCompression';
-import { binarySearch } from '../array';
 import { setupGl } from './webgl/boxes';
-import { IColumn, IColumnLocation, LocationAccessor } from './stacks';
-import { IRichFilter, compileFilter } from '../filter';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -43,9 +43,11 @@ function hash(n: number) {
 }
 
 const pickColor = (location: IColumnLocation): number => {
-	if (location.category === Category.System) {
+	if (location.category === Category.System)
 		return -1;
-	}
+
+	if(location.filtered === false)
+		return 0xff404040;
 
 	const colorHash = hash(location.graphId);
 	const r = (0.9 * 255) | 0;
@@ -146,6 +148,7 @@ const buildDmaBoxes = (model: IProfileModel) => {
 				text,
 				color,
 				loc: {
+					filtered: true,
 					graphId: 100000 + i,
 					selfTime: -1,
 					aggregateTime: -1,
@@ -253,12 +256,19 @@ export const FlameGraph: FunctionComponent<{
 		() => {
 			console.log("columns");
 			const filterFn = compileFilter(filter);
-			const getDefaultFilterTextFlame = (node: LocationAccessor) => [
+			const getFilterText = (node: ILocation) => [
 				node.callFrame.functionName,
 				node.callFrame.url,
 				node.src?.source.path ?? '',
 			];
-			const filtered = LocationAccessor.getFilteredColumns(data, LocationAccessor.rootAccessors(data).filter((d) => getDefaultFilterTextFlame(d).some(filterFn)));
+			const filtered = [...data];
+			for(const column of filtered) {
+				for(const row of column.rows) {
+					if(typeof row === 'number')
+						continue;
+					row.filtered = getFilterText(row).some(filterFn);
+				}
+			}
 			return filtered;
 		},
 		[data, filter]
@@ -381,6 +391,7 @@ export const FlameGraph: FunctionComponent<{
 				box.y1 - bounds.y + 5,
 				width - 6,
 				Constants.BoxHeight,
+				box.loc.filtered ? 1.0 : 0.5
 			);
 		};
 
@@ -405,6 +416,7 @@ export const FlameGraph: FunctionComponent<{
 		webContext.font = webContext.textAlign = 'right';
 		webContext.strokeStyle = cssVariables['editorRuler-foreground'];
 		webContext.lineWidth = 1 / dpr;
+		webContext.globalAlpha = 1.0;
 
 		const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
 		const spacing = canvasSize.width / labels;

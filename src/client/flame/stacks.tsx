@@ -12,12 +12,13 @@ const enum Constants {
 
 export interface IColumnLocation extends ILocation {
 	graphId: number; //. unique ID of the location in the graph
+	filtered: boolean;
 }
 
 export interface IColumn {
 	x1: number;
 	x2: number;
-	rows: (IColumnLocation | number)[];
+	rows: Array<IColumnLocation | number>;
 }
 
 /**
@@ -147,6 +148,7 @@ export const buildColumns = (model: IProfileModel) => {
 			{
 				...model.locations[root.locationId],
 				graphId: graphIdCounter++,
+				filtered: true,
 				selfTime,
 				aggregateTime: 0,
 			},
@@ -157,6 +159,7 @@ export const buildColumns = (model: IProfileModel) => {
 			rows.unshift({
 				...model.locations[model.nodes[id].locationId],
 				graphId: graphIdCounter++,
+				filtered: true,
 				selfTime: 0,
 				aggregateTime: selfTime,
 			});
