@@ -141,6 +141,11 @@
 							"program"
 						],
 						"properties": {
+							"config": {
+								"type": "string",
+								"description": "Amiga model (A500, A1200, A4000)",
+								"default": "A500"
+							},
 							"program": {
 								"type": "string",
 								"description": "Absolute path to a executable file.",

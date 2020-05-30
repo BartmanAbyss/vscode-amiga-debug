@@ -10,6 +10,9 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - added command `Amiga: Open Terminal`
 - fixed disassembly
 - improved `INCBIN` macro to correctly report binary size to the size profiler.
+- added `INCBIN_CHIP` macro to put binaries directly into chip mem.
+- better demo project, shows copper, bitplanes
+- support for different Amiga models (A500, A1200, A4000) in `.vscode/launch.json`
 
 ## 0.9.0
 - updated to GCC 10.1, binutils 2.34 and GDB 9.1

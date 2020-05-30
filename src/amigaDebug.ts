@@ -16,8 +16,9 @@ import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, S
 import { hexFormat } from './utils';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-	program: string; 	// An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
-	kickstart?: string;  // An absolute path to a Kickstart ROM; if not specified, AROS will be used
+	config?: string; // A500 (default), A1200, etc.
+	program: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
+	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 }
 
 class ExtendedVariable {
@@ -159,8 +160,21 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['use_gui'] = 'no';
 		config['win32.start_not_captured'] = 'yes';
 		config['win32.nonotificationicon'] = 'yes'; // tray icons remain after killing WinUAE, so just disable altogether
-		config['boot_rom_uae'] = 'min'; // so we can control warp mode from within amiga executables
-		config['quickstart'] = 'a500,1'; // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+		config['boot_rom_uae'] = 'min'; // so we can control warp mode, KPrintF, debug overlay from within amiga executables
+
+		switch(args.config?.toLowerCase()) {
+		case 'a500':
+		default:
+			config['quickstart'] = 'a500,1'; // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+			break;
+		case 'a1200':
+			config['quickstart'] = 'a1200,0'; // 68020, 2MB Chip
+			break;
+		case 'a4000':
+			config['quickstart'] = 'a4000,0'; // 68030, 68882, 2MB Chip 8MB FAST
+			break;
+		}
+
 		config['debugging_features'] = 'gdbserver';
 		delete config['filesystem2'];
 		delete config['uaehf0'];
@@ -194,34 +208,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return;
 		}
 
+		// all WinUAE options now in config file
 		const winuaePath = path.join(binPath, "winuae-gdb.exe");
-		const winuaeArgs = [
-			'-portable',
-/*			'-s', 'use_gui=no',
-			'-s', 'win32.start_not_captured=yes',
-			'-s', 'boot_rom_uae=min', // so we can control warp mode from within amiga executables
-			'-s', 'quickstart=a500,1', // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
-			'-s', 'input.config=1',
-			'-s', 'input.1.keyboard.0.friendlyname=WinUAE keyboard',
-			'-s', 'input.1.keyboard.0.name=NULLKEYBOARD',
-			'-s', 'input.1.keyboard.0.empty=false',
-			'-s', 'input.1.keyboard.0.disabled=false',
-			'-s', 'input.1.keyboard.0.button.41.GRAVE=SPC_SINGLESTEP.0',
-			'-s', 'input.1.keyboard.0.button.201.PREV=SPC_WARP.0',
-			'-s', 'cpu_cycle_exact=true',
-			'-s', 'cpu_memory_cycle_exact=true',
-			'-s', 'blitter_cycle_exact=true',
-			'-s', 'cycle_exact=true',
-			'-s', 'debugging_features=gdbserver',
-			'-s', 'filesystem=rw,dh0:' + dh0Path */
-		];
-/*		if(args.kickstart !== undefined) {
-			if (!fs.existsSync(args.kickstart)) {
-				this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
-				return;
-			}
-			winuaeArgs.push('-s', 'kickstart_rom_file=' + args.kickstart);
-		}*/
+		const winuaeArgs = [ '-portable' ];
 
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");

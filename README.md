@@ -3,7 +3,7 @@
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 10.1 with the bundled WinUAE.**
 
 ## Overview
-This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
+This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
 
 ## Quick-start
 0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
@@ -19,10 +19,10 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - IntelliSense
 - Full source-level and assembly-level debugging with callstack, breakpoints, watches, registers, memory view with GDB-enabled WinUAE
 - Fully AmigaOS compatible via included .h files
-- `INCBIN` support
+- `INCBIN`, `INCBIN_CHIP` support
 - Output to debug console from WinUAE
 - WinUAE warp-launch (turbo-boot)
-- WinUAE warp-mode control from your Amiga project
+- WinUAE warp-mode control from your Amiga project (speed up precalc during development)
 - WinUAE debug overlay, full control from your Amiga project
 - Frame Profiler: function-level + DMA cycles profiling
 - Size Profiler: profile the size of your executable by functions, data and references
@@ -37,6 +37,12 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - WinUAE: 
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
+
+## Supported Amiga Models
+- Possible values of `"config"` in `.vscode/launch.json`:
+  - `a500`: KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+  - `a1200`: 68020, 2MB Chip
+  - `a4000`: 68030, 68882, 2MB Chip 8MB FAST
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
