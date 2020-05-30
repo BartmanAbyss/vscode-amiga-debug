@@ -40,15 +40,15 @@ This fully self-contained extension will help you to quickly develop demos, intr
 
 ## Supported Amiga Models
 - Possible values of `"config"` in `.vscode/launch.json`:
-  - `a500`: KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow; needs Kickstart 1.3 ROM in `kickstart`
-  - `a1200`: 68020, 2MB Chip; needs Kickstart 3.1 ROM in `kickstart`
-  - `a4000`: 68030, 68882, 2MB Chip 8MB FAST; needs Kickstart 3.1 ROM in `kickstart`
+  - `"a500"`: KS 1.3, ECS Agnus, 0.5MB Chip + 0.5MB Slow; needs Kickstart 1.3 ROM in `"kickstart"`
+  - `"a1200"`: 68020, 2MB Chip; needs Kickstart 3.1 ROM in `"kickstart"`
+  - `"a4000"`: 68030, 68882, 2MB Chip, 8MB FAST; needs Kickstart 3.1 ROM in `"kickstart"`
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
 - Testing by [Pink/Abyss](https://soundcloud.com/pink_abyss)
 
-## Already Used in these productions
+## Already used in these productions
 - [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
 - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
 - [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
@@ -162,6 +162,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* better filtering in profiler
 * finish package.json. Configs, settings, ...
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step

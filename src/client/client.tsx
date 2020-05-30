@@ -29,13 +29,6 @@ for(const col of columns) {
 //const graph = createBottomUpGraph(MODEL);
 const graph = createTopDownGraph(MODEL);
 
-const FlameGraphWrapper: FunctionComponent<{ data: ReadonlyArray<LocationAccessor>, displayUnit: DisplayUnit }> = ({
-	data, displayUnit
-}) => {
-	const filtered = useMemo(() => LocationAccessor.getFilteredColumns(columns, data), [data]);
-	return <FlameGraph model={MODEL} columns={filtered} displayUnit={displayUnit} />;
-};
-
 const CpuProfileLayout = cpuProfileLayoutFactory();
 
 const container = document.createElement('div');
@@ -46,10 +39,11 @@ document.body.appendChild(container);
 render(
 	<Fragment>
 		<CpuProfileLayout
+			model={MODEL}
 			displayUnit={MODEL.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes}
 
 			dataFlame={{
-				data: LocationAccessor.rootAccessors(columns),
+				data: columns,
 				getChildren: 'return node.children',
 				properties: {
 					function: 'node.callFrame.functionName',
@@ -61,12 +55,7 @@ render(
 					id: 'node.id',
 				},
 			}}
-			getDefaultFilterTextFlame={(node) => [
-				node.callFrame.functionName,
-				node.callFrame.url,
-				node.src?.source.path ?? '',
-			]}
-			bodyFlame={FlameGraphWrapper}
+			bodyFlame={FlameGraph}
 			flameHeight={maxY}
 
 			dataTable={{
@@ -82,11 +71,6 @@ render(
 				},
 				getChildren: 'return Object.values(node.children)',
 			}}
-			getDefaultFilterTextTable={(node) => [
-				node.callFrame.functionName,
-				node.callFrame.url,
-				node.src?.source.path ?? '',
-			]}
 			bodyTable={TimeView}
 		/>
 	</Fragment>,

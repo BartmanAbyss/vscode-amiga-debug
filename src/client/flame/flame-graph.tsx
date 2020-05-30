@@ -5,7 +5,7 @@
 import { h, FunctionComponent, Fragment } from 'preact';
 import { createPortal } from 'preact/compat';
 import { IProfileModel, ILocation, Category } from '../model';
-import { dmaTypes } from '../dma'
+import { dmaTypes } from '../dma';
 import { useRef, useMemo, useEffect, useState, useCallback, useContext } from 'preact/hooks';
 import { useWindowSize } from '../useWindowSize';
 import styles from './flame-graph.css';
@@ -19,7 +19,8 @@ import { TextCache } from './textCache';
 import { MiddleOut } from '../middleOutCompression';
 import { binarySearch } from '../array';
 import { setupGl } from './webgl/boxes';
-import { IColumn, IColumnLocation } from './stacks';
+import { IColumn, IColumnLocation, LocationAccessor } from './stacks';
+import { IRichFilter, compileFilter } from '../filter';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -230,10 +231,11 @@ export interface ICanvasSize {
 const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
-	columns: ReadonlyArray<IColumn>;
 	model: IProfileModel;
+	data: ReadonlyArray<IColumn>;
+	filter: IRichFilter;
 	displayUnit: DisplayUnit;
-}> = ({ columns, model, displayUnit }) => {
+}> = ({ model, data, filter, displayUnit }) => {
 	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
@@ -246,6 +248,21 @@ export const FlameGraph: FunctionComponent<{
 	const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(undefined);
 	const [drag, setDrag] = useState<IDrag | undefined>(undefined);
 	const cssVariables = useCssVariables();
+
+	const columns = useMemo(
+		() => {
+			console.log("columns");
+			const filterFn = compileFilter(filter);
+			const getDefaultFilterTextFlame = (node: LocationAccessor) => [
+				node.callFrame.functionName,
+				node.callFrame.url,
+				node.src?.source.path ?? '',
+			];
+			const filtered = LocationAccessor.getFilteredColumns(data, LocationAccessor.rootAccessors(data).filter((d) => getDefaultFilterTextFlame(d).some(filterFn)));
+			return filtered;
+		},
+		[data, filter]
+	);
 
 	const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
 	const dmaBoxes = useMemo(() => buildDmaBoxes(model), [model]);
@@ -554,7 +571,7 @@ export const FlameGraph: FunctionComponent<{
 				return dmaBoxes[box];
 			}
 
-			const col = Math.abs(binarySearch(columns, c => c.x2 - x)) - 1;
+			const col = Math.abs(binarySearch(columns, (c) => c.x2 - x)) - 1;
 			if (!columns[col] || columns[col].x1 > x) {
 				return;
 			}
@@ -727,7 +744,7 @@ export const FlameGraph: FunctionComponent<{
 			return;
 		}
 
-		const firstCol = Math.abs(binarySearch(columns, c => c.x2 - bounds.minX));
+		const firstCol = Math.abs(binarySearch(columns, (c) => c.x2 - bounds.minX));
 		const firstBox = getBoxInRowColumn(columns, rawBoxes.boxById, firstCol, 0);
 		if (firstBox) {
 			setFocused(firstBox);

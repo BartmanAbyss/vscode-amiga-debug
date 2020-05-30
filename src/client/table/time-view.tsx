@@ -23,6 +23,7 @@ import * as ChevronRight from '../icons/chevron-right.svg';
 import { Icon } from '../icons';
 //import VirtualList from 'preact-virtual-list';
 import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
+import { IRichFilter, compileFilter } from '../filter';
 
 type SortFn = (node: ILocation) => number;
 
@@ -42,8 +43,9 @@ const getGlobalUniqueId = (node: IGraphNode) => {
 
 export const TimeView: FunctionComponent<{
 	data: ReadonlyArray<IGraphNode>;
+	filter: IRichFilter;
 	displayUnit: DisplayUnit;
-}> = ({ data, displayUnit }) => {
+}> = ({ data, filter, displayUnit }) => {
 	const listRef = useRef<{ base: HTMLElement }>();
 	const [sortFn, setSort] = useState<SortFn | undefined>(() => aggTime);
 	const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
@@ -60,8 +62,18 @@ export const TimeView: FunctionComponent<{
 
 	// 1. Top level sorted items
 	const sorted = useMemo(
-		() => (sortFn ? data.slice().sort((a, b) => sortFn(b) - sortFn(a)) : data),
-		[data, sortFn],
+		() => {
+			const filterFn = compileFilter(filter);
+			const getDefaultFilterTextTable = (node: IGraphNode) => [
+				node.callFrame.functionName,
+				node.callFrame.url,
+				node.src?.source.path ?? '',
+			];
+
+			const filtered = data.filter((d) => getDefaultFilterTextTable(d).some(filterFn));
+			return (sortFn ? filtered.slice().sort((a, b) => sortFn(b) - sortFn(a)) : filtered);
+		},
+		[data, filter, sortFn],
 	);
 
 	// 2. Expand nested child nodes
@@ -185,7 +197,6 @@ export const TimeView: FunctionComponent<{
 		overscanCount={10}
 	/>
 */
-
 
 	return (
 		<Fragment>
