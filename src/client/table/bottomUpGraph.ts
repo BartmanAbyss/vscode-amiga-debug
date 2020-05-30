@@ -27,6 +27,7 @@ export class BottomUpNode implements IGraphNode {
   public selfTime = 0;
   public ticks = 0;
   public childrenSize = 0;
+	public filtered = true;
 
   public get id() {
     return this.location.id;
@@ -62,6 +63,7 @@ export class BottomUpNode implements IGraphNode {
       id: this.id,
       category: this.category,
       callFrame: this.callFrame,
+      filtered: this.filtered,
     };
   }
 }

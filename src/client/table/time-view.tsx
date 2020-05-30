@@ -50,6 +50,7 @@ export const TimeView: FunctionComponent<{
 	const [sortFn, setSort] = useState<SortFn | undefined>(() => aggTime);
 	const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
 	const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
+	const [filterExpanded, setFilterExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
 
 	const getSortedChildren = (node: IGraphNode) => {
 		const children = Object.values(node.children);
@@ -60,19 +61,40 @@ export const TimeView: FunctionComponent<{
 		return children;
 	};
 
+	// filter
+	useMemo(() => {
+		const filterFn = compileFilter(filter);
+		const getFilterText = (node: IGraphNode) => [
+			node.callFrame.functionName,
+			node.callFrame.url,
+			node.src?.source.path ?? '',
+		];
+
+		const newExpanded = new Set([...expanded]);
+
+		const filterNode = (node: IGraphNode) => {
+			node.filtered = getFilterText(node).some(filterFn);
+			if(node.filtered) {
+				for(let p = node.parent; p; p = p.parent) {
+					if(!p.filtered)
+						newExpanded.add(p);
+				}
+			}
+			for(const c of Object.values(node.children)) {
+				filterNode(c);
+			}
+		};
+
+		for(const c of data) {
+			filterNode(c);
+		}
+
+		setFilterExpanded(newExpanded);
+	}, [data, filter]);
+
 	// 1. Top level sorted items
 	const sorted = useMemo(
-		() => {
-			const filterFn = compileFilter(filter);
-			const getFilterText = (node: IGraphNode) => [
-				node.callFrame.functionName,
-				node.callFrame.url,
-				node.src?.source.path ?? '',
-			];
-
-			const filtered = data.filter((d) => getFilterText(d).some(filterFn));
-			return (sortFn ? filtered.slice().sort((a, b) => sortFn(b) - sortFn(a)) : filtered);
-		},
+		() => (sortFn ? data.slice().sort((a, b) => sortFn(b) - sortFn(a)) : data),
 		[data, filter, sortFn],
 	);
 
@@ -81,7 +103,7 @@ export const TimeView: FunctionComponent<{
 		const output: NodeAtDepth[] = sorted.map((node) => ({ node, position: 1, depth: 0 }));
 		for (let i = 0; i < output.length; i++) {
 			const { node, depth } = output[i];
-			if (expanded.has(node)) {
+			if (expanded.has(node) || filterExpanded.has(node)) {
 				const toAdd = getSortedChildren(node).map((node, i) => ({
 					node,
 					position: i + 1,
@@ -93,7 +115,7 @@ export const TimeView: FunctionComponent<{
 		}
 
 		return output;
-	}, [sorted, expanded, sortFn]);
+	}, [sorted, expanded, filterExpanded, sortFn]);
 
 	const onKeyDown = useCallback(
 		(evt: KeyboardEvent, node: IGraphNode) => {
@@ -202,7 +224,7 @@ export const TimeView: FunctionComponent<{
 		<Fragment>
 			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} />
 			<div className={styles.rows}>
-				{rendered.map((row) => (
+				{rendered.filter((n) => n.node.filtered || expanded.has(n.node) || filterExpanded.has(n.node)).map((row) => (
 					<TimeViewRow
 						onKeyDown={onKeyDown}
 						node={row.node}
@@ -318,9 +340,16 @@ const TimeViewRow: FunctionComponent<{
 		</span>
 	);
 
+	let style = {};
+	if(!node.filtered)
+		style = {
+			opacity: 0.5
+		};
+
 	return (
 		<div
 			className={styles.row}
+			style={style}
 			data-row-id={getGlobalUniqueId(node)}
 			onKeyDown={onKeyDown}
 			onFocus={onFocus}
@@ -340,10 +369,7 @@ const TimeViewRow: FunctionComponent<{
 				{formatValue(node.aggregateTime, root.aggregateTime, displayUnit)}
 			</div>
 			{!location ? (
-				<div
-					className={styles.location}
-					style={{ marginLeft: depth * 15 }}
-				>
+				<div className={styles.location} style={{ marginLeft: depth * 15 }}>
 					{expand} <span className={styles.fn} dangerouslySetInnerHTML={{__html: node.callFrame.functionName}}></span>
 				</div>
 			) : (

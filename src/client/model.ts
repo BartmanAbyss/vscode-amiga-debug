@@ -50,6 +50,7 @@ export interface IGraphNode extends ILocation {
 	children: { [id: number]: IGraphNode };
 	childrenSize: number;
 	parent?: IGraphNode;
+	filtered: boolean;
 }
 
 /**
