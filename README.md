@@ -10,7 +10,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 ![Size Profiler](screen_profiler_size.png)
 
 ## Quick-start
-0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
+0. Install the extension from the Visual Studio Code Marketplace
 1. Create a new empty project folder with `File > Open Folder...`
 2. From the command palette <kbd>Ctrl+Shift+P</kbd> select `Amiga: Init Project`
 3. Open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
@@ -168,8 +168,6 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
-* better filtering in profiler
-* finish package.json. Configs, settings, ...
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
