@@ -49,6 +49,7 @@ SYM (__mulsi3):
 	addl	d1, d0
 	rts
 	.cfi_endproc
+	.size __mulsi3, .-__mulsi3
 
 	.text
 	FUNC(__udivsi3)
@@ -101,6 +102,7 @@ SYM (__udivsi3):
 	.cfi_adjust_cfa_offset -4
 	rts
 	.cfi_endproc
+	.size __udivsi3, .-__udivsi3
 
 	.text
 	FUNC(__divsi3)
@@ -133,6 +135,7 @@ SYM (__divsi3):
 	.cfi_adjust_cfa_offset -4
 	rts
 	.cfi_endproc
+	.size __divsi3, .-__divsi3
 
 	.text
 	FUNC(__modsi3)
@@ -161,6 +164,7 @@ SYM (__modsi3):
 	movel	d1, d0
 	rts
 	.cfi_endproc
+	.size __modsi3, .-__modsi3
 
 	.text
 	FUNC(__umodsi3)
@@ -189,6 +193,7 @@ SYM (__umodsi3):
 	movel	d1, d0
 	rts
 	.cfi_endproc
+	.size __umodsi3, .-__umodsi3
 
 	
 	.text
@@ -205,6 +210,7 @@ SYM(KPutCharX):
 	.cfi_adjust_cfa_offset -4
     rts
 	.cfi_endproc
+	.size KPutCharX, .-KPutCharX
 
 	.text
 	FUNC(PutChar)
@@ -215,3 +221,4 @@ SYM(PutChar):
 	move.b d0, (a3)+
 	rts
 	.cfi_endproc
+	.size PutChar, .-PutChar

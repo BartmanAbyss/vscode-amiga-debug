@@ -675,10 +675,12 @@ int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkh
 		name = (const char *)((uintptr_t)hh[symtab->link]->data + s.name);
 		if(name[0] == '\0')
 			continue;
-		D(bug("\t0x%08x: %s\n", (int)s.value, name));
-		lsize = (strlen(name) + 4) / 4;
+		char name2[512];
+		snprintf(name2, sizeof(name2), "%s@%x", name, s.size);
+		D(bug("\t0x%08x: %s\n", (int)s.value, name2));
+		lsize = (strlen(name2) + 4) / 4;
 		wlong(hunk_fd, lsize);
-		err = write(hunk_fd, name, lsize * 4);
+		err = write(hunk_fd, name2, lsize * 4);
 		if(err < 0)
 			return 0;
 		wlong(hunk_fd, s.value);
