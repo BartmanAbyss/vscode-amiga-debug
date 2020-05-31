@@ -53,8 +53,7 @@ const pickColor = (location: IColumnLocation): number => {
 	const r = (0.9 * 255) | 0;
 	const g = ((colorHash & 255) / 2) | 0;
 	const b = (((colorHash >> 8) & 255) / 2.353) | 0;
-	// 0xAABBGGRR
-	const color = 0xff000000 | ((b & 255) << 16) | ((g & 255) << 8) | ((r & 255) << 0);
+	const color = 0xff000000 | ((b & 255) << 16) | ((g & 255) << 8) | ((r & 255) << 0); // 0xAABBGGRR
 	return color;
 };
 
@@ -293,7 +292,7 @@ export const FlameGraph: FunctionComponent<{
 			setupGl({
 				canvas: glCanvas.current,
 				focusColor: cssVariables.focusBorder,
-				boxes: [...rawBoxes.boxById.values()],
+				boxes: [...rawBoxes.boxById.values(), ...dmaBoxes],
 				scale: dpr,
 			}),
 		[glCanvas.current],

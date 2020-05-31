@@ -5,6 +5,10 @@
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
 
+![Debugger](screen_debug.png)
+![Frame Profiler](screen_profiler_frame.png)
+![Size Profiler](screen_profiler_size.png)
+
 ## Quick-start
 0. [Grab the latest release](https://github.com/BartmanAbyss/vscode-amiga-debug/releases) and follow installation instructions
 1. Create a new empty project folder with `File > Open Folder...`
@@ -27,6 +31,8 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - Frame Profiler: function-level + DMA cycles profiling
 - Size Profiler: profile the size of your executable by functions, data and references
 - Terminal window with access to the build tools
+
+
 
 ## How-to-use
 - `Amiga: View Memory`, `Amiga: Set Force Disassembly`, `Amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
