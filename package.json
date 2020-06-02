@@ -20,7 +20,7 @@
 		"onCommand:amiga.initProject",
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
-		"onCustomEditor:amiga.profile.table"
+		"onCustomEditor:amiga.profile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -108,12 +108,15 @@
 		],
 		"customEditors": [
 			{
-				"viewType": "amiga.profile.table",
+				"viewType": "amiga.profile",
 				"displayName": "Amiga Profile Visualizer",
 				"priority": "default",
 				"selector": [
 					{
 						"filenamePattern": "*.amigaprofile"
+					},
+					{
+						"filenamePattern": "*.shrinklerstats"
 					}
 				]
 			}

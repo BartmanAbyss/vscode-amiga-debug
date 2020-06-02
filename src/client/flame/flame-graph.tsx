@@ -918,8 +918,12 @@ const Tooltip: FunctionComponent<{
 						<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, model.duration, displayUnit)}</dd>
 						<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
 						<dd className={styles.time}>{formatValue(location.selfTime, model.duration, displayUnit)}</dd>
-						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
+						{location.aggregateTime > 0 && (
+							<Fragment>
+								<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
+								<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
+							</Fragment>
+						)}
 					</Fragment>
 				}
 			</dl>

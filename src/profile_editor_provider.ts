@@ -1,9 +1,10 @@
-import { Protocol as Cdp } from 'devtools-protocol';
+//import { Protocol as Cdp } from 'devtools-protocol';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { buildModel, ILocation, IProfileModel } from './client/model';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { LensCollection } from './lens_collection';
+import { profileShrinkler } from './backend/shrinkler';
 
 const decimalFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 2,
@@ -74,7 +75,11 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
-		const model = buildModel(JSON.parse(document.getText()));
+		let json = JSON.parse(document.getText());
+		if(json.hunks) {
+			json = profileShrinkler(json);
+		}
+		const model = buildModel(json);
 		const profile = JSON.parse(document.getText());
 		webviewPanel.webview.html = await bundlePage(webviewPanel.webview, path.join(this.context.extensionPath, 'dist'), {
 			//DOCUMENT: profile,

@@ -64,7 +64,7 @@ class AmigaDebugExtension {
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => { if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); } }),
-			vscode.window.registerCustomEditorProvider('amiga.profile.table', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
+			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
 
 			// debugger
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),

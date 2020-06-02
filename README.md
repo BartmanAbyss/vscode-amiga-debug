@@ -30,9 +30,8 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - WinUAE debug overlay, full control from your Amiga project
 - Frame Profiler: function-level + DMA cycles profiling
 - Size Profiler: profile the size of your executable by functions, data and references
+- Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (open `.shrinklerstats` files)
 - Terminal window with access to the build tools
-
-
 
 ## How-to-use
 - `Amiga: View Memory`, `Amiga: Set Force Disassembly`, `Amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
@@ -83,6 +82,9 @@ This extension contains binaries of:
   - Copyright (C) 2020 Free Software Foundation, Inc.
   - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
 - modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
+- modified [Shrinkler 4.6](https://github.com/BartmanAbyss/Shrinkler)
+  - Copyright 1999-2015 Aske Simon Christensen
+  - Modified 2020, Bartman/Abyss
 - modified elf2hunk (source included)
   - Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.
   - Modified 2018-2020, Bartman/Abyss
@@ -168,6 +170,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* show compression ratio in `.shrinklerstats` profile visualizer
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
