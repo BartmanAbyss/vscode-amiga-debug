@@ -108,7 +108,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 };
 
 const buildDmaBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.dmaRecords;
+	const dmaRecords = model.dmaArray;
 	if(dmaRecords === undefined)
 		return [];
 

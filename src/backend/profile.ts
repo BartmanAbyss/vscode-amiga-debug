@@ -212,18 +212,72 @@ export class UnwindTable {
 	}
 }
 
+/*
+struct dma_rec {
+    uae_u16 reg;
+    uae_u32 dat;
+    uae_u32 addr;
+    uae_u16 evt;
+    uae_s16 type;
+	uae_u16 extra;
+	uae_s8 intlev;
+};
+*/
+
+export interface DmaRecord {
+	reg?: number;
+	dat?: number;
+	addr?: number;
+	evt?: number;
+	type?: number;
+	extra?: number;
+	intlev?: number;
+}
+
 export class ProfileFile {
+	public chipmemSize: number;
+	public chipmem: Uint8Array;
+	public dmaRecords: DmaRecord[] = [];
 	public dmaArray: Uint8Array;
 	public profileArray: Uint32Array;
 
 	public static NR_DMA_REC_HPOS = 228;
 	public static NR_DMA_REC_VPOS = 313;
+	private static sizeofDmaRec = 20;
 
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
-		const dmaLen = ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS;
-		this.dmaArray = new Uint8Array(buffer.buffer, 0, dmaLen);
-		this.profileArray = new Uint32Array(buffer.buffer, dmaLen, (buffer.length - dmaLen) / Uint32Array.BYTES_PER_ELEMENT);
+		let bufferOffset = 0;
+		this.chipmemSize = (new Uint32Array(buffer.buffer, bufferOffset, 4))[0]; bufferOffset += 4;
+		this.chipmem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
+		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
+		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
+		if(dmaLen !== ProfileFile.sizeofDmaRec)
+			throw new Error("dmaCount mismatch");
+		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
+			throw new Error("dmaCount mismatch");
+		const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
+		this.dmaArray = new Uint8Array(dmaCount);
+		for(let i = 0; i < dmaCount; i++) {
+			const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
+			const dat = dmaBuffer.readUInt32LE(i * dmaLen + 4);
+			const addr = dmaBuffer.readUInt32LE(i * dmaLen + 8);
+			const evt = dmaBuffer.readUInt16LE(i * dmaLen + 12);
+			const type = dmaBuffer.readInt16LE(i * dmaLen + 14);
+			const extra = dmaBuffer.readUInt16LE(i * dmaLen + 16);
+			const intlev = dmaBuffer.readInt8(i * dmaLen + 18);
+
+			if(reg !== 0xffff) {
+				this.dmaRecords.push({
+					reg, dat, addr, evt, type, extra, intlev
+				});
+				this.dmaArray[i] = type | (extra << 4);
+			} else {
+				this.dmaRecords.push({});
+				this.dmaArray[i] = 0;
+			}
+		}
+		this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
 	}
 }
 
@@ -365,7 +419,7 @@ export class Profiler {
 			}
 		}
 
-		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), dmaRecords: Array.from(profileFile.dmaArray) };
+		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), dmaArray: Array.from(profileFile.dmaArray), chipMem: Buffer.from(profileFile.chipmem).toString('base64'), dmaRecords: profileFile.dmaRecords };
 		return JSON.stringify(out/*, null, 2*/);
 	}
 

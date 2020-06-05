@@ -67,7 +67,7 @@ export interface IProfileModel {
 	timeDeltas: ReadonlyArray<number>;
 	rootPath?: string;
 	duration: number;
-	dmaRecords?: number[]; // BARTO - see dma.ts
+	dmaArray?: number[]; // BARTO - see dma.ts
 }
 
 /**
@@ -92,17 +92,6 @@ const getBestLocation = (
 	profile: ICpuProfileRaw,
 	candidates: ReadonlyArray<ISourceLocation> = [],
 ) => {
-	if (!profile.$vscode?.rootPath) {
-		return candidates[0];
-	}
-
-	for (const candidate of candidates) {
-		const mapped = addRelativeDiskPath(profile.$vscode.rootPath, candidate);
-		if (mapped.relativePath) {
-			return mapped;
-		}
-	}
-
 	return candidates[0];
 };
 
@@ -205,7 +194,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			timeDeltas: profile.timeDeltas || [],
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
-			dmaRecords: profile.dmaRecords
+			dmaArray: profile.dmaArray
 		};
 	}
 
@@ -287,6 +276,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		timeDeltas: profile.timeDeltas || [],
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
-		dmaRecords: profile.dmaRecords
+		dmaArray: profile.dmaArray
 	};
 };

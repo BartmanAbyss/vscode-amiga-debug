@@ -4,6 +4,7 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from './location-mapping';
+import { DmaRecord } from '../backend/profile';
 
 export const enum Constants {
 	CurrentDataVersion = 1,
@@ -48,7 +49,9 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	$vscode?: IJsDebugAnnotations;
 	nodes: IProfileNode[];
-	dmaRecords?: number[]; // BARTO
+	dmaArray?: number[]; // BARTO
+	chipMem?: string; // base64 encoded binary data
+	dmaRecords?: DmaRecord[]; // base64 encoded binary data
 }
 
 /**

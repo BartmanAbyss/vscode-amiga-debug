@@ -15,7 +15,7 @@ import { buildColumns, LocationAccessor } from './flame/stacks';
 import { DisplayUnit } from './display';
 
 declare const MODEL: IProfileModel;
-if(MODEL.dmaRecords)
+if(MODEL.dmaArray)
 	MODEL.duration = Math.max(7_093_790 / 50, MODEL.duration); // DMA TEST
 const columns = buildColumns(MODEL);
 
@@ -40,7 +40,7 @@ render(
 	<Fragment>
 		<CpuProfileLayout
 			model={MODEL}
-			displayUnit={MODEL.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes}
+			displayUnit={MODEL.dmaArray ? DisplayUnit.PercentFrame : DisplayUnit.Bytes}
 
 			dataFlame={{
 				data: columns,
