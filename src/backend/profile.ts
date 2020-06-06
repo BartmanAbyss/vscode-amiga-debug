@@ -236,9 +236,8 @@ export interface DmaRecord {
 
 export class ProfileFile {
 	public chipmemSize: number;
-	public chipmem: Uint8Array;
+	public chipMem: Uint8Array;
 	public dmaRecords: DmaRecord[] = [];
-	public dmaArray: Uint8Array;
 	public profileArray: Uint32Array;
 
 	public static NR_DMA_REC_HPOS = 228;
@@ -249,7 +248,7 @@ export class ProfileFile {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
 		this.chipmemSize = (new Uint32Array(buffer.buffer, bufferOffset, 4))[0]; bufferOffset += 4;
-		this.chipmem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
+		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
 		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
 		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
@@ -257,7 +256,6 @@ export class ProfileFile {
 		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
 			throw new Error("dmaCount mismatch");
 		const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
-		this.dmaArray = new Uint8Array(dmaCount);
 		for(let i = 0; i < dmaCount; i++) {
 			const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
 			const dat = dmaBuffer.readUInt32LE(i * dmaLen + 4);
@@ -271,10 +269,8 @@ export class ProfileFile {
 				this.dmaRecords.push({
 					reg, dat, addr, evt, type, extra, intlev
 				});
-				this.dmaArray[i] = type | (extra << 4);
 			} else {
 				this.dmaRecords.push({});
-				this.dmaArray[i] = 0;
 			}
 		}
 		this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
@@ -419,7 +415,7 @@ export class Profiler {
 			}
 		}
 
-		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), dmaArray: Array.from(profileFile.dmaArray), chipMem: Buffer.from(profileFile.chipmem).toString('base64'), dmaRecords: profileFile.dmaRecords };
+		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), chipMem: Buffer.from(profileFile.chipMem).toString('base64'), dmaRecords: profileFile.dmaRecords };
 		return JSON.stringify(out/*, null, 2*/);
 	}
 

@@ -49,9 +49,8 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	$vscode?: IJsDebugAnnotations;
 	nodes: IProfileNode[];
-	dmaArray?: number[]; // BARTO
 	chipMem?: string; // base64 encoded binary data
-	dmaRecords?: DmaRecord[]; // base64 encoded binary data
+	dmaRecords?: DmaRecord[];
 }
 
 /**

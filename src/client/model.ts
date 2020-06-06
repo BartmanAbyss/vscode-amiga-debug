@@ -9,6 +9,7 @@ import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation } from './types';
 import { maybeFileUrlToPath } from './path';
 import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
+import { DmaRecord } from '../backend/profile';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -67,7 +68,8 @@ export interface IProfileModel {
 	timeDeltas: ReadonlyArray<number>;
 	rootPath?: string;
 	duration: number;
-	dmaArray?: number[]; // BARTO - see dma.ts
+	chipMem?: string; // base64 encoded binary
+	dmaRecords?: DmaRecord[];
 }
 
 /**
@@ -194,7 +196,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			timeDeltas: profile.timeDeltas || [],
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
-			dmaArray: profile.dmaArray
+			chipMem: profile.chipMem,
+			dmaRecords: profile.dmaRecords
 		};
 	}
 
@@ -276,6 +279,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		timeDeltas: profile.timeDeltas || [],
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
-		dmaArray: profile.dmaArray
+		chipMem: profile.chipMem,
+		dmaRecords: profile.dmaRecords
 	};
 };

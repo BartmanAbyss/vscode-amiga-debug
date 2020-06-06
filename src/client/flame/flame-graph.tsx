@@ -108,7 +108,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 };
 
 const buildDmaBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.dmaArray;
+	const dmaRecords = model.dmaRecords;
 	if(dmaRecords === undefined)
 		return [];
 
@@ -122,9 +122,11 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
 			const dma = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			const dmaType = dma & 0xf;
-			const dmaSubtype = dma >>> 4;
-			if(dma === 0 || dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
+			if(dma.type === undefined)
+				continue;
+			const dmaType = dma.type;
+			const dmaSubtype = dma.extra;
+			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
 			let text = dmaTypes[dmaType].name;
@@ -253,7 +255,6 @@ export const FlameGraph: FunctionComponent<{
 
 	const columns = useMemo(
 		() => {
-			console.log("columns");
 			const filterFn = compileFilter(filter);
 			const getFilterText = (node: ILocation) => [
 				node.callFrame.functionName,
