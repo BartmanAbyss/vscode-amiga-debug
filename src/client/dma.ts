@@ -7,10 +7,26 @@ export interface DmaType {
 	subtypes: DmaSubtype[];
 }
 
+export const NR_DMA_REC_HPOS = 228;
+export const NR_DMA_REC_VPOS = 313;
+
+export namespace DmaEvents {
+	export const BLITIRQ = 1;
+	export const BLITNASTY = 2;
+	export const BLITSTARTFINISH = 4;
+	export const BPLFETCHUPDATE = 8;
+	export const COPPERWAKE = 16;
+	export const CPUIRQ = 32;
+	export const INTREQ = 64;
+	export const COPPERWANTED = 128;
+	export const NOONEGETS = 256;
+	export const SPECIAL = 32768;
+}
+
 export const dmaTypes: DmaType[] = [
-	{
+	{ // 0
 		name: "-",
-		subtypes: [],
+		subtypes: [ { color: 0xff222222 } ]
 	},
 	{ // DMARECORD_REFRESH 1
 		name: 'Refresh',

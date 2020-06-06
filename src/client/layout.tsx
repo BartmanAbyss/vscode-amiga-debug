@@ -17,6 +17,7 @@ import { Filter, IRichFilter } from './filter';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import './react-tabs.css';
 import { CopperVis } from './debugger/copper';
+import { BlitterVis } from './debugger/blitter';
 
 export interface IBodyProps<T> {
 	model: IProfileModel;
@@ -92,16 +93,20 @@ export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<BodyFlame model={model} data={dataFlame.data} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows}>
+			<Tabs defaultIndex={2} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows}>
 				<TabList>
 					<Tab>Profiler</Tab>
-					<Tab>Debugger</Tab>
+					<Tab>Copper</Tab>
+					<Tab>Blitter</Tab>
 				</TabList>
 				<TabPanel style={{ overflow: 'auto' }}>
 					<BodyTable model={model} data={dataTable.data} filter={filter} displayUnit={displayUnit2} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
 					<CopperVis model={model} />
+				</TabPanel>
+				<TabPanel style={{ overflow: 'auto' }}>
+					<BlitterVis model={model} />
 				</TabPanel>
 			</Tabs>
 		</Fragment>

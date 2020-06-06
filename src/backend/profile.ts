@@ -266,9 +266,9 @@ export class ProfileFile {
 			const intlev = dmaBuffer.readInt8(i * dmaLen + 18);
 
 			if(reg !== 0xffff) {
-				this.dmaRecords.push({
-					reg, dat, addr, evt, type, extra, intlev
-				});
+				this.dmaRecords.push({ reg, dat, addr, evt, type, extra, intlev });
+			} else if(evt) {
+				this.dmaRecords.push({ evt });
 			} else {
 				this.dmaRecords.push({});
 			}

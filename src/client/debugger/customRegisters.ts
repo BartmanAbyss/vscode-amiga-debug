@@ -4,11 +4,6 @@
  * Routines for labelling amiga internals.
  */
 
-export interface MemoryLabel {
-	name: string;
-	adr: number;
-}
-
 export interface CustomData {
 	name: string;
 	adr: number;
@@ -16,7 +11,7 @@ export interface CustomData {
 	special?: number;
 }
 
-export class MemoryLabelsRegistry {
+export class CustomRegisters {
 	/* This table was generated from the list of AGA chip names in
 	* AGA.guide available on aminet. It could well have errors in it. */
 
@@ -63,7 +58,7 @@ export class MemoryLabelsRegistry {
 		{ name: "BLTBPTL", adr: 0xdff04E, rw: 2, special: 2 }, /* Blitter pointer to source B (low 15 bits) */
 		{ name: "BLTAPTH", adr: 0xdff050, rw: 2, special: 1 }, /* Blitter pointer to source A (high 5 bits) */
 		{ name: "BLTAPTL", adr: 0xdff052, rw: 2, special: 2 }, /* Blitter pointer to source A (low 15 bits) */
-		{ name: "BPTDPTH", adr: 0xdff054, rw: 2, special: 1 }, /* Blitter pointer to destn  D (high 5 bits) */
+		{ name: "BLTDPTH", adr: 0xdff054, rw: 2, special: 1 }, /* Blitter pointer to destn  D (high 5 bits) */
 		{ name: "BLTDPTL", adr: 0xdff056, rw: 2, special: 2 }, /* Blitter pointer to destn  D (low 15 bits) */
 		{ name: "BLTSIZE", adr: 0xdff058, rw: 2, special: 0 }, /* Blitter start and size (win/width,height) */
 		{ name: "BLTCON0L", adr: 0xdff05A, rw: 2, special: 4 }, /* Blitter control 0 lower 8 bits (minterms) */
@@ -276,29 +271,29 @@ export class MemoryLabelsRegistry {
 		{ name: "RESERVED", adr: 0xdff1F8 }, /* Reserved (forever i guess!) */
 		{ name: "RESERVED", adr: 0xdff1Fa }, /* Reserved (forever i guess!) */
 		{ name: "FMODE", adr: 0xdff1FC, rw: 2 | 8 }, /* Fetch mode register */
-		{ name: "NO-OP(NULL)", adr: 0xdff1FE }   /*   Can also indicate last 2 or 3 refresh cycles or the restart of the COPPER after lockup.*/
+		{ name: "NO-OP", adr: 0xdff1FE }   /*   Can also indicate last 2 or 3 refresh cycles or the restart of the COPPER after lockup.*/
 	];
 
 	private static customMap: Map<string, CustomData> | undefined;
 	private static customMapByAddr: Map<number, CustomData> | undefined;
 
 	private static prepareCustomMap() {
-		if (MemoryLabelsRegistry.customMap === undefined) {
-			MemoryLabelsRegistry.customMap = new Map<string, CustomData>();
-			MemoryLabelsRegistry.customMapByAddr = new Map<number, CustomData>();
-			for (const d of MemoryLabelsRegistry.customData) {
-				MemoryLabelsRegistry.customMap.set(d.name, d);
-				MemoryLabelsRegistry.customMapByAddr.set(d.adr, d);
+		if (CustomRegisters.customMap === undefined) {
+			CustomRegisters.customMap = new Map<string, CustomData>();
+			CustomRegisters.customMapByAddr = new Map<number, CustomData>();
+			for (const d of CustomRegisters.customData) {
+				CustomRegisters.customMap.set(d.name, d);
+				CustomRegisters.customMapByAddr.set(d.adr, d);
 			}
 		}
 	}
 	public static getCustomAddress(name: string): number | undefined {
-		MemoryLabelsRegistry.prepareCustomMap();
-		if (MemoryLabelsRegistry.customMap) {
-			let d = MemoryLabelsRegistry.customMap.get(name);
+		CustomRegisters.prepareCustomMap();
+		if (CustomRegisters.customMap) {
+			let d = CustomRegisters.customMap.get(name);
 			if (d === undefined) {
 				// Maybe a double value - lets try with the high position
-				d = MemoryLabelsRegistry.customMap.get(name + 'H');
+				d = CustomRegisters.customMap.get(name + 'H');
 				if (d !== undefined) {
 					return d.adr;
 				}
@@ -309,9 +304,9 @@ export class MemoryLabelsRegistry {
 		return undefined;
 	}
 	public static getCustomName(address: number): string | undefined {
-		MemoryLabelsRegistry.prepareCustomMap();
-		if (MemoryLabelsRegistry.customMapByAddr) {
-			const d = MemoryLabelsRegistry.customMapByAddr.get(address);
+		CustomRegisters.prepareCustomMap();
+		if (CustomRegisters.customMapByAddr) {
+			const d = CustomRegisters.customMapByAddr.get(address);
 			if (d) {
 				return d.name;
 			}

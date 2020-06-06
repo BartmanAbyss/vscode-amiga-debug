@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText } from '../display';
-import { dmaTypes } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 import { Category, ILocation, IProfileModel } from '../model';
@@ -22,6 +22,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile';
+import { CustomRegisters } from '../debugger/customRegisters';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -114,20 +115,16 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	if(dmaRecords === undefined)
 		return [];
 
-	// from profile.ts
-	const NR_DMA_REC_HPOS = 228;
-	const NR_DMA_REC_VPOS = 313;
-
 	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dmaRecord.type === undefined)
+			if(dmaRecord.type === undefined && dmaRecord.evt === undefined)
 				continue;
-			const dmaType = dmaRecord.type;
-			const dmaSubtype = dmaRecord.extra;
+			const dmaType = dmaRecord.type || 0;
+			const dmaSubtype = dmaRecord.extra || 0;
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
@@ -888,23 +885,94 @@ const Tooltip: FunctionComponent<{
 	const label = getLocationText(location);
 	const isDma = dmaRecord !== undefined;
 
+	let dmaReg = '';
+	let dmaData = '';
+	let dmaEvents = '';
+	if(isDma) { // 42,172
+		if(dmaRecord.type !== undefined) {
+			dmaData = '$' + (dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
+			if(dmaRecord.reg & 0x1000) {
+				if(dmaRecord.reg & 0x0100)
+					dmaReg = 'Write';
+				else
+					dmaReg = 'Read';
+				if((dmaRecord.reg & 0xff) === 4) {
+					dmaReg += '.L';
+					dmaData = '$' + dmaRecord.dat.toString(16).padStart(8, '0');
+				}
+				if((dmaRecord.reg & 0xff) === 2)
+					dmaReg += '.W';
+				if((dmaRecord.reg & 0xff) === 1) {
+					dmaReg += '.B';
+					dmaData = '$' + (dmaRecord.dat & 0xff).toString(16).padStart(2, '0');
+				}
+			} else {
+				dmaReg = CustomRegisters.getCustomName(0xdff000 + dmaRecord.reg) + ' ($' + dmaRecord.reg.toString(16).padStart(3, '0') + ')';
+			}
+		}
+		if(dmaRecord.evt) {
+			const events: string[] = [];
+
+			if(dmaRecord.evt & DmaEvents.BLITNASTY)
+				events.push("Blitter Nasty");
+			if(dmaRecord.evt & DmaEvents.BLITSTARTFINISH)
+				events.push("Blitter Start/Finish");
+			if(dmaRecord.evt & DmaEvents.BLITIRQ)
+				events.push("Blitter IRQ");
+			if(dmaRecord.evt & DmaEvents.BPLFETCHUPDATE)
+				events.push("Bitplane Fetch Update");
+			if(dmaRecord.evt & DmaEvents.COPPERWAKE)
+				events.push("Copper Wake");
+			if(dmaRecord.evt & DmaEvents.NOONEGETS)
+				events.push("Copper can't read");
+			else if(dmaRecord.evt & DmaEvents.COPPERWANTED)
+				events.push("Copper can't read");
+			if(dmaRecord.evt & DmaEvents.CPUIRQ)
+				events.push("CPU IRQ");
+			if(dmaRecord.evt & DmaEvents.INTREQ)
+				events.push("INTREQ");
+			if(dmaRecord.evt & DmaEvents.SPECIAL)
+				events.push("Special");
+
+			dmaEvents = events.join(', ');
+		}
+	}
+
 	const file = label?.split(/\\|\//g).pop();
 	return (
 		<div
 			className={styles.tooltip}
 			aria-live="polite"
 			aria-atomic={true}
-			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '200px' : '400px' }}
+			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '300px' : '400px' }}
 		>
 			<dl>
 				{isDma
 				? <Fragment>
 					<dt>DMA Request</dt>
 					<dd className={styles.function}>{location.callFrame.functionName}</dd>
-					{dmaRecord.addr !== 0xffffffff && (
+					{dmaRecord.addr !== undefined && dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>${dmaRecord.addr.toString(16)}</dd>
+							<dd className={styles.time}>${(dmaRecord.addr & 0x00ffffff).toString(16).padStart(6, '0')}</dd>
+						</Fragment>
+					)}
+					{dmaReg && (
+						<Fragment>
+							<dt className={styles.time}>Register</dt>
+							<dd className={styles.time}>{dmaReg}</dd>
+						</Fragment>
+					)}
+					{dmaData && (
+						<Fragment>
+							<dt className={styles.time}>Data</dt>
+							<dd className={styles.time}>{dmaData}</dd>
+						</Fragment>
+					)}
+					{dmaEvents && (
+						<Fragment>
+							<dt className={styles.time}>Events</dt>
+							<dd className={styles.time}>{dmaEvents}</dd>
 						</Fragment>
 					)}
 					<dt className={styles.time}>Line</dt>

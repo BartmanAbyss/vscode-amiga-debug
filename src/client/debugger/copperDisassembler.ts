@@ -1,5 +1,5 @@
 //import { StringUtils } from "./stringUtils";
-import { MemoryLabelsRegistry } from "./customMemoryAddresses";
+import { CustomRegisters } from "./customRegisters";
 
 /** Type of copper instruction */
 export enum CopperInstructionType {
@@ -57,7 +57,7 @@ export class CopperMove extends CopperInstruction {
 		this.DA = first & 0x01fe;
 		this.RD = second;
 		const register = 0xdff000 + this.DA;
-		this.label = MemoryLabelsRegistry.getCustomName(register);
+		this.label = CustomRegisters.getCustomName(register);
 	}
 	public toString(): string {
 		let l: string;

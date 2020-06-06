@@ -27,7 +27,8 @@
 		"triple-equals": true,
 		"no-console": false,
 		"ordered-imports": false,
-		"ban-types": false
+		"ban-types": false,
+		"no-namespace": false
 	},
 	"defaultSeverity": "warning"
 }
