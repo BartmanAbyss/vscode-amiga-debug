@@ -93,7 +93,7 @@ export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<BodyFlame model={model} data={dataFlame.data} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<Tabs defaultIndex={2} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows}>
+			<Tabs defaultIndex={2} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>
