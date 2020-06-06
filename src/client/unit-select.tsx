@@ -4,7 +4,7 @@
 
 import { FunctionComponent, h } from 'preact';
 import { useCallback } from 'preact/hooks';
-import styles from './unit-select.css';
+import styles from './unit-select.module.css';
 import { DisplayUnit } from './display';
 
 export const UnitSelect: FunctionComponent<{

@@ -4,7 +4,7 @@
 
 import { FunctionComponent, h } from 'preact';
 import { useCallback } from 'preact/hooks';
-import styles from './toggle-button.css';
+import styles from './toggle-button.module.css';
 
 export const ToggleButton: FunctionComponent<{
   icon: string;

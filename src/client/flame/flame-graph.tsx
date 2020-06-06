@@ -17,10 +17,11 @@ import { useLazyEffect } from '../useLazyEffect';
 import { useWindowSize } from '../useWindowSize';
 import { classes } from '../util';
 import { IVscodeApi, VsCodeApi } from '../vscodeApi';
-import styles from './flame-graph.css';
+import styles from './flame-graph.module.css';
 import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
+import { DmaRecord } from '../../backend/profile';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -68,6 +69,7 @@ export interface IBox {
 	level: number;
 	text: string;
 	loc: IColumnLocation;
+	dmaRecord?: DmaRecord;
 }
 
 const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
@@ -121,11 +123,11 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
-			const dma = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dma.type === undefined)
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.type === undefined)
 				continue;
-			const dmaType = dma.type;
-			const dmaSubtype = dma.extra;
+			const dmaType = dmaRecord.type;
+			const dmaSubtype = dmaRecord.extra;
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
@@ -164,6 +166,7 @@ const buildDmaBoxes = (model: IProfileModel) => {
 						columnNumber: x
 					}
 				},
+				dmaRecord
 			});
 		}
 	}
@@ -466,12 +469,12 @@ export const FlameGraph: FunctionComponent<{
 	const zoomToBox = useCallback(
 		(box: IBox) => {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			setBounds({
+			/*setBounds({
 				minX: box.x1,
 				maxX: box.x2,
 				y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampY),
 				level: box.level,
-			});
+			});*/
 			setFocused(box);
 		},
 		[clampX, clampY, canvasSize.height, bounds],
@@ -805,6 +808,7 @@ export const FlameGraph: FunctionComponent<{
 						lowerY={hovered.box.y2 - bounds.y}
 						src={hovered.src}
 						location={hovered.box.loc}
+						dmaRecord={hovered.box.dmaRecord}
 						displayUnit={displayUnit}
 						model={model}
 					/>, document.body)
@@ -876,12 +880,13 @@ const Tooltip: FunctionComponent<{
 	upperY: number;
 	lowerY: number;
 	location: ILocation;
+	dmaRecord: DmaRecord;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
 	model: IProfileModel;
-}> = ({ left, lowerY, upperY, src, location, canvasRect, displayUnit, model }) => {
+}> = ({ left, lowerY, upperY, src, location, dmaRecord, canvasRect, displayUnit, model }) => {
 	const label = getLocationText(location);
-	const isDma = location.callFrame.scriptId === '#dma';
+	const isDma = dmaRecord !== undefined;
 
 	const file = label?.split(/\\|\//g).pop();
 	return (
@@ -894,8 +899,14 @@ const Tooltip: FunctionComponent<{
 			<dl>
 				{isDma
 				? <Fragment>
-						<dt>DMA Request</dt>
-						<dd className={styles.function}>{location.callFrame.functionName}</dd>
+					<dt>DMA Request</dt>
+					<dd className={styles.function}>{location.callFrame.functionName}</dd>
+					{dmaRecord.addr !== 0xffffffff && (
+						<Fragment>
+							<dt className={styles.time}>Address</dt>
+							<dd className={styles.time}>${dmaRecord.addr.toString(16)}</dd>
+						</Fragment>
+					)}
 					<dt className={styles.time}>Line</dt>
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>

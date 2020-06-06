@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 import { h, render, FunctionComponent, Fragment } from 'preact';
 import { useCallback, useContext, useMemo } from 'preact/hooks';
-import styles from './client.css';
+import styles from './client.module.css';
 //import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { cpuProfileLayoutFactory } from './layout';
 import { IProfileModel, IGraphNode } from './model';

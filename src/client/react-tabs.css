@@ -1,0 +1,57 @@
+.react-tabs {
+	-webkit-tap-highlight-color: transparent;
+  }
+  
+  .react-tabs__tab-list {
+	background: var(--vscode-editorGroupHeader-tabsBackground);
+	border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder);
+	margin: 0 0 10px;
+	padding: 0;
+  }
+  
+  .react-tabs__tab {
+	background: var(--vscode-tab-inactiveBackground);
+	color: var(--vscode-tab-inactiveForeground);
+	border-top: 1px solid var(--vscode-tab-inactiveBorderTop);
+	border-bottom: 1px solid var(--vscode-tab-inactiveBorder);
+	display: inline-block;
+	bottom: -1px;
+	position: relative;
+	list-style: none;
+	padding: 6px 12px;
+	cursor: pointer;
+  }
+
+  .react-tabs__tab:hover {
+	background: var(--vscode-tab-hoverBackground);
+	color: var(--vscode-tab-hoverForeground);
+  }
+  
+  .react-tabs__tab--selected {
+	background: var(--vscode-tab-activeBackground);
+	color: var(--vscode-tab-activeForeground);
+	border-top: 1px solid var(--vscode-tab-activeBorderTop);
+	border-bottom: 1px solid var(--vscode-tab-activeBorder);
+  }
+
+  .react-tabs__tab--selected:hover {
+	background: var(--vscode-tab-activeBackground);
+	color: var(--vscode-tab-activeForeground);
+  }
+  
+  .react-tabs__tab--disabled {
+	color: GrayText;
+	cursor: default;
+  }
+  
+  .react-tabs__tab:focus {
+	outline: none;
+  }
+
+  .react-tabs__tab-panel {
+	display: none;
+  }
+  
+  .react-tabs__tab-panel--selected {
+	display: block;
+  }

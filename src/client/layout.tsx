@@ -6,13 +6,16 @@ import { useState, useMemo, useEffect } from 'preact/hooks';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
-import styles from './layout.css';
+import styles from './layout.module.css';
 import { IDataSource } from './datasource';
 import { IGraphNode, IProfileModel } from './model';
 import { LocationAccessor, IColumn } from './flame/stacks';
 import { DisplayUnit } from './display';
 import { UnitSelect } from './unit-select';
 import { Filter, IRichFilter } from './filter';
+
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import './react-tabs.css';
 
 export interface IBodyProps<T> {
 	model: IProfileModel;
@@ -88,9 +91,20 @@ export const cpuProfileLayoutFactory = (): CpuProfileLayoutComponent => ({
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<BodyFlame model={model} data={dataFlame.data} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<div className={styles.rows} style={{flexBasis: 0, flexGrow: 1}}>
-				<BodyTable model={model} data={dataTable.data} filter={filter} displayUnit={displayUnit2} />
-			</div>
+			<Tabs>
+				<TabList>
+					<Tab>Profiler</Tab>
+					<Tab>Debugger</Tab>
+				</TabList>
+				<TabPanel>
+					<div className={styles.rows} style={{flexBasis: 0, flexGrow: 1}}>
+						<BodyTable model={model} data={dataTable.data} filter={filter} displayUnit={displayUnit2} />
+					</div>
+				</TabPanel>
+				<TabPanel>
+					<h2>Any content 2: Debugger?</h2>
+				</TabPanel>
+			</Tabs>
 		</Fragment>
 	);
 };

@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { h, FunctionComponent } from 'preact';
-import styles from './middleOutCompression.css';
+import styles from './middleOutCompression.module.css';
 
 /**
  * Puts ellipses in the middle of the text on overflow, rather than clipping the end.

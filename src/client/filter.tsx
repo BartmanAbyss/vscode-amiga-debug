@@ -4,7 +4,7 @@
 
 import { h, FunctionComponent, ComponentChild } from 'preact';
 import { useCallback } from 'preact/hooks';
-import styles from './filter.css';
+import styles from './filter.module.css';
 
 /**
  * Filter that the RichFilter returns,

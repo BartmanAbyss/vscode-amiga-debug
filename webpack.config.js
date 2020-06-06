@@ -8,7 +8,11 @@ var config = {
 		chunkFilename: "client.bundle.[id].js"
 	},
 	resolve: {
-		extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
+		extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
+		alias: {
+			"react": "preact/compat",
+			"react-dom": "preact/compat",
+		}
 	},
 	module: {
 		rules: [
@@ -29,6 +33,15 @@ var config = {
 						},
 					}
 				],
+				include: /\.module\.css$/
+			},
+			{
+				test: /\.css$/,
+				use: [
+					'style-loader',
+					'css-loader'
+				],
+				exclude: /\.module\.css$/
 			},
 			{
 				test: /\.svg$/,
