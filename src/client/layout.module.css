@@ -22,8 +22,9 @@
 .rows {
 /*  flex-basis: 0px;*/
 /*  flex-grow: 1;*/
-  overflow: hidden; /* messes up tooltips, but if disabled, causes scrollbars to appear when zooming in flamechart */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
+  min-height: 0;
 }

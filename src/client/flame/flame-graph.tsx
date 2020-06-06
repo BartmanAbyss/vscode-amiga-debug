@@ -824,14 +824,14 @@ const DragHandle: FunctionComponent<{
 	startDrag: (bounds: IDrag) => void;
 }> = ({ current, bounds, startDrag, canvasWidth }) => {
 	const start = useCallback(
-		(evt: MouseEvent, lock: LockBound, original: IBounds = bounds) => {
+		(evt: MouseEvent, lck: LockBound, original: IBounds = bounds) => {
 			startDrag({
 				timestamp: Date.now(),
 				pageXOrigin: evt.pageX,
 				pageYOrigin: evt.pageY,
 				original,
 				xPerPixel: -1 / canvasWidth,
-				lock: lock | LockBound.Y,
+				lock: lck | LockBound.Y,
 			});
 			evt.preventDefault();
 			evt.stopPropagation();
