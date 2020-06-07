@@ -242,3 +242,44 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 
 	return insns;
 }
+
+// returs chipMem after DMA requests up to endCycle
+// currently only CPU and blitter writes implemented
+export function GetChipMemAfterDma(chipMem: Uint8Array, dmaRecords: DmaRecord[], endCycle: number): Uint8Array {
+	const chipMemAfter = new Uint8Array(chipMem);
+
+	const writeByte = (addr: number, dat: number) => {
+		chipMemAfter[addr + 0] = dat;
+	};
+	const writeWord = (addr: number, dat: number) => {
+		chipMemAfter[addr + 0] = (dat >>> 8) & 0xff;
+		chipMemAfter[addr + 1] = dat & 0xff;
+	};
+	const writeLong = (addr: number, dat: number) => {
+		chipMemAfter[addr + 0] = (dat >>> 24) & 0xff;
+		chipMemAfter[addr + 1] = (dat >>> 16) & 0xff;
+		chipMemAfter[addr + 2] = (dat >>> 8) & 0xff;
+		chipMemAfter[addr + 3] = dat & 0xff;
+	};
+
+	let i = 0;
+	for(let y = 0; y < NR_DMA_REC_VPOS && i < endCycle; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < endCycle; x++, i++) { // long and short lines alternate
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.addr === undefined || dmaRecord.addr >= chipMem.byteLength)
+				continue;
+
+			if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
+				switch(dmaRecord.reg & 0xff) {
+				case 1: writeByte(dmaRecord.addr, dmaRecord.dat); break;
+				case 2: writeWord(dmaRecord.addr, dmaRecord.dat); break;
+				case 4: writeLong(dmaRecord.addr, dmaRecord.dat); break;
+				}
+			} else if(dmaRecord.reg === 0) { // Blitter write
+				writeWord(dmaRecord.addr, dmaRecord.dat);
+			}
+		}
+	}
+
+	return chipMemAfter;
+}

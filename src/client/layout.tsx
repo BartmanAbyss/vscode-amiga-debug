@@ -12,8 +12,8 @@ import { Filter, IRichFilter } from './filter';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import './react-tabs.css';
 
-import { CopperVis } from './debugger/copper';
-import { BlitterVis } from './debugger/blitter';
+import { CopperList } from './debugger/copper';
+import { BlitterList } from './debugger/blitter';
 import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { TimeView } from './table/time-view';
 import { createTopDownGraph } from './table/topDownGraph';
@@ -76,7 +76,7 @@ export const CpuProfileLayout: FunctionComponent<{
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<Tabs defaultIndex={0} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
+			<Tabs defaultIndex={2} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>
@@ -86,10 +86,10 @@ export const CpuProfileLayout: FunctionComponent<{
 					<TimeView data={dataTable} filter={filter} displayUnit={displayUnit2} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
-					<CopperVis model={model} />
+					<CopperList model={model} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
-					<BlitterVis model={model} />
+					<BlitterList model={model} />
 				</TabPanel>
 			</Tabs>
 		</Fragment>

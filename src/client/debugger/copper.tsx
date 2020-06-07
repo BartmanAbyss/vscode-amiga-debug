@@ -6,7 +6,7 @@ import { CopperDisassembler } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper } from '../dma';
 
-export const CopperVis: FunctionComponent<{
+export const CopperList: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
 	//const customRegs = new Uint16Array(model.customRegs);
