@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 import { GetBlits } from '../dma';
+import ReactJson from 'react-json-view'; // DEBUG only
 
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
@@ -12,7 +13,9 @@ export const BlitterVis: FunctionComponent<{
 
 	return (
 		<Fragment>
-			<div class={styles.container}>{JSON.stringify(blits, null, 2)}</div>
+			<div class={styles.container}>
+				<ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
+			</div>
 		</Fragment>
 	);
 };
