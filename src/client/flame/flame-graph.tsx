@@ -22,7 +22,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile';
-import { CustomRegisters } from '../debugger/customRegisters';
+import { CustomRegisters } from '../customRegisters';
 
 export const enum Constants {
 	BoxHeight = 16,
