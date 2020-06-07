@@ -237,6 +237,7 @@ export interface DmaRecord {
 export class ProfileFile {
 	public chipmemSize: number;
 	public chipMem: Uint8Array;
+	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public profileArray: Uint32Array;
 
@@ -247,10 +248,11 @@ export class ProfileFile {
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
-		this.chipmemSize = (new Uint32Array(buffer.buffer, bufferOffset, 4))[0]; bufferOffset += 4;
+		this.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
+		this.chipmemSize = (new Uint32Array(buffer.buffer, bufferOffset, 1))[0]; bufferOffset += 4;
 		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
-		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
-		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 4)[0]; bufferOffset += 4;
+		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
 			throw new Error("dmaCount mismatch");
 		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
@@ -415,7 +417,7 @@ export class Profiler {
 			}
 		}
 
-		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), chipMem: Buffer.from(profileFile.chipMem).toString('base64'), dmaRecords: profileFile.dmaRecords };
+		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), chipMem: Buffer.from(profileFile.chipMem).toString('base64'), customRegs: Array.from(profileFile.customRegs), dmaRecords: profileFile.dmaRecords };
 		return JSON.stringify(out/*, null, 2*/);
 	}
 

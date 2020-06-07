@@ -69,6 +69,7 @@ export interface IProfileModel {
 	rootPath?: string;
 	duration: number;
 	chipMem?: string; // base64 encoded binary
+	customRegs?: number[];
 	dmaRecords?: DmaRecord[];
 }
 
@@ -197,6 +198,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
 			chipMem: profile.chipMem,
+			customRegs: profile.customRegs,
 			dmaRecords: profile.dmaRecords
 		};
 	}
@@ -280,6 +282,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
 		chipMem: profile.chipMem,
+		customRegs: profile.customRegs,
 		dmaRecords: profile.dmaRecords
 	};
 };

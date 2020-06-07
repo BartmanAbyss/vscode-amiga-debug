@@ -464,7 +464,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile));
 
 			// open output
-			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"));
+			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 
 			//await this.miDebugger.continue(this.currentThreadId);
 			this.sendResponse(response);

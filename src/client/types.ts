@@ -50,6 +50,7 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	$vscode?: IJsDebugAnnotations;
 	nodes: IProfileNode[];
 	chipMem?: string; // base64 encoded binary data
+	customRegs?: number[];
 	dmaRecords?: DmaRecord[];
 }
 

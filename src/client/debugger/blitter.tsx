@@ -3,14 +3,14 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 import { CustomRegisters } from './customRegisters';
-import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, DmaEvents } from '../dma';
 //import { CopperDisassembler } from './copperDisassembler';
 
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
 	// TODO (WinUAE): we need state of custom registers at start of frame as well......
-	const customRegs = new Uint16Array(0x100).fill(0);
+	const customRegs = new Uint16Array(model.customRegs);
 	const BLTxPT = [
 		CustomRegisters.getCustomAddress("BLTAPT"),
 		CustomRegisters.getCustomAddress("BLTBPT"),
@@ -47,10 +47,14 @@ export const BlitterVis: FunctionComponent<{
 							addresses.push('ABCD'[b] + ' = $' + adr.toString(16).padStart(8, '0'));
 						} else {
 							channels += '-';
+							addresses.push('             ');
 						}
 					}
-					BlitTrace += `${channels} ${addresses.join(', ')}\n`;
+					BlitTrace += `${channels} ${addresses.join(' ')}\n`;
 				}
+			}
+			if(dmaRecord.evt & DmaEvents.BLITIRQ) {
+				BlitTrace += `Line ${y.toString().padStart(3, ' ')} Cycle ${x.toString().padStart(3, ' ')}: BLITIRQ\n`;
 			}
 		}
 	}
