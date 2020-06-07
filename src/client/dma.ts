@@ -1,6 +1,6 @@
 import { DmaRecord } from "../backend/profile";
 import { CustomRegisters } from './customRegisters';
-import { CopperInstruction } from "./debugger/copperDisassembler";
+import { CopperInstruction } from "./copperDisassembler";
 
 export interface DmaSubtype {
 	color: number; 	// 0xAABBGGRR

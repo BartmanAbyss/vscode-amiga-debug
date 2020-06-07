@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
-import { CopperDisassembler } from './copperDisassembler';
+import { CopperDisassembler } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper } from '../dma';
 

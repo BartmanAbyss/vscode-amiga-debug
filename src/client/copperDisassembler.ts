@@ -1,5 +1,5 @@
 //import { StringUtils } from "./stringUtils";
-import { CustomRegisters } from "../customRegisters";
+import { CustomRegisters } from "./customRegisters";
 
 /** Type of copper instruction */
 export enum CopperInstructionType {
