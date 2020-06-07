@@ -36,9 +36,9 @@ export const CpuProfileLayout: FunctionComponent<{
 	const dataTable = Object.values(graph.children);
 
 	// calc max. height of flamegraph
-	let flameHeight = (FlameConstants.BoxHeight) * 2 + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 padding
+	let flameHeight = (FlameConstants.BoxHeight) * 3 + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
 	for(const col of dataFlame) {
-		const y = (FlameConstants.BoxHeight) * (col.rows.length + 2) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 padding
+		const y = (FlameConstants.BoxHeight) * (col.rows.length + 3) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
 		flameHeight = Math.max(flameHeight, y);
 	}
 
@@ -76,7 +76,7 @@ export const CpuProfileLayout: FunctionComponent<{
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<Tabs defaultIndex={2} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
+			<Tabs defaultIndex={0} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>

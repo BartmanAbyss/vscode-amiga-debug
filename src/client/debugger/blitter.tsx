@@ -8,8 +8,10 @@ import ReactJson from 'react-json-view'; // DEBUG only
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
-	const customRegs = new Uint16Array(model.customRegs);
-	const blits = GetBlits(customRegs, model.dmaRecords);
+	const blits = useMemo(() => {
+		const customRegs = new Uint16Array(model.customRegs);
+		return GetBlits(customRegs, model.dmaRecords);
+	}, [model]);
 
 	return (
 		<Fragment>

@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, DmaTypes, Blit } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 import { Category, ILocation, IProfileModel } from '../model';
@@ -71,6 +71,7 @@ export interface IBox {
 	text: string;
 	loc: IColumnLocation;
 	dmaRecord?: DmaRecord;
+	blit?: Blit;
 }
 
 const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
@@ -84,7 +85,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				getBoxInRowColumn(columns, boxes, x, y)!.x2 = col.x2;
 			} else {
-				const y1 = Constants.BoxHeight * (y + 1) + Constants.TimelineHeight; // +1: make room for dmaRecords
+				const y1 = Constants.BoxHeight * (y + 2) + Constants.TimelineHeight; // +2: make room for dmaRecords, blits
 				const y2 = y1 + Constants.BoxHeight;
 				boxes.set(loc.graphId, {
 					column: x,
@@ -135,7 +136,7 @@ const buildDmaBoxes = (model: IProfileModel) => {
 
 			const x1 = i * 2 / duration;
 			const x2 = (i + 1) * 2 / duration;
-			const y1 = 0 + Constants.TimelineHeight;
+			const y1 = 0 * Constants.BoxHeight + Constants.TimelineHeight;
 			const y2 = y1 + Constants.BoxHeight;
 			boxes.push({
 				column: 0,
@@ -166,6 +167,65 @@ const buildDmaBoxes = (model: IProfileModel) => {
 				dmaRecord
 			});
 		}
+	}
+	return boxes;
+};
+
+const buildBlitBoxes = (model: IProfileModel) => {
+	const dmaRecords = model.dmaRecords;
+	if(dmaRecords === undefined)
+		return [];
+
+	const customRegs = new Uint16Array(model.customRegs);
+	const blits = GetBlits(customRegs, model.dmaRecords);
+
+	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
+	const boxes: IBox[] = [];
+
+	for(const blit of blits) {
+		const color = dmaTypes[DmaTypes.BLITTER].subtypes[0].color; // TODO: subtype
+
+		const x1 = blit.cycleStart * 2 / duration;
+		const x2 = blit.cycleEnd ? (blit.cycleEnd) * 2 / duration : 1;
+		const y1 = 1 * Constants.BoxHeight + Constants.TimelineHeight;
+		const y2 = y1 + Constants.BoxHeight;
+		let channels = '';
+		for(let channel = 0; channel < 4; channel++) {
+			if(blit.BLTCON0 & (1 << (11 - channel)))
+				channels += 'ABCD'[channel];
+			else
+				channels += '-';
+		}
+
+		const text = `Blit ${channels} ${blit.BLTSIZH * 16}x${blit.BLTSIZV}px`;
+		boxes.push({
+			column: 0,
+			row: 0,
+			x1,
+			x2,
+			y1,
+			y2,
+			level: 0,
+			text,
+			color,
+			loc: {
+				filtered: true,
+				graphId: 200000 + blit.cycleStart,
+				selfTime: -1,
+				aggregateTime: -1,
+				id: 0,
+				ticks: 0,
+				category: Category.User,
+				callFrame: {
+					functionName: text,
+					scriptId: '#blit',
+					url: '',
+					lineNumber: blit.vposStart,
+					columnNumber: blit.hposStart
+				}
+			},
+			blit
+		});
 	}
 	return boxes;
 };
@@ -276,6 +336,7 @@ export const FlameGraph: FunctionComponent<{
 
 	const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
 	const dmaBoxes = useMemo(() => buildDmaBoxes(model), [model]);
+	const blitBoxes = useMemo(() => buildBlitBoxes(model), [model]);
 	const clampX = useMemo(
 		() => ({
 			minX: 0, //columns[0]?.x1 ?? 0,
@@ -293,12 +354,12 @@ export const FlameGraph: FunctionComponent<{
 			setupGl({
 				canvas: glCanvas.current,
 				focusColor: cssVariables.focusBorder,
-				boxes: [...rawBoxes.boxById.values(), ...dmaBoxes],
+				boxes: [...rawBoxes.boxById.values(), ...dmaBoxes, ...blitBoxes],
 				scale: dpr,
 			}),
 		[glCanvas.current],
 	);
-	useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values(), ...dmaBoxes]), [rawBoxes, dmaBoxes]);
+	useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values(), ...dmaBoxes, ...blitBoxes]), [rawBoxes, dmaBoxes, blitBoxes]);
 	useEffect(() => gl?.setBounds(bounds, canvasSize, dpr), [bounds, canvasSize]);
 	useEffect(() => gl?.setFocusColor(cssVariables.focusBorder), [cssVariables]);
 	useEffect(() => gl?.setFocused(focused?.loc.graphId), [focused]);
@@ -401,9 +462,12 @@ export const FlameGraph: FunctionComponent<{
 		for(const box of dmaBoxes)
 			doBox(box);
 
+		for(const box of blitBoxes)
+			doBox(box);
+
 		webContext.clip();
 		webContext.restore();
-	}, [webContext, bounds, rawBoxes, dmaBoxes, canvasSize, cssVariables]);
+	}, [webContext, bounds, rawBoxes, dmaBoxes, blitBoxes, canvasSize, cssVariables]);
 
 	// Re-render the zoom indicator when bounds change
 	useEffect(() => {
@@ -583,6 +647,15 @@ export const FlameGraph: FunctionComponent<{
 				return dmaBoxes[box];
 			}
 
+			// blit
+			if(fromTop < Constants.TimelineHeight + 2 * Constants.TimelineHeight) {
+				const box = Math.abs(binarySearch(blitBoxes, (b) => b.x2 - x)) - 1;
+				if (!blitBoxes[box] || blitBoxes[box].x1 > x) {
+					return;
+				}
+				return blitBoxes[box];
+			}
+
 			const col = Math.abs(binarySearch(columns, (c) => c.x2 - x)) - 1;
 			if (!columns[col] || columns[col].x1 > x) {
 				return;
@@ -591,7 +664,7 @@ export const FlameGraph: FunctionComponent<{
 			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight) - 1; // -1: dmaRecord
 			return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
 		},
-		[webCanvas, bounds, columns, rawBoxes, dmaBoxes],
+		[webCanvas, bounds, columns, rawBoxes, dmaBoxes, blitBoxes],
 	);
 
 	// Listen for drag events on the window when it's running
@@ -806,6 +879,7 @@ export const FlameGraph: FunctionComponent<{
 						src={hovered.src}
 						location={hovered.box.loc}
 						dmaRecord={hovered.box.dmaRecord}
+						blit={hovered.box.blit}
 						displayUnit={displayUnit}
 						model={model}
 					/>, document.body)
@@ -878,17 +952,20 @@ const Tooltip: FunctionComponent<{
 	lowerY: number;
 	location: ILocation;
 	dmaRecord: DmaRecord;
+	blit: Blit;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
 	model: IProfileModel;
-}> = ({ left, lowerY, upperY, src, location, dmaRecord, canvasRect, displayUnit, model }) => {
+}> = ({ left, lowerY, upperY, src, location, dmaRecord, blit, canvasRect, displayUnit, model }) => {
 	const label = getLocationText(location);
 	const isDma = dmaRecord !== undefined;
+	const isBlit = blit !== undefined;
+	const isFunction = !isDma && !isBlit;
 
 	let dmaReg = '';
 	let dmaData = '';
 	let dmaEvents = '';
-	if(isDma) { // 42,172
+	if(isDma) {
 		if(dmaRecord.type !== undefined) {
 			dmaData = '$' + (dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
 			if(dmaRecord.reg & 0x1000) {
@@ -947,8 +1024,7 @@ const Tooltip: FunctionComponent<{
 			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '300px' : '400px' }}
 		>
 			<dl>
-				{isDma
-				? <Fragment>
+				{isDma && (<Fragment>
 					<dt>DMA Request</dt>
 					<dd className={styles.function}>{location.callFrame.functionName}</dd>
 					{dmaRecord.addr !== undefined && dmaRecord.addr !== 0xffffffff && (
@@ -957,61 +1033,57 @@ const Tooltip: FunctionComponent<{
 							<dd className={styles.time}>${(dmaRecord.addr & 0x00ffffff).toString(16).padStart(6, '0')}</dd>
 						</Fragment>
 					)}
-					{dmaReg && (
-						<Fragment>
-							<dt className={styles.time}>Register</dt>
-							<dd className={styles.time}>{dmaReg}</dd>
-						</Fragment>
-					)}
-					{dmaData && (
-						<Fragment>
-							<dt className={styles.time}>Data</dt>
-							<dd className={styles.time}>{dmaData}</dd>
-						</Fragment>
-					)}
-					{dmaEvents && (
-						<Fragment>
-							<dt className={styles.time}>Events</dt>
-							<dd className={styles.time}>{dmaEvents}</dd>
-						</Fragment>
-					)}
+					{dmaReg && (<Fragment>
+						<dt className={styles.time}>Register</dt>
+						<dd className={styles.time}>{dmaReg}</dd>
+					</Fragment>)}
+					{dmaData && (<Fragment>
+						<dt className={styles.time}>Data</dt>
+						<dd className={styles.time}>{dmaData}</dd>
+					</Fragment>)}
+					{dmaEvents && (<Fragment>
+						<dt className={styles.time}>Events</dt>
+						<dd className={styles.time}>{dmaEvents}</dd>
+					</Fragment>)}
 					<dt className={styles.time}>Line</dt>
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>
 					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
-				</Fragment>
-				: <Fragment>
-						<dt>{dataName(displayUnit) === 'Time' ? 'Function' : 'Symbol'}</dt>
-						<dd className={styles.function}>{location.callFrame.functionName}</dd>
-						{label && (
-							<Fragment>
-								<dt>File</dt>
-								<dd
-									aria-label={file}
-									className={classes(styles.label, location.src && styles.clickable)}
-								>
-									<MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
-								</dd>
-							</Fragment>
-						)}
-						<dt className={styles.time}>Total {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, model.duration, displayUnit)}</dd>
-						<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.selfTime, model.duration, displayUnit)}</dd>
-						{location.aggregateTime > 0 && (
-							<Fragment>
-								<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
-								<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
-							</Fragment>
-						)}
-					</Fragment>
-				}
+				</Fragment>)}
+				{isBlit && (<Fragment>
+					{Object.keys(blit).filter((k) => k.startsWith('BLT')).map((k) => <Fragment>
+						<dt className={styles.time}>{k}</dt>
+						<dd className={styles.time}>{Array.isArray(blit[k]) ? blit[k].map((v) => '$' + v.toString(16)).join(' ') : ('$' + blit[k].toString(16))}</dd>
+					</Fragment>)}
+					<dt className={styles.time}>Start</dt>
+					<dd className={styles.time}>Line {blit.vposStart}, Color Clock {blit.hposStart}</dd>
+					{blit.vposEnd && (<Fragment>
+						<dt className={styles.time}>End</dt>
+						<dd className={styles.time}>Line {blit.vposEnd}, Color Clock {blit.hposEnd}</dd>
+					</Fragment>)}
+				</Fragment>)}
+				{isFunction && (<Fragment>
+					<dt>{dataName(displayUnit) === 'Time' ? 'Function' : 'Symbol'}</dt>
+					<dd className={styles.function}>{location.callFrame.functionName}</dd>
+					{label && (<Fragment>
+						<dt>File</dt>
+						<dd aria-label={file} className={classes(styles.label, location.src && styles.clickable)}>
+							<MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
+						</dd>
+					</Fragment>)}
+					<dt className={styles.time}>Total {dataName(displayUnit)}</dt>
+					<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, model.duration, displayUnit)}</dd>
+					<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
+					<dd className={styles.time}>{formatValue(location.selfTime, model.duration, displayUnit)}</dd>
+					{location.aggregateTime > 0 && (<Fragment>
+						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
+						<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
+					</Fragment>)}
+				</Fragment>)}
 			</dl>
-			{label && (
-				<div className={styles.hint}>
-					Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
-				</div>
-			)}
+			{label && (<div className={styles.hint}>
+				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
+			</div>)}
 		</div>
 	);
 };

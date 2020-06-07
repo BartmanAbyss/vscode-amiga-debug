@@ -1,5 +1,6 @@
 import { DmaRecord } from "../backend/profile";
 import { CustomRegisters } from './customRegisters';
+import { CopperInstruction } from "./debugger/copperDisassembler";
 
 export interface DmaSubtype {
 	color: number; 	// 0xAABBGGRR
@@ -24,6 +25,28 @@ export namespace DmaEvents {
 	export const COPPERWANTED = 128;
 	export const NOONEGETS = 256;
 	export const SPECIAL = 32768;
+}
+
+export namespace DmaTypes {
+	export const REFRESH = 1;
+	export const CPU = 2;
+	export const COPPER = 3;
+	export const AUDIO = 4;
+	export const BLITTER = 5;
+	export const BITPLANE = 6;
+	export const SPRITE = 7;
+	export const DISK = 8;
+}
+
+export namespace DmaSubTypes {
+	export const CPU_CODE = 0;
+	export const CPU_DATA = 1;
+	export const COPPER = 0;
+	export const COPPER_WAIT = 1;
+	export const COPPER_SPECIAL = 2;
+	export const BLITTER = 0;
+	export const BLITTER_FILL = 1;
+	export const BLITTER_LINE = 2;
 }
 
 export const dmaTypes: DmaType[] = [
@@ -93,6 +116,14 @@ export interface Blit {
 	BLTxMOD: number[]; // A-D
 }
 
+export interface Copper {
+	cycle: number;
+	vpos: number;
+	hpos: number;
+	address: number;
+	insn: CopperInstruction;
+}
+
 export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const customRegL = (reg: number) => (customRegs[(reg - 0xdff000) >>> 1] << 16) | customRegs[(reg + 2 - 0xdff000) >>> 1];
@@ -148,7 +179,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					for(let channel = 0; channel < 4; channel++) {
 						const adr = customRegL(regBLTxPT[channel]) & 0x1ffffe; // ECS=0x1ffffe, OCS=0x7fffe;
 						BLTxPT.push(adr);
-						BLTxMOD.push(regBLTxMOD[channel]);
+						BLTxMOD.push(customReg(regBLTxMOD[channel]));
 						if(BLTCON0 & (1 << (11 - channel))) {
 							channels += 'ABCD'[channel];
 							addresses.push('ABCD'[channel] + ' = $' + adr.toString(16).padStart(8, '0'));
@@ -184,4 +215,30 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 		}
 	}
 	return blits;
+}
+
+export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[] {
+	const insns: Copper[] = [];
+	const regCOPINS = CustomRegisters.getCustomAddress("COPINS");
+
+	let i = 0;
+	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS - 0xdff000) {
+				const first  = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
+				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
+				const insn = CopperInstruction.parse(first, second);
+				insns.push({
+					cycle: i,
+					vpos: y,
+					hpos: x,
+					address: dmaRecord.addr,
+					insn
+				});
+			}
+		}
+	}
+
+	return insns;
 }
