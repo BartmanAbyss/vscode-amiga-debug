@@ -176,6 +176,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		config['debugging_features'] = 'gdbserver';
+		//config['debugging_trigger'] = ':runme.exe';
 		delete config['filesystem2'];
 		delete config['uaehf0'];
 		config['filesystem'] = 'rw,dh0:' + dh0Path;
