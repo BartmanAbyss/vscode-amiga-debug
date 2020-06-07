@@ -2,53 +2,86 @@ import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
-import { Blit, GetBlits, GetChipMemAfterDma } from '../dma';
+import { Blit, GetBlits, GetChipMemAfterDma, GetPalette } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
+import { CustomRegisters } from '../customRegisters';
 
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
 	blit: Blit;
 }> = ({ model, blit }) => {
 	const chipMem = Uint8Array.from(atob(model.chipMem), (c) => c.charCodeAt(0));
+	const chipMemBefore = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleStart);
 	const chipMemAfter = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleEnd || 0xffffffff);
+	const customRegs = new Uint16Array(model.customRegs);
+	const palette = GetPalette(customRegs);
 
+	const planes = 5;
 	const canvasScale = 2;
 	const canvasWidth = blit.BLTSIZH * 16 * canvasScale;
-	const canvasHeight = blit.BLTSIZV * canvasScale;
-	const canvasRef = useRef<HTMLCanvasElement>();
+	const canvasHeight = blit.BLTSIZV / planes * canvasScale;
+	const canvas = [
+		useRef<HTMLCanvasElement>(),
+		useRef<HTMLCanvasElement>(),
+		useRef<HTMLCanvasElement>(),
+		useRef<HTMLCanvasElement>()
+	];
 	useEffect(() => {
-		const context = canvasRef.current?.getContext('2d');
-		const imgData = context.createImageData(canvasWidth, canvasHeight);
-		let BLTDPT = blit.BLTxPT[3];
-		const putPixel = (x: number, y: number, color: number) => {
-			for(let yy = 0; yy < canvasScale; yy++) {
-				for(let xx = 0; xx < canvasScale; xx++) {
-					const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx) * 4;
-					imgData.data[offset] = imgData.data[offset + 1] = imgData.data[offset + 2] = color;
-					imgData.data[offset + 3] = 0xff; // alpha
+		for(let channel = 0; channel < 4; channel++) {
+			if(!(blit.BLTCON0 & (1 << (11 - channel))))
+				continue;
+			const context = canvas[channel].current?.getContext('2d');
+			const imgData = context.createImageData(canvasWidth, canvasHeight);
+			let BLTxPT = blit.BLTxPT[channel];
+			const putPixel = (x: number, y: number, color: number[]) => {
+				for(let yy = 0; yy < canvasScale; yy++) {
+					for(let xx = 0; xx < canvasScale; xx++) {
+						const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx) * 4;
+						imgData.data[offset] = color[0];
+						imgData.data[offset + 1] = color[1];
+						imgData.data[offset + 2] = color[2];
+						imgData.data[offset + 3] = 0xff; // alpha
+					}
 				}
-			}
-		};
-		for(let y = 0; y < blit.BLTSIZV; y++) {
-			for(let x = 0; x < blit.BLTSIZH; x++) {
-				let BLTDDAT = (chipMem[BLTDPT] << 8) | chipMem[BLTDPT + 1];
-				if(x === 0)
-					BLTDDAT &= blit.BLTAFWM;
-				else if(x === blit.BLTSIZH - 1)
-					BLTDDAT &= blit.BLTALWM;
-				for(let i = 0; i < 16; i++) {
-					const pixel = (BLTDDAT & (1 << (15 - i))) ? 0xff : 0x00;
-					putPixel(x * 16 + i, y, pixel);
+			};
+			// TODO: scrolling
+			for(let y = 0; y < blit.BLTSIZV / planes; y++) {
+				for(let x = 0; x < blit.BLTSIZH; x++) {
+					const BLTxDAT = [];
+					for(let p = 0; p < planes; p++) {
+						const addr = BLTxPT + x * 2 + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
+						let raw = (channel < 3) ? ((chipMemBefore[addr] << 8) | chipMemBefore[addr + 1]) : ((chipMemAfter[addr] << 8) | chipMemAfter[addr + 1]);
+						if(channel === 0) {
+							if(x === 0)
+								raw &= blit.BLTAFWM;
+							else if(x === blit.BLTSIZH - 1)
+								raw &= blit.BLTALWM;
+						}
+						BLTxDAT.push(raw);
+					}
+					for(let i = 0; i < 16; i++) {
+						let pixel = 0;
+						for(let p = 0; p < planes; p++) {
+							if((BLTxDAT[p] & (1 << (15 - i))))
+								pixel |= 1 << p;
+						}
+						putPixel(x * 16 + i, y, palette[pixel]);
+					}
 				}
-				BLTDPT += 2;
+				BLTxPT += planes * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 			}
-			BLTDPT += blit.BLTxMOD[3];
+			context.putImageData(imgData, 0, 0);
 		}
-		context.putImageData(imgData, 0, 0);
-	}, [canvasRef.current]);
+	}, [canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
 
 	return (
-		<canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} />
+		<Fragment>
+			L{blit.vposStart.toString().padStart(3, '0')}C{blit.hposStart.toString().padStart(3, '0')}:
+			<span style={{ opacity: (blit.BLTCON0 & (1 << 11)) ? 1.0 : 0.3, paddingLeft: '20px' }}>A</span> <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 << 10)) ? 1.0 : 0.3, paddingLeft: '20px' }}>B</span> <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 <<  9)) ? 1.0 : 0.3, paddingLeft: '20px' }}>C</span> <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 <<  8)) ? 1.0 : 0.3, paddingLeft: '20px' }}>D</span> <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} />
+		</Fragment>
 	);
 };
 
@@ -60,11 +93,12 @@ export const BlitterList: FunctionComponent<{
 		return GetBlits(customRegs, model.dmaRecords);
 	}, [model]);
 
+	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
+
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				<BlitterVis model={model} blit={blits[0]} />
-				<ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
+				{blits.map((b) => <div><BlitterVis model={model} blit={b} /></div>)}
 			</div>
 		</Fragment>
 	);

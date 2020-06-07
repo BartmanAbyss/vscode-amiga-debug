@@ -530,12 +530,12 @@ export const FlameGraph: FunctionComponent<{
 	const zoomToBox = useCallback(
 		(box: IBox) => {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			/*setBounds({
+			setBounds({
 				minX: box.x1,
 				maxX: box.x2,
 				y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampY),
 				level: box.level,
-			});*/
+			});
 			setFocused(box);
 		},
 		[clampX, clampY, canvasSize.height, bounds],
@@ -661,7 +661,7 @@ export const FlameGraph: FunctionComponent<{
 				return;
 			}
 
-			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight) - 1; // -1: dmaRecord
+			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight) - 2; // -1: dmaRecord, -1: blits
 			return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
 		},
 		[webCanvas, bounds, columns, rawBoxes, dmaBoxes, blitBoxes],
@@ -801,7 +801,8 @@ export const FlameGraph: FunctionComponent<{
 			if (box && (evt.ctrlKey || evt.metaKey)) {
 				openBox(box, evt);
 			} else if (box) {
-				zoomToBox(box);
+				//zoomToBox(box);
+				setFocused(box);
 			} else {
 				setBounds({ ...clampX, y: 0, level: 0 });
 			}
@@ -812,7 +813,17 @@ export const FlameGraph: FunctionComponent<{
 			evt.stopPropagation();
 			evt.preventDefault();
 		},
-		[drag, getBoxUnderCursor, openBox, zoomToBox, clampX],
+		[drag, getBoxUnderCursor, openBox, clampX],
+	);
+
+	const onDblClick = useCallback(
+		(evt: MouseEvent) => {
+			if(focused)
+				zoomToBox(focused);
+			evt.stopPropagation();
+			evt.preventDefault();
+		},
+		[focused]
 	);
 
 	const onMouseLeave = useCallback(
@@ -853,6 +864,7 @@ export const FlameGraph: FunctionComponent<{
 				onFocus={onFocus}
 				onMouseDown={onMouseDown}
 				onMouseUp={onMouseUp}
+				onDblClick={onDblClick}
 				onMouseLeave={onMouseLeave}
 				onMouseMove={onMouseMove}
 				onWheel={onWheel}

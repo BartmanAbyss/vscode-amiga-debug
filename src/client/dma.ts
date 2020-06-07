@@ -206,8 +206,8 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 			}
 			if(dmaRecord.evt & DmaEvents.BLITIRQ) {
 				if(blits.length && blits[blits.length - 1].vposEnd === undefined) {
-					blits[blits.length - 1].cycleEnd = i;
-					blits[blits.length - 1].vposEnd = y;
+					blits[blits.length - 1].cycleEnd = i + 8; // why +8? if not, blitter is not finished
+					blits[blits.length - 1].vposEnd = y; // TODO: auch irgendwie +8
 					blits[blits.length - 1].hposEnd = x;
 				}
 				BlitTrace += `Line ${y.toString().padStart(3, ' ')} Cycle ${x.toString().padStart(3, ' ')}: BLITIRQ\n`;
@@ -282,4 +282,20 @@ export function GetChipMemAfterDma(chipMem: Uint8Array, dmaRecords: DmaRecord[],
 	}
 
 	return chipMemAfter;
+}
+
+// returns 32-element array of 3-element array (R, G, B) (0x00-0xff)
+export function GetPalette(customRegs: Uint16Array): number[][] {
+	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
+	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
+	const palette = [];
+	for(let i = 0; i < 32; i++) {
+		const color = customReg(regCOLOR + i * 2);
+		palette.push([
+			(((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf),
+			(((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf),
+			(((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)
+		]);
+	}
+	return palette;
 }
