@@ -77,10 +77,10 @@ export const BlitterVis: FunctionComponent<{
 	return (
 		<Fragment>
 			L{blit.vposStart.toString().padStart(3, '0')}C{blit.hposStart.toString().padStart(3, '0')}:
-			<span style={{ opacity: (blit.BLTCON0 & (1 << 11)) ? 1.0 : 0.3, paddingLeft: '20px' }}>A</span> <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 << 10)) ? 1.0 : 0.3, paddingLeft: '20px' }}>B</span> <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 <<  9)) ? 1.0 : 0.3, paddingLeft: '20px' }}>C</span> <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 <<  8)) ? 1.0 : 0.3, paddingLeft: '20px' }}>D</span> <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 << 11)) ? 1.0 : 0.2, paddingLeft: '20px' }}>A</span> <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 << 10)) ? 1.0 : 0.2, paddingLeft: '20px' }}>B</span> <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 <<  9)) ? 1.0 : 0.2, paddingLeft: '20px' }}>C</span> <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} />
+			<span style={{ opacity: (blit.BLTCON0 & (1 <<  8)) ? 1.0 : 0.2, paddingLeft: '20px' }}>D</span> <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} />
 		</Fragment>
 	);
 };
