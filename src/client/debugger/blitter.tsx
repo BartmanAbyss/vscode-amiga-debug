@@ -8,9 +8,9 @@ import { CustomRegisters } from '../customRegisters';
 
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
+	chipMem: Uint8Array;
 	blit: Blit;
-}> = ({ model, blit }) => {
-	const chipMem = Uint8Array.from(atob(model.chipMem), (c) => c.charCodeAt(0));
+}> = ({ model, chipMem, blit }) => {
 	const chipMemBefore = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleStart);
 	const chipMemAfter = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleEnd || 0xffffffff);
 	const customRegs = new Uint16Array(model.customRegs);
@@ -33,9 +33,17 @@ export const BlitterVis: FunctionComponent<{
 			const context = canvas[channel].current?.getContext('2d');
 			const imgData = context.createImageData(canvasWidth, canvasHeight);
 			let BLTxPT = blit.BLTxPT[channel];
+			let shift = 0;
+			if(channel === 0)
+				shift = (blit.BLTCON0 >>> 12) & 0xf;
+			else if(channel === 1)
+				shift = (blit.BLTCON1 >>> 12) & 0xf;
 			const putPixel = (x: number, y: number, color: number[]) => {
+				x += shift;
 				for(let yy = 0; yy < canvasScale; yy++) {
 					for(let xx = 0; xx < canvasScale; xx++) {
+						if(x >= canvasWidth)
+							continue;
 						const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx) * 4;
 						imgData.data[offset] = color[0];
 						imgData.data[offset + 1] = color[1];
@@ -93,12 +101,15 @@ export const BlitterList: FunctionComponent<{
 		return GetBlits(customRegs, model.dmaRecords);
 	}, [model]);
 
+	// cache chipMem. "atob" is ~200ms
+	const chipMem = useMemo(() => Uint8Array.from(atob(model.chipMem), (c) => c.charCodeAt(0)), [model]);
+
 	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blits.map((b) => <div><BlitterVis model={model} blit={b} /></div>)}
+				{blits.map((b) => <div><BlitterVis model={model} chipMem={chipMem} blit={b} /></div>)}
 			</div>
 		</Fragment>
 	);
