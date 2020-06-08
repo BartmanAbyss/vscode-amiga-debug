@@ -8,11 +8,10 @@ import { CustomRegisters } from '../customRegisters';
 
 export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
-	chipMem: Uint8Array;
 	blit: Blit;
-}> = ({ model, chipMem, blit }) => {
-	const chipMemBefore = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleStart);
-	const chipMemAfter = GetChipMemAfterDma(chipMem, model.dmaRecords, blit.cycleEnd || 0xffffffff);
+}> = ({ model, blit }) => {
+	const chipMemBefore = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleStart);
+	const chipMemAfter = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleEnd || 0xffffffff);
 	const customRegs = new Uint16Array(model.customRegs);
 	const palette = GetPalette(customRegs);
 
@@ -52,7 +51,6 @@ export const BlitterVis: FunctionComponent<{
 					}
 				}
 			};
-			// TODO: scrolling
 			for(let y = 0; y < blit.BLTSIZV / planes; y++) {
 				for(let x = 0; x < blit.BLTSIZH; x++) {
 					const BLTxDAT = [];
@@ -101,15 +99,12 @@ export const BlitterList: FunctionComponent<{
 		return GetBlits(customRegs, model.dmaRecords);
 	}, [model]);
 
-	// cache chipMem. "atob" is ~200ms
-	const chipMem = useMemo(() => Uint8Array.from(atob(model.chipMem), (c) => c.charCodeAt(0)), [model]);
-
 	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blits.map((b) => <div><BlitterVis model={model} chipMem={chipMem} blit={b} /></div>)}
+				{blits.map((b) => <div><BlitterVis model={model} blit={b} /></div>)}
 			</div>
 		</Fragment>
 	);

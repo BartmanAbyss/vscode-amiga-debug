@@ -69,6 +69,7 @@ export interface IProfileModel {
 	rootPath?: string;
 	duration: number;
 	chipMem?: string; // base64 encoded binary
+	chipMemCache?: Uint8Array;
 	customRegs?: number[];
 	dmaRecords?: DmaRecord[];
 }

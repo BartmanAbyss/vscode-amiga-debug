@@ -1,6 +1,6 @@
 import { DmaRecord } from "../backend/profile";
 import { CustomRegisters } from './customRegisters';
-import { CopperInstruction } from "./copperDisassembler";
+import { CopperInstruction, CopperMove } from "./copperDisassembler";
 
 export interface DmaSubtype {
 	color: number; 	// 0xAABBGGRR
@@ -241,6 +241,73 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 	}
 
 	return insns;
+}
+
+export interface IScreen {
+	width: number;
+	height: number;
+	planes: number[];
+	modulos: number[]; // always [2]
+}
+
+export function GetScreen(copper: Copper[]): IScreen {
+	let planes = [0, 0, 0, 0, 0];
+	let modulos = [0, 0];
+
+	let BPLCON0 = 0;
+	let DDFSTRT = 0;
+	let DDFSTOP = 0;
+	let DIWSTRT = 0;
+	let DIWSTOP = 0;
+
+	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0");
+	const regBPL1MOD = CustomRegisters.getCustomAddress("BPL1MOD");
+	const regBPL2MOD = CustomRegisters.getCustomAddress("BPL2MOD");
+	const regBPL1PTH = CustomRegisters.getCustomAddress("BPL1PTH");
+	const regBPL1PTL = CustomRegisters.getCustomAddress("BPL1PTL");
+	const regBPL2PTH = CustomRegisters.getCustomAddress("BPL2PTH");
+	const regBPL2PTL = CustomRegisters.getCustomAddress("BPL2PTL");
+	const regBPL3PTH = CustomRegisters.getCustomAddress("BPL3PTH");
+	const regBPL3PTL = CustomRegisters.getCustomAddress("BPL3PTL");
+	const regBPL4PTH = CustomRegisters.getCustomAddress("BPL4PTH");
+	const regBPL4PTL = CustomRegisters.getCustomAddress("BPL4PTL");
+	const regBPL5PTH = CustomRegisters.getCustomAddress("BPL5PTH");
+	const regBPL5PTL = CustomRegisters.getCustomAddress("BPL5PTL");
+	const regDDFSTRT = CustomRegisters.getCustomAddress("DDFSTRT");
+	const regDDFSTOP = CustomRegisters.getCustomAddress("DDFSTOP");
+	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
+	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
+
+	for(const c of copper) {
+		if(c.insn instanceof CopperMove) {
+			switch(c.insn.DA + 0xdff000) {
+			case regBPLCON0: BPLCON0 = c.insn.RD; break;
+			case regBPL1MOD: modulos[0] = c.insn.RD; break;
+			case regBPL2MOD: modulos[1] = c.insn.RD; break;
+			case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
+			case regBPL1PTL: planes[0] = (planes[0] & 0xffff0000) |  c.insn.RD; break;
+			case regBPL2PTH: planes[1] = (planes[1] & 0x0000ffff) | (c.insn.RD << 16); break;
+			case regBPL2PTL: planes[1] = (planes[1] & 0xffff0000) |  c.insn.RD; break;
+			case regBPL3PTH: planes[2] = (planes[2] & 0x0000ffff) | (c.insn.RD << 16); break;
+			case regBPL3PTL: planes[2] = (planes[2] & 0xffff0000) |  c.insn.RD; break;
+			case regBPL4PTH: planes[3] = (planes[3] & 0x0000ffff) | (c.insn.RD << 16); break;
+			case regBPL4PTL: planes[3] = (planes[3] & 0xffff0000) |  c.insn.RD; break;
+			case regBPL5PTH: planes[4] = (planes[4] & 0x0000ffff) | (c.insn.RD << 16); break;
+			case regBPL5PTL: planes[4] = (planes[4] & 0xffff0000) |  c.insn.RD; break;
+			case regDDFSTRT: DDFSTRT = c.insn.RD; break;
+			case regDDFSTOP: DDFSTOP = c.insn.RD; break;
+			case regDIWSTRT: DIWSTRT = c.insn.RD; break;
+			case regDIWSTOP: DIWSTOP = c.insn.RD; break;
+			}
+		}
+	}
+
+	const width = (((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4;
+	const height = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
+
+	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
+
+	return { width, height, planes, modulos };
 }
 
 // returs chipMem after DMA requests up to endCycle
