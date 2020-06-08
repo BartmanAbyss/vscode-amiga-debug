@@ -233,8 +233,6 @@ const buildBlitBoxes = (model: IProfileModel) => {
 export interface IBounds {
 	minX: number;
 	maxX: number;
-	y: number;
-	level: number;
 }
 
 const enum LockBound {
@@ -344,9 +342,8 @@ export const FlameGraph: FunctionComponent<{
 		}),
 		[columns],
 	);
-	const clampY = Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer);
 	const [focused, setFocused] = useState<IBox | undefined>(rawBoxes.boxById.get(prevState?.focusedId ?? -1));
-	const [bounds, setBounds] = useState<IBounds>(prevState?.bounds ?? { ...clampX, y: 0, level: 0 });
+	const [bounds, setBounds] = useState<IBounds>(prevState?.bounds ?? { ...clampX });
 
 	const gl = useMemo(
 		() =>
@@ -421,14 +418,6 @@ export const FlameGraph: FunctionComponent<{
 		webContext.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
 
 		const doBox = (box: IBox) => {
-			if (box.y2 < bounds.y) {
-				return;
-			}
-
-			if (box.y1 > bounds.y + canvasSize.height) {
-				return;
-			}
-
 			const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
 			const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
 			if (x1 > canvasSize.width) {
@@ -449,7 +438,7 @@ export const FlameGraph: FunctionComponent<{
 				webContext,
 				box.text,
 				x1 + 3,
-				box.y1 - bounds.y + 5,
+				box.y1 + 5,
 				width - 6,
 				Constants.BoxHeight,
 				box.loc.filtered ? 1.0 : 0.5
@@ -529,16 +518,34 @@ export const FlameGraph: FunctionComponent<{
 	// Callback that zoomes into the given box.
 	const zoomToBox = useCallback(
 		(box: IBox) => {
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			setBounds({
+			setFocused(box);
+
+			const from = bounds;
+			const to: IBounds = {
 				minX: box.x1,
 				maxX: box.x2,
-				y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampY),
-				level: box.level,
-			});
-			setFocused(box);
+			};
+			if(from.minX === to.minX && from.maxX === to.maxX)
+				to.minX = 0, to.maxX = 1;
+
+			const duration = 300;
+			let start;
+			const QuadraticEaseInOut = (p: number) => (p < 0.5) ? 2 * p * p : (-2 * p * p) + (4 * p) - 1;
+
+			const update = (timestamp: DOMHighResTimeStamp) => {
+				if (start === undefined)
+					start = timestamp;
+				const elapsed = timestamp - start;
+				const animated = { ...from };
+				const lerp = QuadraticEaseInOut(Math.min(1.0, elapsed / duration));
+				Object.keys(animated).forEach((k) => { animated[k] = from[k] + (to[k] - from[k]) * lerp; });
+				setBounds(animated);
+				if(elapsed < duration)
+					requestAnimationFrame(update);
+			};
+			requestAnimationFrame(update);
 		},
-		[clampX, clampY, canvasSize.height, bounds],
+		[clampX, canvasSize.height, bounds],
 	);
 
 	// Key event handler, deals with focus navigation and escape/enter
@@ -549,7 +556,7 @@ export const FlameGraph: FunctionComponent<{
 					// If there's a tooltip open, close that on first escape
 					return hovered?.src === HighlightSource.Keyboard
 						? setHovered(undefined)
-						: setBounds({ ...clampX, y: 0, level: 0 });
+						: setBounds({ ...clampX });
 				case 'Enter':
 					if ((evt.metaKey || evt.ctrlKey) && hovered) {
 						return openBox(hovered.box, evt);
@@ -661,7 +668,7 @@ export const FlameGraph: FunctionComponent<{
 				return;
 			}
 
-			const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight) - 2; // -1: dmaRecord, -1: blits
+			const row = Math.floor((fromTop - Constants.TimelineHeight) / Constants.BoxHeight) - 2; // -1: dmaRecord, -1: blits
 			return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
 		},
 		[webCanvas, bounds, columns, rawBoxes, dmaBoxes, blitBoxes],
@@ -692,9 +699,7 @@ export const FlameGraph: FunctionComponent<{
 				);
 			}
 
-			const y =
-				lock & LockBound.Y ? bounds.y : clamp(0, original.y - (evt.pageY - pageYOrigin), clampY);
-			setBounds({ minX, maxX, y, level: bounds.level });
+			setBounds({ minX, maxX });
 		};
 
 		const onUp = (evt: MouseEvent) => {
@@ -711,7 +716,7 @@ export const FlameGraph: FunctionComponent<{
 			document.removeEventListener('mouseleave', onUp);
 			document.removeEventListener('mouseup', onUp);
 		};
-	}, [clampX, clampY, drag]);
+	}, [clampX, drag]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -736,11 +741,6 @@ export const FlameGraph: FunctionComponent<{
 				return;
 			}
 
-			if (evt.altKey) {
-				setBounds({ ...bounds, y: clamp(0, bounds.y + evt.deltaY, clampY) });
-				return;
-			}
-
 			const { left, width } = webCanvas.current.getBoundingClientRect();
 			if (evt.shiftKey) {
 				const deltaX = clamp(
@@ -758,13 +758,11 @@ export const FlameGraph: FunctionComponent<{
 			setBounds({
 				minX: Math.max(clampX.minX, bounds.minX + scale * (center - bounds.minX)),
 				maxX: Math.min(clampX.maxX, bounds.maxX - scale * (bounds.maxX - center)),
-				y: bounds.y,
-				level: bounds.level,
 			});
 
 			evt.preventDefault();
 		},
-		[clampX, clampY, webCanvas.current, drag || bounds],
+		[clampX, webCanvas.current, drag || bounds],
 	);
 
 	const onMouseDown = useCallback(
@@ -804,7 +802,7 @@ export const FlameGraph: FunctionComponent<{
 				//zoomToBox(box);
 				setFocused(box);
 			} else {
-				setBounds({ ...clampX, y: 0, level: 0 });
+				setBounds({ ...clampX });
 			}
 
 			setHovered(undefined);
@@ -818,12 +816,13 @@ export const FlameGraph: FunctionComponent<{
 
 	const onDblClick = useCallback(
 		(evt: MouseEvent) => {
-			if(focused)
+			if(focused) {
 				zoomToBox(focused);
+			}
 			evt.stopPropagation();
 			evt.preventDefault();
 		},
-		[focused]
+		[focused, bounds]
 	);
 
 	const onMouseLeave = useCallback(
@@ -886,8 +885,8 @@ export const FlameGraph: FunctionComponent<{
 					<Tooltip
 						canvasRect={webCanvas.current.getBoundingClientRect()}
 						left={(hovered.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
-						upperY={canvasSize.height - hovered.box.y1 + bounds.y}
-						lowerY={hovered.box.y2 - bounds.y}
+						upperY={canvasSize.height - hovered.box.y1}
+						lowerY={hovered.box.y2}
 						src={hovered.src}
 						location={hovered.box.loc}
 						dmaRecord={hovered.box.dmaRecord}
