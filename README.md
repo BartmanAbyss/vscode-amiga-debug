@@ -32,6 +32,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - Size Profiler: profile the size of your executable by functions, data and references
 - Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (open `.shrinklerstats` files)
 - Terminal window with access to the build tools
+- Extension automatically mounts executable's directory as `dh1:`, allowing for reading and writing files.
 
 ## How-to-use
 - `Amiga: View Memory`, `Amiga: Set Force Disassembly`, `Amiga: View Disassembly (Function)` are available from the command palette <kbd>Ctrl+Shift+P</kbd>
@@ -94,6 +95,7 @@ This extension contains binaries of:
   - Copyright (C) 1988-2016 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
   - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
+- `cd` command replacement from [AmigaPorts/amiga-cd](https://github.com/AmigaPorts/amiga-cd)
 
 ## Caveats
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
