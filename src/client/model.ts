@@ -9,7 +9,7 @@ import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation } from './types';
 import { maybeFileUrlToPath } from './path';
 import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
-import { DmaRecord, GfxResource } from '../backend/profile';
+import { DmaRecord, GfxResource } from '../backend/profile_types';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.

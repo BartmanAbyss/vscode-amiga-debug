@@ -4,7 +4,7 @@
 
 import { FunctionComponent, h } from 'preact';
 import { useCallback } from 'preact/hooks';
-import styles from './unit-select.module.css';
+import './styles.css';
 import { DisplayUnit } from './display';
 
 export const UnitSelect: FunctionComponent<{
@@ -18,7 +18,7 @@ export const UnitSelect: FunctionComponent<{
 
 	return (
 		<select
-			className={styles.unit_select}
+			className="select"
 			alt="Display Unit"
 			aria-label="Display Unit"
 			value={DisplayUnit[value]}

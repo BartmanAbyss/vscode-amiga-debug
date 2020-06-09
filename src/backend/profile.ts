@@ -4,16 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { SymbolTable } from './symbols';
 import { ICpuProfileRaw, IProfileNode } from '../client/types';
-
-export interface SourceLine {
-	func?: string;
-	file: string;
-	line: number;
-}
-
-export interface CallFrame {
-	frames: SourceLine[];
-}
+import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxResourceFlags } from './profile_types';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -223,42 +214,6 @@ struct dma_rec {
 	uae_s8 intlev;
 };
 */
-
-export interface DmaRecord {
-	reg?: number;
-	dat?: number;
-	addr?: number;
-	evt?: number;
-	type?: number;
-	extra?: number;
-	intlev?: number;
-}
-
-export enum GfxResourceType {
-	bitmap,
-	palette,
-	copperlist
-}
-
-export enum GfxResourceFlags {
-	debug_resource_bitmap_interleaved = 1 << 0
-}
-
-export interface GfxResource {
-	address: number;
-	size: number;
-	name: string;
-	type: GfxResourceType;
-	flags: GfxResourceFlags;
-	bitmap?: {
-		width: number;
-		height: number;
-		numPlanes: number;
-	};
-	palette?: {
-		numEntries: number;
-	};
-}
 
 /*
 struct barto_debug_resource {

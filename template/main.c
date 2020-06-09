@@ -258,7 +258,7 @@ int main() {
 
 	// register graphics resources with WinUAE for nicer gfx debugger experience
 	debug_register_bitmap(image, "image.bpl", 320, 256, 5, 0);
-	debug_register_palette(colors, "image.bpl", 32, 0);
+	//debug_register_palette(colors, "image.pal", 32, 0); // meh, fast mem...
 	debug_register_copperlist(copper1, "copper1", 1024, 0);
 	debug_register_copperlist(copper2, "copper2", sizeof(copper2), 0);
 

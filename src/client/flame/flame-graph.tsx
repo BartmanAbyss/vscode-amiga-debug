@@ -21,7 +21,7 @@ import styles from './flame-graph.module.css';
 import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
-import { DmaRecord } from '../../backend/profile';
+import { DmaRecord } from '../../backend/profile_types';
 import { CustomRegisters } from '../customRegisters';
 
 export const enum Constants {

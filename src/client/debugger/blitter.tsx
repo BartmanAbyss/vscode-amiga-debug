@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
-import { Blit, GetBlits, GetChipMemAfterDma, GetPalette } from '../dma';
+import { Blit, GetBlits, GetChipMemAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
 import { CustomRegisters } from '../customRegisters';
 
@@ -13,7 +13,7 @@ export const BlitterVis: FunctionComponent<{
 	const chipMemBefore = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleStart);
 	const chipMemAfter = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleEnd || 0xffffffff);
 	const customRegs = new Uint16Array(model.customRegs);
-	const palette = GetPalette(customRegs);
+	const palette = GetPaletteFromCustomRegs(customRegs);
 
 	const planes = 5;
 	const canvasScale = 2;
@@ -31,23 +31,21 @@ export const BlitterVis: FunctionComponent<{
 				continue;
 			const context = canvas[channel].current?.getContext('2d');
 			const imgData = context.createImageData(canvasWidth, canvasHeight);
+			const data = new Uint32Array(imgData.data.buffer);
 			let BLTxPT = blit.BLTxPT[channel];
 			let shift = 0;
 			if(channel === 0)
 				shift = (blit.BLTCON0 >>> 12) & 0xf;
 			else if(channel === 1)
 				shift = (blit.BLTCON1 >>> 12) & 0xf;
-			const putPixel = (x: number, y: number, color: number[]) => {
+			const putPixel = (x: number, y: number, color: number) => {
 				x += shift;
 				for(let yy = 0; yy < canvasScale; yy++) {
 					for(let xx = 0; xx < canvasScale; xx++) {
 						if(x >= canvasWidth)
 							continue;
-						const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx) * 4;
-						imgData.data[offset] = color[0];
-						imgData.data[offset + 1] = color[1];
-						imgData.data[offset + 2] = color[2];
-						imgData.data[offset + 3] = 0xff; // alpha
+						const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx);
+						data[offset] = color;
 					}
 				}
 			};

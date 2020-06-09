@@ -1,4 +1,4 @@
-import { DmaRecord } from "../backend/profile";
+import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters } from './customRegisters';
 import { CopperInstruction, CopperMove } from "./copperDisassembler";
 
@@ -250,7 +250,7 @@ export interface IScreen {
 	modulos: number[]; // always [2]
 }
 
-export function GetScreen(copper: Copper[]): IScreen {
+export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let planes = [0, 0, 0, 0, 0];
 	let modulos = [0, 0];
 
@@ -351,18 +351,47 @@ export function GetChipMemAfterDma(chipMem: Uint8Array, dmaRecords: DmaRecord[],
 	return chipMemAfter;
 }
 
+function GetAmigaColor(color: number): number {
+	return (((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) |
+		(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) |
+		(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) |
+		0xff000000;
+}
+
 // returns 32-element array of 3-element array (R, G, B) (0x00-0xff)
-export function GetPalette(customRegs: Uint16Array): number[][] {
+export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
 	const palette = [];
 	for(let i = 0; i < 32; i++) {
 		const color = customReg(regCOLOR + i * 2);
-		palette.push([
-			(((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf),
-			(((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf),
-			(((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)
-		]);
+		palette.push(GetAmigaColor(color));
+	}
+	return palette;
+}
+
+export function GetPaletteFromChipMem(chipMem: Uint8Array, addr: number, numEntries: number): number[] {
+	const palette = [];
+	for(let i = 0; i < 32; i++) {
+		if(i < numEntries) {
+			const color = (chipMem[addr + i * 2 + 0] << 8) | chipMem[addr + i * 2 + 1];
+			palette.push(GetAmigaColor(color));
+		} else {
+			palette.push([0, 0, 0]);
+		}
+	}
+	return palette;
+}
+
+export function GetPaletteFromCopper(copper: Copper[]): number[] {
+	const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
+	const palette = new Array(32).fill([]);
+	for(const c of copper) {
+		if(c.insn instanceof CopperMove && c.insn.DA >= regCOLOR00 && c.insn.DA < regCOLOR00 + 32 * 2) {
+			const idx = (c.insn.DA - regCOLOR00) >>> 1;
+			if(palette[idx].length === 0) // don't overwrite color
+				palette[idx] = GetAmigaColor(c.insn.RD);
+		}
 	}
 	return palette;
 }

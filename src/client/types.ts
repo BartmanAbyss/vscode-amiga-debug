@@ -4,7 +4,7 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from './location-mapping';
-import { DmaRecord, GfxResource } from '../backend/profile';
+import { DmaRecord, GfxResource } from '../backend/profile_types';
 
 export const enum Constants {
 	CurrentDataVersion = 1,
