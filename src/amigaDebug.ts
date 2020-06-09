@@ -174,11 +174,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			break;
 		}
 
-		config['debugging_features'] = 'gdbserver';
-		//config['debugging_trigger'] = ':runme.exe';
-		delete config['filesystem2'];
-		delete config['uaehf0'];
-		config['filesystem'] = 'rw,dh0:' + dh0Path;
 		if(args.kickstart !== undefined) {
 			if (!fs.existsSync(args.kickstart)) {
 				this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
@@ -200,9 +195,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['input.1.keyboard.0.disabled'] = 'false';
 		config['input.1.keyboard.0.button.41.GRAVE'] = 'SPC_SINGLESTEP.0';
 		config['input.1.keyboard.0.button.201.PREV'] = 'SPC_WARP.0';
-		// filesystem for launched exe
+		// filesystems
+		delete config['uaehf0'];
+		config['filesystem'] = 'rw,dh0:' + dh0Path;
 		config['filesystem2'] = 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128';
-		// debugging trigger
+		// debugging options
+		config['debugging_features'] = 'gdbserver';
 		config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
 
 		try {
@@ -230,7 +228,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".exe"}.`);
 			return;
 		}
-		
+
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
 			fs.writeFileSync(ssPath, 'cd dh1:\n' + config['debugging_trigger']);
