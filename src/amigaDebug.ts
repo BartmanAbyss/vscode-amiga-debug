@@ -123,7 +123,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 		const dh0Path = path.join(binPath, "dh0");
-		const runmePath = path.join(dh0Path, "runme.exe");
 
 		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
@@ -201,6 +200,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['input.1.keyboard.0.disabled'] = 'false';
 		config['input.1.keyboard.0.button.41.GRAVE'] = 'SPC_SINGLESTEP.0';
 		config['input.1.keyboard.0.button.201.PREV'] = 'SPC_WARP.0';
+		// filesystem for launched exe
+		config['filesystem2'] = 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128';
+		// debugging trigger
+		config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
 
 		try {
 			fs.writeFileSync(defaultPath, stringifyCfg(config));
@@ -227,10 +230,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".exe"}.`);
 			return;
 		}
+		
+		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
-			fs.copyFileSync(this.args.program + ".exe", runmePath);
-		} catch(err) {
-			this.sendErrorResponse(response, 103, `Failed to copy executable file at ${this.args.program + ".exe"} to ${runmePath}. ${err.toString()}`);
+			fs.writeFileSync(ssPath, 'cd dh1:\n' + config['debugging_trigger']);
+		} catch (err) {
+			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${err.toString()}`);
 			return;
 		}
 
