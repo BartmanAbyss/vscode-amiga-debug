@@ -64,8 +64,9 @@ var config = {
 
 module.exports = (env, argv) => {
 	if (argv.mode === 'development') {
+		config.devtool = 'source-map';
 		//config.devtool = 'inline-source-map'; // doesn't work with source in HTML
-		config.devtool = 'eval-source-map';
+		//config.devtool = 'eval-source-map';
 	}
 
 	if (argv.mode === 'production') {
