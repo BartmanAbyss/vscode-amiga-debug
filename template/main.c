@@ -256,6 +256,12 @@ int main() {
 	USHORT* copper1 = AllocMem(1024, MEMF_CHIP);
 	USHORT* copPtr = copper1;
 
+	// register graphics resources with WinUAE for nicer gfx debugger experience
+	debug_register_bitmap(image, "image.bpl", 320, 256, 5, 0);
+	debug_register_palette(colors, "image.bpl", 32, 0);
+	debug_register_copperlist(copper1, "copper1", 1024, 0);
+	debug_register_copperlist(copper2, "copper2", sizeof(copper2), 0);
+
 	copPtr = screenScanDefault(copPtr);
 	//enable bitplanes	
 	*copPtr++ = offsetof(struct Custom, bplcon0);

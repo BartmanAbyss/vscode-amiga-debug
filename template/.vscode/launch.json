@@ -8,7 +8,7 @@
             "name": "Amiga 500",
             "config": "A500",
             "program": "${workspaceFolder}/a.mingw",
-            "kickstart": "c:/amiga-dev/winuae/Kickstarts/KICK13.rom",
+            "kickstart": "c:/amiga/KICK13.rom",
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
@@ -18,7 +18,7 @@
             "name": "Amiga 1200",
             "config": "A1200",
             "program": "${workspaceFolder}/a.mingw",
-            "kickstart": "c:/amiga-dev/winuae/Kickstarts/KICK31.rom",
+            "kickstart": "c:/amiga/KICK31.rom",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]

@@ -8,6 +8,7 @@ bin/winuae.ini
 bin/dh0/runme.exe
 bin/*.uae
 bin/configuration.*
+bin/dh0/s/startup-sequence
 bin/*.ini
 bin/winuaebootlog.txt
 template/obj8mingw
@@ -17,3 +18,4 @@ template/a.mingw.*
 template/.vscode/settings.json
 src/test/suite/data/private
 src/test/suite/data/output
+

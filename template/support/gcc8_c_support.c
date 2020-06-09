@@ -1,3 +1,4 @@
+#include "gcc8_c_support.h"
 #include <proto/exec.h>
 extern struct ExecBase* SysBase;
 
@@ -57,12 +58,12 @@ void KPrintF(const char* fmt, ...)
 {
 	va_list vl;
 	va_start(vl, fmt);
-    long(*UaeDbgLog)(long mode, const char* string) = (long(*)(long, const char*))0xf0ff60;
-    if(*((UWORD *)UaeDbgLog) == 0x4eb9 || *((UWORD *)UaeDbgLog) == 0xa00e) {
+	long(*UaeDbgLog)(long mode, const char* string) = (long(*)(long, const char*))0xf0ff60;
+	if(*((UWORD *)UaeDbgLog) == 0x4eb9 || *((UWORD *)UaeDbgLog) == 0xa00e) {
 		char temp[128];
 		RawDoFmt((CONST_STRPTR)fmt, vl, PutChar, temp);
 		UaeDbgLog(86, temp);
-    } else {
+	} else {
 		RawDoFmt((CONST_STRPTR)fmt, vl, KPutCharX, 0);
 	}
 }
@@ -101,7 +102,7 @@ void warpmode(int on) // bool
 {
 	long(*UaeConf)(long mode, int index, const char* param, int param_len, char* outbuf, int outbuf_len);
 	UaeConf = (long(*)(long, int, const char*, int, char*, int))0xf0ff60;
-    if(*((UWORD *)UaeConf) == 0x4eb9 || *((UWORD *)UaeConf) == 0xa00e) {
+	if(*((UWORD *)UaeConf) == 0x4eb9 || *((UWORD *)UaeConf) == 0xa00e) {
 		char outbuf;
 		UaeConf(82, -1, on ? "warp true" : "warp false", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
@@ -112,7 +113,7 @@ static void debug_cmd(unsigned int arg1, unsigned int arg2, unsigned int arg3, u
 {
 	long(*UaeLib)(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
 	UaeLib = (long(*)(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int))0xf0ff60;
-    if(*((UWORD *)UaeLib) == 0x4eb9 || *((UWORD *)UaeLib) == 0xa00e) {
+	if(*((UWORD *)UaeLib) == 0x4eb9 || *((UWORD *)UaeLib) == 0xa00e) {
 		UaeLib(88, arg1, arg2, arg3, arg4);
 	}
 }
@@ -122,24 +123,89 @@ enum barto_cmd {
 	barto_cmd_rect,
 	barto_cmd_filled_rect,
 	barto_cmd_text,
+	barto_cmd_register_resource,
 };
 
-void debug_clear()
-{
+enum debug_resource_type {
+	debug_resource_type_bitmap,
+	debug_resource_type_palette,
+	debug_resource_type_copperlist,
+};
+
+struct debug_resource {
+	unsigned int address; // can't use void* because WinUAE is 64-bit
+	unsigned int size;
+	char name[32];
+	unsigned short /*enum debug_resource_type*/ type;
+	unsigned short /*enum debug_resource_flags*/ flags;
+
+	union {
+		struct bitmap {
+			short width;
+			short height;
+			short numPlanes;
+		} bitmap;
+		struct palette {
+			short numEntries;
+		} palette;
+	};
+};
+
+// debug overlay
+void debug_clear() {
 	debug_cmd(barto_cmd_clear, 0, 0, 0);
 }
 
-void debug_rect(short left, short top, short right, short bottom, unsigned int color)
-{
+void debug_rect(short left, short top, short right, short bottom, unsigned int color) {
 	debug_cmd(barto_cmd_rect, (((unsigned int)left) << 16) | ((unsigned int)top), (((unsigned int)right) << 16) | ((unsigned int)bottom), color);
 }
 
-void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color)
-{
+void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color) {
 	debug_cmd(barto_cmd_filled_rect, (((unsigned int)left) << 16) | ((unsigned int)top), (((unsigned int)right) << 16) | ((unsigned int)bottom), color);
 }
 
-void debug_text(short left, short top, const char* text, unsigned int color)
-{
+void debug_text(short left, short top, const char* text, unsigned int color) {
 	debug_cmd(barto_cmd_text, (((unsigned int)left) << 16) | ((unsigned int)top), (unsigned int)text, color);
+}
+
+// gfx debugger
+static void my_strncpy(char* destination, const char* source, unsigned long num) {
+	while(*source && --num > 0)
+		*destination++ = *source++;
+	*destination = '\0';
+}
+
+void debug_register_bitmap(const void* addr, const char* name, short width, short height, short numPlanes, unsigned short flags) {
+	struct debug_resource resource = {
+		.address = (unsigned int)addr,
+		.size = width / 8 * height * numPlanes,
+		.type = debug_resource_type_bitmap,
+		.flags = flags,
+		.bitmap = { width, height, numPlanes }
+	};
+	my_strncpy(resource.name, name, sizeof(resource.name));
+	debug_cmd(barto_cmd_register_resource, (unsigned int)&resource, 0, 0);
+}
+
+void debug_register_palette(const void* addr, const char* name, short numEntries, unsigned short flags) {
+	struct debug_resource resource = {
+		.address = (unsigned int)addr,
+		.size = numEntries * 2,
+		.type = debug_resource_type_palette,
+		.flags = flags,
+		.palette = { numEntries }
+	};
+	my_strncpy(resource.name, name, sizeof(resource.name));
+	debug_cmd(barto_cmd_register_resource, (unsigned int)&resource, 0, 0);
+}
+
+void debug_register_copperlist(const void* addr, const char* name, unsigned int size, unsigned short flags) {
+	struct debug_resource resource = {
+		.address = (unsigned int)addr,
+		.size = size,
+		.type = debug_resource_type_copperlist,
+		.flags = flags,
+	};
+	my_strncpy(resource.name, name, sizeof(resource.name));
+	debug_cmd(barto_cmd_register_resource, (unsigned int)&resource, 0, 0);
 }

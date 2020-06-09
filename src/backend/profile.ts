@@ -234,16 +234,64 @@ export interface DmaRecord {
 	intlev?: number;
 }
 
+export enum GfxResourceType {
+	bitmap,
+	palette,
+	copperlist
+}
+
+export enum GfxResourceFlags {
+	debug_resource_bitmap_interleaved = 1 << 0
+}
+
+export interface GfxResource {
+	address: number;
+	size: number;
+	name: string;
+	type: GfxResourceType;
+	flags: GfxResourceFlags;
+	bitmap?: {
+		width: number;
+		height: number;
+		numPlanes: number;
+	};
+	palette?: {
+		numEntries: number;
+	};
+}
+
+/*
+struct barto_debug_resource {
+	unsigned int address;
+	unsigned int size;
+	char name[32];
+	unsigned short enum debug_resource_type type;
+	unsigned short enum debug_resource_flags flags;
+	union {
+		struct bitmap {
+			short width;
+			short height;
+			short numPlanes;
+		} bitmap;
+		struct palette {
+			short numEntries;
+		} palette;
+	};
+};
+*/
+
 export class ProfileFile {
 	public chipmemSize: number;
 	public chipMem: Uint8Array;
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
+	public gfxResources: GfxResource[] = [];
 	public profileArray: Uint32Array;
 
 	public static NR_DMA_REC_HPOS = 228;
 	public static NR_DMA_REC_VPOS = 313;
 	private static sizeofDmaRec = 20;
+	private static sizeofResource = 52;
 
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
@@ -254,7 +302,7 @@ export class ProfileFile {
 		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
 		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
-			throw new Error("dmaCount mismatch");
+			throw new Error("dmaLen mismatch");
 		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
 			throw new Error("dmaCount mismatch");
 		const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
@@ -275,6 +323,35 @@ export class ProfileFile {
 				this.dmaRecords.push({});
 			}
 		}
+		const resourceLen = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		const resourceCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		if(resourceLen !== ProfileFile.sizeofResource)
+			throw new Error("resourceLen mismatch");
+		const resourceBuffer = Buffer.from(buffer.buffer, bufferOffset, resourceLen * resourceCount); bufferOffset += resourceLen * resourceCount;
+		for(let i = 0; i < resourceCount; i++) {
+			const address = resourceBuffer.readUInt32LE(i * resourceLen + 0);
+			const size = resourceBuffer.readUInt32LE(i * resourceLen + 4);
+			const name = resourceBuffer.toString('utf8', i * resourceLen + 8, resourceBuffer.indexOf(0, i * resourceLen + 8));
+			const type = resourceBuffer.readUInt16LE(i * resourceLen + 40) as GfxResourceType;
+			const flags = resourceBuffer.readUInt16LE(i * resourceLen + 42) as GfxResourceFlags;
+			const resource: GfxResource = { address, size, name, type, flags };
+			switch(type) {
+			case GfxResourceType.bitmap:
+				const width = resourceBuffer.readUInt16LE(i * resourceLen + 44);
+				const height = resourceBuffer.readUInt16LE(i * resourceLen + 46);
+				const numPlanes = resourceBuffer.readUInt16LE(i * resourceLen + 48);
+				resource.bitmap = { width, height, numPlanes };
+				break;
+			case GfxResourceType.palette:
+				const numEntries = resourceBuffer.readUInt16LE(i * resourceLen + 44);
+				resource.palette = { numEntries };
+				break;
+			}
+			this.gfxResources.push(resource);
+		}
+		const profileCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
+			throw new Error("profileCount mismatch");
 		this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
 	}
 }
@@ -387,6 +464,7 @@ export class Profiler {
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
 
+		let iii = 0;
 		for(const p of profileFile.profileArray) {
 			if(p < 0xffff0000) {
 				let pc = p;
@@ -415,9 +493,16 @@ export class Profiler {
 				lastCallstack.frames = [...callstack.frames];
 				callstack.frames.length = 0;
 			}
+			iii++;
 		}
 
-		const out: ICpuProfileRaw = { ...profileCommon(cyclesPerFunction, locations), chipMem: Buffer.from(profileFile.chipMem).toString('base64'), customRegs: Array.from(profileFile.customRegs), dmaRecords: profileFile.dmaRecords };
+		const out: ICpuProfileRaw = { 
+			...profileCommon(cyclesPerFunction, locations),
+			chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
+			customRegs: Array.from(profileFile.customRegs), 
+			dmaRecords: profileFile.dmaRecords,
+			gfxResources: profileFile.gfxResources
+		};
 		return JSON.stringify(out/*, null, 2*/);
 	}
 

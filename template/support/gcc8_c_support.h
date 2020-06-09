@@ -19,6 +19,15 @@ void debug_rect(short left, short top, short right, short bottom, unsigned int c
 void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color);
 void debug_text(short left, short top, const char* text, unsigned int color);
 
+// Graphics debugger
+enum debug_resource_flags {
+    debug_resource_bitmap_interleaved = 1 << 0,
+};
+
+void debug_register_bitmap(const void* addr, const char* name, short width, short height, short numPlanes, unsigned short flags);
+void debug_register_palette(const void* addr, const char* name, short numEntries, unsigned short flags);
+void debug_register_copperlist(const void* addr, const char* name, unsigned int size, unsigned short flags);
+
 #define INCBIN(name, file) INCBIN_SECTION(name, file, ".rodata", "")
 #define INCBIN_CHIP(name, file) INCBIN_SECTION(name, file, ".INCBIN.MEMF_CHIP", "aw")
 #define INCBIN_SECTION(name, file, section, flags) \

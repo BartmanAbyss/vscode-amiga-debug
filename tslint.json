@@ -28,7 +28,9 @@
 		"no-console": false,
 		"ordered-imports": false,
 		"ban-types": false,
-		"no-namespace": false
+		"no-namespace": false,
+		"no-trailing-whitespace": false,
+		"no-shadowed-variable": false
 	},
 	"defaultSeverity": "warning"
 }

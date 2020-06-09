@@ -4,7 +4,7 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from './location-mapping';
-import { DmaRecord } from '../backend/profile';
+import { DmaRecord, GfxResource } from '../backend/profile';
 
 export const enum Constants {
 	CurrentDataVersion = 1,
@@ -52,6 +52,7 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	chipMem?: string; // base64 encoded binary data
 	customRegs?: number[];
 	dmaRecords?: DmaRecord[];
+	gfxResources?: GfxResource[];
 }
 
 /**

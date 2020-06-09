@@ -9,7 +9,7 @@ import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation } from './types';
 import { maybeFileUrlToPath } from './path';
 import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
-import { DmaRecord } from '../backend/profile';
+import { DmaRecord, GfxResource } from '../backend/profile';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -72,6 +72,7 @@ export interface IProfileModel {
 	chipMemCache?: Uint8Array;
 	customRegs?: number[];
 	dmaRecords?: DmaRecord[];
+	gfxResources?: GfxResource[];
 }
 
 /**
@@ -200,7 +201,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			duration: profile.endTime - profile.startTime,
 			chipMem: profile.chipMem,
 			customRegs: profile.customRegs,
-			dmaRecords: profile.dmaRecords
+			dmaRecords: profile.dmaRecords,
+			gfxResources: profile.gfxResources
 		};
 	}
 
@@ -284,6 +286,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		duration: profile.endTime - profile.startTime,
 		chipMem: profile.chipMem,
 		customRegs: profile.customRegs,
-		dmaRecords: profile.dmaRecords
+		dmaRecords: profile.dmaRecords,
+		gfxResources: profile.gfxResources
 	};
 };
