@@ -32,6 +32,22 @@
   font-size: 0.9em;
 }
 
+.tooltip .dmaon {
+  font-size: 80%;
+  display: inline-block;
+  margin-right: 2px;
+  background-color: var(--vscode-editor-selectionBackground);
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+}
+
+.tooltip .dmaoff {
+  font-size: 80%;
+  display: inline-block;
+  margin-right: 2px;
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+  opacity: 0.6;
+}
+
 .handle {
   position: absolute;
   top: 0;

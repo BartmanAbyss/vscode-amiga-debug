@@ -25,7 +25,7 @@ export const CpuProfileLayout: FunctionComponent<{
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
 	const [text, setFilter] = useState('');
-	const [displayUnit2, setDisplayUnit] = useState<DisplayUnit>(model.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes);
+	const [displayUnit2, setDisplayUnit] = useState<DisplayUnit>(model.amiga.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes);
 
 	const filter: IRichFilter = { text, caseSensitive, regex };
 
@@ -76,7 +76,7 @@ export const CpuProfileLayout: FunctionComponent<{
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit2} />
 			</div>
-			<Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
+			<Tabs defaultIndex={0} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>

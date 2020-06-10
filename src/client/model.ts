@@ -6,7 +6,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation } from './types';
+import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra } from './types';
 import { maybeFileUrlToPath } from './path';
 import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
 import { DmaRecord, GfxResource } from '../backend/profile_types';
@@ -68,11 +68,9 @@ export interface IProfileModel {
 	timeDeltas: ReadonlyArray<number>;
 	rootPath?: string;
 	duration: number;
-	chipMem?: string; // base64 encoded binary
+
+	amiga?: IAmigaProfileExtra;
 	chipMemCache?: Uint8Array;
-	customRegs?: number[];
-	dmaRecords?: DmaRecord[];
-	gfxResources?: GfxResource[];
 }
 
 /**
@@ -164,7 +162,7 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
 
 	for (const node of profile.nodes) {
 		node.locationId = getLocationIdFor(node.callFrame);
-		node.positionTicks = node.positionTicks?.map(tick => ({
+		node.positionTicks = node.positionTicks?.map((tick) => ({
 			...tick,
 			// weirdly, line numbers here are 1-based, not 0-based. The position tick
 			// only gives line-level granularity, so 'mark' the entire range of source
@@ -184,7 +182,7 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
 
 	return [...locationsByRef.values()]
 		.sort((a, b) => a.id - b.id)
-		.map(l => ({ locations: [l.location], callFrame: l.callFrame }));
+		.map((l) => ({ locations: [l.location], callFrame: l.callFrame }));
 };
 
 /**
@@ -199,10 +197,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			timeDeltas: profile.timeDeltas || [],
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
-			chipMem: profile.chipMem,
-			customRegs: profile.customRegs,
-			dmaRecords: profile.dmaRecords,
-			gfxResources: profile.gfxResources
+			amiga: profile.$amiga,
 		};
 	}
 
@@ -230,7 +225,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		}
 
 		return id;
-	}
+	};
 
 	// 1. Created a sorted list of nodes. It seems that the profile always has
 	// incrementing IDs, although they are just not initially sorted.
@@ -284,9 +279,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		timeDeltas: profile.timeDeltas || [],
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
-		chipMem: profile.chipMem,
-		customRegs: profile.customRegs,
-		dmaRecords: profile.dmaRecords,
-		gfxResources: profile.gfxResources
+		amiga: profile.$amiga,
 	};
 };

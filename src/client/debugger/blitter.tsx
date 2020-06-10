@@ -10,9 +10,9 @@ export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
 	blit: Blit;
 }> = ({ model, blit }) => {
-	const chipMemBefore = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleStart);
-	const chipMemAfter = GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, blit.cycleEnd || 0xffffffff);
-	const customRegs = new Uint16Array(model.customRegs);
+	const chipMemBefore = GetChipMemAfterDma(model.chipMemCache, model.amiga.dmaRecords, blit.cycleStart);
+	const chipMemAfter = GetChipMemAfterDma(model.chipMemCache, model.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
+	const customRegs = new Uint16Array(model.amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
 	const planes = 5;
@@ -93,8 +93,8 @@ export const BlitterList: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
 	const blits = useMemo(() => {
-		const customRegs = new Uint16Array(model.customRegs);
-		return GetBlits(customRegs, model.dmaRecords);
+		const customRegs = new Uint16Array(model.amiga.customRegs);
+		return GetBlits(customRegs, model.amiga.dmaRecords);
 	}, [model]);
 
 	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />

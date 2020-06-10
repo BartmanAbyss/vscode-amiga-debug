@@ -252,7 +252,7 @@ export interface IScreen {
 
 export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let planes = [0, 0, 0, 0, 0];
-	let modulos = [0, 0];
+	const modulos = [0, 0];
 
 	let BPLCON0 = 0;
 	let DDFSTRT = 0;

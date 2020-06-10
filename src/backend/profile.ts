@@ -238,6 +238,7 @@ struct barto_debug_resource {
 export class ProfileFile {
 	public chipmemSize: number;
 	public chipMem: Uint8Array;
+	public dmacon: number;
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
@@ -251,11 +252,12 @@ export class ProfileFile {
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
+		this.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
 		this.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
-		this.chipmemSize = (new Uint32Array(buffer.buffer, bufferOffset, 1))[0]; bufferOffset += 4;
+		this.chipmemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
-		const dmaLen = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
-		const dmaCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
 			throw new Error("dmaLen mismatch");
 		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
@@ -278,8 +280,8 @@ export class ProfileFile {
 				this.dmaRecords.push({});
 			}
 		}
-		const resourceLen = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
-		const resourceCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		const resourceLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		const resourceCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(resourceLen !== ProfileFile.sizeofResource)
 			throw new Error("resourceLen mismatch");
 		const resourceBuffer = Buffer.from(buffer.buffer, bufferOffset, resourceLen * resourceCount); bufferOffset += resourceLen * resourceCount;
@@ -304,10 +306,14 @@ export class ProfileFile {
 			}
 			this.gfxResources.push(resource);
 		}
-		const profileCount = new Uint32Array(buffer.buffer, bufferOffset, 1)[0]; bufferOffset += 4;
+		const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
 			throw new Error("profileCount mismatch");
-		this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
+		// profileArray may be unaligned, so manually read entries
+		//this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
+		this.profileArray = new Uint32Array(profileCount);
+		for(let i = 0; i < profileCount; i++)
+			this.profileArray[i] = buffer.readUInt32LE(bufferOffset + i * 4);
 	}
 }
 
@@ -453,10 +459,13 @@ export class Profiler {
 
 		const out: ICpuProfileRaw = { 
 			...profileCommon(cyclesPerFunction, locations),
-			chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
-			customRegs: Array.from(profileFile.customRegs), 
-			dmaRecords: profileFile.dmaRecords,
-			gfxResources: profileFile.gfxResources
+			$amiga: {
+				chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
+				dmacon: profileFile.dmacon,
+				customRegs: Array.from(profileFile.customRegs), 
+				dmaRecords: profileFile.dmaRecords,
+				gfxResources: profileFile.gfxResources
+			}
 		};
 		return JSON.stringify(out/*, null, 2*/);
 	}

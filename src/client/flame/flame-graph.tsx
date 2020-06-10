@@ -59,6 +59,12 @@ const pickColor = (location: IColumnLocation): number => {
 	return color;
 };
 
+interface IBoxAmiga {
+	dmacon?: number;
+	dmaRecord?: DmaRecord;
+	blit?: Blit;
+}
+
 export interface IBox {
 	column: number;
 	row: number;
@@ -70,8 +76,7 @@ export interface IBox {
 	level: number;
 	text: string;
 	loc: IColumnLocation;
-	dmaRecord?: DmaRecord;
-	blit?: Blit;
+	amiga?: IBoxAmiga;
 }
 
 const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
@@ -112,9 +117,12 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 };
 
 const buildDmaBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.dmaRecords;
+	const dmaRecords = model.amiga.dmaRecords;
 	if(dmaRecords === undefined)
 		return [];
+
+	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+	let dmacon = model.amiga.dmacon;
 
 	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
 	const boxes: IBox[] = [];
@@ -128,6 +136,13 @@ const buildDmaBoxes = (model: IProfileModel) => {
 			const dmaSubtype = dmaRecord.extra || 0;
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
+
+			if(dmaRecord.reg === regDMACON) {
+				if (dmaRecord.dat & 0x8000)
+					dmacon |= dmaRecord.dat & 0x7FFF;
+				else
+					dmacon &= ~dmaRecord.dat;
+			}
 
 			let text = dmaTypes[dmaType].name;
 			if(dmaTypes[dmaType].subtypes[dmaSubtype].name !== undefined)
@@ -164,7 +179,10 @@ const buildDmaBoxes = (model: IProfileModel) => {
 						columnNumber: x
 					}
 				},
-				dmaRecord
+				amiga: {
+					dmacon,
+					dmaRecord
+				}
 			});
 		}
 	}
@@ -172,12 +190,12 @@ const buildDmaBoxes = (model: IProfileModel) => {
 };
 
 const buildBlitBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.dmaRecords;
+	const dmaRecords = model.amiga.dmaRecords;
 	if(dmaRecords === undefined)
 		return [];
 
-	const customRegs = new Uint16Array(model.customRegs);
-	const blits = GetBlits(customRegs, model.dmaRecords);
+	const customRegs = new Uint16Array(model.amiga.customRegs);
+	const blits = GetBlits(customRegs, model.amiga.dmaRecords);
 
 	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
 	const boxes: IBox[] = [];
@@ -224,7 +242,7 @@ const buildBlitBoxes = (model: IProfileModel) => {
 					columnNumber: blit.hposStart
 				}
 			},
-			blit
+			amiga: { blit }
 		});
 	}
 	return boxes;
@@ -889,8 +907,7 @@ export const FlameGraph: FunctionComponent<{
 						lowerY={hovered.box.y2}
 						src={hovered.src}
 						location={hovered.box.loc}
-						dmaRecord={hovered.box.dmaRecord}
-						blit={hovered.box.blit}
+						amiga={hovered.box.amiga}
 						displayUnit={displayUnit}
 						model={model}
 					/>, document.body)
@@ -962,64 +979,98 @@ const Tooltip: FunctionComponent<{
 	upperY: number;
 	lowerY: number;
 	location: ILocation;
-	dmaRecord: DmaRecord;
-	blit: Blit;
+	amiga: IBoxAmiga;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
 	model: IProfileModel;
-}> = ({ left, lowerY, upperY, src, location, dmaRecord, blit, canvasRect, displayUnit, model }) => {
+}> = ({ left, lowerY, upperY, src, location, amiga, canvasRect, displayUnit, model }) => {
 	const label = getLocationText(location);
-	const isDma = dmaRecord !== undefined;
-	const isBlit = blit !== undefined;
+	const isDma = amiga?.dmaRecord !== undefined;
+	const isBlit = amiga?.blit !== undefined;
 	const isFunction = !isDma && !isBlit;
 
 	let dmaReg = '';
 	let dmaData = '';
 	let dmaEvents = '';
+
+	interface DmaChannel {
+		name: string;
+		enabled: boolean;
+	}
+	enum DmaFlags {
+		AUD0    = 0x0001,
+		AUD1    = 0x0002,
+		AUD2    = 0x0004,
+		AUD3    = 0x0008,
+		DISK    = 0x0010,
+		SPRITE  = 0x0020,
+		BLITTER = 0x0040,
+		COPPER  = 0x0080,
+		RASTER  = 0x0100,
+		MASTER  = 0x0200, 
+	}
+	const dmaChannels: DmaChannel[] = [];
+
 	if(isDma) {
-		if(dmaRecord.type !== undefined) {
-			dmaData = '$' + (dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
-			if(dmaRecord.reg & 0x1000) {
-				if(dmaRecord.reg & 0x0100)
+		if(amiga.dmacon !== undefined) {
+			if(amiga.dmacon & DmaFlags.MASTER) {
+				dmaChannels.push({ name: "Master", enabled: true });
+				dmaChannels.push({ name: "Raster", enabled: !!(amiga.dmacon & DmaFlags.RASTER) });
+				dmaChannels.push({ name: "Copper", enabled: !!(amiga.dmacon & DmaFlags.COPPER) });
+				dmaChannels.push({ name: "Blitter", enabled: !!(amiga.dmacon & DmaFlags.BLITTER) });
+				dmaChannels.push({ name: "Sprite", enabled: !!(amiga.dmacon & DmaFlags.SPRITE) });
+				dmaChannels.push({ name: "Disk", enabled: !!(amiga.dmacon & DmaFlags.DISK) });
+				dmaChannels.push({ name: "Aud0", enabled: !!(amiga.dmacon & DmaFlags.AUD0) });
+				dmaChannels.push({ name: "Aud1", enabled: !!(amiga.dmacon & DmaFlags.AUD1) });
+				dmaChannels.push({ name: "Aud2", enabled: !!(amiga.dmacon & DmaFlags.AUD2) });
+				dmaChannels.push({ name: "Aud3", enabled: !!(amiga.dmacon & DmaFlags.AUD3) });
+			} else {
+				dmaChannels.push({ name: "Master", enabled: false });
+			}
+		}
+		if(amiga.dmaRecord.type !== undefined) {
+			dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
+			if(amiga.dmaRecord.reg & 0x1000) {
+				if(amiga.dmaRecord.reg & 0x0100)
 					dmaReg = 'Write';
 				else
 					dmaReg = 'Read';
-				if((dmaRecord.reg & 0xff) === 4) {
+				if((amiga.dmaRecord.reg & 0xff) === 4) {
 					dmaReg += '.L';
-					dmaData = '$' + dmaRecord.dat.toString(16).padStart(8, '0');
+					dmaData = '$' + amiga.dmaRecord.dat.toString(16).padStart(8, '0');
 				}
-				if((dmaRecord.reg & 0xff) === 2)
+				if((amiga.dmaRecord.reg & 0xff) === 2)
 					dmaReg += '.W';
-				if((dmaRecord.reg & 0xff) === 1) {
+				if((amiga.dmaRecord.reg & 0xff) === 1) {
 					dmaReg += '.B';
-					dmaData = '$' + (dmaRecord.dat & 0xff).toString(16).padStart(2, '0');
+					dmaData = '$' + (amiga.dmaRecord.dat & 0xff).toString(16).padStart(2, '0');
 				}
 			} else {
-				dmaReg = CustomRegisters.getCustomName(0xdff000 + dmaRecord.reg) + ' ($' + dmaRecord.reg.toString(16).padStart(3, '0') + ')';
+				dmaReg = CustomRegisters.getCustomName(0xdff000 + amiga.dmaRecord.reg) + ' ($' + amiga.dmaRecord.reg.toString(16).padStart(3, '0') + ')';
 			}
 		}
-		if(dmaRecord.evt) {
+		if(amiga.dmaRecord.evt) {
 			const events: string[] = [];
 
-			if(dmaRecord.evt & DmaEvents.BLITNASTY)
+			if(amiga.dmaRecord.evt & DmaEvents.BLITNASTY)
 				events.push("Blitter Nasty");
-			if(dmaRecord.evt & DmaEvents.BLITSTARTFINISH)
+			if(amiga.dmaRecord.evt & DmaEvents.BLITSTARTFINISH)
 				events.push("Blitter Start/Finish");
-			if(dmaRecord.evt & DmaEvents.BLITIRQ)
+			if(amiga.dmaRecord.evt & DmaEvents.BLITIRQ)
 				events.push("Blitter IRQ");
-			if(dmaRecord.evt & DmaEvents.BPLFETCHUPDATE)
+			if(amiga.dmaRecord.evt & DmaEvents.BPLFETCHUPDATE)
 				events.push("Bitplane Fetch Update");
-			if(dmaRecord.evt & DmaEvents.COPPERWAKE)
+			if(amiga.dmaRecord.evt & DmaEvents.COPPERWAKE)
 				events.push("Copper Wake");
-			if(dmaRecord.evt & DmaEvents.NOONEGETS)
+			if(amiga.dmaRecord.evt & DmaEvents.NOONEGETS)
 				events.push("Copper can't read");
-			else if(dmaRecord.evt & DmaEvents.COPPERWANTED)
+			else if(amiga.dmaRecord.evt & DmaEvents.COPPERWANTED)
 				events.push("Copper can't read");
-			if(dmaRecord.evt & DmaEvents.CPUIRQ)
+			if(amiga.dmaRecord.evt & DmaEvents.CPUIRQ)
 				events.push("CPU IRQ");
-			if(dmaRecord.evt & DmaEvents.INTREQ)
+			if(amiga.dmaRecord.evt & DmaEvents.INTREQ)
 				events.push("INTREQ");
-			if(dmaRecord.evt & DmaEvents.SPECIAL)
+			if(amiga.dmaRecord.evt & DmaEvents.SPECIAL)
 				events.push("Special");
 
 			dmaEvents = events.join(', ');
@@ -1032,16 +1083,16 @@ const Tooltip: FunctionComponent<{
 			className={styles.tooltip}
 			aria-live="polite"
 			aria-atomic={true}
-			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 400), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: isDma ? '300px' : '400px' }}
+			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 420), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: '420px' }}
 		>
 			<dl>
 				{isDma && (<Fragment>
 					<dt>DMA Request</dt>
 					<dd className={styles.function}>{location.callFrame.functionName}</dd>
-					{dmaRecord.addr !== undefined && dmaRecord.addr !== 0xffffffff && (
+					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>${(dmaRecord.addr & 0x00ffffff).toString(16).padStart(6, '0')}</dd>
+							<dd className={styles.time}>${(amiga.dmaRecord.addr & 0x00ffffff).toString(16).padStart(6, '0')}</dd>
 						</Fragment>
 					)}
 					{dmaReg && (<Fragment>
@@ -1056,21 +1107,27 @@ const Tooltip: FunctionComponent<{
 						<dt className={styles.time}>Events</dt>
 						<dd className={styles.time}>{dmaEvents}</dd>
 					</Fragment>)}
+					<dt className={styles.time}>DMA Control</dt>
+					<dd className={styles.time}>
+						{dmaChannels.map((d) => (
+							<div class={d.enabled ? styles.dmaon : styles.dmaoff}>{d.name}</div>
+						))}
+					</dd>
 					<dt className={styles.time}>Line</dt>
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>
 					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
 				</Fragment>)}
 				{isBlit && (<Fragment>
-					{Object.keys(blit).filter((k) => k.startsWith('BLT')).map((k) => <Fragment>
+					{Object.keys(amiga.blit).filter((k) => k.startsWith('BLT')).map((k) => <Fragment>
 						<dt className={styles.time}>{k}</dt>
-						<dd className={styles.time}>{Array.isArray(blit[k]) ? blit[k].map((v) => '$' + v.toString(16)).join(' ') : ('$' + blit[k].toString(16))}</dd>
+						<dd className={styles.time}>{Array.isArray(amiga.blit[k]) ? amiga.blit[k].map((v) => '$' + v.toString(16)).join(' ') : ('$' + amiga.blit[k].toString(16))}</dd>
 					</Fragment>)}
 					<dt className={styles.time}>Start</dt>
-					<dd className={styles.time}>Line {blit.vposStart}, Color Clock {blit.hposStart}</dd>
-					{blit.vposEnd && (<Fragment>
+					<dd className={styles.time}>Line {amiga.blit.vposStart}, Color Clock {amiga.blit.hposStart}</dd>
+					{amiga.blit.vposEnd && (<Fragment>
 						<dt className={styles.time}>End</dt>
-						<dd className={styles.time}>Line {blit.vposEnd}, Color Clock {blit.hposEnd}</dd>
+						<dd className={styles.time}>Line {amiga.blit.vposEnd}, Color Clock {amiga.blit.hposEnd}</dd>
 					</Fragment>)}
 				</Fragment>)}
 				{isFunction && (<Fragment>

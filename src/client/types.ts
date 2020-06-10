@@ -46,13 +46,18 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 	}>;
 }
 
+export interface IAmigaProfileExtra {
+	chipMem: string; // base64 encoded binary data
+	dmacon: number;
+	customRegs: number[];
+	dmaRecords: DmaRecord[];
+	gfxResources: GfxResource[];
+}
+
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	$vscode?: IJsDebugAnnotations;
+	$amiga?: IAmigaProfileExtra;
 	nodes: IProfileNode[];
-	chipMem?: string; // base64 encoded binary data
-	customRegs?: number[];
-	dmaRecords?: DmaRecord[];
-	gfxResources?: GfxResource[];
 }
 
 /**

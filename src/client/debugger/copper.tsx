@@ -68,7 +68,7 @@ export const CopperList: FunctionComponent<{
 	//const COP1LC = customRegL(regCOP1LC);
 	//const copper1 = new CopperDisassembler(chipMem, COP1LC);
 
-	const copper = GetCopper(model.chipMemCache, model.dmaRecords);
+	const copper = GetCopper(model.chipMemCache, model.amiga.dmaRecords);
 	const [bitmap, setBitmap] = useState<string>("copper");
 	const [palette, setPalette] = useState<string>("copper");
 
@@ -98,7 +98,7 @@ export const CopperList: FunctionComponent<{
 	if(typeof palette === 'string' && palette === "copper") {
 		screenPalette = GetPaletteFromCopper(copper);
 	} else if(typeof palette === 'string' && palette === "customRegs") {
-		const customRegs = new Uint16Array(model.customRegs);
+		const customRegs = new Uint16Array(model.amiga.customRegs);
 		screenPalette = GetPaletteFromCustomRegs(customRegs);
 	} else {
 		const resource = JSON.parse(palette) as GfxResource;
@@ -119,7 +119,7 @@ export const CopperList: FunctionComponent<{
 				Bitmap:
 				<select class="select" alt="Bitmap" aria-label="Bitmap" value={bitmap} onChange={onChangeBitmap}>
 					<option value="copper">*Copper*</option>
-					{model.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
+					{model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
 						<option value={JSON.stringify(r)}>{r.name}</option>
 					))}
 				</select>&nbsp;
@@ -127,7 +127,7 @@ export const CopperList: FunctionComponent<{
 				<select class="select" alt="Palette" aria-label="Palette" value={palette} onChange={onChangePalette}>
 					<option value="customRegs">*Custom Registers*</option>
 					<option value="copper">*Copper*</option>
-					{model.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
+					{model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
 						<option value={JSON.stringify(r)}>{r.name}</option>
 					))}
 				</select><br/>
