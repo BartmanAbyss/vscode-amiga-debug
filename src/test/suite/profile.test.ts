@@ -99,7 +99,7 @@ function htmlPage(scripts: string[]) {
 		<title>TEST</title>
 		${vscodeStyle}
 	</head>
-	<body>
+	<body style="overflow: hidden">
 		<script type="text/javascript">
 			function acquireVsCodeApi() { return { getState: () => {}, setState: (s) => {}, postMessage: (message) => {} }; }
 		</script>

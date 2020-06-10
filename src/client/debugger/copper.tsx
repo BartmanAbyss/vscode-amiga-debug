@@ -9,6 +9,9 @@ import { GetCopper, GetChipMemAfterDma, GetPaletteFromCustomRegs, IScreen, GetSc
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
+import { ReactDropdown } from '../dropdown';
+import '../dropdown.css';
+
 export const Screen: FunctionComponent<{
 	model: IProfileModel;
 	screen: IScreen;
@@ -24,12 +27,16 @@ export const Screen: FunctionComponent<{
 	const zoomDiv = useRef<HTMLDivElement>();
 	const zoomCanvas = useRef<HTMLCanvasElement>();
 	const zoomCanvasScale = 8;
-	const zoomCanvasWidth = 128;
-	const zoomCanvasHeight = 128;
+	const zoomCanvasWidth = 144;
+	const zoomCanvasHeight = 144;
 
-	const [zoomPixelX, setZoomPixelX] = useState<number>(-1);
-	const [zoomPixelY, setZoomPixelY] = useState<number>(-1);
-	const [zoomPixelColor, setZoomPixelColor] = useState<number>(-1);
+	interface ZoomInfo {
+		x?: number;
+		y?: number;
+		color?: number;
+		mask?: number;
+	}
+	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
 	const chipMem = model.chipMemCache;//GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
 
@@ -97,35 +104,26 @@ export const Screen: FunctionComponent<{
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
-			zoomDiv.current.style.top = evt.pageY - evt.pageY % canvasScale + 10 + "px";
-			zoomDiv.current.style.left = evt.pageX - evt.pageX % canvasScale + 10 + "px";
-			zoomDiv.current.style.display = 'block';
+			const snap = (p: number) => Math.floor(p / canvasScale) * canvasScale;
 			const context = zoomCanvas.current?.getContext('2d');
 			context.imageSmoothingEnabled = false;
-			//context.fillStyle = 'black';
-			//context.fillRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			context.clearRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			const srcWidth = zoomCanvasWidth / zoomCanvasScale;
 			const srcHeight = zoomCanvasHeight / zoomCanvasScale;
-			context.drawImage(canvas.current, evt.offsetX - evt.offsetX % canvasScale - srcWidth / 2, evt.offsetY - evt.offsetY % canvasScale - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
+			context.drawImage(canvas.current, snap(evt.offsetX) - srcWidth / 2, snap(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			context.lineWidth = 2;
 			context.strokeStyle = 'rgba(0,0,0,1)';
 			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, zoomCanvasScale * canvasScale, zoomCanvasScale * canvasScale);
 			context.strokeStyle = 'rgba(255,255,255,1)';
 			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScale + 4, zoomCanvasScale * canvasScale + 4);
-/*			context.font = `20px Consolas`;
-			context.textAlign = 'left';
-			context.textBaseline = 'top';
-			context.fillStyle = 'red';
 			const srcX = Math.floor(evt.offsetX / canvasScale);
 			const srcY = Math.floor(evt.offsetY / canvasScale);
-			context.fillText(srcX.toString() + '\n' + srcY.toString() + '\n' + getPixel(screen, srcX, srcY).toString(), 0, 0);
-*/			
-			const srcX = Math.floor(evt.offsetX / canvasScale);
-			const srcY = Math.floor(evt.offsetY / canvasScale);
-			setZoomPixelX(srcX);
-			setZoomPixelY(srcY);
-			setZoomPixelColor(getPixel(screen, srcX, srcY));
+			setZoomInfo({ x: srcX, y: srcY, color: getPixel(screen, srcX, srcY), mask: mask ? getPixel(mask, srcX, srcY) : undefined });
+
+			// position zoomCanvas
+			zoomDiv.current.style.top = snap(evt.pageY) + 10 + "px";
+			zoomDiv.current.style.left = snap(evt.pageX) + 10 + "px";
+			zoomDiv.current.style.display = 'block';
 		}, [canvas.current, zoomCanvas.current, scale, screen, mask]);
 
 	const onMouseLeave = (evt: MouseEvent) => {
@@ -137,14 +135,19 @@ export const Screen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
 			{createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
-				<div>
+				{zoomInfo.color !== undefined && (<div>
 					<dl>
 						<dt>Pos</dt>
-						<dd>X:{zoomPixelX} Y:{zoomPixelY}</dd>
+						<dd>X:{zoomInfo.x} Y:{zoomInfo.y}</dd>
 						<dt>Color</dt>
-						<dd>{zoomPixelColor} (%{zoomPixelColor.toString(2).padStart(screen.planes.length, '0')})</dd>
+						<dd>{zoomInfo.color} ${zoomInfo.color.toString(16).padStart(2, '0')} %{zoomInfo.color.toString(2).padStart(screen.planes.length, '0')}</dd>
+						{zoomInfo.mask !== undefined && (<Fragment>
+							<dt>Mask</dt>
+							<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(mask.planes.length, '0')}</dd>
+						</Fragment>)}
 					</dl>
 				</div>
+				)}
 			</div>, document.body)}
 		</Fragment>
 	);
@@ -218,9 +221,15 @@ export const CopperList: FunctionComponent<{
 		setPalette(event.target.value as string);
 	};
 
+	const options = [
+		'one', 'two', 'three'
+	  ];
+	const defaultOption = options[0];
+
 	return (
 		<Fragment>
 			<div class={styles.container}>
+				<ReactDropdown options={options} value={defaultOption} placeholder="Select an option" />;	
 				Bitmap:
 				<select class="select" alt="Bitmap" aria-label="Bitmap" value={bitmap} onChange={onChangeBitmap}>
 					<option value="copper">*Copper*</option>

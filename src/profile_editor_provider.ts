@@ -35,7 +35,7 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	  <title>Custom Editor: ${bundlePath}</title>
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
-	<body>
+	<body style="overflow: hidden">
 	  <script type="text/javascript" nonce="${nonce}">(() => {
 	  	${constantDecls}
 	  	${bundle}

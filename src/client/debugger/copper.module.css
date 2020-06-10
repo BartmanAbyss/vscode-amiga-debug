@@ -21,8 +21,6 @@
 
 .zoom {
 	position: absolute;
-	left: 0px;
-	top: 0px;
 	box-shadow: 0 0 1em 0 black;
 	background: var(--vscode-editor-background);
 }
