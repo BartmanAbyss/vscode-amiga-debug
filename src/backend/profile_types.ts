@@ -25,7 +25,8 @@ export enum GfxResourceType {
 }
 
 export enum GfxResourceFlags {
-	bitmap_interleaved = 1 << 0
+	bitmap_interleaved = 1 << 0,
+	bitmap_masked = 1 << 1, 
 }
 
 export interface GfxResource {

@@ -533,35 +533,44 @@ export const FlameGraph: FunctionComponent<{
 		setCanvasSize({ width, height });
 	}, [windowSize]);
 
+	const animationRef = useRef<number>();
+
 	// Callback that zoomes into the given box.
-	const zoomToBox = useCallback(
-		(box: IBox) => {
-			setFocused(box);
+	const zoomTo = useCallback(
+		(target: IBounds | IBox) => {
+			//setFocused(box);
+
+			if(animationRef.current) {
+				cancelAnimationFrame(animationRef.current);
+				animationRef.current = undefined;
+			}
 
 			const from = bounds;
-			const to: IBounds = {
-				minX: box.x1,
-				maxX: box.x2,
-			};
+			const to = 'minX' in target ? target : { minX: (target as IBox).x1, maxX: (target as IBox).x2 };
 			if(from.minX === to.minX && from.maxX === to.maxX)
 				to.minX = 0, to.maxX = 1;
 
-			const duration = 300;
+//setBounds(to);return;
+
+			const duration = 100;
 			let start;
 			const QuadraticEaseInOut = (p: number) => (p < 0.5) ? 2 * p * p : (-2 * p * p) + (4 * p) - 1;
+			const LinearInterp = (p: number) => p;
 
 			const update = (timestamp: DOMHighResTimeStamp) => {
 				if (start === undefined)
 					start = timestamp;
 				const elapsed = timestamp - start;
 				const animated = { ...from };
-				const lerp = QuadraticEaseInOut(Math.min(1.0, elapsed / duration));
+				const lerp = /*QuadraticEaseInOut*/LinearInterp(Math.min(1.0, elapsed / duration));
 				Object.keys(animated).forEach((k) => { animated[k] = from[k] + (to[k] - from[k]) * lerp; });
 				setBounds(animated);
 				if(elapsed < duration)
-					requestAnimationFrame(update);
+					animationRef.current = requestAnimationFrame(update);
+				else
+					animationRef.current = undefined;
 			};
-			requestAnimationFrame(update);
+			animationRef.current = requestAnimationFrame(update);
 		},
 		[clampX, canvasSize.height, bounds],
 	);
@@ -580,9 +589,9 @@ export const FlameGraph: FunctionComponent<{
 						return openBox(hovered.box, evt);
 					}
 
-					return focused && zoomToBox(focused);
+					return focused && zoomTo(focused);
 				case 'Space':
-					return focused && zoomToBox(focused);
+					return focused && zoomTo(focused);
 				default:
 				// fall through
 			}
@@ -639,7 +648,7 @@ export const FlameGraph: FunctionComponent<{
 				setHovered({ box: nextFocus, src: HighlightSource.Keyboard });
 			}
 		},
-		[zoomToBox, focused, hovered, rawBoxes, clampX],
+		[zoomTo, focused, hovered, rawBoxes, clampX],
 	);
 
 	// Keyboard events
@@ -766,13 +775,16 @@ export const FlameGraph: FunctionComponent<{
 					(evt.deltaY / width) * (bounds.maxX - bounds.minX),
 					clampX.maxX - bounds.maxX,
 				);
-				setBounds({ ...bounds, minX: bounds.minX + deltaX, maxX: bounds.maxX + deltaX });
+				setBounds({ minX: bounds.minX + deltaX, maxX: bounds.maxX + deltaX });
 				return;
 			}
 
 			const range = bounds.maxX - bounds.minX;
 			const center = bounds.minX + (range * (evt.pageX - left)) / width;
 			const scale = evt.deltaY / -400;
+			//const mouseWheelZoomSpeed = 1 / 120;
+			//const scale = Math.pow(1.4, -evt.deltaY * mouseWheelZoomSpeed) - 1;
+			//console.log(scale);
 			setBounds({
 				minX: Math.max(clampX.minX, bounds.minX + scale * (center - bounds.minX)),
 				maxX: Math.min(clampX.maxX, bounds.maxX - scale * (bounds.maxX - center)),
@@ -835,7 +847,7 @@ export const FlameGraph: FunctionComponent<{
 	const onDblClick = useCallback(
 		(evt: MouseEvent) => {
 			if(focused) {
-				zoomToBox(focused);
+				zoomTo(focused);
 			}
 			evt.stopPropagation();
 			evt.preventDefault();

@@ -1,8 +1,28 @@
 .container {
-    background: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-    font-weight: var(--vscode-editor-font-weight);   
-    white-space: pre;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);   
+	white-space: pre;
+}
+
+:root {
+	--stripe1: rgba(255, 255, 255, 0.1);
+	--stripe2: rgba(255, 255, 255, 0.2);
+}
+
+.screen {
+	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
+	background-size: 30px 30px;
+	animation: barberpole 0.5s linear infinite;
+}
+
+@keyframes barberpole {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: 60px 30px;
+	}
 }

@@ -11,9 +11,10 @@ import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/pr
 export const Screen: FunctionComponent<{
 	model: IProfileModel;
 	screen: IScreen;
+	mask?: IScreen;
 	palette: number[];
 	scale: number;
-}> = ({ model, screen, palette, scale }) => {
+}> = ({ model, screen, mask, palette, scale }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -34,8 +35,14 @@ export const Screen: FunctionComponent<{
 			}
 		};
 		const planes = [...screen.planes];
+		let maskPlane = mask?.planes[0];
 		for(let y = 0; y < screen.height; y++) {
 			for(let x = 0; x < screen.width / 16; x++) {
+				let pixelMask = 0xffff;
+				if(mask) {
+					const addr = maskPlane + x * 2;
+					pixelMask = (chipMem[addr] << 8) | chipMem[addr + 1];
+				}
 				for(let i = 0; i < 16; i++) {
 					let pixel = 0;
 					for(let p = 0; p < planes.length; p++) {
@@ -44,18 +51,20 @@ export const Screen: FunctionComponent<{
 						if((raw & (1 << (15 - i))))
 							pixel |= 1 << p;
 					}
-					putPixel(x * 16 + i, y, palette[pixel]);
+					putPixel(x * 16 + i, y, (pixelMask & 1 << (15 - i)) ? palette[pixel] : 0);
 				}
 			}
 			for(let p = 0; p < planes.length; p++) {
 				planes[p] += screen.width / 8 + screen.modulos[p & 1];
 			}
+			if(mask)
+				maskPlane += mask.width / 8 + mask.modulos[0];
 		}
 		context.putImageData(imgData, 0, 0);
 	}, [canvas.current, scale, screen]);
 
 	return (
-		<canvas ref={canvas} width={canvasWidth} height={canvasHeight} />
+		<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} />
 	);
 };
 
@@ -73,6 +82,7 @@ export const CopperList: FunctionComponent<{
 	const [palette, setPalette] = useState<string>("copper");
 
 	let screen: IScreen;
+	let mask: IScreen;
 	if(typeof bitmap === 'string' && bitmap === "copper") {
 		screen = GetScreenFromCopper(copper);
 	} else {
@@ -82,9 +92,10 @@ export const CopperList: FunctionComponent<{
 		const modulos = [];
 		const planes = [];
 		if(resource.flags & GfxResourceFlags.bitmap_interleaved) {
+			const moduloScale = (resource.flags & GfxResourceFlags.bitmap_masked) ? 2 : 1;
 			for(let p = 0; p < resource.bitmap.numPlanes; p++)
-				planes.push(resource.address + p * width / 8);
-			const modulo = (width / 8) * (resource.bitmap.numPlanes - 1);
+				planes.push(resource.address + p * width / 8 * moduloScale);
+			const modulo = (width / 8) * (resource.bitmap.numPlanes * moduloScale - 1);
 			modulos.push(modulo, modulo);
 		} else {
 			for(let p = 0; p < resource.bitmap.numPlanes; p++)
@@ -92,6 +103,18 @@ export const CopperList: FunctionComponent<{
 			modulos.push(0, 0);
 		}
 		screen = { width, height, planes, modulos };
+		if(resource.flags & GfxResourceFlags.bitmap_masked) {
+			const maskPlanes = [...planes];
+			if(resource.flags & GfxResourceFlags.bitmap_interleaved) {
+				for(let p = 0; p < resource.bitmap.numPlanes; p++)
+					maskPlanes[p] += width / 8;
+			} else {
+				// ??? does this make sense ?? not tested
+				for(let p = 0; p < resource.bitmap.numPlanes; p++)
+					maskPlanes[p] += width / 8 * height;
+			}
+			mask = { width, height, planes: maskPlanes, modulos };
+		}
 	}
 
 	let screenPalette: number[];
@@ -131,7 +154,7 @@ export const CopperList: FunctionComponent<{
 						<option value={JSON.stringify(r)}>{r.name}</option>
 					))}
 				</select><br/>
-				<Screen model={model} screen={screen} palette={screenPalette} scale={2} /><br/>
+				<Screen model={model} screen={screen} mask={mask} palette={screenPalette} scale={2} /><br/>
 				{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}
 			</div>
 		</Fragment>
