@@ -153,6 +153,12 @@ export const Screen: FunctionComponent<{
 	);
 };
 
+const Blabla: FunctionComponent<{}> = () => {
+	return (
+		<span class="Dropdown-arrow">Hallo!</span>
+	);
+};
+
 export const CopperList: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
@@ -229,7 +235,7 @@ export const CopperList: FunctionComponent<{
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				<ReactDropdown options={options} value={defaultOption} placeholder="Select an option" />;	
+				<ReactDropdown options={options} value={defaultOption} arrowOpen={Blabla} arrowClosed={Blabla} placeholder="Select an option" />
 				Bitmap:
 				<select class="select" alt="Bitmap" aria-label="Bitmap" value={bitmap} onChange={onChangeBitmap}>
 					<option value="copper">*Copper*</option>

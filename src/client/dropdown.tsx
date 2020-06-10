@@ -1,9 +1,9 @@
 // code based on react-dropdown Copyright (c) 2014 xvfeng, MIT license
 
-import { h, Component } from 'preact';
+import { h, Component, ComponentType } from 'preact';
 
 export interface Option {
-	label: React.ReactNode;
+	label: string;
 	value: string;
 	className?: string;
 }
@@ -21,8 +21,8 @@ export interface ReactDropdownProps {
 	menuClassName?: string;
 	arrowClassName?: string;
 	disabled?: boolean;
-	arrowClosed?: React.ReactNode;
-	arrowOpen?: React.ReactNode;
+	arrowClosed?: ComponentType;
+	arrowOpen?: ComponentType;
 	onChange?: (arg: Option) => void;
 	onFocus?: (arg: boolean) => void;
 	value?: Option | string;
@@ -197,12 +197,12 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 				const groupTitle = (<div className={`${baseClassName}-title`}>
 					{(option as Group).name}
 				</div>);
-				let _options = (option as Group).items.map((item) => this.renderOption(item));
+				const groupOptions = (option as Group).items.map((item) => this.renderOption(item));
 
 				return (
 					<div className={`${baseClassName}-group`} key={(option as Group).name} role='listbox' tabIndex={-1}>
 						{groupTitle}
-						{_options}
+						{groupOptions}
 					</div>
 				);
 			} else {
@@ -266,14 +266,14 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 			{this.buildMenu()}
 		</div> : null;
 
+		const Arrow = this.state.isOpen ? this.props.arrowOpen : this.props.arrowClosed;
+
 		return (
 			<div className={dropdownClass}>
 				<div className={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleMouseDown.bind(this)} aria-haspopup='listbox'>
 					{value}
 					<div className={`${baseClassName}-arrow-wrapper`}>
-						{arrowOpen && arrowClosed
-							? this.state.isOpen ? arrowOpen : arrowClosed
-							: <span className={arrowClass} />}
+						{Arrow ? <Arrow /> : <span className={arrowClass} />}
 					</div>
 				</div>
 				{menu}
