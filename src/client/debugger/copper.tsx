@@ -7,6 +7,7 @@ import { CopperDisassembler } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper, GetChipMemAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromChipMem, GetPaletteFromCopper } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
+import { createPortal } from 'preact/compat';
 
 export const Screen: FunctionComponent<{
 	model: IProfileModel;
@@ -20,7 +21,28 @@ export const Screen: FunctionComponent<{
 	const canvasWidth = screen.width * canvasScale;
 	const canvasHeight = screen.height * canvasScale;
 
+	const zoomDiv = useRef<HTMLDivElement>();
+	const zoomCanvas = useRef<HTMLCanvasElement>();
+	const zoomCanvasScale = 8;
+	const zoomCanvasWidth = 128;
+	const zoomCanvasHeight = 128;
+
+	const [zoomPixelX, setZoomPixelX] = useState<number>(-1);
+	const [zoomPixelY, setZoomPixelY] = useState<number>(-1);
+	const [zoomPixelColor, setZoomPixelColor] = useState<number>(-1);
+
 	const chipMem = model.chipMemCache;//GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
+
+	const getPixel = (scr: IScreen, x: number, y: number): number => {
+		let pixel = 0;
+		for(let p = 0; p < scr.planes.length; p++) {
+			const addr = scr.planes[p] + y * (scr.width / 8 + scr.modulos[p & 1]) + Math.floor(x / 8);
+			const raw = chipMem[addr];
+			if(raw & (1 << (7 - (x & 7))))
+				pixel |= 1 << p;
+		}
+		return pixel;
+	};
 
 	useEffect(() => {
 		const context = canvas.current?.getContext('2d');
@@ -35,36 +57,96 @@ export const Screen: FunctionComponent<{
 			}
 		};
 		const planes = [...screen.planes];
-		let maskPlane = mask?.planes[0];
+		const maskPlanes = [...mask?.planes ?? []];
 		for(let y = 0; y < screen.height; y++) {
 			for(let x = 0; x < screen.width / 16; x++) {
-				let pixelMask = 0xffff;
-				if(mask) {
-					const addr = maskPlane + x * 2;
-					pixelMask = (chipMem[addr] << 8) | chipMem[addr + 1];
-				}
 				for(let i = 0; i < 16; i++) {
 					let pixel = 0;
+					let pixelMask = 0xffff;
 					for(let p = 0; p < planes.length; p++) {
 						const addr = planes[p] + x * 2;
 						const raw = (chipMem[addr] << 8) | chipMem[addr + 1];
 						if((raw & (1 << (15 - i))))
 							pixel |= 1 << p;
 					}
-					putPixel(x * 16 + i, y, (pixelMask & 1 << (15 - i)) ? palette[pixel] : 0);
+					if(mask) {
+						for(let p = 0; p < maskPlanes.length; p++) {
+							const addr = maskPlanes[p] + x * 2;
+							const raw = (chipMem[addr] << 8) | chipMem[addr + 1];
+							if((raw & (1 << (15 - i))))
+								pixelMask |= 1 << p;
+						}
+						pixel &= pixelMask;
+						putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
+					} else {
+						putPixel(x * 16 + i, y, palette[pixel]);
+					}
 				}
 			}
 			for(let p = 0; p < planes.length; p++) {
 				planes[p] += screen.width / 8 + screen.modulos[p & 1];
 			}
-			if(mask)
-				maskPlane += mask.width / 8 + mask.modulos[0];
+			if(mask) {
+				for(let p = 0; p < maskPlanes.length; p++) {
+					maskPlanes[p] += mask.width / 8 + mask.modulos[p & 1];
+				}
+			}
 		}
 		context.putImageData(imgData, 0, 0);
-	}, [canvas.current, scale, screen]);
+	}, [canvas.current, scale, screen, mask]);
+
+	const onMouseMove = useCallback(
+		(evt: MouseEvent) => {
+			zoomDiv.current.style.top = evt.pageY - evt.pageY % canvasScale + 10 + "px";
+			zoomDiv.current.style.left = evt.pageX - evt.pageX % canvasScale + 10 + "px";
+			zoomDiv.current.style.display = 'block';
+			const context = zoomCanvas.current?.getContext('2d');
+			context.imageSmoothingEnabled = false;
+			//context.fillStyle = 'black';
+			//context.fillRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
+			context.clearRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
+			const srcWidth = zoomCanvasWidth / zoomCanvasScale;
+			const srcHeight = zoomCanvasHeight / zoomCanvasScale;
+			context.drawImage(canvas.current, evt.offsetX - evt.offsetX % canvasScale - srcWidth / 2, evt.offsetY - evt.offsetY % canvasScale - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
+			context.lineWidth = 2;
+			context.strokeStyle = 'rgba(0,0,0,1)';
+			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, zoomCanvasScale * canvasScale, zoomCanvasScale * canvasScale);
+			context.strokeStyle = 'rgba(255,255,255,1)';
+			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScale + 4, zoomCanvasScale * canvasScale + 4);
+/*			context.font = `20px Consolas`;
+			context.textAlign = 'left';
+			context.textBaseline = 'top';
+			context.fillStyle = 'red';
+			const srcX = Math.floor(evt.offsetX / canvasScale);
+			const srcY = Math.floor(evt.offsetY / canvasScale);
+			context.fillText(srcX.toString() + '\n' + srcY.toString() + '\n' + getPixel(screen, srcX, srcY).toString(), 0, 0);
+*/			
+			const srcX = Math.floor(evt.offsetX / canvasScale);
+			const srcY = Math.floor(evt.offsetY / canvasScale);
+			setZoomPixelX(srcX);
+			setZoomPixelY(srcY);
+			setZoomPixelColor(getPixel(screen, srcX, srcY));
+		}, [canvas.current, zoomCanvas.current, scale, screen, mask]);
+
+	const onMouseLeave = (evt: MouseEvent) => {
+		zoomDiv.current.style.display = 'none';
+	};
 
 	return (
-		<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} />
+		<Fragment>
+			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
+			{createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
+				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
+				<div>
+					<dl>
+						<dt>Pos</dt>
+						<dd>X:{zoomPixelX} Y:{zoomPixelY}</dd>
+						<dt>Color</dt>
+						<dd>{zoomPixelColor} (%{zoomPixelColor.toString(2).padStart(screen.planes.length, '0')})</dd>
+					</dl>
+				</div>
+			</div>, document.body)}
+		</Fragment>
 	);
 };
 
