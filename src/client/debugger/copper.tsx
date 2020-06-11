@@ -163,7 +163,7 @@ interface GfxResourceWithPayload {
 const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayload>> = ({ option, placeholder }) => {
 	const resource = option.resource;
 	return (<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource}>
-		<dd><b>{resource.name}</b></dd><dd>${resource.address.toString(16).padStart(8, '0')}</dd>
+		<dt>{resource.name}</dt><dd class={styles.fixed}>${resource.address.toString(16).padStart(8, '0')}-${(resource.address + resource.size).toString(16).padStart(8, '0')}</dd>
 		<dd>
 		{resource.type === GfxResourceType.bitmap && (<Fragment>
 			{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
@@ -172,7 +172,9 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 			{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
 		</Fragment>)}
 		{resource.type === GfxResourceType.palette && (<Fragment>
-			{resource.palette.numEntries}
+			<div class={styles.palette}>
+				{option.palette.map((p) => <div style={{backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}`}} />)}
+			</div>
 		</Fragment>)}
 		</dd>
 	</div>);
@@ -244,7 +246,7 @@ export const CopperList: FunctionComponent<{
 		const copperPalette = GetPaletteFromCopper(copper);
 		const copperResource: GfxResource = {
 			address: 0, // TODO
-			size: 0,
+			size: 32*2,
 			name: '*Copper*',
 			type: GfxResourceType.palette,
 			flags: 0,
@@ -257,7 +259,7 @@ export const CopperList: FunctionComponent<{
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),
-			size: 0,
+			size: 32*2,
 			name: '*Custom Registers*',
 			type: GfxResourceType.palette,
 			flags: 0,
