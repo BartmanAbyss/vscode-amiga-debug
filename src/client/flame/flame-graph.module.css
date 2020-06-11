@@ -7,6 +7,7 @@
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
   pointer-events: none;
+	box-shadow: 0 .25em .5em 0 black;
 }
 
 .tooltip dl {
@@ -26,13 +27,18 @@
   margin-right: 0.5em;
 }
 
+.tooltip .eh {
+  font-weight: bold;
+  margin-left: 1em;
+}
+
 .tooltip .hint {
   margin-top: 0.5em;
   text-align: right;
   font-size: 0.9em;
 }
 
-.tooltip .dmaon {
+.tooltip .biton {
   font-size: 80%;
   display: inline-block;
   margin-right: 2px;
@@ -40,7 +46,7 @@
   border: 1px solid var(--vscode-editorHoverWidget-border);
 }
 
-.tooltip .dmaoff {
+.tooltip .bitoff {
   font-size: 80%;
   display: inline-block;
   margin-right: 2px;

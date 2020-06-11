@@ -7,11 +7,11 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, DmaTypes, Blit } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 import { Category, ILocation, IProfileModel } from '../model';
-import { IOpenDocumentMessage } from '../types';
+import { IOpenDocumentMessage, IAmigaProfileExtra } from '../types';
 import { useCssVariables } from '../useCssVariables';
 import { useLazyEffect } from '../useLazyEffect';
 import { useWindowSize } from '../useWindowSize';
@@ -23,6 +23,7 @@ import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
 import { CustomRegisters } from '../customRegisters';
+import { Screen } from '../debugger/copper';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -550,9 +551,9 @@ export const FlameGraph: FunctionComponent<{
 			if(from.minX === to.minX && from.maxX === to.maxX)
 				to.minX = 0, to.maxX = 1;
 
-//setBounds(to);return;
+			//setBounds(to);return;
 
-			const duration = 100;
+			const duration = 300;
 			let start;
 			const QuadraticEaseInOut = (p: number) => (p < 0.5) ? 2 * p * p : (-2 * p * p) + (4 * p) - 1;
 			const LinearInterp = (p: number) => p;
@@ -562,7 +563,7 @@ export const FlameGraph: FunctionComponent<{
 					start = timestamp;
 				const elapsed = timestamp - start;
 				const animated = { ...from };
-				const lerp = /*QuadraticEaseInOut*/LinearInterp(Math.min(1.0, elapsed / duration));
+				const lerp = QuadraticEaseInOut/*LinearInterp*/(Math.min(1.0, elapsed / duration));
 				Object.keys(animated).forEach((k) => { animated[k] = from[k] + (to[k] - from[k]) * lerp; });
 				setBounds(animated);
 				if(elapsed < duration)
@@ -985,6 +986,14 @@ const DragHandle: FunctionComponent<{
 	);
 };
 
+function symbolize(address: number, amiga: IAmigaProfileExtra) {
+	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size)
+	if(resource)
+		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
+	else
+		return `\$${address.toString(16).padStart(8, '0')}`;
+}
+
 const Tooltip: FunctionComponent<{
 	canvasRect: DOMRect;
 	left: number;
@@ -1005,7 +1014,7 @@ const Tooltip: FunctionComponent<{
 	let dmaData = '';
 	let dmaEvents = '';
 
-	interface DmaChannel {
+	interface Bit {
 		name: string;
 		enabled: boolean;
 	}
@@ -1021,7 +1030,7 @@ const Tooltip: FunctionComponent<{
 		RASTER  = 0x0100,
 		MASTER  = 0x0200, 
 	}
-	const dmaChannels: DmaChannel[] = [];
+	const dmaChannels: Bit[] = [];
 
 	if(isDma) {
 		if(amiga.dmacon !== undefined) {
@@ -1089,13 +1098,45 @@ const Tooltip: FunctionComponent<{
 		}
 	}
 
+	enum BLTCON0Flags {
+		USEA    = 1 << 11,
+		USEB    = 1 << 10,
+		USEC    = 1 <<  9,
+		USED    = 1 <<  8,
+	}
+	enum BLTCON1Flags {
+		DOFF    = 1 << 7,
+		EFE     = 1 << 4,
+		IFE     = 1 << 3,
+		FCI     = 1 << 2,
+		DESC    = 1 << 1,
+		LINE    = 1 << 0,
+	}
+	const BLTCON: Bit[] = [];
+	if(isBlit) {
+		BLTCON.push({ name: "USEA", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
+		BLTCON.push({ name: "USEB", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
+		BLTCON.push({ name: "USEC", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEC) });
+		BLTCON.push({ name: "USED", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USED) });
+		BLTCON.push({ name: "DOFF", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DOFF) });
+		BLTCON.push({ name: "EFE",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.EFE) });
+		BLTCON.push({ name: "IFE",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.IFE) });
+		BLTCON.push({ name: "FCI",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.FCI) });
+		BLTCON.push({ name: "DESC", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DESC) });
+		// TODO: line mode
+		//BLTCON.push({ name: "LINE", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
+	}
+
 	const file = label?.split(/\\|\//g).pop();
-	return (
+	const tooltipLeft = clamp(10, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 600);
+	const tooltipTop = canvasRect.top + lowerY + 10;
+	const tooltipWidth = 450;
+	return (<Fragment>
 		<div
 			className={styles.tooltip}
 			aria-live="polite"
 			aria-atomic={true}
-			style={{ left: clamp(0, canvasRect.left + canvasRect.width * left + 10, canvasRect.right - 420), top: canvasRect.top + lowerY + 10, bottom: 'initial', width: '420px' }}
+			style={{ left: tooltipLeft, top: tooltipTop, bottom: 'initial', width: tooltipWidth + 'px' }}
 		>
 			<dl>
 				{isDma && (<Fragment>
@@ -1104,7 +1145,7 @@ const Tooltip: FunctionComponent<{
 					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>${(amiga.dmaRecord.addr & 0x00ffffff).toString(16).padStart(6, '0')}</dd>
+							<dd className={styles.time}>{symbolize(amiga.dmaRecord.addr & 0x00ffffff, model.amiga)}</dd>
 						</Fragment>
 					)}
 					{dmaReg && (<Fragment>
@@ -1120,21 +1161,28 @@ const Tooltip: FunctionComponent<{
 						<dd className={styles.time}>{dmaEvents}</dd>
 					</Fragment>)}
 					<dt className={styles.time}>DMA Control</dt>
-					<dd className={styles.time}>
-						{dmaChannels.map((d) => (
-							<div class={d.enabled ? styles.dmaon : styles.dmaoff}>{d.name}</div>
-						))}
-					</dd>
+					<dd className={styles.time}>{dmaChannels.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt className={styles.time}>Line</dt>
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>
 					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
 				</Fragment>)}
 				{isBlit && (<Fragment>
-					{Object.keys(amiga.blit).filter((k) => k.startsWith('BLT')).map((k) => <Fragment>
-						<dt className={styles.time}>{k}</dt>
-						<dd className={styles.time}>{Array.isArray(amiga.blit[k]) ? amiga.blit[k].map((v) => '$' + v.toString(16)).join(' ') : ('$' + amiga.blit[k].toString(16))}</dd>
-					</Fragment>)}
+					<dt className={styles.time}>Size</dt>
+					<dd className={styles.time}>{amiga.blit.BLTSIZH * 16}x{amiga.blit.BLTSIZV}px</dd>
+					<dt className={styles.time}>Blitter Control</dt>
+					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<Fragment>
+						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
+						<dd className={styles.time}>{symbolize(amiga.blit.BLTxPT[channel], model.amiga)} 
+						{channel === 0 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</Fragment>)}
+						{channel === 1 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</Fragment>)}
+						<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>
+						{channel === 0 && (<Fragment>
+							<dt className={styles.time}>Masks</dt>
+							<dd><b>FWM</b> %{amiga.blit.BLTAFWM.toString(2).padStart(16, '0')} <span class={styles.eh}>LWM</span> %{amiga.blit.BLTALWM.toString(2).padStart(16, '0')}</dd>
+						</Fragment>)}
+					</Fragment>))}
 					<dt className={styles.time}>Start</dt>
 					<dd className={styles.time}>Line {amiga.blit.vposStart}, Color Clock {amiga.blit.hposStart}</dd>
 					{amiga.blit.vposEnd && (<Fragment>
@@ -1164,6 +1212,11 @@ const Tooltip: FunctionComponent<{
 			{label && (<div className={styles.hint}>
 				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
 			</div>)}
-		</div>
-	);
+			</div>
+		{isBlit && <Fragment>
+			<div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
+				<Screen model={model} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs))} useZoom={false} />
+			</div>
+		</Fragment>}
+	</Fragment>);
 };

@@ -17,8 +17,9 @@ export const Screen: FunctionComponent<{
 	screen: IScreen;
 	mask?: IScreen;
 	palette: number[];
-	scale: number;
-}> = ({ model, screen, mask, palette, scale }) => {
+	scale?: number;
+	useZoom?: boolean;
+}> = ({ model, screen, mask, palette, scale = 2, useZoom = true }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -104,6 +105,8 @@ export const Screen: FunctionComponent<{
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
+			if(!useZoom)
+				return;
 			const snap = (p: number) => Math.floor(p / canvasScale) * canvasScale;
 			const context = zoomCanvas.current?.getContext('2d');
 			context.imageSmoothingEnabled = false;
@@ -124,16 +127,18 @@ export const Screen: FunctionComponent<{
 			zoomDiv.current.style.top = snap(evt.pageY) + 10 + "px";
 			zoomDiv.current.style.left = snap(evt.pageX) + 10 + "px";
 			zoomDiv.current.style.display = 'block';
-		}, [canvas.current, zoomCanvas.current, scale, screen, mask]);
+		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom]);
 
 	const onMouseLeave = (evt: MouseEvent) => {
+		if(!useZoom)
+			return;
 		zoomDiv.current.style.display = 'none';
 	};
 
 	return (
 		<div>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
-			{createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
+			{useZoom && createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
 				{zoomInfo.color !== undefined && (<div>
 					<dl>
@@ -295,7 +300,7 @@ export const CopperList: FunctionComponent<{
 			&nbsp;
 			Palette:&nbsp;
 			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
-			<Screen model={model} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} scale={2} />
+			<Screen model={model} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
 
 			<div class={styles.container}>
 				{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}

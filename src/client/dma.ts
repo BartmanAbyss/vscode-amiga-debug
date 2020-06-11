@@ -310,6 +310,23 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	return { width, height, planes, modulos };
 }
 
+export function GetScreenFromBlit(blit: Blit): IScreen {
+	const numPlanes = 5;
+	const channel = 3; // visualize D channel
+	const width = blit.BLTSIZH * 16;
+	const height = blit.BLTSIZV / numPlanes;
+	const planes = [];
+	const modulos = [];
+
+	for(let p = 0; p < numPlanes; p++)
+		planes.push(blit.BLTxPT[channel] + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]));
+
+	const modulo = blit.BLTxMOD[channel] + (numPlanes - 1) * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
+	modulos.push(modulo, modulo);
+
+	return { width, height, planes, modulos };
+}
+
 // returs chipMem after DMA requests up to endCycle
 // currently only CPU and blitter writes implemented
 export function GetChipMemAfterDma(chipMem: Uint8Array, dmaRecords: DmaRecord[], endCycle: number): Uint8Array {

@@ -15,10 +15,10 @@ export const BlitterVis: FunctionComponent<{
 	const customRegs = new Uint16Array(model.amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
-	const planes = 5;
+	const numPlanes = 5;
 	const canvasScale = 2;
 	const canvasWidth = blit.BLTSIZH * 16 * canvasScale;
-	const canvasHeight = blit.BLTSIZV / planes * canvasScale;
+	const canvasHeight = blit.BLTSIZV / numPlanes * canvasScale;
 	const canvas = [
 		useRef<HTMLCanvasElement>(),
 		useRef<HTMLCanvasElement>(),
@@ -49,10 +49,10 @@ export const BlitterVis: FunctionComponent<{
 					}
 				}
 			};
-			for(let y = 0; y < blit.BLTSIZV / planes; y++) {
+			for(let y = 0; y < blit.BLTSIZV / numPlanes; y++) {
 				for(let x = 0; x < blit.BLTSIZH; x++) {
 					const BLTxDAT = [];
-					for(let p = 0; p < planes; p++) {
+					for(let p = 0; p < numPlanes; p++) {
 						const addr = BLTxPT + x * 2 + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 						let raw = (channel < 3) ? ((chipMemBefore[addr] << 8) | chipMemBefore[addr + 1]) : ((chipMemAfter[addr] << 8) | chipMemAfter[addr + 1]);
 						if(channel === 0) {
@@ -65,14 +65,14 @@ export const BlitterVis: FunctionComponent<{
 					}
 					for(let i = 0; i < 16; i++) {
 						let pixel = 0;
-						for(let p = 0; p < planes; p++) {
+						for(let p = 0; p < numPlanes; p++) {
 							if((BLTxDAT[p] & (1 << (15 - i))))
 								pixel |= 1 << p;
 						}
 						putPixel(x * 16 + i, y, palette[pixel]);
 					}
 				}
-				BLTxPT += planes * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
+				BLTxPT += numPlanes * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 			}
 			context.putImageData(imgData, 0, 0);
 		}
