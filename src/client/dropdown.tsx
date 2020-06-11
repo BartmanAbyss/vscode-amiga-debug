@@ -1,4 +1,4 @@
-// code based on react-dropdown Copyright (c) 2014 xvfeng, MIT license
+// code based on react-dropdown, Copyright (c) 2014 xvfeng, MIT license
 
 import { h, Component, ComponentType, createRef, RefObject } from 'preact';
 
@@ -22,23 +22,20 @@ export interface DropdownProps<ValueType> {
 	menuClassName?: string;
 	arrowClassName?: string;
 	disabled?: boolean;
-	arrowClosed?: ComponentType;
-	arrowOpen?: ComponentType;
 	optionComponent: ComponentType<DropdownOptionProps<ValueType>>;
 	onChange?: (arg: ValueType) => void;
 	onFocus?: (arg: boolean) => void;
 	value: ValueType;
 }
 
+// from classnames, Copyright (c) 2017 Jed Watson. MIT license
 function classNames(...args: any[]) {
 	const hasOwn = {}.hasOwnProperty;
 	const classes = [];
 
 	for(const arg of args) {
 		if (!arg) continue;
-
 		const argType = typeof arg;
-
 		if (argType === 'string' || argType === 'number') {
 			classes.push(arg);
 		} else if (Array.isArray(arg)) {
@@ -51,7 +48,6 @@ function classNames(...args: any[]) {
 			}
 		}
 	}
-
 	return classes.join(' ');
 } 
 
@@ -154,13 +150,8 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		const OptionComponent = this.props.optionComponent;
 
 		return (
-			<div
-				className={optionClass}
-				onMouseDown={this.setValue.bind(this, option)}
-				onClick={this.setValue.bind(this, option)}
-				role='option'
-				aria-selected={isSelected ? 'true' : 'false'}>
-					<OptionComponent option={option} placeholder={false} />
+			<div class={optionClass} onMouseDown={this.setValue.bind(this, option)} onClick={this.setValue.bind(this, option)} role='option' aria-selected={isSelected ? 'true' : 'false'}>
+				<OptionComponent option={option} placeholder={false} />
 			</div>
 		);
 	}
@@ -169,13 +160,13 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		const { options, baseClassName } = this.props;
 		const ops = options.map((option) => {
 			if ((option as Group<ValueType>).type === 'group') {
-				const groupTitle = (<div className={`${baseClassName}-title`}>
+				const groupTitle = (<div class={`${baseClassName}-title`}>
 					{(option as Group<ValueType>).name}
 				</div>);
 				const groupOptions = (option as Group<ValueType>).items.map((item) => this.renderOption(item));
 
 				return (
-					<div className={`${baseClassName}-group`} key={(option as Group<ValueType>).name} role='listbox' tabIndex={-1}>
+					<div class={`${baseClassName}-group`} key={(option as Group<ValueType>).name} role='listbox' tabIndex={-1}>
 						{groupTitle}
 						{groupOptions}
 					</div>
@@ -184,10 +175,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 				return this.renderOption(option as ValueType);
 			}
 		});
-
-		return ops.length ? ops : <div className={`${baseClassName}-noresults`}>
-			No options found
-		</div>;
+		return ops;
 	}
 
 	public handleDocumentClick(event) {
@@ -201,7 +189,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 	}
 
 	public render() {
-		const { baseClassName, controlClassName, placeholderClassName, menuClassName, arrowClassName, arrowClosed, arrowOpen, className } = this.props;
+		const { baseClassName, controlClassName, placeholderClassName, menuClassName, arrowClassName, className } = this.props;
 
 		const disabledClass = this.props.disabled ? 'Dropdown-disabled' : '';
 
@@ -229,18 +217,17 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		});
 
 		const OptionComponent = this.props.optionComponent;
-		const Arrow = this.state.isOpen ? this.props.arrowOpen : this.props.arrowClosed;
 		return (
-			<div className={dropdownClass}>
-				<div className={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleMouseDown.bind(this)} aria-haspopup='listbox'>
-					<div className={placeholderClass}>
+			<div class={dropdownClass}>
+				<div class={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleMouseDown.bind(this)} aria-haspopup='listbox'>
+					<div class={placeholderClass}>
 						<OptionComponent option={this.state.selected} placeholder={true} />
 					</div>
-					<div className={`${baseClassName}-arrow-wrapper`}>
-						{Arrow ? <Arrow /> : <span className={arrowClass} />}
+					<div class={`${baseClassName}-arrow-wrapper`}>
+						<span class={arrowClass} />
 					</div>
 				</div>
-				<div ref={this.menuRef} className={menuClass} style={{ display: this.state.isOpen ? 'block' : 'none' }} aria-expanded='true'>
+				<div ref={this.menuRef} class={menuClass} style={{ display: this.state.isOpen ? 'block' : 'none' }} aria-expanded='true'>
 					{this.buildMenu()}
 				</div>
 			</div>
