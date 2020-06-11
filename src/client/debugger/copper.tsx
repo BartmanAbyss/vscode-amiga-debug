@@ -141,7 +141,7 @@ export const Screen: FunctionComponent<{
 						<dd>X:{zoomInfo.x} Y:{zoomInfo.y}</dd>
 						<dt>Color</dt>
 						<dd>{zoomInfo.color} ${zoomInfo.color.toString(16).padStart(2, '0')} %{zoomInfo.color.toString(2).padStart(screen.planes.length, '0')}</dd>
-						{zoomInfo.mask !== undefined && (<Fragment>
+						{mask !== undefined && zoomInfo.mask !== undefined && (<Fragment>
 							<dt>Mask</dt>
 							<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(mask.planes.length, '0')}</dd>
 						</Fragment>)}
