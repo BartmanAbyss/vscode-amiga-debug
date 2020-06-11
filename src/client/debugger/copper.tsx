@@ -9,7 +9,7 @@ import { GetCopper, GetChipMemAfterDma, GetPaletteFromCustomRegs, IScreen, GetSc
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
-import { ReactDropdown } from '../dropdown';
+import { DropdownComponent, DropdownOptionProps } from '../dropdown';
 import '../dropdown.css';
 
 export const Screen: FunctionComponent<{
@@ -131,7 +131,7 @@ export const Screen: FunctionComponent<{
 	};
 
 	return (
-		<Fragment>
+		<div>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
 			{createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
@@ -149,111 +149,155 @@ export const Screen: FunctionComponent<{
 				</div>
 				)}
 			</div>, document.body)}
-		</Fragment>
+		</div>
 	);
 };
 
-const Blabla: FunctionComponent<{}> = () => {
-	return (
-		<span class="Dropdown-arrow">Hallo!</span>
-	);
+interface GfxResourceWithPayload {
+	resource: GfxResource;
+	screen?: IScreen;
+	mask?: IScreen;
+	palette?: number[];
+}
+
+const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayload>> = ({ option, placeholder }) => {
+	const resource = option.resource;
+	return (<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource}>
+		<dd><b>{resource.name}</b></dd><dd>${resource.address.toString(16).padStart(8, '0')}</dd>
+		<dd>
+		{resource.type === GfxResourceType.bitmap && (<Fragment>
+			{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
+			&nbsp;
+			{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
+			{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
+		</Fragment>)}
+		{resource.type === GfxResourceType.palette && (<Fragment>
+			{resource.palette.numEntries}
+		</Fragment>)}
+		</dd>
+	</div>);
 };
+
+// do not move into 'CopperList' otherwise the Dropdown will be recreated on every render
+class GfxResourceDropdown extends DropdownComponent<GfxResourceWithPayload> {
+	public static defaultProps = { optionComponent: GfxResourceItem, menuClassName: styles.gfxresource_menu, ...DropdownComponent.defaultProps };
+}
 
 export const CopperList: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
-	//const customRegs = new Uint16Array(model.customRegs);
-	//const customRegL = (reg: number) => (customRegs[(reg - 0xdff000) >>> 1] << 16) | customRegs[(reg + 2 - 0xdff000) >>> 1];
-	//const regCOP1LC = CustomRegisters.getCustomAddress("COP1LC");
-	//const COP1LC = customRegL(regCOP1LC);
-	//const copper1 = new CopperDisassembler(chipMem, COP1LC);
-
-	const copper = GetCopper(model.chipMemCache, model.amiga.dmaRecords);
-	const [bitmap, setBitmap] = useState<string>("copper");
-	const [palette, setPalette] = useState<string>("copper");
-
-	let screen: IScreen;
-	let mask: IScreen;
-	if(typeof bitmap === 'string' && bitmap === "copper") {
-		screen = GetScreenFromCopper(copper);
-	} else {
-		const resource = JSON.parse(bitmap) as GfxResource;
-		const width = resource.bitmap.width;
-		const height = resource.bitmap.height;
-		const modulos = [];
-		const planes = [];
-		if(resource.flags & GfxResourceFlags.bitmap_interleaved) {
-			const moduloScale = (resource.flags & GfxResourceFlags.bitmap_masked) ? 2 : 1;
-			for(let p = 0; p < resource.bitmap.numPlanes; p++)
-				planes.push(resource.address + p * width / 8 * moduloScale);
-			const modulo = (width / 8) * (resource.bitmap.numPlanes * moduloScale - 1);
-			modulos.push(modulo, modulo);
-		} else {
-			for(let p = 0; p < resource.bitmap.numPlanes; p++)
-				planes.push(resource.address + p * width / 8 * height);
-			modulos.push(0, 0);
-		}
-		screen = { width, height, planes, modulos };
-		if(resource.flags & GfxResourceFlags.bitmap_masked) {
-			const maskPlanes = [...planes];
+	const copper = useMemo(() => GetCopper(model.chipMemCache, model.amiga.dmaRecords), [model]);
+	const bitmaps = useMemo(() => {
+		const bitmaps: GfxResourceWithPayload[] = [];
+		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+			const width = resource.bitmap.width;
+			const height = resource.bitmap.height;
+			const modulos = [];
+			const planes = [];
 			if(resource.flags & GfxResourceFlags.bitmap_interleaved) {
+				const moduloScale = (resource.flags & GfxResourceFlags.bitmap_masked) ? 2 : 1;
 				for(let p = 0; p < resource.bitmap.numPlanes; p++)
-					maskPlanes[p] += width / 8;
+					planes.push(resource.address + p * width / 8 * moduloScale);
+				const modulo = (width / 8) * (resource.bitmap.numPlanes * moduloScale - 1);
+				modulos.push(modulo, modulo);
 			} else {
-				// ??? does this make sense ?? not tested
 				for(let p = 0; p < resource.bitmap.numPlanes; p++)
-					maskPlanes[p] += width / 8 * height;
+					planes.push(resource.address + p * width / 8 * height);
+				modulos.push(0, 0);
 			}
-			mask = { width, height, planes: maskPlanes, modulos };
-		}
-	}
+			const screen: IScreen = { width, height, planes, modulos };
+			let mask: IScreen;
+			if(resource.flags & GfxResourceFlags.bitmap_masked) {
+				const maskPlanes = [...planes];
+				if(resource.flags & GfxResourceFlags.bitmap_interleaved) {
+					for(let p = 0; p < resource.bitmap.numPlanes; p++)
+						maskPlanes[p] += width / 8;
+				} else {
+					// ??? does this make sense ?? not tested
+					for(let p = 0; p < resource.bitmap.numPlanes; p++)
+						maskPlanes[p] += width / 8 * height;
+				}
+				mask = { width, height, planes: maskPlanes, modulos };
+			}
+			bitmaps.push({ resource, screen, mask });
+		});
+		const copperScreen = GetScreenFromCopper(copper);
+		const copperResource: GfxResource = {
+			address: copperScreen.planes[0],
+			size: 0,
+			name: '*Copper*',
+			type: GfxResourceType.bitmap,
+			flags: 0,
+			bitmap: {
+				width: copperScreen.width,
+				height: copperScreen.height,
+				numPlanes: copperScreen.planes.length
+			}
+		};
+		bitmaps.unshift({ resource: copperResource, screen: copperScreen });
+		return bitmaps;
+	}, [model]);
 
-	let screenPalette: number[];
-	if(typeof palette === 'string' && palette === "copper") {
-		screenPalette = GetPaletteFromCopper(copper);
-	} else if(typeof palette === 'string' && palette === "customRegs") {
-		const customRegs = new Uint16Array(model.amiga.customRegs);
-		screenPalette = GetPaletteFromCustomRegs(customRegs);
-	} else {
-		const resource = JSON.parse(palette) as GfxResource;
-		screenPalette = GetPaletteFromChipMem(model.chipMemCache, resource.address, resource.palette.numEntries);
-	}
+	const palettes = useMemo(() => {
+		const palettes: GfxResourceWithPayload[] = [];
 
-	const onChangeBitmap = (event: any) => {
-		setBitmap(event.target.value as string);
+		const copperPalette = GetPaletteFromCopper(copper);
+		const copperResource: GfxResource = {
+			address: 0, // TODO
+			size: 0,
+			name: '*Copper*',
+			type: GfxResourceType.palette,
+			flags: 0,
+			palette: {
+				numEntries: copperPalette.length
+			}
+		};
+		palettes.push({ resource: copperResource, palette: copperPalette });
+
+		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs));
+		const customRegsResource: GfxResource = {
+			address: CustomRegisters.getCustomAddress("COLOR00"),
+			size: 0,
+			name: '*Custom Registers*',
+			type: GfxResourceType.palette,
+			flags: 0,
+			palette: {
+				numEntries: 32
+			}
+		};
+		palettes.push({ resource: customRegsResource, palette: customRegsPalette });
+
+		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+			const palette = GetPaletteFromChipMem(model.chipMemCache, resource.address, resource.palette.numEntries);
+			palettes.push({ resource, palette });
+		});
+
+		return palettes;
+	}, [model]);
+
+	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(bitmaps[0]);
+	const [palette, setPalette] = useState<GfxResourceWithPayload>(palettes[0]);
+
+	const onChangeBitmap = (selected: GfxResourceWithPayload) => {
+		setBitmap(selected);
 	};
 
-	const onChangePalette = (event: any) => {
-		setPalette(event.target.value as string);
+	const onChangePalette = (selected: GfxResourceWithPayload) => {
+		setPalette(selected);
 	};
-
-	const options = [
-		'one', 'two', 'three'
-	  ];
-	const defaultOption = options[0];
 
 	return (
-		<Fragment>
+		<div style={{'font-size': 'var(--vscode-editor-font-size)'}}>
+			Bitmap:&nbsp;
+			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
+			&nbsp;
+			Palette:&nbsp;
+			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
+			<Screen model={model} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} scale={2} />
+
 			<div class={styles.container}>
-				<ReactDropdown options={options} value={defaultOption} arrowOpen={Blabla} arrowClosed={Blabla} placeholder="Select an option" />
-				Bitmap:
-				<select class="select" alt="Bitmap" aria-label="Bitmap" value={bitmap} onChange={onChangeBitmap}>
-					<option value="copper">*Copper*</option>
-					{model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
-						<option value={JSON.stringify(r)}>{r.name}</option>
-					))}
-				</select>&nbsp;
-				Palette:
-				<select class="select" alt="Palette" aria-label="Palette" value={palette} onChange={onChangePalette}>
-					<option value="customRegs">*Custom Registers*</option>
-					<option value="copper">*Copper*</option>
-					{model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
-						<option value={JSON.stringify(r)}>{r.name}</option>
-					))}
-				</select><br/>
-				<Screen model={model} screen={screen} mask={mask} palette={screenPalette} scale={2} /><br/>
 				{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}
 			</div>
-		</Fragment>
+		</div>
 	);
 };

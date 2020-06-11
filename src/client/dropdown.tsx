@@ -1,19 +1,20 @@
 // code based on react-dropdown Copyright (c) 2014 xvfeng, MIT license
 
-import { h, Component, ComponentType } from 'preact';
+import { h, Component, ComponentType, createRef, RefObject } from 'preact';
 
-export interface Option {
-	label: string;
-	value: string;
-	className?: string;
-}
-export interface Group {
+export interface Group<ValueType> {
 	type: "group";
 	name: string;
-	items: Option[];
+	items: ValueType[];
 }
-export interface ReactDropdownProps {
-	options: Array<Group | Option | string>;
+
+export interface DropdownOptionProps<ValueType> {
+	option: ValueType;
+	placeholder: boolean;
+}
+
+export interface DropdownProps<ValueType> {
+	options: Array<Group<ValueType> | ValueType>;
 	baseClassName?: string;
 	className?: string;
 	controlClassName?: string;
@@ -23,21 +24,17 @@ export interface ReactDropdownProps {
 	disabled?: boolean;
 	arrowClosed?: ComponentType;
 	arrowOpen?: ComponentType;
-	onChange?: (arg: Option) => void;
+	optionComponent: ComponentType<DropdownOptionProps<ValueType>>;
+	onChange?: (arg: ValueType) => void;
 	onFocus?: (arg: boolean) => void;
-	value?: Option | string;
-	placeholder?: String;
+	value: ValueType;
 }
 
-const DEFAULT_PLACEHOLDER_STRING = 'Select...';
-
-const hasOwn = {}.hasOwnProperty;
-
 function classNames(...args: any[]) {
+	const hasOwn = {}.hasOwnProperty;
 	const classes = [];
 
-	for (let i = 0; i < args.length; i++) {
-		const arg = args[i];
+	for(const arg of args) {
 		if (!arg) continue;
 
 		const argType = typeof arg;
@@ -58,43 +55,29 @@ function classNames(...args: any[]) {
 	return classes.join(' ');
 } 
 
-export class ReactDropdown extends Component<ReactDropdownProps, {
-	selected: {
-		label: string;
-		value: string;
-	},
+export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueType>, {
+	selected: ValueType;
 	isOpen: boolean;
 }> {
 	public static defaultProps = { baseClassName: 'Dropdown' };
 
 	private mounted: boolean;
+	public menuRef = createRef<HTMLDivElement>();
 
-	constructor(props: ReactDropdownProps) {
+	constructor(props: DropdownProps<ValueType>) {
 		super(props);
 		this.state = {
-			selected: this.parseValue(props.value, props.options) || {
-				label: typeof props.placeholder === 'undefined' ? DEFAULT_PLACEHOLDER_STRING : props.placeholder,
-				value: ''
-			},
+			selected: this.parseValue(props.value, props.options),
 			isOpen: false
 		};
 		this.mounted = true;
 		this.handleDocumentClick = this.handleDocumentClick.bind(this);
 		this.fireChangeEvent = this.fireChangeEvent.bind(this);
 	}
-	public componentWillReceiveProps(newProps) {
-		if (newProps.value) {
-			const selected = this.parseValue(newProps.value, newProps.options);
-			if (selected !== this.state.selected) {
-				this.setState({ selected });
-			}
-		} else {
-			this.setState({
-				selected: {
-					label: typeof newProps.placeholder === 'undefined' ? DEFAULT_PLACEHOLDER_STRING : newProps.placeholder,
-					value: ''
-				}
-			});
+	public componentWillReceiveProps(newProps: DropdownProps<ValueType>) {
+		const selected = this.parseValue(newProps.value, newProps.options);
+		if (selected !== this.state.selected) {
+			this.setState({ selected });
 		}
 	}
 
@@ -124,7 +107,7 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 		}
 	}
 
-	private parseValue(value, options) {
+	private parseValue(value: ValueType | string, options) {
 		let option;
 
 		if (typeof value === 'string') {
@@ -143,12 +126,9 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 		return option || value;
 	}
 
-	public setValue(value, label) {
+	public setValue(value: ValueType) {
 		const newState = {
-			selected: {
-				value,
-				label
-			},
+			selected: value,
 			isOpen: false
 		};
 		this.fireChangeEvent(newState);
@@ -161,31 +141,26 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 		}
 	}
 
-	public renderOption(option) {
-		let value = option.value;
-		if (typeof value === 'undefined') {
-			value = option.label || option;
-		}
-		const label = option.label || option.value || option;
-		const isSelected = value === this.state.selected.value || value === this.state.selected;
+	public renderOption(option: ValueType) {
+		const isSelected = option === this.state.selected;
 
 		const classes = {
 			[`${this.props.baseClassName}-option`]: true,
-			[option.className]: !!option.className,
 			'is-selected': isSelected
 		};
 
 		const optionClass = classNames(classes);
 
+		const OptionComponent = this.props.optionComponent;
+
 		return (
 			<div
-				key={value}
 				className={optionClass}
-				onMouseDown={this.setValue.bind(this, value, label)}
-				onClick={this.setValue.bind(this, value, label)}
+				onMouseDown={this.setValue.bind(this, option)}
+				onClick={this.setValue.bind(this, option)}
 				role='option'
 				aria-selected={isSelected ? 'true' : 'false'}>
-				{label}
+					<OptionComponent option={option} placeholder={false} />
 			</div>
 		);
 	}
@@ -193,20 +168,20 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 	public buildMenu() {
 		const { options, baseClassName } = this.props;
 		const ops = options.map((option) => {
-			if ((option as Group).type === 'group') {
+			if ((option as Group<ValueType>).type === 'group') {
 				const groupTitle = (<div className={`${baseClassName}-title`}>
-					{(option as Group).name}
+					{(option as Group<ValueType>).name}
 				</div>);
-				const groupOptions = (option as Group).items.map((item) => this.renderOption(item));
+				const groupOptions = (option as Group<ValueType>).items.map((item) => this.renderOption(item));
 
 				return (
-					<div className={`${baseClassName}-group`} key={(option as Group).name} role='listbox' tabIndex={-1}>
+					<div className={`${baseClassName}-group`} key={(option as Group<ValueType>).name} role='listbox' tabIndex={-1}>
 						{groupTitle}
 						{groupOptions}
 					</div>
 				);
 			} else {
-				return this.renderOption(option);
+				return this.renderOption(option as ValueType);
 			}
 		});
 
@@ -225,15 +200,10 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 		}
 	}
 
-	public isValueSelected() {
-		return typeof this.state.selected === 'string' || this.state.selected.value !== '';
-	}
-
 	public render() {
 		const { baseClassName, controlClassName, placeholderClassName, menuClassName, arrowClassName, arrowClosed, arrowOpen, className } = this.props;
 
 		const disabledClass = this.props.disabled ? 'Dropdown-disabled' : '';
-		const placeHolderValue = typeof this.state.selected === 'string' ? this.state.selected : this.state.selected.label;
 
 		const dropdownClass = classNames({
 			[`${baseClassName}-root`]: true,
@@ -248,7 +218,6 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 		const placeholderClass = classNames({
 			[`${baseClassName}-placeholder`]: true,
 			[placeholderClassName]: !!placeholderClassName,
-			'is-selected': this.isValueSelected()
 		});
 		const menuClass = classNames({
 			[`${baseClassName}-menu`]: true,
@@ -259,24 +228,21 @@ export class ReactDropdown extends Component<ReactDropdownProps, {
 			[arrowClassName]: !!arrowClassName
 		});
 
-		const value = (<div className={placeholderClass}>
-			{placeHolderValue}
-		</div>);
-		const menu = this.state.isOpen ? <div className={menuClass} aria-expanded='true'>
-			{this.buildMenu()}
-		</div> : null;
-
+		const OptionComponent = this.props.optionComponent;
 		const Arrow = this.state.isOpen ? this.props.arrowOpen : this.props.arrowClosed;
-
 		return (
 			<div className={dropdownClass}>
 				<div className={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleMouseDown.bind(this)} aria-haspopup='listbox'>
-					{value}
+					<div className={placeholderClass}>
+						<OptionComponent option={this.state.selected} placeholder={true} />
+					</div>
 					<div className={`${baseClassName}-arrow-wrapper`}>
 						{Arrow ? <Arrow /> : <span className={arrowClass} />}
 					</div>
 				</div>
-				{menu}
+				<div ref={this.menuRef} className={menuClass} style={{ display: this.state.isOpen ? 'block' : 'none' }} aria-expanded='true'>
+					{this.buildMenu()}
+				</div>
 			</div>
 		);
 	}

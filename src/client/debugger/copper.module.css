@@ -7,6 +7,31 @@
 	white-space: pre;
 }
 
+.gfxresource_menu {
+	width: initial !important;
+	box-shadow: 0 .25em .5em 0 black;
+}
+
+.gfxresource {
+	width: 360px;
+	display: grid;
+	grid-template-columns: auto 80px 100px;
+}
+
+.gfxresource_brief {
+	width: 175px;
+	display: grid;
+	grid-template-columns: auto 0 0;
+}
+
+.gfxresource dd, .gfxresource_brief dd {
+	margin-right: 0.5em;
+
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 :root {
 	--stripe1: rgba(255, 255, 255, 0.1);
 	--stripe2: rgba(255, 255, 255, 0.2);
