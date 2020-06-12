@@ -1,6 +1,6 @@
 // code based on react-dropdown, Copyright (c) 2014 xvfeng, MIT license
 
-import { h, Component, ComponentType, createRef, RefObject } from 'preact';
+import { h, Component, ComponentType, createRef, JSX } from 'preact';
 
 export interface Group<ValueType> {
 	type: "group";
@@ -88,7 +88,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		document.removeEventListener('touchend', this.handleDocumentClick, false);
 	}
 
-	private handleMouseDown(event) {
+	private handleMouseDown(event: JSX.TargetedMouseEvent<HTMLElement>) {
 		if (this.props.onFocus && typeof this.props.onFocus === 'function') {
 			this.props.onFocus(this.state.isOpen);
 		}

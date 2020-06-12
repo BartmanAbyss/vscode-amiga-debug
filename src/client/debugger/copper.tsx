@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h } from 'preact';
+import { Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
@@ -171,11 +171,11 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 
 	const [hover, setHover] = useState<{ x: number, y: number }>({ x: -1, y: -1 });
 
-	const onMouseEnter = (evt) => {
-		const rect = evt.target.getBoundingClientRect();
+	const onMouseEnter = (evt: JSX.TargetedMouseEvent<HTMLDivElement>) => {
+		const rect = evt.currentTarget.getBoundingClientRect();
 		setHover({ x: rect.right + 10, y: rect.top });
 	};
-	const onMouseLeave = (evt: any) => {
+	const onMouseLeave = () => {
 		setHover({ x: -1, y: -1});
 	};
 

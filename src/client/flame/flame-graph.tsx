@@ -988,7 +988,7 @@ const DragHandle: FunctionComponent<{
 };
 
 function symbolize(address: number, amiga: IAmigaProfileExtra) {
-	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size)
+	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 	if(resource)
 		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
 	else
