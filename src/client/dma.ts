@@ -75,7 +75,12 @@ export const dmaTypes: DmaType[] = [
 	},
 	{ // DMARECORD_AUDIO 4
 		name: 'Audio',
-		subtypes: [ { color: 0xff0000ff } ]
+		subtypes: [ 
+			{ color: 0xff0000ff, name: 'Channel 0' },
+			{ color: 0xff0000ee, name: 'Channel 1' },
+			{ color: 0xff0000dd, name: 'Channel 2' },
+			{ color: 0xff0000cc, name: 'Channel 3' },
+		]
 	},
 	{ // DMARECORD_BLITTER 5
 		name: 'Blitter',
@@ -87,11 +92,29 @@ export const dmaTypes: DmaType[] = [
 	},
 	{ // DMARECORD_BITPLANE 6
 		name: 'Bitplane',
-		subtypes: [ { color: 0xffff0000 } ]
+		subtypes: [ 
+			{ color: 0xffff0000, name: 'Plane 1' },
+			{ color: 0xffee0000, name: 'Plane 2' },
+			{ color: 0xffdd0000, name: 'Plane 3' },
+			{ color: 0xffcc0000, name: 'Plane 4' },
+			{ color: 0xffbb0000, name: 'Plane 5' },
+			{ color: 0xffaa0000, name: 'Plane 6' },
+			{ color: 0xff990000, name: 'Plane 7' },
+			{ color: 0xff880000, name: 'Plane 8' },
+		]
 	},
 	{ // DMARECORD_SPRITE 7
 		name: 'Sprite',
-		subtypes: [ { color: 0xffff00ff } ]
+		subtypes: [ 
+			{ color: 0xffff00ff, name: 'Sprite 0' },
+			{ color: 0xffee00ee, name: 'Sprite 1' },
+			{ color: 0xffdd00dd, name: 'Sprite 2' },
+			{ color: 0xffcc00cc, name: 'Sprite 3' },
+			{ color: 0xffbb00bb, name: 'Sprite 4' },
+			{ color: 0xffaa00aa, name: 'Sprite 5' },
+			{ color: 0xff990099, name: 'Sprite 6' },
+			{ color: 0xff880088, name: 'Sprite 7' },
+		]
 	},
 	{ // DMARECORD_DISK 8
 		name: 'Disk',

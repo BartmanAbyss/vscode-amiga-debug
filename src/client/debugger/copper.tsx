@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h } from 'preact';
+import { Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
@@ -160,6 +160,7 @@ export const Screen: FunctionComponent<{
 
 interface GfxResourceWithPayload {
 	resource: GfxResource;
+	model: IProfileModel;
 	screen?: IScreen;
 	mask?: IScreen;
 	palette?: number[];
@@ -167,22 +168,40 @@ interface GfxResourceWithPayload {
 
 const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayload>> = ({ option, placeholder }) => {
 	const resource = option.resource;
-	return (<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource}>
-		<dt>{resource.name}</dt><dd class={styles.fixed}>${resource.address.toString(16).padStart(8, '0')}-${(resource.address + resource.size).toString(16).padStart(8, '0')}</dd>
-		<dd>
-		{resource.type === GfxResourceType.bitmap && (<Fragment>
-			{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
-			&nbsp;
-			{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
-			{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
-		</Fragment>)}
-		{resource.type === GfxResourceType.palette && (<Fragment>
-			<div class={styles.palette}>
-				{option.palette.map((p) => <div style={{backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}`}} />)}
-			</div>
-		</Fragment>)}
-		</dd>
-	</div>);
+
+	const [hover, setHover] = useState<{ x: number, y: number }>({ x: -1, y: -1 });
+
+	const onMouseEnter = (evt: JSX.TargetedMouseEvent<HTMLDivElement>) => {
+		const rect = evt.currentTarget.getBoundingClientRect();
+		setHover({ x: rect.right + 10, y: rect.top });
+	};
+	const onMouseLeave = () => {
+		setHover({ x: -1, y: -1});
+	};
+
+	return (<Fragment>
+		<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+			<dt>{resource.name}</dt>
+			<dd>
+				{resource.type === GfxResourceType.bitmap && (<Fragment>
+					{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
+					&nbsp;
+					{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
+					{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
+				</Fragment>)}
+				{resource.type === GfxResourceType.palette && (<Fragment>
+					<div class={styles.palette}>
+						{option.palette.map((p) => <div style={{backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}`}} />)}
+					</div>
+				</Fragment>)}
+			</dd>
+			<dd class={styles.right}>{resource.size ? (resource.size.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'b') : ''}</dd>
+			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
+		</div>
+		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
+			<Screen model={option.model} screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(option.model.amiga.customRegs))} scale={1} useZoom={false} />
+		</div>, document.body)}
+	</Fragment>);
 };
 
 // do not move into 'CopperList' otherwise the Dropdown will be recreated on every render
@@ -226,7 +245,7 @@ export const CopperList: FunctionComponent<{
 				}
 				mask = { width, height, planes: maskPlanes, modulos };
 			}
-			bitmaps.push({ resource, screen, mask });
+			bitmaps.push({ resource, model, screen, mask });
 		});
 		const copperScreen = GetScreenFromCopper(copper);
 		const copperResource: GfxResource = {
@@ -241,7 +260,7 @@ export const CopperList: FunctionComponent<{
 				numPlanes: copperScreen.planes.length
 			}
 		};
-		bitmaps.unshift({ resource: copperResource, screen: copperScreen });
+		bitmaps.unshift({ resource: copperResource, model, screen: copperScreen });
 		return bitmaps;
 	}, [model]);
 
@@ -259,7 +278,7 @@ export const CopperList: FunctionComponent<{
 				numEntries: copperPalette.length
 			}
 		};
-		palettes.push({ resource: copperResource, palette: copperPalette });
+		palettes.push({ resource: copperResource, model, palette: copperPalette });
 
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs));
 		const customRegsResource: GfxResource = {
@@ -272,11 +291,11 @@ export const CopperList: FunctionComponent<{
 				numEntries: 32
 			}
 		};
-		palettes.push({ resource: customRegsResource, palette: customRegsPalette });
+		palettes.push({ resource: customRegsResource, model, palette: customRegsPalette });
 
 		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
 			const palette = GetPaletteFromChipMem(model.chipMemCache, resource.address, resource.palette.numEntries);
-			palettes.push({ resource, palette });
+			palettes.push({ resource, model, palette });
 		});
 
 		return palettes;

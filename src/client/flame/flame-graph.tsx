@@ -131,10 +131,11 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+
 			if(dmaRecord.type === undefined && dmaRecord.evt === undefined)
 				continue;
 			const dmaType = dmaRecord.type || 0;
-			const dmaSubtype = dmaRecord.extra || 0;
+			const dmaSubtype = (dmaTypes[dmaType].subtypes.length === 1) ? 0 : (dmaRecord.extra || 0);
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
@@ -987,7 +988,7 @@ const DragHandle: FunctionComponent<{
 };
 
 function symbolize(address: number, amiga: IAmigaProfileExtra) {
-	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size)
+	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 	if(resource)
 		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
 	else
@@ -1213,10 +1214,8 @@ const Tooltip: FunctionComponent<{
 				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
 			</div>)}
 			</div>
-		{isBlit && <Fragment>
-			<div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-				<Screen model={model} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs))} useZoom={false} />
-			</div>
-		</Fragment>}
+		{isBlit && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
+			<Screen model={model} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs))} useZoom={false} />
+		</div>}
 	</Fragment>);
 };
