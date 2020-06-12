@@ -1,12 +1,15 @@
 // Place your settings in this file to overwrite default and user settings.
 {
     "files.exclude": {
-        "out": false // set this to true to hide the "out" folder with the compiled JS files
+        "dist": true,
+        "node_modules": true,
+        "out": true
     },
     "search.exclude": {
-        "out": true // set this to false to include "out" folder in search results
+        "dist": true,
+        "node_modules": true,
+        "out": true
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
-    "C_Cpp.default.compilerPath": "c:\\Users\\Chuck\\.vscode\\extensions\\bartmanabyss.amiga-debug-1.0.0\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe"
 }

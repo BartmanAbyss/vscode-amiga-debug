@@ -17,6 +17,17 @@
 	text-align: right;
 }
 
+.tooltip {
+	z-index: 100;
+	position: absolute;
+	box-sizing: border-box;
+	box-shadow: 0 .25em .5em 0 black;
+	padding: 5px;
+	background: var(--vscode-editorWidget-background);
+	border: 1px solid var(--vscode-editorWidget-border);
+	pointer-events: none;
+}
+  
 .gfxresource_menu {
 	width: initial !important;
 	box-shadow: 0 .25em .5em 0 black;
