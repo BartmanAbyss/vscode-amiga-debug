@@ -111,22 +111,19 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 	const NR_DMA_REC_HPOS = 228;
 	const NR_DMA_REC_VPOS = 313;
 
-	const cyclesPerMicroSecond = 7.093790;
-	const colorClocksPerMicroSecond = cyclesPerMicroSecond / 2;
-	const microSecondsPerColorClock = 1 / colorClocksPerMicroSecond;
 	const dmaTimes: number[] = new Array(0x100).fill(0);
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
-			const dma = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dma.type === undefined)
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.type === undefined)
 				continue;
-			const dmaType = dma.type;
-			const dmaSubtype = dma.extra;
+			const dmaType = dmaRecord.type;
+			const dmaSubtype = (dmaTypes[dmaType].subtypes.length === 1) ? 0 : (dmaRecord.extra || 0);
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
-			dmaTimes[(dmaSubtype << 4) | dmaType] += microSecondsPerColorClock;
+			dmaTimes[(dmaSubtype << 4) | dmaType] += 2;
 		}
 	}
 

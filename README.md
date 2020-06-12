@@ -174,6 +174,8 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* BLTSIZ $0000 crashes viewer
+* fix stray callstack in bobble
 * show compression ratio in `.shrinklerstats` profile visualizer
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
