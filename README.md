@@ -73,6 +73,10 @@ Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gc
 
 Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
 
+[The Player® 6.1A](https://www.pouet.net/prod.php?which=19922): Copyright © 1992-95 Jarno Paananen.
+
+P61.testmod - Module by Skylord/Sector 7 
+
 This extension contains binaries of:
 - modified [GCC 10.1.0](https://github.com/BartmanAbyss/gcc)
   - Copyright (C) 2020 Free Software Foundation, Inc.

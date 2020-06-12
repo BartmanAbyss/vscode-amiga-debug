@@ -6,6 +6,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - added custom version of Shrinkler executable cruncher by Blueberry that generates `.shrinklerstats` files that can be opened with VS Code for size profiling
 - added blitter timeline to profiler
 - graphics debugger in profiler (copper, blitter, bitmaps). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience
+- template project: added ThePlayer61 module replayer. To convert your own modules, use [p61con](https://www.pouet.net/prod.php?which=19922)
 
 ## 1.0.0
 - added function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled.

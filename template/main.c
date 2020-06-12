@@ -153,6 +153,52 @@ const UWORD copper2[] __attribute__((section (".MEMF_CHIP"))) = {
 	0xffff, 0xfffe // end copper list
 };
 
+// Demo - Module Player - ThePlayer 6.1a: https://www.pouet.net/prod.php?which=19922
+// The Player® 6.1A: Copyright © 1992-95 Jarno Paananen
+// P61.testmod - Module by Skylord/Sector 7 
+INCBIN(player, "player610.6.no_cia.bin")
+INCBIN_CHIP(module, "testmod.p61")
+
+int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
+	volatile register const void* _a0 __asm("a0") = module;
+	volatile register const void* _a1 __asm("a1") = NULL;
+	volatile register const void* _a2 __asm("a2") = NULL;
+	volatile register const void* _a3 __asm("a3") = player;
+	         register int         _d0 __asm("d0"); // return value
+	__asm volatile (
+		"movem.l %%d1-%%d7/%%a4-%%a6,-(%%sp)\n"
+		"jsr 0(%%a3)\n"
+		"movem.l (%%sp)+,%%d1-%%d7/%%a4-%%a6"
+	: "=r" (_d0), "+rf"(_a0), "+rf"(_a1), "+rf"(_a2), "+rf"(_a3)
+	:
+	: "cc", "memory");
+	return _d0;
+}
+
+void p61Music() {
+	volatile register const void* _a3 __asm("a3") = player;
+	volatile register const void* _a6 __asm("a6") = (void*)0xdff000;
+	__asm volatile (
+		"movem.l %%d0-%%d7/%%a0-%%a2/%%a4-%%a5,-(%%sp)\n"
+		"jsr 4(%%a3)\n"
+		"movem.l (%%sp)+,%%d0-%%d7/%%a0-%%a2/%%a4-%%a5"
+	: "+rf"(_a3), "+rf"(_a6)
+	:
+	: "cc", "memory");
+}
+
+void p61End() {
+	volatile register const void* _a3 __asm("a3") = player;
+	volatile register const void* _a6 __asm("a6") = (void*)0xdff000;
+	__asm volatile (
+		"movem.l %%d0-%%d1/%%a0-%%a1,-(%%sp)\n"
+		"jsr 8(%%a3)\n"
+		"movem.l (%%sp)+,%%d0-%%d1/%%a0-%%a1"
+	: "+rf"(_a3), "+rf"(_a6)
+	:
+	: "cc", "memory");
+}
+
 inline USHORT* copSetPlanes(UBYTE bplPtrStart,USHORT* copListEnd,const UBYTE **planes,int numPlanes) {
 	for (USHORT i=0;i<numPlanes;i++) {
 		ULONG addr=(ULONG)planes[i];
@@ -182,8 +228,30 @@ inline USHORT* copSetColor(USHORT* copListCurrent,USHORT index,USHORT color) {
 	return copListCurrent;
 }
 
+UWORD* scroll = NULL;
+
+static const UBYTE sinus[] = { 
+	8,8,9,10,10,11,12,12,
+	13,13,14,14,14,15,15,15,
+	15,15,15,15,14,14,14,13,
+	13,12,12,11,10,10,9,8,
+	8,7,6,5,5,4,3,3,
+	2,2,1,1,1,0,0,0,
+	0,0,0,0,1,1,1,2,
+	2,3,3,4,5,5,6,7, 
+};
+
 static __attribute__((interrupt)) void interruptHandler() {
 	custom->intreq=(1<<INTB_VERTB); custom->intreq=(1<<INTB_VERTB); //reset vbl req. twice for a4000 bug.
+
+	// modify scrolling in copper list
+	if(scroll) {
+		int sin = sinus[frameCounter & 63];
+		*scroll = sin | (sin << 4);
+	}
+
+	// DEMO - ThePlayer
+	p61Music();
 	// DEMO - increment frameCounter
 	frameCounter++;
 }
@@ -248,6 +316,8 @@ int main() {
 
 	warpmode(1);
 	// TODO: precalc stuff here
+	if(p61Init(module) != 0)
+		KPrintF("p61Init failed!\n");
 	warpmode(0);
 
 	TakeSystem();
@@ -267,6 +337,7 @@ int main() {
 	*copPtr++ = offsetof(struct Custom, bplcon0);
 	*copPtr++ = (0<<10)/*dual pf*/|(1<<9)/*color*/|((5)<<12)/*num bitplanes*/;
 	*copPtr++ = offsetof(struct Custom, bplcon1);	//scrolling
+	scroll = copPtr;
 	*copPtr++ = 0;
 	*copPtr++ = offsetof(struct Custom, bplcon2);	//playfied priority
 	*copPtr++ = 1<<6;//0x24;			//Sprites have priority over playfields
@@ -300,8 +371,8 @@ int main() {
 
 	// DEMO
 	SetInterruptHandler((APTR)interruptHandler);
-	custom->intena=(1<<INTB_SETCLR)|(1<<INTB_INTEN)|(1<<INTB_VERTB);
-	custom->intreq=1<<INTB_VERTB;//reset vbl req
+	custom->intena=(1<<INTB_SETCLR)|(1<<INTB_INTEN)|(1<<INTB_VERTB)|(1<<INTB_EXTER); // ThePlayer needs INTB_EXTER
+	custom->intreq=(1<<INTB_VERTB);//reset vbl req
 
 	while(!MouseLeft()) {
 		WaitVbl();
@@ -312,6 +383,8 @@ int main() {
 		debug_filled_rect(f + 100, 200*2, f + 400, 220*2, 0x0000ff00); // 0x00RRGGBB
 		debug_text(f+ 130, 209*2, "This is a WinUAE debug overlay", 0x00ff00ff);
 	}
+
+	p61End();
 
 	// END
 	FreeSystem();
