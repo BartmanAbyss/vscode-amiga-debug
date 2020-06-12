@@ -13,6 +13,10 @@
 	font-weight: var(--vscode-editor-font-weight);   
 }
 
+.right {
+	text-align: right;
+}
+
 .gfxresource_menu {
 	width: initial !important;
 	box-shadow: 0 .25em .5em 0 black;
@@ -21,14 +25,14 @@
 .gfxresource {
 	width: 450px;
 	display: grid;
-	grid-template-columns: auto 150px 100px; /* name, address-range, information */
+	grid-template-columns: auto 100px 70px 80px; /* name, information, size, address */
 	column-gap: 0.3em;
 }
 
 .gfxresource_brief {
 	width: 175px;
 	display: grid;
-	grid-template-columns: auto 0 0;
+	grid-template-columns: auto 0 0 0;
 }
 
 .gfxresource dd, .gfxresource_brief dd, .gfxresource dt, .gfxresource_brief dt {

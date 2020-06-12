@@ -447,7 +447,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 			const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
 			const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
-			const tmp = path.join(os.tmpdir(), `amiga-profile-${new Date().getTime()}`);
+
+			const date = new Date();
+			const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" + 
+				date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
+
+			const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
 
 			// write unwind table for WinUAE
 			const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);

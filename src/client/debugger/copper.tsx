@@ -168,20 +168,22 @@ interface GfxResourceWithPayload {
 const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayload>> = ({ option, placeholder }) => {
 	const resource = option.resource;
 	return (<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource}>
-		<dt>{resource.name}</dt><dd class={styles.fixed}>${resource.address.toString(16).padStart(8, '0')}-${(resource.address + resource.size).toString(16).padStart(8, '0')}</dd>
+		<dt>{resource.name}</dt>
 		<dd>
-		{resource.type === GfxResourceType.bitmap && (<Fragment>
-			{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
-			&nbsp;
-			{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
-			{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
-		</Fragment>)}
-		{resource.type === GfxResourceType.palette && (<Fragment>
-			<div class={styles.palette}>
-				{option.palette.map((p) => <div style={{backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}`}} />)}
-			</div>
-		</Fragment>)}
+			{resource.type === GfxResourceType.bitmap && (<Fragment>
+				{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
+				&nbsp;
+				{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
+				{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
+			</Fragment>)}
+			{resource.type === GfxResourceType.palette && (<Fragment>
+				<div class={styles.palette}>
+					{option.palette.map((p) => <div style={{backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}`}} />)}
+				</div>
+			</Fragment>)}
 		</dd>
+		<dd class={styles.right}>{resource.size ? (resource.size.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'b') : ''}</dd>
+		<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
 	</div>);
 };
 
