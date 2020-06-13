@@ -60,8 +60,6 @@ export const setupGl = ({
 	boxes: initialBoxes,
 	focusColor,
 }: IOptions) => {
-	console.trace("setupGL", initialScale);
-
 	// Get A WebGL context
 	const gl = canvas.getContext('webgl2');
 	if (!gl) {
@@ -197,12 +195,10 @@ export const setupGl = ({
 			redraw();
 		},
 		setBounds: (bounds: IBounds, size: ICanvasSize, scale: number) => {
-			console.trace("setBounds", bounds, size, scale);
 			setBounds(bounds, size, scale);
 			redraw();
 		},
 		setBoxes: (boxes: ReadonlyArray<IBox>) => {
-			console.trace("setBoxes");
 			setBoxes(boxes);
 			redraw();
 		},
