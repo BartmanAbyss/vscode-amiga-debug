@@ -186,10 +186,18 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					if(dmaRecord.reg === regBLTSIZE - 0xdff000) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
 						BLTSIZV = dmaRecord.dat >>> 6;
+						if(BLTSIZH === 0)
+							BLTSIZH = 64;
+						if(BLTSIZV === 0)
+							BLTSIZV = 1024;
 					}
 					if(dmaRecord.reg === regBLTSIZH - 0xdff000) { // ECS
 						BLTSIZH = dmaRecord.dat & 0x7ff;
 						BLTSIZV = customReg(regBLTSIZV) & 0x7fff;
+						if(BLTSIZH === 0)
+							BLTSIZH = 2048;
+						if(BLTSIZV === 0)
+							BLTSIZV = 32768;
 					}
 					const BLTCON0 = customReg(regBLTCON0);
 					const BLTCON1 = customReg(regBLTCON1);

@@ -1214,7 +1214,7 @@ const Tooltip: FunctionComponent<{
 				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
 			</div>)}
 			</div>
-		{isBlit && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
+		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
 			<Screen model={model} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs))} useZoom={false} />
 		</div>}
 	</Fragment>);
