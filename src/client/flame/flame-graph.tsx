@@ -80,7 +80,7 @@ export interface IBox {
 	amiga?: IBoxAmiga;
 }
 
-const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
+const buildBoxes = (columns: ReadonlyArray<IColumn>, rowOffset: number) => {
 	const boxes: Map<number, IBox> = new Map();
 	let maxY = 0;
 	for (let x = 0; x < columns.length; x++) {
@@ -91,7 +91,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				getBoxInRowColumn(columns, boxes, x, y)!.x2 = col.x2;
 			} else {
-				const y1 = Constants.BoxHeight * (y + 2) + Constants.TimelineHeight; // +2: make room for dmaRecords, blits
+				const y1 = Constants.BoxHeight * (y + rowOffset) + Constants.TimelineHeight;
 				const y2 = y1 + Constants.BoxHeight;
 				boxes.set(loc.graphId, {
 					column: x,
@@ -352,7 +352,7 @@ export const FlameGraph: FunctionComponent<{
 		[data, filter]
 	);
 
-	const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
+	const rawBoxes = useMemo(() => buildBoxes(columns, model.amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
 	const dmaBoxes = useMemo(() => buildDmaBoxes(model), [model]);
 	const blitBoxes = useMemo(() => buildBlitBoxes(model), [model]);
 	const clampX = useMemo(
@@ -674,22 +674,26 @@ export const FlameGraph: FunctionComponent<{
 
 			const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
 
-			// dmaRecord
-			if(fromTop < Constants.TimelineHeight + 1 * Constants.TimelineHeight) {
-				const box = Math.abs(binarySearch(dmaBoxes, (b) => b.x2 - x)) - 1;
-				if (!dmaBoxes[box] || dmaBoxes[box].x1 > x) {
-					return;
+			let rowOffset = 0;
+			if(model.amiga) {
+				// dmaRecord
+				if(fromTop < Constants.TimelineHeight + 1 * Constants.TimelineHeight) {
+					const box = Math.abs(binarySearch(dmaBoxes, (b) => b.x2 - x)) - 1;
+					if (!dmaBoxes[box] || dmaBoxes[box].x1 > x) {
+						return;
+					}
+					return dmaBoxes[box];
 				}
-				return dmaBoxes[box];
-			}
 
-			// blit
-			if(fromTop < Constants.TimelineHeight + 2 * Constants.TimelineHeight) {
-				const box = Math.abs(binarySearch(blitBoxes, (b) => b.x2 - x)) - 1;
-				if (!blitBoxes[box] || blitBoxes[box].x1 > x) {
-					return;
+				// blit
+				if(fromTop < Constants.TimelineHeight + 2 * Constants.TimelineHeight) {
+					const box = Math.abs(binarySearch(blitBoxes, (b) => b.x2 - x)) - 1;
+					if (!blitBoxes[box] || blitBoxes[box].x1 > x) {
+						return;
+					}
+					return blitBoxes[box];
 				}
-				return blitBoxes[box];
+				rowOffset = 2; // +1: dmaRecord, +1: blits
 			}
 
 			const col = Math.abs(binarySearch(columns, (c) => c.x2 - x)) - 1;
@@ -697,7 +701,7 @@ export const FlameGraph: FunctionComponent<{
 				return;
 			}
 
-			const row = Math.floor((fromTop - Constants.TimelineHeight) / Constants.BoxHeight) - 2; // -1: dmaRecord, -1: blits
+			const row = Math.floor((fromTop - Constants.TimelineHeight) / Constants.BoxHeight) - rowOffset;
 			return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
 		},
 		[webCanvas, bounds, columns, rawBoxes, dmaBoxes, blitBoxes],

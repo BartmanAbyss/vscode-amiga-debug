@@ -35,10 +35,12 @@ export const CpuProfileLayout: FunctionComponent<{
 	const dataFlame = columns;
 	const dataTable = Object.values(graph.children);
 
+	const extraRows = (model.amiga ? 2 : 0); // +1 for dmaRecord, +1 for blits, +1 padding
+
 	// calc max. height of flamegraph
-	let flameHeight = (FlameConstants.BoxHeight) * 3 + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+	let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
 	for(const col of dataFlame) {
-		const y = (FlameConstants.BoxHeight) * (col.rows.length + 3) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+		const y = (FlameConstants.BoxHeight) * (col.rows.length + extraRows) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
 		flameHeight = Math.max(flameHeight, y);
 	}
 
