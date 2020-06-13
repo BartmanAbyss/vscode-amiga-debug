@@ -494,7 +494,7 @@ export const FlameGraph: FunctionComponent<{
 		webContext.fillStyle = cssVariables['editor-foreground'];
 		webContext.strokeStyle = cssVariables['editorRuler-foreground'];
 		webContext.lineWidth = 1;
-		webContext.globalAlpha = 1.0;
+		webContext.globalAlpha = 0.6;
 
 		const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
 		const spacing = canvasSize.width / labels;
@@ -528,15 +528,18 @@ export const FlameGraph: FunctionComponent<{
 		}
 		webContext.stroke();
 
-/*		// time marker
-		webContext.strokeStyle = 'white'; // TODO: light theme
+		// time marker
+		webContext.globalAlpha = 1.0;
 		const x = (time - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
-		webContext.lineWidth = 1;
+		const text = formatValue(time * model.duration, model.duration, displayUnit);
 		webContext.beginPath();
-		webContext.moveTo(x, Constants.TimelineHeight);
-		webContext.lineTo(x, webContext.canvas.height);
-		webContext.stroke();*/
-	}, [webContext, model, canvasSize, bounds, cssVariables, displayUnit]);
+		const textMetrics = webContext.measureText(text);
+		webContext.fillStyle = cssVariables['editor-background'];
+		webContext.fillRect(x, 0, textMetrics.width + 2 * 6, Constants.TimelineHeight);
+		webContext.fillStyle = cssVariables['editor-foreground'];
+		webContext.fillText(text, x + 6, Constants.TimelineHeight / 2);
+		webContext.stroke();
+	}, [webContext, model, canvasSize, bounds, cssVariables, displayUnit, time]);
 
 	// Update the canvas size when the window size changes, and on initial render
 	useEffect(() => {
