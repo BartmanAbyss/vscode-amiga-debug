@@ -6,7 +6,7 @@ import { Fragment, FunctionComponent, h } from 'preact';
 import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
-import { dataName, DisplayUnit, formatValue, getLocationText } from '../display';
+import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
 import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
@@ -262,13 +262,19 @@ const enum LockBound {
 	MaxX = 1 << 2,
 }
 
+const enum DragMode {
+	View,
+	Time,
+}
+
 interface IDrag {
+	dragMode: DragMode;
 	timestamp: number;
 	pageXOrigin: number;
 	pageYOrigin: number;
-	original: IBounds;
+	original?: IBounds; // View
 	xPerPixel: number;
-	lock: LockBound;
+	lock?: LockBound; // View
 }
 
 const enum HighlightSource {
@@ -330,6 +336,8 @@ export const FlameGraph: FunctionComponent<{
 	const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(undefined);
 	const [drag, setDrag] = useState<IDrag | undefined>(undefined);
 	const cssVariables = useCssVariables();
+
+	const [time, setTime] = useState<number>(0.5);
 
 	const columns = useMemo(
 		() => {
@@ -409,8 +417,6 @@ export const FlameGraph: FunctionComponent<{
 		[cssVariables],
 	);
 
-	useLazyEffect(() => setBounds({ ...bounds, ...clampX }), [clampX]);
-
 	useLazyEffect(() => {
 		vscode.setState({ ...vscode.getState(), bounds });
 	}, [bounds]);
@@ -486,9 +492,8 @@ export const FlameGraph: FunctionComponent<{
 
 		webContext.clearRect(0, 0, webContext.canvas.width, Constants.TimelineHeight);
 		webContext.fillStyle = cssVariables['editor-foreground'];
-		webContext.font = webContext.textAlign = 'right';
 		webContext.strokeStyle = cssVariables['editorRuler-foreground'];
-		webContext.lineWidth = 1 / dpr;
+		webContext.lineWidth = 1;
 		webContext.globalAlpha = 1.0;
 
 		const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
@@ -497,21 +502,40 @@ export const FlameGraph: FunctionComponent<{
 		const timeRange = model.duration * (bounds.maxX - bounds.minX);
 		const timeStart = model.duration * bounds.minX;
 
+		const scale = timeRange / scaleValue(timeRange, model.duration, displayUnit);
+
+		let uuu = 1;
+		const scaledDuration = scaleValue(model.duration, model.duration, displayUnit);
+		let i = 0;
+		for(; (uuu) < scaledDuration; i++)
+			uuu *= [2, 2.5, 2][i % 3];
+
+		let div = scaledDuration / uuu;
+		for(i--; webContext.canvas.width / (bounds.maxX - bounds.minX) / (div * [2, 2.5, 2][((i % 3) + 3) % 3]) >= Constants.TimelineLabelSpacing; i--)
+			div *= [2, 2.5, 2][((i % 3) + 3) % 3];
+
+		const unitsPerLabel = 1.0 / div;
+		const firstLabel = (Math.floor(bounds.minX / unitsPerLabel) - 1) * unitsPerLabel;
+		const lastLabel = (Math.ceil(bounds.maxX / unitsPerLabel) + 1) * unitsPerLabel;
+
 		webContext.beginPath();
-		for (let i = 0; i <= labels; i++) {
-			const time = (i / labels) * timeRange + timeStart;
-			const x = i * spacing;
-			webContext.fillText(
-				`${formatValue(time, model.duration, displayUnit)}`,
-				Math.max(40, x - 3),
-				Constants.TimelineHeight / 2,
-			);
+		for(let u = firstLabel; u <= lastLabel; u += unitsPerLabel) {
+			const x = (u - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
+			const time = model.duration * u;
+			webContext.fillText(formatValue(time, model.duration, displayUnit), x + 3, Constants.TimelineHeight / 2);
 			webContext.moveTo(x, 0);
 			webContext.lineTo(x, Constants.TimelineHeight);
 		}
-
 		webContext.stroke();
-		webContext.textAlign = 'left';
+
+/*		// time marker
+		webContext.strokeStyle = 'white'; // TODO: light theme
+		const x = (time - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
+		webContext.lineWidth = 1;
+		webContext.beginPath();
+		webContext.moveTo(x, Constants.TimelineHeight);
+		webContext.lineTo(x, webContext.canvas.height);
+		webContext.stroke();*/
 	}, [webContext, model, canvasSize, bounds, cssVariables, displayUnit]);
 
 	// Update the canvas size when the window size changes, and on initial render
@@ -713,26 +737,27 @@ export const FlameGraph: FunctionComponent<{
 			return;
 		}
 
-		const { original, pageXOrigin, xPerPixel, pageYOrigin, lock } = drag;
+		const { dragMode, original, pageXOrigin, xPerPixel, pageYOrigin, lock } = drag;
 		const onMove = (evt: MouseEvent) => {
-			const range = original.maxX - original.minX;
-			let minX: number;
-			let maxX: number;
-			if (!(lock & LockBound.MinX)) {
-				const upper =
-					lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampX.maxX - range;
-				minX = clamp(clampX.minX, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
-				maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampX.maxX, minX + range);
-			} else {
-				minX = original.minX;
-				maxX = clamp(
-					minX + Constants.MinWindow,
-					original.maxX - (evt.pageX - pageXOrigin) * xPerPixel,
-					clampX.maxX,
-				);
-			}
+			if(dragMode === DragMode.View) {
+				const range = original.maxX - original.minX;
+				let minX: number;
+				let maxX: number;
+				if (!(lock & LockBound.MinX)) {
+					const upper = lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampX.maxX - range;
+					minX = clamp(clampX.minX, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
+					maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampX.maxX, minX + range);
+				} else {
+					minX = original.minX;
+					maxX = clamp(minX + Constants.MinWindow, original.maxX - (evt.pageX - pageXOrigin) * xPerPixel, clampX.maxX);
+				}
 
-			setBounds({ minX, maxX });
+				setBounds({ minX, maxX });
+			} else if(dragMode === DragMode.Time) {
+				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
+				const newTime = bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX);
+				setTime(newTime);
+			}
 		};
 
 		const onUp = (evt: MouseEvent) => {
@@ -749,7 +774,7 @@ export const FlameGraph: FunctionComponent<{
 			document.removeEventListener('mouseleave', onUp);
 			document.removeEventListener('mouseup', onUp);
 		};
-	}, [clampX, drag]);
+	}, [clampX, drag, canvasSize.width]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -804,6 +829,7 @@ export const FlameGraph: FunctionComponent<{
 	const onMouseDown = useCallback(
 		(evt: MouseEvent) => {
 			setDrag({
+				dragMode: DragMode.View,
 				timestamp: Date.now(),
 				pageXOrigin: evt.pageX,
 				pageYOrigin: evt.pageY,
@@ -887,8 +913,10 @@ export const FlameGraph: FunctionComponent<{
 		<Fragment>
 			<DragHandle
 				bounds={bounds}
+				time={time}
 				current={drag}
 				canvasWidth={canvasSize.width}
+				canvasHeight={canvasSize.height}
 				startDrag={setDrag}
 			/>
 			<canvas
@@ -936,13 +964,16 @@ export const FlameGraph: FunctionComponent<{
 
 const DragHandle: FunctionComponent<{
 	canvasWidth: number;
+	canvasHeight: number;
 	bounds: IBounds;
+	time: number;
 	current: IDrag | undefined;
 	startDrag: (bounds: IDrag) => void;
-}> = ({ current, bounds, startDrag, canvasWidth }) => {
+}> = ({ current, bounds, time, startDrag, canvasWidth, canvasHeight }) => {
 	const start = useCallback(
 		(evt: MouseEvent, lck: LockBound, original: IBounds = bounds) => {
 			startDrag({
+				dragMode: DragMode.View,
 				timestamp: Date.now(),
 				pageXOrigin: evt.pageX,
 				pageYOrigin: evt.pageY,
@@ -956,10 +987,24 @@ const DragHandle: FunctionComponent<{
 		[canvasWidth, bounds],
 	);
 
+	const startTime = (evt: MouseEvent) => {
+		startDrag({
+			dragMode: DragMode.Time,
+			timestamp: Date.now(),
+			pageXOrigin: evt.pageX,
+			pageYOrigin: evt.pageY,
+			xPerPixel: -1 / canvasWidth,
+		});
+		evt.preventDefault();
+		evt.stopPropagation();
+	};
+
 	const range = bounds.maxX - bounds.minX;
 	const lock = current?.lock ?? 0;
 
-	return (
+	const timeInPixel = (time - bounds.minX) * canvasWidth / (bounds.maxX - bounds.minX);
+	
+	return (<Fragment>
 		<div class={classes(styles.handle, current && styles.active)} style={{ height: Constants.TimelineHeight }}>
 			<div
 				className={classes(styles.bg, lock === LockBound.Y && styles.active)}
@@ -985,7 +1030,11 @@ const DragHandle: FunctionComponent<{
 				/>
 			</div>
 		</div>
-	);
+		<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }}
+			onMouseDown={startTime}
+		/>
+		<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasHeight, transform: `translateX(${timeInPixel}px)` }}/>
+	</Fragment>);
 };
 
 function symbolize(address: number, amiga: IAmigaProfileExtra) {

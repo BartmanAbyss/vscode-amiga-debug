@@ -66,18 +66,32 @@ export const dataName = (unit: DisplayUnit) => {
 		default:
 			return '???';
 	}
-}
+};
 
-export const formatValue = (value: number, total: number, unit: DisplayUnit) => {
+export const scaleValue = (value: number, total: number, unit: DisplayUnit) => {
 	const cyclesPerMicroSecond = 7.093790;
 	switch(unit) {
-	case DisplayUnit.Microseconds: return integerFormat.format(value / cyclesPerMicroSecond) + 'µs';
+	case DisplayUnit.Microseconds: return value / cyclesPerMicroSecond;
+	case DisplayUnit.Cycles: return value;
+	case DisplayUnit.Lines: return value / cyclesPerMicroSecond / 200 * 312.5 / 100;
+	case DisplayUnit.PercentFrame: return value / cyclesPerMicroSecond / 200;
+	case DisplayUnit.Bytes: return Math.round(value);
+	case DisplayUnit.BytesHex: return Math.round(value);
+	case DisplayUnit.Percent: return value / total * 100;
+	default: return value;
+	}
+};
+
+export const formatValue = (value: number, total: number, unit: DisplayUnit) => {
+	value = scaleValue(value, total, unit);
+	switch(unit) {
+	case DisplayUnit.Microseconds: return integerFormat.format(value) + 'µs';
 	case DisplayUnit.Cycles: return integerFormat.format(value) + 'cy';
-	case DisplayUnit.Lines: return decimalFormat.format(value / cyclesPerMicroSecond / 200 * 312.5 / 100) + 'li';
-	case DisplayUnit.PercentFrame: return decimalFormat.format(value / cyclesPerMicroSecond / 200) + '%';
-	case DisplayUnit.Bytes: return integerFormat.format(Math.round(value)) + 'b';
-	case DisplayUnit.BytesHex: return '$' + Math.round(value).toString(16);
-	case DisplayUnit.Percent: return decimalFormat.format(value / total * 100) + '%';
+	case DisplayUnit.Lines: return decimalFormat.format(value) + 'li';
+	case DisplayUnit.PercentFrame: return decimalFormat.format(value) + '%';
+	case DisplayUnit.Bytes: return integerFormat.format(value) + 'b';
+	case DisplayUnit.BytesHex: return '$' + value.toString(16);
+	case DisplayUnit.Percent: return value / total * 100 + '%';
 	default: return decimalFormat.format(value);
 	}
 };

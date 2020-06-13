@@ -99,11 +99,40 @@ function htmlPage(scripts: string[]) {
 		<title>TEST</title>
 		<link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABdAElMP2v7/H62RTg/a/v8IbX9HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtfyP/ENr+gw/a/v8Q2v6DD9r+/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQgwD/kIMA/5CDAP8P2v7/D9r+/w/a/v8P2v7/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQgwD/kIMA/5CDAP+QgwD/AAAAAADC/f8Awv3+AML9/wDC/f4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwHUA/8B1AP/AdQD/AAAAAAAAAAAAAAAAAML9/wDC/f8Awv3/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACh//8Aof//AKH//wCh//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKH//wCh//8Aof//AKH//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkP//AJD//wCQ//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJD//wCQ//8AkP//AJD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbPP/AGzz/wBs8/8AbPP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABs8/8AbPP/AGzz/wBt8zAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQdxMAEHc/wBB3P8AQdz/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABB3P8AQdz/AEHc/wBB3P8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAD1/wAA4P8AAMB/AACEPwAAjj8AAP4fAAD/DwAA/48AAP+HAAD/wwAA/+MAAP/xAAD/8AAA//8AAA==" />
 		${vscodeStyle}
+		<script type="text/javascript">
+			const acquireVsCodeApi = (function() {
+				const originalPostMessage = window.parent.postMessage.bind(window.parent);
+				const targetOrigin = '*';
+				let acquired = false;
+
+				let state = {bounds:{minX:0,maxX:1}};
+
+				return () => {
+					if (acquired && !undefined) {
+						throw new Error('An instance of the VS Code API has already been acquired');
+					}
+					acquired = true;
+					return Object.freeze({
+						postMessage: function(msg) {
+							return originalPostMessage({ command: 'onmessage', data: msg }, targetOrigin);
+						},
+						setState: function(newState) {
+							state = newState;
+							originalPostMessage({ command: 'do-update-state', data: JSON.stringify(newState) }, targetOrigin);
+							return newState;
+						},
+						getState: function() {
+							return state;
+						}
+					});
+				};
+			})();
+			delete window.parent;
+			delete window.top;
+			delete window.frameElement;
+		</script>
 	</head>
 	<body style="overflow: hidden">
-		<script type="text/javascript">
-			function acquireVsCodeApi() { return { getState: () => {}, setState: (s) => {}, postMessage: (message) => {} }; }
-		</script>
 	`;
 	for(const script of scripts)
 		html += `<script src="${script}"></script>\n`;
