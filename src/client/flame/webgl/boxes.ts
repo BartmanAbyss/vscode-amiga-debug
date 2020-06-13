@@ -60,6 +60,8 @@ export const setupGl = ({
 	boxes: initialBoxes,
 	focusColor,
 }: IOptions) => {
+	console.trace("setupGL", initialScale);
+
 	// Get A WebGL context
 	const gl = canvas.getContext('webgl2');
 	if (!gl) {
@@ -178,7 +180,7 @@ export const setupGl = ({
 	setBounds({ minX: 0, maxX: 1 }, { width: 100, height: 100 }, initialScale);
 	setBoxes(initialBoxes);
 	setFocusColor(focusColor);
-	redraw();
+	//redraw(); // don't draw, we haven't got good bounds yet, these will come soon
 
 	return {
 		redraw,
@@ -195,10 +197,12 @@ export const setupGl = ({
 			redraw();
 		},
 		setBounds: (bounds: IBounds, size: ICanvasSize, scale: number) => {
+			console.trace("setBounds", bounds, size, scale);
 			setBounds(bounds, size, scale);
 			redraw();
 		},
 		setBoxes: (boxes: ReadonlyArray<IBox>) => {
+			console.trace("setBoxes");
 			setBoxes(boxes);
 			redraw();
 		},
