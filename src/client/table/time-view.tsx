@@ -300,22 +300,40 @@ const TimeViewRow: FunctionComponent<{
 		[vscode, node],
 	);
 
-	const onToggleExpand = useCallback((event) => {
+	const onToggleExpand = useCallback((event: MouseEvent) => {
 		if(event.shiftKey) {
 			const nextExpanded = new Set(expanded);
-			const expandChildren = (n: IGraphNode) => {
-				for (const child of Object.values(n.children)) {
-					nextExpanded.add(child);
-					expandChildren(child);
-				}
-			};
-			nextExpanded.add(node);
-			expandChildren(node);
+			if(expanded.has(node)) {
+				// collapse
+				const collapseChildren = (n: IGraphNode) => {
+					for (const child of Object.values(n.children)) {
+						nextExpanded.delete(child);
+						collapseChildren(child);
+					}
+				};
+				nextExpanded.delete(node);
+				collapseChildren(node);
+			} else {
+				// expand
+				const expandChildren = (n: IGraphNode) => {
+					for (const child of Object.values(n.children)) {
+						nextExpanded.add(child);
+						expandChildren(child);
+					}
+				};
+				nextExpanded.add(node);
+				expandChildren(node);
+			}
 			onExpandChange(nextExpanded);
 		} else {
 			onExpandChange(toggleInSet(expanded, node));
 		}
 	}, [expanded, onExpandChange, node]);
+
+	const onMouseDown = (event: MouseEvent) => {
+		if(event.shiftKey)
+			event.preventDefault();
+	};
 
 	const onKeyDown = useCallback(
 		(evt: KeyboardEvent) => {
@@ -335,7 +353,7 @@ const TimeViewRow: FunctionComponent<{
 
 	const location = getLocationText(node);
 	const expand = (
-		<span className={styles.expander} onClick={onToggleExpand}>
+		<span className={styles.expander} onClick={onToggleExpand} onMouseDown={onMouseDown}>
 			{node.childrenSize > 0 ? <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} /> : null}
 		</span>
 	);

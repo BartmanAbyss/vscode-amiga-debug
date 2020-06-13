@@ -164,7 +164,7 @@ suite("Profiler", () => {
 	});
 */
 	test("Time: bobble.elf", () => {
-		test_profile_time('amiga-profile-1591796259447', 'private/bobble.elf');
+		test_profile_time('amiga-profile-2020.06.13-15.43.47', 'private/bobble.elf');
 	});
 	test("Size: test3.elf", () => {
 		test_profile_size('test3', 'test3.elf');
