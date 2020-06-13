@@ -28,6 +28,11 @@ export const getLocationText = (location: ILocation) => {
 	return `${location.src.source.path}:${location.src.lineNumber}`;
 };
 
+export enum DisplayUnitType {
+	Time,
+	Size
+}
+
 export enum DisplayUnit {
 	Microseconds,
 	Cycles,

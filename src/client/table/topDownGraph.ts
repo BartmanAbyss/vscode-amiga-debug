@@ -84,6 +84,8 @@ const processNode = (aggregate: TopDownNode, node: IComputedNode, model: IProfil
 };
 
 const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
+	if(!model.amiga || !model.amiga.dmaRecords)
+		return;
 	const dmaRecords = model.amiga.dmaRecords;
 	if(dmaRecords === undefined)
 		return;
@@ -209,7 +211,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 export const createTopDownGraph = (model: IProfileModel) => {
 	const root = TopDownNode.root();
 	let cpuRoot = root;
-	if(model.amiga.dmaRecords) {
+	if(model.amiga) {
 		cpuRoot = new TopDownNode({
 			selfTime: 0,
 			aggregateTime: 0,
@@ -233,7 +235,7 @@ export const createTopDownGraph = (model: IProfileModel) => {
 		cpuRoot.selfTime += node.aggregateTime;
 		cpuRoot.aggregateTime += node.aggregateTime;
 	}
-	if(model.amiga.dmaRecords) {
+	if(model.amiga) {
 		//root.selfTime = cpuRoot.selfTime;
 		root.aggregateTime = cpuRoot.aggregateTime;
 

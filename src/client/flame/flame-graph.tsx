@@ -118,9 +118,9 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
 };
 
 const buildDmaBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.amiga.dmaRecords;
-	if(dmaRecords === undefined)
+	if(!model.amiga || !model.amiga.dmaRecords)
 		return [];
+	const dmaRecords = model.amiga.dmaRecords;
 
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
 	let dmacon = model.amiga.dmacon;
@@ -192,9 +192,9 @@ const buildDmaBoxes = (model: IProfileModel) => {
 };
 
 const buildBlitBoxes = (model: IProfileModel) => {
-	const dmaRecords = model.amiga.dmaRecords;
-	if(dmaRecords === undefined)
+	if(!model.amiga || !model.amiga.dmaRecords)
 		return [];
+	const dmaRecords = model.amiga.dmaRecords;
 
 	const customRegs = new Uint16Array(model.amiga.customRegs);
 	const blits = GetBlits(customRegs, model.amiga.dmaRecords);
@@ -956,10 +956,7 @@ const DragHandle: FunctionComponent<{
 	const lock = current?.lock ?? 0;
 
 	return (
-		<div
-			className={classes(styles.handle, current && styles.active)}
-			style={{ height: Constants.TimelineHeight }}
-		>
+		<div class={classes(styles.handle, current && styles.active)} style={{ height: Constants.TimelineHeight }}>
 			<div
 				className={classes(styles.bg, lock === LockBound.Y && styles.active)}
 				onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.Y), [start])}

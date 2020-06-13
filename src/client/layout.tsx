@@ -5,7 +5,7 @@ import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './layout.module.css';
 import { IProfileModel } from './model';
-import { DisplayUnit } from './display';
+import { DisplayUnit, DisplayUnitType } from './display';
 import { UnitSelect } from './unit-select';
 import { Filter, IRichFilter } from './filter';
 
@@ -25,7 +25,7 @@ export const CpuProfileLayout: FunctionComponent<{
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
 	const [text, setFilter] = useState('');
-	const [displayUnit2, setDisplayUnit] = useState<DisplayUnit>(model.amiga.dmaRecords ? DisplayUnit.PercentFrame : DisplayUnit.Bytes);
+	const [displayUnit, setDisplayUnit] = useState<DisplayUnit>(model.amiga ? DisplayUnit.PercentFrame : DisplayUnit.Bytes);
 
 	const filter: IRichFilter = { text, caseSensitive, regex };
 
@@ -65,7 +65,8 @@ export const CpuProfileLayout: FunctionComponent<{
 									onChange={setRegex}
 								/>
 								<UnitSelect
-									value={displayUnit2}
+									value={displayUnit}
+									type={model.amiga ? DisplayUnitType.Time : DisplayUnitType.Size}
 									onChange={setDisplayUnit}
 								/>
 							</Fragment>
@@ -74,16 +75,16 @@ export const CpuProfileLayout: FunctionComponent<{
 				</div>
 			</div>
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
-				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit2} />
+				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit} />
 			</div>
-			<Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
+			{model.amiga ? <Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>
 					<Tab>Blitter</Tab>
 				</TabList>
 				<TabPanel style={{ overflow: 'auto' }}>
-					<TimeView data={dataTable} filter={filter} displayUnit={displayUnit2} />
+					<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
 					<CopperList model={model} />
@@ -91,7 +92,9 @@ export const CpuProfileLayout: FunctionComponent<{
 				<TabPanel style={{ overflow: 'auto' }}>
 					<BlitterList model={model} />
 				</TabPanel>
-			</Tabs>
+			</Tabs> : <div class={styles.rows}>
+				<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
+			</div>}
 		</Fragment>
 	);
 };
