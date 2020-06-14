@@ -182,10 +182,10 @@ suite("Profiler", () => {
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
 	});
-	test("Time: test.elf", () => {
+/*	test("Time: test.elf", () => {
 		test_profile_time('amiga-profile-1591782448506', 'test.elf');
 	});
-/*	test("Time: test2.elf", () => {
+	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
 	});
 	test("bitshmup.elf", () => {
@@ -193,7 +193,7 @@ suite("Profiler", () => {
 	});
 */
 	test("Time: bobble.elf", () => {
-		test_profile_time('amiga-profile-2020.06.13-15.43.47', 'private/bobble.elf');
+		test_profile_time('amiga-profile-2020.06.14-13.42.51', 'private/bobble.elf');
 	});
 	test("Size: test3.elf", () => {
 		test_profile_size('test3', 'test3.elf');

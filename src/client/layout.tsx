@@ -35,7 +35,7 @@ export const CpuProfileLayout: FunctionComponent<{
 	const dataFlame = columns;
 	const dataTable = Object.values(graph.children);
 
-	const extraRows = (model.amiga ? 2 : 0); // +1 for dmaRecord, +1 for blits, +1 padding
+	const extraRows = (model.amiga ? 3 : 1); // +1 for dmaRecord, +1 for blits, +1 padding
 
 	// calc max. height of flamegraph
 	let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
@@ -52,27 +52,11 @@ export const CpuProfileLayout: FunctionComponent<{
 						value={text}
 						placeholder="Filter functions or files"
 						onChange={setFilter}
-						foot={
-							<Fragment>
-								<ToggleButton
-									icon={CaseSensitive}
-									label="Match Case"
-									checked={caseSensitive}
-									onChange={setCaseSensitive}
-								/>
-								<ToggleButton
-									icon={Regex}
-									label="Use Regular Expression"
-									checked={regex}
-									onChange={setRegex}
-								/>
-								<UnitSelect
-									value={displayUnit}
-									type={model.amiga ? DisplayUnitType.Time : DisplayUnitType.Size}
-									onChange={setDisplayUnit}
-								/>
-							</Fragment>
-						}
+						foot={<Fragment>
+							<ToggleButton icon={CaseSensitive} label="Match Case" checked={caseSensitive} onChange={setCaseSensitive}/>
+							<ToggleButton icon={Regex} label="Use Regular Expression" checked={regex} onChange={setRegex}/>
+							<UnitSelect value={displayUnit} type={model.amiga ? DisplayUnitType.Time : DisplayUnitType.Size} onChange={setDisplayUnit}/>
+						</Fragment>}
 					/>
 				</div>
 			</div>

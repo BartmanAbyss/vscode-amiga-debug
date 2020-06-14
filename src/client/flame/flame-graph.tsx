@@ -337,7 +337,7 @@ export const FlameGraph: FunctionComponent<{
 	const [drag, setDrag] = useState<IDrag | undefined>(undefined);
 	const cssVariables = useCssVariables();
 
-	const [time, setTime] = useState<number>(0.5);
+	const [time, setTime] = useState(0);
 
 	const columns = useMemo(
 		() => {
@@ -417,13 +417,8 @@ export const FlameGraph: FunctionComponent<{
 		[cssVariables],
 	);
 
-	useLazyEffect(() => {
-		vscode.setState({ ...vscode.getState(), bounds });
-	}, [bounds]);
-
-	useLazyEffect(() => {
-		vscode.setState({ ...vscode.getState(), focusedId: focused?.loc.graphId });
-	}, [focused]);
+	useLazyEffect(() => { vscode.setState({ ...vscode.getState(), bounds }); }, [bounds]);
+	useLazyEffect(() => { vscode.setState({ ...vscode.getState(), focusedId: focused?.loc.graphId }); }, [focused]);
 
 	useEffect(() => {
 		if (webContext) {
@@ -434,9 +429,8 @@ export const FlameGraph: FunctionComponent<{
 
 	// Re-render box labels when data changes
 	useEffect(() => {
-		if (!webContext) {
+		if (!webContext)
 			return;
-		}
 
 		webContext.clearRect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
 		webContext.save();
@@ -486,9 +480,8 @@ export const FlameGraph: FunctionComponent<{
 
 	// Re-render the zoom indicator when bounds change
 	useEffect(() => {
-		if (!webContext) {
+		if (!webContext)
 			return;
-		}
 
 		webContext.clearRect(0, 0, webContext.canvas.width, Constants.TimelineHeight);
 		webContext.fillStyle = cssVariables['editor-foreground'];
@@ -530,8 +523,8 @@ export const FlameGraph: FunctionComponent<{
 
 		// time marker
 		webContext.globalAlpha = 1.0;
-		const x = (time - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
-		const text = formatValue(time * model.duration, model.duration, displayUnit);
+		const x = (time / model.duration - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
+		const text = formatValue(time, model.duration, displayUnit);
 		webContext.beginPath();
 		const textMetrics = webContext.measureText(text);
 		webContext.fillStyle = cssVariables['editor-background'];
@@ -758,7 +751,7 @@ export const FlameGraph: FunctionComponent<{
 				setBounds({ minX, maxX });
 			} else if(dragMode === DragMode.Time) {
 				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-				const newTime = bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX);
+				const newTime = bounds.minX + x * model.duration / canvasSize.width * (bounds.maxX - bounds.minX);
 				setTime(newTime);
 			}
 		};
@@ -916,7 +909,7 @@ export const FlameGraph: FunctionComponent<{
 		<Fragment>
 			<DragHandle
 				bounds={bounds}
-				time={time}
+				time={time / model.duration}
 				current={drag}
 				canvasWidth={canvasSize.width}
 				canvasHeight={canvasSize.height}
