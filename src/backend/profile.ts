@@ -236,8 +236,10 @@ struct barto_debug_resource {
 */
 
 export class ProfileFile {
-	public chipmemSize: number;
+	public chipMemSize: number;
 	public chipMem: Uint8Array;
+	public bogoMemSize: number;
+	public bogoMem: Uint8Array;
 	public dmacon: number;
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
@@ -254,8 +256,10 @@ export class ProfileFile {
 		let bufferOffset = 0;
 		this.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
 		this.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
-		this.chipmemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipmemSize); bufferOffset += this.chipmemSize;
+		this.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipMemSize); bufferOffset += this.chipMemSize;
+		this.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, this.bogoMemSize); bufferOffset += this.bogoMemSize;
 		const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
@@ -461,6 +465,7 @@ export class Profiler {
 			...profileCommon(cyclesPerFunction, locations),
 			$amiga: {
 				chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
+				bogoMem: Buffer.from(profileFile.bogoMem).toString('base64'),
 				dmacon: profileFile.dmacon,
 				customRegs: Array.from(profileFile.customRegs), 
 				dmaRecords: profileFile.dmaRecords,

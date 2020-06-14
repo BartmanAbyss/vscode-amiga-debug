@@ -10,6 +10,7 @@ import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra } from './types
 import { maybeFileUrlToPath } from './path';
 import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
 import { DmaRecord, GfxResource } from '../backend/profile_types';
+import { Memory } from './dma';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -70,7 +71,7 @@ export interface IProfileModel {
 	duration: number;
 
 	amiga?: IAmigaProfileExtra;
-	chipMemCache?: Uint8Array;
+	memory?: Memory;
 }
 
 /**

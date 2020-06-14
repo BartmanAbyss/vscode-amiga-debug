@@ -5,7 +5,7 @@ import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 import { CopperDisassembler } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, GetChipMemAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromChipMem, GetPaletteFromCopper } from '../dma';
+import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -39,13 +39,13 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const chipMem = model.chipMemCache;//GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
+	const memory = model.memory; //GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
 
 	const getPixel = (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
 		for(let p = 0; p < scr.planes.length; p++) {
 			const addr = scr.planes[p] + y * (scr.width / 8 + scr.modulos[p & 1]) + Math.floor(x / 8);
-			const raw = chipMem[addr];
+			const raw = memory.readByte(addr);
 			if(raw & (1 << (7 - (x & 7))))
 				pixel |= 1 << p;
 		}
@@ -73,14 +73,14 @@ export const Screen: FunctionComponent<{
 					let pixelMask = 0xffff;
 					for(let p = 0; p < planes.length; p++) {
 						const addr = planes[p] + x * 2;
-						const raw = (chipMem[addr] << 8) | chipMem[addr + 1];
+						const raw = memory.readWord(addr);
 						if((raw & (1 << (15 - i))))
 							pixel |= 1 << p;
 					}
 					if(mask) {
 						for(let p = 0; p < maskPlanes.length; p++) {
 							const addr = maskPlanes[p] + x * 2;
-							const raw = (chipMem[addr] << 8) | chipMem[addr + 1];
+							const raw = memory.readWord(addr);
 							if((raw & (1 << (15 - i))))
 								pixelMask |= 1 << p;
 						}
@@ -212,7 +212,7 @@ class GfxResourceDropdown extends DropdownComponent<GfxResourceWithPayload> {
 export const CopperList: FunctionComponent<{
 	model: IProfileModel;
 }> = ({ model }) => {
-	const copper = useMemo(() => GetCopper(model.chipMemCache, model.amiga.dmaRecords), [model]);
+	const copper = useMemo(() => GetCopper(model.memory.chipMem, model.amiga.dmaRecords), [model]);
 	const bitmaps = useMemo(() => {
 		const bitmaps: GfxResourceWithPayload[] = [];
 		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
@@ -294,7 +294,7 @@ export const CopperList: FunctionComponent<{
 		palettes.push({ resource: customRegsResource, model, palette: customRegsPalette });
 
 		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
-			const palette = GetPaletteFromChipMem(model.chipMemCache, resource.address, resource.palette.numEntries);
+			const palette = GetPaletteFromMemory(model.memory, resource.address, resource.palette.numEntries);
 			palettes.push({ resource, model, palette });
 		});
 

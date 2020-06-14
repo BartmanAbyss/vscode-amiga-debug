@@ -2,6 +2,44 @@ import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters } from './customRegisters';
 import { CopperInstruction, CopperMove } from "./copperDisassembler";
 
+export class Memory {
+	private chipMemAddr = 0x00000000;
+	private bogoMemAddr = 0x00c00000;
+
+	constructor(public chipMem: Uint8Array, public bogoMem: Uint8Array) {
+	}
+
+	public readByte(addr: number): number {
+		if(addr >= this.chipMemAddr && addr < this.chipMemAddr + this.chipMem.byteLength)
+			return this.chipMem[addr - this.chipMemAddr];
+		if(addr >= this.bogoMemAddr && addr < this.bogoMemAddr + this.bogoMem.byteLength)
+			return this.bogoMem[addr - this.bogoMemAddr];
+		return 0;
+	}
+	public readWord(addr: number): number {
+		return (this.readByte(addr) << 8) | (this.readByte(addr + 1));
+
+	}
+	public readLong(addr: number): number {
+		return (this.readWord(addr) << 16) | (this.readWord(addr + 2));
+	}
+
+	public writeByte(addr: number, dat: number) {
+		if(addr >= this.chipMemAddr && addr < this.chipMemAddr + this.chipMem.byteLength)
+			this.chipMem[addr - this.chipMemAddr] = dat & 0xff;
+		if(addr >= this.bogoMemAddr && addr < this.bogoMemAddr + this.bogoMem.byteLength)
+			this.bogoMem[addr - this.bogoMemAddr] = dat & 0xff;
+	}
+	public writeWord(addr: number, dat: number) {
+		this.writeByte(addr, dat >>> 8);
+		this.writeByte(addr + 1, dat);
+	}
+	public writeLong(addr: number, dat: number) {
+		this.writeWord(addr, dat >>> 16);
+		this.writeWord(addr + 2, dat);
+	}
+}
+
 export interface DmaSubtype {
 	color: number; 	// 0xAABBGGRR
 	name?: string;
@@ -360,43 +398,29 @@ export function GetScreenFromBlit(blit: Blit): IScreen {
 
 // returs chipMem after DMA requests up to endCycle
 // currently only CPU and blitter writes implemented
-export function GetChipMemAfterDma(chipMem: Uint8Array, dmaRecords: DmaRecord[], endCycle: number): Uint8Array {
-	const chipMemAfter = new Uint8Array(chipMem);
-
-	const writeByte = (addr: number, dat: number) => {
-		chipMemAfter[addr + 0] = dat;
-	};
-	const writeWord = (addr: number, dat: number) => {
-		chipMemAfter[addr + 0] = (dat >>> 8) & 0xff;
-		chipMemAfter[addr + 1] = dat & 0xff;
-	};
-	const writeLong = (addr: number, dat: number) => {
-		chipMemAfter[addr + 0] = (dat >>> 24) & 0xff;
-		chipMemAfter[addr + 1] = (dat >>> 16) & 0xff;
-		chipMemAfter[addr + 2] = (dat >>> 8) & 0xff;
-		chipMemAfter[addr + 3] = dat & 0xff;
-	};
+export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCycle: number): Memory {
+	const memoryAfter = new Memory(new Uint8Array(memory.chipMem), new Uint8Array(memory.bogoMem));
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS && i < endCycle; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < endCycle; x++, i++) { // long and short lines alternate
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dmaRecord.addr === undefined || dmaRecord.addr >= chipMem.byteLength)
+			if(dmaRecord.addr === undefined)
 				continue;
 
 			if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
 				switch(dmaRecord.reg & 0xff) {
-				case 1: writeByte(dmaRecord.addr, dmaRecord.dat); break;
-				case 2: writeWord(dmaRecord.addr, dmaRecord.dat); break;
-				case 4: writeLong(dmaRecord.addr, dmaRecord.dat); break;
+				case 1: memoryAfter.writeByte(dmaRecord.addr, dmaRecord.dat); break;
+				case 2: memoryAfter.writeWord(dmaRecord.addr, dmaRecord.dat); break;
+				case 4: memoryAfter.writeLong(dmaRecord.addr, dmaRecord.dat); break;
 				}
 			} else if(dmaRecord.reg === 0) { // Blitter write
-				writeWord(dmaRecord.addr, dmaRecord.dat);
+				memoryAfter.writeWord(dmaRecord.addr, dmaRecord.dat);
 			}
 		}
 	}
 
-	return chipMemAfter;
+	return memoryAfter;
 }
 
 function GetAmigaColor(color: number): number {
@@ -418,11 +442,11 @@ export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	return palette;
 }
 
-export function GetPaletteFromChipMem(chipMem: Uint8Array, addr: number, numEntries: number): number[] {
+export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: number): number[] {
 	const palette = [];
 	for(let i = 0; i < 32; i++) {
 		if(i < numEntries) {
-			const color = (chipMem[addr + i * 2 + 0] << 8) | chipMem[addr + i * 2 + 1];
+			const color = memory.readWord(addr + i * 2);
 			palette.push(GetAmigaColor(color));
 		} else {
 			palette.push([0, 0, 0]);

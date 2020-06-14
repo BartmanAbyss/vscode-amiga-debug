@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
 import { IProfileModel } from '../model';
-import { Blit, GetBlits, GetChipMemAfterDma, GetPaletteFromCustomRegs } from '../dma';
+import { Blit, GetBlits, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
 import { CustomRegisters } from '../customRegisters';
 
@@ -10,8 +10,8 @@ export const BlitterVis: FunctionComponent<{
 	model: IProfileModel;
 	blit: Blit;
 }> = ({ model, blit }) => {
-	const chipMemBefore = GetChipMemAfterDma(model.chipMemCache, model.amiga.dmaRecords, blit.cycleStart);
-	const chipMemAfter = GetChipMemAfterDma(model.chipMemCache, model.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
+	const memoryBefore = GetMemoryAfterDma(model.memory, model.amiga.dmaRecords, blit.cycleStart);
+	const memoryAfter = GetMemoryAfterDma(model.memory, model.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
 	const customRegs = new Uint16Array(model.amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
@@ -54,7 +54,7 @@ export const BlitterVis: FunctionComponent<{
 					const BLTxDAT = [];
 					for(let p = 0; p < numPlanes; p++) {
 						const addr = BLTxPT + x * 2 + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
-						let raw = (channel < 3) ? ((chipMemBefore[addr] << 8) | chipMemBefore[addr + 1]) : ((chipMemAfter[addr] << 8) | chipMemAfter[addr + 1]);
+						let raw = (channel < 3) ? memoryBefore.readWord(addr) : memoryAfter.readWord(addr);
 						if(channel === 0) {
 							if(x === 0)
 								raw &= blit.BLTAFWM;

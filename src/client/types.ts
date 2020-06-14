@@ -48,6 +48,7 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 
 export interface IAmigaProfileExtra {
 	chipMem: string; // base64 encoded binary data
+	bogoMem: string; // base64 encoded binary data
 	dmacon: number;
 	customRegs: number[];
 	dmaRecords: DmaRecord[];
