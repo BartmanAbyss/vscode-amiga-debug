@@ -8,6 +8,31 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - graphics debugger in profiler (copper, blitter, bitmaps). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience
 - several DMA request were not displayed in the timeline (bitplanes > 1, sprites > 1, refresh > 1)
 - template project: added ThePlayer61 module replayer. To convert your own modules, use [p61con](https://www.pouet.net/prod.php?which=19922)
+- IntelliSense: previous versions would write `"compilerPath"` to every `.vscode/c_cpp_properties.json`, even if it wasn't an Amiga project. Now, the whole process has been simplified. Please use the following `.vscode/c_cpp_properties.json` file:
+```json
+{
+    "configurations": [
+        {
+            "name": "Amiga",
+            "configurationProvider": "BartmanAbyss.amiga-debug"
+        }
+    ],
+    "version": 4
+}
+```
+and move the existing `"defines"`, `"includePath"` settings to `.vscode/amiga.json` like this:
+```json
+{
+	"includePath": [ 
+		"${workspaceFolder}/**",
+		"${workspaceFolder}/../shared/"
+	],
+	"defines": [ "DEBUG" ]
+}
+```
+`"defines" : [ "__GNUC__=8", "_NO_INLINE" ]` is no longer needed.
+
+**Important:** You must have a `.vscode/amiga.json` file in your workspace, even if it's empty. IntelliSense will not work if this file is not present.
 
 ## 1.0.0
 - added function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled.
