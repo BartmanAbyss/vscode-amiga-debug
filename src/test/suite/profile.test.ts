@@ -5,7 +5,8 @@ import { SymbolTable } from '../../backend/symbols';
 import { buildModel } from '../../client/model';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
-const testOutDir = path.resolve(__dirname, "../../../src/test/suite/data/output");
+const testOutDir = path.resolve(__dirname, "../../../src/test/suite/data/output/data");
+const testHtmlDir = path.resolve(__dirname, "../../../src/test/suite/data/output");
 const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
 
 const vscodeHtmlStyle = `--vscode-activityBar-activeBorder:#ffffff; --vscode-activityBar-background:#333333; --vscode-activityBar-dropBackground:rgba(255, 255, 255, 0.12); --vscode-activityBar-foreground:#ffffff; --vscode-activityBar-inactiveForeground:rgba(255, 255, 255, 0.4); --vscode-activityBarBadge-background:#007acc; --vscode-activityBarBadge-foreground:#ffffff; --vscode-badge-background:#4d4d4d; --vscode-badge-foreground:#ffffff; --vscode-bookmarks-lineBackground:rgba(0, 0, 0, 0); --vscode-bookmarks-lineBorder:rgba(0, 0, 0, 0); --vscode-bookmarks-overviewRuler:rgba(21, 126, 251, 0.53); --vscode-breadcrumb-activeSelectionForeground:#e0e0e0; --vscode-breadcrumb-background:#1e1e1e; --vscode-breadcrumb-focusForeground:#e0e0e0; --vscode-breadcrumb-foreground:rgba(204, 204, 204, 0.8); --vscode-breadcrumbPicker-background:#252526; --vscode-button-background:#0e639c; --vscode-button-foreground:#ffffff; --vscode-button-hoverBackground:#1177bb; --vscode-checkbox-background:#3c3c3c; --vscode-checkbox-border:#3c3c3c; --vscode-checkbox-foreground:#f0f0f0; --vscode-debugExceptionWidget-background:#420b0d; --vscode-debugExceptionWidget-border:#a31515; --vscode-debugIcon-breakpointCurrentStackframeForeground:#ffcc00; --vscode-debugIcon-breakpointDisabledForeground:#848484; --vscode-debugIcon-breakpointForeground:#e51400; --vscode-debugIcon-breakpointStackframeForeground:#89d185; --vscode-debugIcon-breakpointUnverifiedForeground:#848484; --vscode-debugIcon-continueForeground:#75beff; --vscode-debugIcon-disconnectForeground:#f48771; --vscode-debugIcon-pauseForeground:#75beff; --vscode-debugIcon-restartForeground:#89d185; --vscode-debugIcon-startForeground:#89d185; --vscode-debugIcon-stepBackForeground:#75beff; --vscode-debugIcon-stepIntoForeground:#75beff; --vscode-debugIcon-stepOutForeground:#75beff; --vscode-debugIcon-stepOverForeground:#75beff; --vscode-debugIcon-stopForeground:#f48771; --vscode-debugTokenExpression-boolean:#4e94ce; --vscode-debugTokenExpression-error:#f48771; --vscode-debugTokenExpression-name:#c586c0; --vscode-debugTokenExpression-number:#b5cea8; --vscode-debugTokenExpression-string:#ce9178; --vscode-debugTokenExpression-value:rgba(204, 204, 204, 0.6); --vscode-debugToolBar-background:#333333; --vscode-debugView-exceptionLabelBackground:#6c2022; --vscode-debugView-exceptionLabelForeground:#cccccc; --vscode-debugView-stateLabelBackground:rgba(136, 136, 136, 0.27); --vscode-debugView-stateLabelForeground:#cccccc; --vscode-debugView-valueChangedHighlight:#569cd6; --vscode-descriptionForeground:rgba(204, 204, 204, 0.7); --vscode-diffEditor-diagonalFill:rgba(204, 204, 204, 0.2); --vscode-diffEditor-insertedTextBackground:rgba(155, 185, 85, 0.2); --vscode-diffEditor-removedTextBackground:rgba(255, 0, 0, 0.2); --vscode-dropdown-background:#3c3c3c; --vscode-dropdown-border:#3c3c3c; --vscode-dropdown-foreground:#f0f0f0; --vscode-editor-background:#1e1e1e; --vscode-editor-findMatchBackground:#515c6a; --vscode-editor-findMatchHighlightBackground:rgba(234, 92, 0, 0.33); --vscode-editor-findRangeHighlightBackground:rgba(58, 61, 65, 0.4); --vscode-editor-focusedStackFrameHighlightBackground:rgba(122, 189, 122, 0.3); --vscode-editor-foldBackground:rgba(38, 79, 120, 0.3); --vscode-editor-font-family:Consolas, &quot;Courier New&quot;, monospace; --vscode-editor-font-size:14px; --vscode-editor-font-weight:normal; --vscode-editor-foreground:#d4d4d4; --vscode-editor-hoverHighlightBackground:rgba(38, 79, 120, 0.25); --vscode-editor-inactiveSelectionBackground:#3a3d41; --vscode-editor-lineHighlightBorder:#282828; --vscode-editor-rangeHighlightBackground:rgba(255, 255, 255, 0.04); --vscode-editor-selectionBackground:#264f78; --vscode-editor-selectionHighlightBackground:rgba(173, 214, 255, 0.15); --vscode-editor-snippetFinalTabstopHighlightBorder:#525252; --vscode-editor-snippetTabstopHighlightBackground:rgba(124, 124, 124, 0.3); --vscode-editor-stackFrameHighlightBackground:rgba(255, 255, 0, 0.2); --vscode-editor-symbolHighlightBackground:rgba(234, 92, 0, 0.33); --vscode-editor-wordHighlightBackground:rgba(87, 87, 87, 0.72); --vscode-editor-wordHighlightStrongBackground:rgba(0, 73, 114, 0.72); --vscode-editorActiveLineNumber-foreground:#c6c6c6; --vscode-editorBracketMatch-background:rgba(0, 100, 0, 0.1); --vscode-editorBracketMatch-border:#888888; --vscode-editorCodeLens-foreground:#999999; --vscode-editorCursor-foreground:#aeafad; --vscode-editorError-foreground:#f48771; --vscode-editorGroup-border:#444444; --vscode-editorGroup-dropBackground:rgba(83, 89, 93, 0.5); --vscode-editorGroupHeader-noTabsBackground:#1e1e1e; --vscode-editorGroupHeader-tabsBackground:#252526; --vscode-editorGutter-addedBackground:#587c0c; --vscode-editorGutter-background:#1e1e1e; --vscode-editorGutter-commentRangeForeground:#c5c5c5; --vscode-editorGutter-deletedBackground:#94151b; --vscode-editorGutter-foldingControlForeground:#c5c5c5; --vscode-editorGutter-modifiedBackground:#0c7d9d; --vscode-editorHint-foreground:rgba(238, 238, 238, 0.7); --vscode-editorHoverWidget-background:#252526; --vscode-editorHoverWidget-border:#454545; --vscode-editorHoverWidget-foreground:#cccccc; --vscode-editorHoverWidget-statusBarBackground:#2c2c2d;
@@ -144,7 +145,15 @@ function htmlPage(scripts: string[]) {
 	return html;
 }
 
+function makeDirs() {
+	try { fs.mkdirSync(testHtmlDir); } catch(e) {}
+	try { fs.mkdirSync(testOutDir); } catch(e) {}
+}
+
+// open resulting HTML files with npm task "serve" (localhost:8080)
+
 function test_profile_time(base: string, elf: string) {
+	makeDirs();
 	const profileFile = new ProfileFile(path.join(testDataDir, base));
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
@@ -154,11 +163,12 @@ function test_profile_time(base: string, elf: string) {
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
 	const model = buildModel(JSON.parse(json));
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage([ base + ".time.amigaprofile.model", "../../../../../dist/client.bundle.js" ]);
-	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.html'), html);
+	const html = htmlPage([ "data/" + base + ".time.amigaprofile.model", "client.bundle.js" ]);
+	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
 }
 
 function test_profile_size(base: string, elf: string) {
+	makeDirs();
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
 	const profiler = new Profiler(sourceMap, symbolTable);
@@ -166,8 +176,8 @@ function test_profile_size(base: string, elf: string) {
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile'), json);
 	const model = buildModel(JSON.parse(json));
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage([ base + ".size.amigaprofile.model", "../../../../../dist/client.bundle.js" ]);
-	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile.html'), html);
+	const html = htmlPage([ "data/" + base + ".size.amigaprofile.model", "client.bundle.js" ]);
+	fs.writeFileSync(path.join(testHtmlDir, base + '.size.amigaprofile.html'), html);
 }
 
 function test_unwind(elf: string) {

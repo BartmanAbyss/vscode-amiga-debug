@@ -1,5 +1,7 @@
+const path = require('path');
 const webpack = require('webpack');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const { pathToFileURL } = require('url');
 
 var config = {
 	entry: "./src/client/client.tsx",
@@ -59,7 +61,12 @@ var config = {
 			maxChunks: 1
 		}),
 		new CleanWebpackPlugin(),
-    ]
+	],
+	devServer: {
+		open: true,
+		contentBase: path.join(__dirname, 'src/test/suite/data/output/'),
+		writeToDisk: true
+	}
 };
 
 module.exports = (env, argv) => {

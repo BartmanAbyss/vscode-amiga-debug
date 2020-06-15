@@ -15,6 +15,30 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		// https://gist.github.com/johnhamm/d8256fc9ce1561b62af35b90341fb44e
+		{
+			"type": "npm",
+			"script": "serve",
+			"problemMatcher": {
+				"owner": "webpack",
+				"severity": "error",
+				"fileLocation": "absolute",
+				"pattern": [
+					{
+						"regexp": "ERROR in [^ ]* (.*):(.*):(.*)",
+						"file": 1,
+						"line": 2,
+						"column": 3
+					},
+					{
+						"regexp": ".*",
+						"message": 0
+					}
+				]
+			},
+			"label": "npm: serve",
+			"detail": "webpack-dev-server"
 		}
 	]
 }

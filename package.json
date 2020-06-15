@@ -251,9 +251,8 @@
 		"compile": "concurrently -r \"npm:compile:*\"",
 		"compile:ext": "tsc -p ./",
 		"compile:client": "webpack --mode=development",
-		"watch": "concurrently -r \"npm:watch:*\"",
-		"watch:ext": "tsc -watch -p ./",
-		"watch:client": "webpack --watch --mode=development",
+		"watch": "tsc -watch -p ./",
+		"serve": "webpack-dev-server --mode=development",
 		"pretest": "npm run compile:ext",
 		"test": "node ./out/test/runTest.js"
 	},
