@@ -178,6 +178,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* move `model` out of preact-props (preact-devtools can't handle it)
 * .shrinklerstats profiler doesn't work
 * fix stray callstack in bobble (can't reproduce)
 * show compression ratio in `.shrinklerstats` profile visualizer

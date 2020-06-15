@@ -323,7 +323,9 @@ export const FlameGraph: FunctionComponent<{
 	data: ReadonlyArray<IColumn>;
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
-}> = ({ model, data, filter, displayUnit }) => {
+	time;
+	setTime;
+}> = ({ model, data, filter, displayUnit, time, setTime }) => {
 	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
@@ -337,7 +339,7 @@ export const FlameGraph: FunctionComponent<{
 	const [drag, setDrag] = useState<IDrag | undefined>(undefined);
 	const cssVariables = useCssVariables();
 
-	const [time, setTime] = useState<number>(0.5);
+//	const [time, setTime] = useState<number>(0.5);
 
 	const columns = useMemo(
 		() => {

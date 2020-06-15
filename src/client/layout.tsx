@@ -29,20 +29,20 @@ export const CpuProfileLayout: FunctionComponent<{
 
 	const filter: IRichFilter = { text, caseSensitive, regex };
 
-	const columns = buildColumns(model);
-	const graph = createTopDownGraph(model);
+	const dataFlame = useMemo(() => buildColumns(model), [model]);
+	const dataTable = useMemo(() => Object.values(createTopDownGraph(model).children), [model]);
 
-	const dataFlame = columns;
-	const dataTable = Object.values(graph.children);
+	const flameHeight = useMemo(() => {
+		const extraRows = (model.amiga ? 2 : 0) + 1; // +1 for dmaRecord, +1 for blits, +1 padding
+		let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+		for(const col of dataFlame) {
+			const y = (FlameConstants.BoxHeight) * (col.rows.length + extraRows) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+			flameHeight = Math.max(flameHeight, y);
+		}
+		return flameHeight;
+	}, [model]);
 
-	const extraRows = (model.amiga ? 2 : 0); // +1 for dmaRecord, +1 for blits, +1 padding
-
-	// calc max. height of flamegraph
-	let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
-	for(const col of dataFlame) {
-		const y = (FlameConstants.BoxHeight) * (col.rows.length + extraRows) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
-		flameHeight = Math.max(flameHeight, y);
-	}
+	const [time, setTime] = useState(0);
 
 	return (
 		<Fragment>
@@ -52,32 +52,16 @@ export const CpuProfileLayout: FunctionComponent<{
 						value={text}
 						placeholder="Filter functions or files"
 						onChange={setFilter}
-						foot={
-							<Fragment>
-								<ToggleButton
-									icon={CaseSensitive}
-									label="Match Case"
-									checked={caseSensitive}
-									onChange={setCaseSensitive}
-								/>
-								<ToggleButton
-									icon={Regex}
-									label="Use Regular Expression"
-									checked={regex}
-									onChange={setRegex}
-								/>
-								<UnitSelect
-									value={displayUnit}
-									type={model.amiga ? DisplayUnitType.Time : DisplayUnitType.Size}
-									onChange={setDisplayUnit}
-								/>
-							</Fragment>
-						}
+						foot={<Fragment>
+							<ToggleButton icon={CaseSensitive} label="Match Case" checked={caseSensitive} onChange={setCaseSensitive} />
+							<ToggleButton icon={Regex} label="Use Regular Expression" checked={regex} onChange={setRegex} />
+							<UnitSelect value={displayUnit} type={model.amiga ? DisplayUnitType.Time : DisplayUnitType.Size} onChange={setDisplayUnit} />
+						</Fragment>}
 					/>
 				</div>
 			</div>
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
-				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit} />
+				<FlameGraph model={model} data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
 			{model.amiga ? <Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
 				<TabList>
