@@ -10,7 +10,10 @@ import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from 
 import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
+
 import { Category, ILocation, IProfileModel } from '../model';
+declare const MODEL: IProfileModel;
+
 import { IOpenDocumentMessage, IAmigaProfileExtra } from '../types';
 import { useCssVariables } from '../useCssVariables';
 import { useLazyEffect } from '../useLazyEffect';
@@ -117,15 +120,15 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>, rowOffset: number) => {
 	};
 };
 
-const buildDmaBoxes = (model: IProfileModel) => {
-	if(!model.amiga || !model.amiga.dmaRecords)
+const buildDmaBoxes = () => {
+	if(!MODEL.amiga || !MODEL.amiga.dmaRecords)
 		return [];
-	const dmaRecords = model.amiga.dmaRecords;
+	const dmaRecords = MODEL.amiga.dmaRecords;
 
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	let dmacon = model.amiga.dmacon;
+	let dmacon = MODEL.amiga.dmacon;
 
-	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
+	const duration = 7_093_790 / 50 * (7_093_790 / 50 / MODEL.duration);
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
@@ -191,15 +194,15 @@ const buildDmaBoxes = (model: IProfileModel) => {
 	return boxes;
 };
 
-const buildBlitBoxes = (model: IProfileModel) => {
-	if(!model.amiga || !model.amiga.dmaRecords)
+const buildBlitBoxes = () => {
+	if(!MODEL.amiga || !MODEL.amiga.dmaRecords)
 		return [];
-	const dmaRecords = model.amiga.dmaRecords;
+	const dmaRecords = MODEL.amiga.dmaRecords;
 
-	const customRegs = new Uint16Array(model.amiga.customRegs);
-	const blits = GetBlits(customRegs, model.amiga.dmaRecords);
+	const customRegs = new Uint16Array(MODEL.amiga.customRegs);
+	const blits = GetBlits(customRegs, MODEL.amiga.dmaRecords);
 
-	const duration = 7_093_790 / 50 * (7_093_790 / 50 / model.duration);
+	const duration = 7_093_790 / 50 * (7_093_790 / 50 / MODEL.duration);
 	const boxes: IBox[] = [];
 
 	for(const blit of blits) {
@@ -319,13 +322,12 @@ export interface ICanvasSize {
 const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
-	model: IProfileModel;
 	data: ReadonlyArray<IColumn>;
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 	time;
 	setTime;
-}> = ({ model, data, filter, displayUnit, time, setTime }) => {
+}> = ({ data, filter, displayUnit, time, setTime }) => {
 	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
@@ -362,9 +364,9 @@ export const FlameGraph: FunctionComponent<{
 		[data, filter]
 	);
 
-	const rawBoxes = useMemo(() => buildBoxes(columns, model.amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
-	const dmaBoxes = useMemo(() => buildDmaBoxes(model), [model]);
-	const blitBoxes = useMemo(() => buildBlitBoxes(model), [model]);
+	const rawBoxes = useMemo(() => buildBoxes(columns, MODEL.amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
+	const dmaBoxes = useMemo(() => buildDmaBoxes(), [MODEL]);
+	const blitBoxes = useMemo(() => buildBlitBoxes(), [MODEL]);
 	const clampX = useMemo(
 		() => ({
 			minX: 0, //columns[0]?.x1 ?? 0,
@@ -494,13 +496,13 @@ export const FlameGraph: FunctionComponent<{
 		const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
 		const spacing = canvasSize.width / labels;
 
-		const timeRange = model.duration * (bounds.maxX - bounds.minX);
-		const timeStart = model.duration * bounds.minX;
+		const timeRange = MODEL.duration * (bounds.maxX - bounds.minX);
+		const timeStart = MODEL.duration * bounds.minX;
 
-		const scale = timeRange / scaleValue(timeRange, model.duration, displayUnit);
+		const scale = timeRange / scaleValue(timeRange, MODEL.duration, displayUnit);
 
 		let uuu = 1;
-		const scaledDuration = scaleValue(model.duration, model.duration, displayUnit);
+		const scaledDuration = scaleValue(MODEL.duration, MODEL.duration, displayUnit);
 		let i = 0;
 		for(; (uuu) < scaledDuration; i++)
 			uuu *= [2, 2.5, 2][i % 3];
@@ -516,8 +518,8 @@ export const FlameGraph: FunctionComponent<{
 		webContext.beginPath();
 		for(let u = firstLabel; u <= lastLabel; u += unitsPerLabel) {
 			const x = (u - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
-			const time = model.duration * u;
-			webContext.fillText(formatValue(time, model.duration, displayUnit), x + 3, Constants.TimelineHeight / 2);
+			const time = MODEL.duration * u;
+			webContext.fillText(formatValue(time, MODEL.duration, displayUnit), x + 3, Constants.TimelineHeight / 2);
 			webContext.moveTo(x, 0);
 			webContext.lineTo(x, Constants.TimelineHeight);
 		}
@@ -525,8 +527,8 @@ export const FlameGraph: FunctionComponent<{
 
 		// time marker
 		webContext.globalAlpha = 1.0;
-		const x = (time / model.duration - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
-		const text = formatValue(time, model.duration, displayUnit);
+		const x = (time / MODEL.duration - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
+		const text = formatValue(time, MODEL.duration, displayUnit);
 		webContext.beginPath();
 		const textMetrics = webContext.measureText(text);
 		webContext.fillStyle = cssVariables['editor-background'];
@@ -534,7 +536,7 @@ export const FlameGraph: FunctionComponent<{
 		webContext.fillStyle = cssVariables['editor-foreground'];
 		webContext.fillText(text, x + 6, Constants.TimelineHeight / 2);
 		webContext.stroke();
-	}, [webContext, model, canvasSize, bounds, cssVariables, displayUnit, time]);
+	}, [webContext, MODEL, canvasSize, bounds, cssVariables, displayUnit, time]);
 
 	// Update the canvas size when the window size changes, and on initial render
 	useEffect(() => {
@@ -697,7 +699,7 @@ export const FlameGraph: FunctionComponent<{
 			const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
 
 			let rowOffset = 0;
-			if(model.amiga) {
+			if(MODEL.amiga) {
 				// dmaRecord
 				if(fromTop < Constants.TimelineHeight + 1 * Constants.TimelineHeight) {
 					const box = Math.abs(binarySearch(dmaBoxes, (b) => b.x2 - x)) - 1;
@@ -753,7 +755,7 @@ export const FlameGraph: FunctionComponent<{
 				setBounds({ minX, maxX });
 			} else if(dragMode === DragMode.Time) {
 				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-				const newTime = bounds.minX + x * model.duration / canvasSize.width * (bounds.maxX - bounds.minX);
+				const newTime = Math.round(bounds.minX + x * MODEL.duration / canvasSize.width * (bounds.maxX - bounds.minX));
 				setTime(newTime);
 			}
 		};
@@ -911,7 +913,7 @@ export const FlameGraph: FunctionComponent<{
 		<Fragment>
 			<DragHandle
 				bounds={bounds}
-				time={time / model.duration}
+				time={time / MODEL.duration}
 				current={drag}
 				canvasWidth={canvasSize.width}
 				canvasHeight={canvasSize.height}
@@ -953,7 +955,6 @@ export const FlameGraph: FunctionComponent<{
 						location={hovered.box.loc}
 						amiga={hovered.box.amiga}
 						displayUnit={displayUnit}
-						model={model}
 					/>, document.body)
 			)}
 		</Fragment>
@@ -1052,8 +1053,7 @@ const Tooltip: FunctionComponent<{
 	amiga: IBoxAmiga;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
-	model: IProfileModel;
-}> = ({ left, lowerY, upperY, src, location, amiga, canvasRect, displayUnit, model }) => {
+}> = ({ left, lowerY, upperY, src, location, amiga, canvasRect, displayUnit }) => {
 	const label = getLocationText(location);
 	const isDma = amiga?.dmaRecord !== undefined;
 	const isBlit = amiga?.blit !== undefined;
@@ -1194,7 +1194,7 @@ const Tooltip: FunctionComponent<{
 					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>{symbolize(amiga.dmaRecord.addr & 0x00ffffff, model.amiga)}</dd>
+							<dd className={styles.time}>{symbolize(amiga.dmaRecord.addr & 0x00ffffff, MODEL.amiga)}</dd>
 						</Fragment>
 					)}
 					{dmaReg && (<Fragment>
@@ -1223,7 +1223,7 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<Fragment>
 						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
-						<dd className={styles.time}>{symbolize(amiga.blit.BLTxPT[channel], model.amiga)} 
+						<dd className={styles.time}>{symbolize(amiga.blit.BLTxPT[channel], MODEL.amiga)} 
 						{channel === 0 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</Fragment>)}
 						{channel === 1 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</Fragment>)}
 						<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>
@@ -1249,12 +1249,12 @@ const Tooltip: FunctionComponent<{
 						</dd>
 					</Fragment>)}
 					<dt className={styles.time}>Total {dataName(displayUnit)}</dt>
-					<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, model.duration, displayUnit)}</dd>
+					<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, MODEL.duration, displayUnit)}</dd>
 					<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
-					<dd className={styles.time}>{formatValue(location.selfTime, model.duration, displayUnit)}</dd>
+					<dd className={styles.time}>{formatValue(location.selfTime, MODEL.duration, displayUnit)}</dd>
 					{location.aggregateTime > 0 && (<Fragment>
 						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.aggregateTime, model.duration, displayUnit)}</dd>
+						<dd className={styles.time}>{formatValue(location.aggregateTime, MODEL.duration, displayUnit)}</dd>
 					</Fragment>)}
 				</Fragment>)}
 			</dl>
@@ -1263,7 +1263,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen model={model} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs))} useZoom={false} />
+			<Screen screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} useZoom={false} />
 		</div>}
 	</Fragment>);
 };

@@ -2,7 +2,10 @@ import { Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
+
 import { IProfileModel } from '../model';
+declare const MODEL: IProfileModel;
+
 import { CopperDisassembler } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper } from '../dma';
@@ -13,13 +16,12 @@ import { DropdownComponent, DropdownOptionProps } from '../dropdown';
 import '../dropdown.css';
 
 export const Screen: FunctionComponent<{
-	model: IProfileModel;
 	screen: IScreen;
 	mask?: IScreen;
 	palette: number[];
 	scale?: number;
 	useZoom?: boolean;
-}> = ({ model, screen, mask, palette, scale = 2, useZoom = true }) => {
+}> = ({ screen, mask, palette, scale = 2, useZoom = true }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -39,7 +41,7 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const memory = model.memory; //GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
+	const memory = MODEL.memory; //GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
 
 	const getPixel = (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
@@ -160,7 +162,6 @@ export const Screen: FunctionComponent<{
 
 interface GfxResourceWithPayload {
 	resource: GfxResource;
-	model: IProfileModel;
 	screen?: IScreen;
 	mask?: IScreen;
 	palette?: number[];
@@ -199,7 +200,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
 		</div>
 		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
-			<Screen model={option.model} screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(option.model.amiga.customRegs))} scale={1} useZoom={false} />
+			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} scale={1} useZoom={false} />
 		</div>, document.body)}
 	</Fragment>);
 };
@@ -209,13 +210,11 @@ class GfxResourceDropdown extends DropdownComponent<GfxResourceWithPayload> {
 	public static defaultProps = { optionComponent: GfxResourceItem, menuClassName: styles.gfxresource_menu, ...DropdownComponent.defaultProps };
 }
 
-export const CopperList: FunctionComponent<{
-	model: IProfileModel;
-}> = ({ model }) => {
-	const copper = useMemo(() => GetCopper(model.memory.chipMem, model.amiga.dmaRecords), [model]);
+export const CopperList: FunctionComponent<{}> = ({ }) => {
+	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
 	const bitmaps = useMemo(() => {
 		const bitmaps: GfxResourceWithPayload[] = [];
-		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+		MODEL.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
 			const width = resource.bitmap.width;
 			const height = resource.bitmap.height;
 			const modulos = [];
@@ -245,7 +244,7 @@ export const CopperList: FunctionComponent<{
 				}
 				mask = { width, height, planes: maskPlanes, modulos };
 			}
-			bitmaps.push({ resource, model, screen, mask });
+			bitmaps.push({ resource, screen, mask });
 		});
 		const copperScreen = GetScreenFromCopper(copper);
 		const copperResource: GfxResource = {
@@ -260,9 +259,9 @@ export const CopperList: FunctionComponent<{
 				numPlanes: copperScreen.planes.length
 			}
 		};
-		bitmaps.unshift({ resource: copperResource, model, screen: copperScreen });
+		bitmaps.unshift({ resource: copperResource, screen: copperScreen });
 		return bitmaps;
-	}, [model]);
+	}, [MODEL]);
 
 	const palettes = useMemo(() => {
 		const palettes: GfxResourceWithPayload[] = [];
@@ -278,9 +277,9 @@ export const CopperList: FunctionComponent<{
 				numEntries: copperPalette.length
 			}
 		};
-		palettes.push({ resource: copperResource, model, palette: copperPalette });
+		palettes.push({ resource: copperResource, palette: copperPalette });
 
-		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(model.amiga.customRegs));
+		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),
 			size: 32*2,
@@ -291,15 +290,15 @@ export const CopperList: FunctionComponent<{
 				numEntries: 32
 			}
 		};
-		palettes.push({ resource: customRegsResource, model, palette: customRegsPalette });
+		palettes.push({ resource: customRegsResource, palette: customRegsPalette });
 
-		model.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
-			const palette = GetPaletteFromMemory(model.memory, resource.address, resource.palette.numEntries);
-			palettes.push({ resource, model, palette });
+		MODEL.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+			const palette = GetPaletteFromMemory(MODEL.memory, resource.address, resource.palette.numEntries);
+			palettes.push({ resource, palette });
 		});
 
 		return palettes;
-	}, [model]);
+	}, [MODEL]);
 
 	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(bitmaps[0]);
 	const [palette, setPalette] = useState<GfxResourceWithPayload>(palettes[0]);
@@ -319,7 +318,7 @@ export const CopperList: FunctionComponent<{
 			&nbsp;
 			Palette:&nbsp;
 			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
-			<Screen model={model} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
+			<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
 
 			<div class={styles.container}>
 				{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}

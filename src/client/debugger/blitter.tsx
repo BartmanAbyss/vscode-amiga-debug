@@ -1,18 +1,20 @@
 import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
+
 import { IProfileModel } from '../model';
+declare const MODEL: IProfileModel;
+
 import { Blit, GetBlits, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
 import { CustomRegisters } from '../customRegisters';
 
 export const BlitterVis: FunctionComponent<{
-	model: IProfileModel;
 	blit: Blit;
-}> = ({ model, blit }) => {
-	const memoryBefore = GetMemoryAfterDma(model.memory, model.amiga.dmaRecords, blit.cycleStart);
-	const memoryAfter = GetMemoryAfterDma(model.memory, model.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
-	const customRegs = new Uint16Array(model.amiga.customRegs);
+}> = ({ blit }) => {
+	const memoryBefore = GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, blit.cycleStart);
+	const memoryAfter = GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
+	const customRegs = new Uint16Array(MODEL.amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
 	const numPlanes = 5;
@@ -89,20 +91,18 @@ export const BlitterVis: FunctionComponent<{
 	);
 };
 
-export const BlitterList: FunctionComponent<{
-	model: IProfileModel;
-}> = ({ model }) => {
+export const BlitterList: FunctionComponent<{}> = ({ }) => {
 	const blits = useMemo(() => {
-		const customRegs = new Uint16Array(model.amiga.customRegs);
-		return GetBlits(customRegs, model.amiga.dmaRecords);
-	}, [model]);
+		const customRegs = new Uint16Array(MODEL.amiga.customRegs);
+		return GetBlits(customRegs, MODEL.amiga.dmaRecords);
+	}, [MODEL]);
 
 	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blits.map((b) => <div><BlitterVis model={model} blit={b} /></div>)}
+				{blits.map((b) => <div><BlitterVis blit={b} /></div>)}
 			</div>
 		</Fragment>
 	);
