@@ -43,7 +43,7 @@ export const Screen: FunctionComponent<{
 
 	const memory = MODEL.memory; //GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
 
-	const getPixel = (scr: IScreen, x: number, y: number): number => {
+	const getPixel = useMemo(() => (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
 		for(let p = 0; p < scr.planes.length; p++) {
 			const addr = scr.planes[p] + y * (scr.width / 8 + scr.modulos[p & 1]) + Math.floor(x / 8);
@@ -52,7 +52,7 @@ export const Screen: FunctionComponent<{
 				pixel |= 1 << p;
 		}
 		return pixel;
-	};
+	}, [memory]);
 
 	useEffect(() => {
 		const context = canvas.current?.getContext('2d');
@@ -126,21 +126,21 @@ export const Screen: FunctionComponent<{
 			setZoomInfo({ x: srcX, y: srcY, color: getPixel(screen, srcX, srcY), mask: mask ? getPixel(mask, srcX, srcY) : undefined });
 
 			// position zoomCanvas
-			zoomDiv.current.style.top = snap(evt.pageY) + 10 + "px";
-			zoomDiv.current.style.left = snap(evt.pageX) + 10 + "px";
+			zoomDiv.current.style.top = snap(evt.offsetY) + 10 + "px";
+			zoomDiv.current.style.left = snap(evt.offsetX) + 10 + "px";
 			zoomDiv.current.style.display = 'block';
 		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom]);
 
-	const onMouseLeave = (evt: MouseEvent) => {
+	const onMouseLeave = useCallback((evt: MouseEvent) => {
 		if(!useZoom)
 			return;
 		zoomDiv.current.style.display = 'none';
-	};
+	}, [useZoom, zoomDiv.current]);
 
 	return (
-		<div>
+		<div class={styles.screen}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
-			{useZoom && createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
+			{useZoom && <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
 				{zoomInfo.color !== undefined && (<div>
 					<dl>
@@ -153,9 +153,8 @@ export const Screen: FunctionComponent<{
 							<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(mask.planes.length, '0')}</dd>
 						</Fragment>)}
 					</dl>
-				</div>
-				)}
-			</div>, document.body)}
+				</div>)}
+			</div>}
 		</div>
 	);
 };
@@ -302,27 +301,19 @@ export const CopperList: FunctionComponent<{}> = ({ }) => {
 
 	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(bitmaps[0]);
 	const [palette, setPalette] = useState<GfxResourceWithPayload>(palettes[0]);
+	const onChangeBitmap = (selected: GfxResourceWithPayload) => { setBitmap(selected); };
+	const onChangePalette = (selected: GfxResourceWithPayload) => { setPalette(selected); };
 
-	const onChangeBitmap = (selected: GfxResourceWithPayload) => {
-		setBitmap(selected);
-	};
+	return (<div style={{'font-size': 'var(--vscode-editor-font-size)'}}>
+		Bitmap:&nbsp;
+		<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
+		&nbsp;
+		Palette:&nbsp;
+		<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
+		<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
 
-	const onChangePalette = (selected: GfxResourceWithPayload) => {
-		setPalette(selected);
-	};
-
-	return (
-		<div style={{'font-size': 'var(--vscode-editor-font-size)'}}>
-			Bitmap:&nbsp;
-			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
-			&nbsp;
-			Palette:&nbsp;
-			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
-			<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
-
-			<div class={styles.container}>
-				{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}
-			</div>
+		<div class={styles.container}>
+			{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}
 		</div>
-	);
+	</div>);
 };

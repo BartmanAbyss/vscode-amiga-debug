@@ -74,6 +74,10 @@
 }
 
 .screen {
+	position: relative; /* to allow for 'position: absolute' in .zoom */
+}
+
+.screen > canvas {
 	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
 	background-size: 30px 30px;
 	animation: barberpole 0.5s linear infinite;

@@ -64,7 +64,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<FlameGraph data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
-			{MODEL.amiga ? <Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows} forceRenderTabPanel={true}>
+			{MODEL.amiga ? <Tabs defaultIndex={1} style={{flexBasis: 0, flexGrow: 1}} className={styles.rows}>
 				<TabList>
 					<Tab>Profiler</Tab>
 					<Tab>Copper</Tab>
