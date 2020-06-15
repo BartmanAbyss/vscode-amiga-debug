@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
+import { h, FunctionComponent, Fragment, createContext } from 'preact';
 import styles from './time-view.module.css';
 import {
 	useMemo,
@@ -25,12 +25,17 @@ import { Icon } from '../icons';
 import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
 import { IRichFilter, compileFilter } from '../filter';
 
-type SortFn = (node: ILocation) => number;
+//type SortFn = (node: ILocation) => number;
 
-const selfTime: SortFn = (n) => n.selfTime;
-const aggTime: SortFn = (n) => n.aggregateTime;
+enum SortFn {
+	Self,
+	Agg
+}
 
-type NodeAtDepth = { node: IGraphNode; depth: number; position: number };
+//const selfTime: SortFn = (n) => n.selfTime;
+//const aggTime: SortFn = (n) => n.aggregateTime;
+
+interface NodeAtDepth { node: IGraphNode; depth: number; position: number; }
 
 const getGlobalUniqueId = (node: IGraphNode) => {
 	const parts = [node.id];
@@ -41,23 +46,49 @@ const getGlobalUniqueId = (node: IGraphNode) => {
 	return parts.join('-');
 };
 
+// store state because component will get unmounted when tab switches
+interface IState {
+	sortFn: SortFn;
+	focused: undefined | IGraphNode;
+	expanded: ReadonlySet<IGraphNode>;
+}
+const Context = createContext<IState>({ sortFn: SortFn.Agg, focused: undefined, expanded: new Set() });
+
 export const TimeView: FunctionComponent<{
 	data: ReadonlyArray<IGraphNode>;
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 }> = ({ data, filter, displayUnit }) => {
 	const listRef = useRef<{ base: HTMLElement }>();
-	const [sortFn, setSort] = useState<SortFn | undefined>(() => aggTime);
-	const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
-	const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
-	const [filterExpanded, setFilterExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
+	const state = useContext<IState>(Context);
+	const [sortFn, setSort2] = useState<SortFn>(state.sortFn);
+	const [focused, setFocused2] = useState<undefined | IGraphNode>(state.focused);
+	const [expanded, setExpanded2] = useState<ReadonlySet<IGraphNode>>(state.expanded); // nodes expanded by user
+	const setSort = useMemo(() => (newSort: SortFn) => {
+		state.sortFn = newSort;
+		setSort2(newSort);
+	}, [setSort2]);
+	const setFocused = useMemo(() => (newFocused: undefined | IGraphNode) => {
+		state.focused = newFocused;
+		setFocused2(newFocused);
+	}, [setFocused2]);
+	const setExpanded = useMemo(() => (newExpanded: ReadonlySet<IGraphNode>) => {
+		state.expanded = newExpanded;
+		setExpanded2(newExpanded);
+	}, [setFocused2]);
+	const [filterExpanded, setFilterExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>()); // nodes expanded by search filter
+
+	const sort = (nodes: IGraphNode[]) => {
+		switch(sortFn) {
+			case SortFn.Agg: nodes.sort((a, b) => b.aggregateTime - a.aggregateTime); break;
+			case SortFn.Agg: nodes.sort((a, b) => b.selfTime - a.selfTime); break;
+		}
+		return nodes;
+	};
 
 	const getSortedChildren = (node: IGraphNode) => {
 		const children = Object.values(node.children);
-		if (sortFn) {
-			children.sort((a, b) => sortFn(b) - sortFn(a));
-		}
-
+		sort(children);
 		return children;
 	};
 
@@ -93,10 +124,7 @@ export const TimeView: FunctionComponent<{
 	}, [data, filter]);
 
 	// 1. Top level sorted items
-	const sorted = useMemo(
-		() => (sortFn ? data.slice().sort((a, b) => sortFn(b) - sortFn(a)) : data),
-		[data, filter, sortFn],
-	);
+	const sorted = useMemo(() => sort(data.slice()), [data, filter, sortFn]);
 
 	// 2. Expand nested child nodes
 	const rendered = useMemo(() => {
@@ -242,27 +270,27 @@ export const TimeView: FunctionComponent<{
 };
 
 const TimeViewHeader: FunctionComponent<{
-	sortFn: SortFn | undefined;
-	onChangeSort: (newFn: () => SortFn | undefined) => void;
+	sortFn: SortFn;
+	onChangeSort: (newFn: SortFn) => void;
 	displayUnit: DisplayUnit
 }> = ({ sortFn, onChangeSort, displayUnit }) => (
 	<div className={styles.row}>
 		<div
 			id="self-time-header"
 			className={classes(styles.heading, styles.timing)}
-			aria-sort={sortFn === selfTime ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [sortFn])}
+			aria-sort={sortFn === SortFn.Self ? 'descending' : undefined}
+			onClick={useCallback(() => onChangeSort(sortFn === SortFn.Self ? SortFn.Agg : SortFn.Self), [sortFn])}
 		>
-			{sortFn === selfTime && <Icon i={ChevronDown} />}
+			{sortFn === SortFn.Self && <Icon i={ChevronDown} />}
 			Self {dataName(displayUnit)}
 		</div>
 		<div
 			id="total-time-header"
 			className={classes(styles.heading, styles.timing)}
-			aria-sort={sortFn === aggTime ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [sortFn])}
+			aria-sort={sortFn === SortFn.Agg ? 'descending' : undefined}
+			onClick={useCallback(() => onChangeSort(sortFn === SortFn.Agg ? SortFn.Self : SortFn.Agg), [sortFn])}
 		>
-			{sortFn === aggTime && <Icon i={ChevronDown} />}
+			{sortFn === SortFn.Agg && <Icon i={ChevronDown} />}
 			Total {dataName(displayUnit)}
 		</div>
 		<div className={styles.heading}>File</div>

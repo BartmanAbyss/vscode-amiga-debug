@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h, JSX } from 'preact';
+import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
@@ -209,6 +209,13 @@ class GfxResourceDropdown extends DropdownComponent<GfxResourceWithPayload> {
 	public static defaultProps = { optionComponent: GfxResourceItem, menuClassName: styles.gfxresource_menu, ...DropdownComponent.defaultProps };
 }
 
+// store state because component will get unmounted when tab switches
+interface IState {
+	bitmap?: GfxResourceWithPayload;
+	palette?: GfxResourceWithPayload;
+}
+const Context = createContext<IState>({});
+
 export const CopperList: FunctionComponent<{}> = ({ }) => {
 	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
 	const bitmaps = useMemo(() => {
@@ -299,10 +306,16 @@ export const CopperList: FunctionComponent<{}> = ({ }) => {
 		return palettes;
 	}, [MODEL]);
 
-	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(bitmaps[0]);
-	const [palette, setPalette] = useState<GfxResourceWithPayload>(palettes[0]);
-	const onChangeBitmap = (selected: GfxResourceWithPayload) => { setBitmap(selected); };
-	const onChangePalette = (selected: GfxResourceWithPayload) => { setPalette(selected); };
+	const state = useContext<IState>(Context);
+	if(state.bitmap === undefined)
+		state.bitmap = bitmaps[0];
+	if(state.palette === undefined)
+		state.palette = palettes[0];
+
+	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(state.bitmap);
+	const [palette, setPalette] = useState<GfxResourceWithPayload>(state.palette);
+	const onChangeBitmap = (selected: GfxResourceWithPayload) => { state.bitmap = selected; setBitmap(selected); };
+	const onChangePalette = (selected: GfxResourceWithPayload) => { state.palette = selected; setPalette(selected); };
 
 	return (<div style={{'font-size': 'var(--vscode-editor-font-size)'}}>
 		Bitmap:&nbsp;
