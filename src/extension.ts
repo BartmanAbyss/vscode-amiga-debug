@@ -7,6 +7,8 @@ import * as Net from 'net';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CppToolsApi, Version, CustomConfigurationProvider, getCppToolsApi, SourceFileConfigurationItem, WorkspaceBrowseConfiguration, SourceFileConfiguration } from 'vscode-cpptools';
+import { CancellationToken } from 'vscode-jsonrpc';
 
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { MemoryContentProvider } from './memory_content_provider';
@@ -24,21 +26,87 @@ import { SourceMap, Profiler } from './backend/profile';
  */
 const EMBED_DEBUG_ADAPTER = true;
 
+// .vscode/amiga.json
+interface AmigaConfiguration {
+	includePath?: string[];
+	defines?: string[];
+}
+
+class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
+	public compilerPath: string;
+	constructor(extensionPath: string) {
+		this.compilerPath = extensionPath + "\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe";
+	}
+
+	public readonly name = "Amiga C/C++";
+	public readonly extensionId = "BartmanAbyss.amiga-debug";
+
+	private config: AmigaConfiguration = {};
+
+	public async init() {
+		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+		try {
+			this.config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+			for(let i = 0; i < this.config.includePath.length; i++) {
+				this.config.includePath[i] = this.config.includePath[i].replace(/\$\{workspaceFolder\}/g, workspaceFolder);
+			}
+		} catch(e) { /**/ }
+	}
+
+	public async canProvideConfiguration(uri: vscode.Uri, token?: CancellationToken) {
+		return true;
+	}
+	public async provideConfigurations(uris: vscode.Uri[], token?: CancellationToken) {
+		const items: SourceFileConfigurationItem[] = [];
+		for(const uri of uris) {
+			const configuration: SourceFileConfiguration = {
+				includePath: this.config.includePath,
+				defines: [ "__GNUC__=10", "_NO_INLINE", ...this.config.defines ],
+				intelliSenseMode: 'gcc-x64',
+				standard: uri.toString().endsWith('.c') ? 'c11' : 'c++17',
+				compilerPath: this.compilerPath,
+			};
+			const config: SourceFileConfigurationItem = { uri, configuration };
+			items.push(config);
+		}
+		return items;
+	}
+	public async canProvideBrowseConfiguration(token?: CancellationToken) {
+		return true;
+	}
+	public async provideBrowseConfiguration(token?: CancellationToken) {
+		const config: WorkspaceBrowseConfiguration = { 
+			browsePath: [],
+			compilerPath: this.compilerPath,
+		};
+		return config;
+	}
+	public async canProvideBrowseConfigurationsPerFolder(token?: CancellationToken) {
+		return false;
+	}
+	public async provideFolderBrowseConfiguration(uri: vscode.Uri, token?: CancellationToken) {
+		const config: WorkspaceBrowseConfiguration = { browsePath: [] };
+		return config;
+	}
+
+	public dispose() {
+	}
+}
+
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private memoryProvider: MemoryContentProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath: string = '';
+	private cppToolsApi: CppToolsApi;
 
-	constructor(context: vscode.ExtensionContext) {
+	constructor(private context: vscode.ExtensionContext) {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
 
 		this.extensionPath = context.extensionPath;
-
-		//vscode.workspace.getConfiguration().update("C_Cpp.default.includePath", `${extensionPath}\\bin\\opt\\m68k-amiga-elf\\sys-include`, false);
-		vscode.workspace.getConfiguration().update("C_Cpp.default.compilerPath", `${this.extensionPath}\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe`, false);
 
 		const lenses = new ProfileCodeLensProvider();
 
@@ -70,12 +138,24 @@ class AmigaDebugExtension {
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),
 			vscode.debug.onDidStartDebugSession(this.debugSessionStarted.bind(this)),
 			vscode.debug.onDidTerminateDebugSession(this.debugSessionTerminated.bind(this)),
-			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaConfigurationProvider()),
+			vscode.debug.registerDebugConfigurationProvider('amiga', new AmigaDebugConfigurationProvider()),
 
 			// code lenses (from profiler)
 			vscode.languages.registerCodeLensProvider('*', lenses),
 			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear())
 		);
+	}
+
+	public async init() {
+		const provider = new AmigaCppConfigurationProvider(this.extensionPath);
+		this.cppToolsApi = await getCppToolsApi(Version.v4);
+		this.cppToolsApi.registerCustomConfigurationProvider(provider);
+		await provider.init();
+		this.cppToolsApi.notifyReady(provider);
+	}
+
+	public async dispose() {
+		this.cppToolsApi.dispose();
 	}
 
 	private activeEditorChanged(editor: vscode.TextEditor) {
@@ -343,25 +423,29 @@ class AmigaDebugExtension {
 		}
 	}
 
-	private receivedStopEvent(e) {
+	private receivedStopEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugStopped();
 		vscode.workspace.textDocuments.filter((td) => td.fileName.endsWith('.amigamem'))
 			.forEach((doc) => { this.memoryProvider.update(doc); });
 	}
 
-	private receivedContinuedEvent(e) {
+	private receivedContinuedEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugContinued();
 	}
 }
 
-export function activate(context: vscode.ExtensionContext) {
-	const extension = new AmigaDebugExtension(context);
+let extension: AmigaDebugExtension;
+
+export async function activate(context: vscode.ExtensionContext) {
+	extension = new AmigaDebugExtension(context);
+	await extension.init();
 }
 
-export function deactivate() {
+export async function deactivate() {
+	await extension.dispose();
 }
 
-class AmigaConfigurationProvider implements vscode.DebugConfigurationProvider {
+class AmigaDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 	private server?: Net.Server;
 
 	/**

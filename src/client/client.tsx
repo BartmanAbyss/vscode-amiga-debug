@@ -1,8 +1,11 @@
+import 'preact/debug';
 import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
 import { IProfileModel } from './model';
 import { Memory } from './dma';
+
+console.log("client.tsx START: " + new Date().toLocaleString());
 
 declare const MODEL: IProfileModel;
 if(MODEL.amiga) {

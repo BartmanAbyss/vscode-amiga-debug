@@ -20,7 +20,8 @@
 		"onCommand:amiga.initProject",
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
-		"onCustomEditor:amiga.profile"
+		"onCustomEditor:amiga.profile",
+		"workspaceContains:.vscode/amiga.json"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -250,9 +251,8 @@
 		"compile": "concurrently -r \"npm:compile:*\"",
 		"compile:ext": "tsc -p ./",
 		"compile:client": "webpack --mode=development",
-		"watch": "concurrently -r \"npm:watch:*\"",
-		"watch:ext": "tsc -watch -p ./",
-		"watch:client": "webpack --watch --mode=development",
+		"watch": "tsc -watch -p ./",
+		"serve": "webpack-dev-server --mode=development",
 		"pretest": "npm run compile:ext",
 		"test": "node ./out/test/runTest.js"
 	},
@@ -283,9 +283,12 @@
 		"vscode-test": "^1.3.0",
 		"webpack": "^4.42.0",
 		"webpack-bundle-analyzer": "^3.8.0",
-		"webpack-cli": "^3.3.11"
+		"webpack-cli": "^3.3.11",
+		"webpack-dev-server": "^3.11.0"
 	},
 	"dependencies": {
+		"vscode-cpptools": "^4.0.1",
+		"vscode-jsonrpc": "^5.0.1",
 		"vscode-debugadapter": "^1.40.0",
 		"vscode-debugprotocol": "^1.40.0"
 	},
