@@ -51,8 +51,9 @@ interface IState {
 	sortFn: SortFn;
 	focused: undefined | IGraphNode;
 	expanded: ReadonlySet<IGraphNode>;
+	filterExpanded: ReadonlySet<IGraphNode>;
 }
-const Context = createContext<IState>({ sortFn: SortFn.Agg, focused: undefined, expanded: new Set() });
+const Context = createContext<IState>({ sortFn: SortFn.Agg, focused: undefined, expanded: new Set(), filterExpanded: new Set() });
 
 export const TimeView: FunctionComponent<{
 	data: ReadonlyArray<IGraphNode>;
@@ -64,6 +65,7 @@ export const TimeView: FunctionComponent<{
 	const [sortFn, setSort2] = useState<SortFn>(state.sortFn);
 	const [focused, setFocused2] = useState<undefined | IGraphNode>(state.focused);
 	const [expanded, setExpanded2] = useState<ReadonlySet<IGraphNode>>(state.expanded); // nodes expanded by user
+	const [filterExpanded, setFilterExpanded2] = useState<ReadonlySet<IGraphNode>>(state.filterExpanded); // nodes expanded by search filter
 	const setSort = useMemo(() => (newSort: SortFn) => {
 		state.sortFn = newSort;
 		setSort2(newSort);
@@ -73,10 +75,13 @@ export const TimeView: FunctionComponent<{
 		setFocused2(newFocused);
 	}, [setFocused2]);
 	const setExpanded = useMemo(() => (newExpanded: ReadonlySet<IGraphNode>) => {
-		state.expanded = newExpanded;
+		state.expanded = new Set(newExpanded);
 		setExpanded2(newExpanded);
-	}, [setFocused2]);
-	const [filterExpanded, setFilterExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>()); // nodes expanded by search filter
+	}, [setExpanded2]);
+	const setFilterExpanded = useMemo(() => (newExpanded: ReadonlySet<IGraphNode>) => {
+		state.filterExpanded = new Set(newExpanded);
+		setFilterExpanded2(newExpanded);
+	}, [setFilterExpanded2]);
 
 	const sort = (nodes: IGraphNode[]) => {
 		switch(sortFn) {
@@ -121,7 +126,7 @@ export const TimeView: FunctionComponent<{
 		}
 
 		setFilterExpanded(newExpanded);
-	}, [data, filter]);
+	}, [data, filter, expanded]);
 
 	// 1. Top level sorted items
 	const sorted = useMemo(() => sort(data.slice()), [data, filter, sortFn]);
