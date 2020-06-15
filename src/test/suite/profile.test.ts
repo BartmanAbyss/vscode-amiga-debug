@@ -91,13 +91,13 @@ const vscodeStyle = `<style id="_defaultStyles">
 		background-color: var(--vscode-scrollbarSlider-activeBackground);
 	}</style>`;
 
-function htmlPage(scripts: string[]) {
+function htmlPage(title: string, scripts: string[]) {
 	let html = `<!DOCTYPE html>
 	<html lang="en" style="${vscodeHtmlStyle}">
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>TEST</title>
+		<title>${title}</title>
 		<link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABdAElMP2v7/H62RTg/a/v8IbX9HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtfyP/ENr+gw/a/v8Q2v6DD9r+/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQgwD/kIMA/5CDAP8P2v7/D9r+/w/a/v8P2v7/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQgwD/kIMA/5CDAP+QgwD/AAAAAADC/f8Awv3+AML9/wDC/f4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwHUA/8B1AP/AdQD/AAAAAAAAAAAAAAAAAML9/wDC/f8Awv3/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACh//8Aof//AKH//wCh//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKH//wCh//8Aof//AKH//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkP//AJD//wCQ//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJD//wCQ//8AkP//AJD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbPP/AGzz/wBs8/8AbPP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABs8/8AbPP/AGzz/wBt8zAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQdxMAEHc/wBB3P8AQdz/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABB3P8AQdz/AEHc/wBB3P8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAD1/wAA4P8AAMB/AACEPwAAjj8AAP4fAAD/DwAA/48AAP+HAAD/wwAA/+MAAP/xAAD/8AAA//8AAA==" />
 		${vscodeStyle}
 		<script type="text/javascript">
@@ -163,7 +163,7 @@ function test_profile_time(base: string, elf: string) {
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
 	const model = buildModel(JSON.parse(json));
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage([ "data/" + base + ".time.amigaprofile.model", "client.bundle.js" ]);
+	const html = htmlPage(base, [ "data/" + base + ".time.amigaprofile.model", "client.bundle.js" ]);
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
 }
 
@@ -176,7 +176,7 @@ function test_profile_size(base: string, elf: string) {
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile'), json);
 	const model = buildModel(JSON.parse(json));
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage([ "data/" + base + ".size.amigaprofile.model", "client.bundle.js" ]);
+	const html = htmlPage(base, [ "data/" + base + ".size.amigaprofile.model", "client.bundle.js" ]);
 	fs.writeFileSync(path.join(testHtmlDir, base + '.size.amigaprofile.html'), html);
 }
 
