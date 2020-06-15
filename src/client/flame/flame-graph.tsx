@@ -755,7 +755,7 @@ export const FlameGraph: FunctionComponent<{
 				setBounds({ minX, maxX });
 			} else if(dragMode === DragMode.Time) {
 				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-				const newTime = Math.round(bounds.minX + x * MODEL.duration / canvasSize.width * (bounds.maxX - bounds.minX));
+				const newTime = Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration);
 				setTime(newTime);
 			}
 		};
