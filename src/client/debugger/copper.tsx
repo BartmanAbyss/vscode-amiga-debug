@@ -21,7 +21,8 @@ export const Screen: FunctionComponent<{
 	palette: number[];
 	scale?: number;
 	useZoom?: boolean;
-}> = ({ screen, mask, palette, scale = 2, useZoom = true }) => {
+	time: number;
+}> = ({ screen, mask, palette, scale = 2, useZoom = true, time }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -41,7 +42,7 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const memory = MODEL.memory; //GetChipMemAfterDma(model.chipMemCache, model.dmaRecords, 0xffffffff); // end-of-frame for now
+	const memory = useMemo(() => GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, time / 2), [time]);
 
 	const getPixel = useMemo(() => (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
@@ -103,7 +104,7 @@ export const Screen: FunctionComponent<{
 			}
 		}
 		context.putImageData(imgData, 0, 0);
-	}, [canvas.current, scale, screen, mask]);
+	}, [canvas.current, scale, screen, mask, time]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -129,7 +130,7 @@ export const Screen: FunctionComponent<{
 			zoomDiv.current.style.top = snap(evt.offsetY) + 10 + "px";
 			zoomDiv.current.style.left = snap(evt.offsetX) + 10 + "px";
 			zoomDiv.current.style.display = 'block';
-		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom]);
+		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom, time]);
 
 	const onMouseLeave = useCallback((evt: MouseEvent) => {
 		if(!useZoom)
@@ -199,7 +200,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
 		</div>
 		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
-			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} scale={1} useZoom={false} />
+			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} scale={1} useZoom={false} time={0} />
 		</div>, document.body)}
 	</Fragment>);
 };
@@ -216,7 +217,9 @@ interface IState {
 }
 const Context = createContext<IState>({});
 
-export const CopperList: FunctionComponent<{}> = ({ }) => {
+export const CopperList: FunctionComponent<{
+	time: number
+}> = ({ time }) => {
 	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
 	const bitmaps = useMemo(() => {
 		const bitmaps: GfxResourceWithPayload[] = [];
@@ -323,7 +326,7 @@ export const CopperList: FunctionComponent<{}> = ({ }) => {
 		&nbsp;
 		Palette:&nbsp;
 		<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
-		<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} />
+		<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} time={time} />
 
 		<div class={styles.container}>
 			{copper.map((c) => 'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ' $' + c.address.toString(16).padStart(8, '0') + ': ' + c.insn.toString()).join('\n')}

@@ -1,5 +1,5 @@
-import { h, FunctionComponent, Fragment, ComponentType } from 'preact';
-import { useState, useMemo, useEffect } from 'preact/hooks';
+import { h, FunctionComponent, Fragment } from 'preact';
+import { useState, useMemo } from 'preact/hooks';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
@@ -74,7 +74,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 					<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
-					<CopperList />
+					<CopperList time={time} />
 				</TabPanel>
 				<TabPanel style={{ overflow: 'auto' }}>
 					<BlitterList />

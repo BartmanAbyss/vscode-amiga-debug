@@ -208,7 +208,7 @@ const buildBlitBoxes = () => {
 	for(const blit of blits) {
 		const color = dmaTypes[DmaTypes.BLITTER].subtypes[0].color; // TODO: subtype
 
-		const x1 = blit.cycleStart * 2 / duration;
+		const x1 = blit.cycleStart * 2 / duration; // * 2: convert from DMA cycles to CPU cycles
 		const x2 = blit.cycleEnd ? (blit.cycleEnd) * 2 / duration : 1;
 		const y1 = 1 * Constants.BoxHeight + Constants.TimelineHeight;
 		const y2 = y1 + Constants.BoxHeight;
@@ -1201,10 +1201,10 @@ const Tooltip: FunctionComponent<{
 						</Fragment>)}
 					</Fragment>))}
 					<dt className={styles.time}>Start</dt>
-					<dd className={styles.time}>Line {amiga.blit.vposStart}, Color Clock {amiga.blit.hposStart}</dd>
+					<dd className={styles.time}>Line {amiga.blit.vposStart}, Color Clock {amiga.blit.hposStart}, DMA Cycle {amiga.blit.cycleStart}</dd>
 					{amiga.blit.vposEnd && (<Fragment>
 						<dt className={styles.time}>End</dt>
-						<dd className={styles.time}>Line {amiga.blit.vposEnd}, Color Clock {amiga.blit.hposEnd}</dd>
+						<dd className={styles.time}>Line {amiga.blit.vposEnd}, Color Clock {amiga.blit.hposEnd}, DMA Cycle {amiga.blit.cycleEnd}</dd>
 					</Fragment>)}
 				</Fragment>)}
 				{isFunction && (<Fragment>
@@ -1231,7 +1231,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} useZoom={false} />
+			<Screen screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} useZoom={false} time={amiga.blit.cycleEnd * 2} />
 		</div>}
 	</Fragment>);
 };
