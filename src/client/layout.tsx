@@ -34,10 +34,10 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const dataTable = useMemo(() => Object.values(createTopDownGraph(MODEL).children), [MODEL]);
 
 	const flameHeight = useMemo(() => {
-		const extraRows = (MODEL.amiga ? 2 : 0) + 1; // +1 for dmaRecord, +1 for blits, +1 padding
-		let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+		const extraRows = (MODEL.amiga ? 2 : 0) + 1 + 1; // +1 for dmaRecord, +1 for blits, +1 padding, +1 for scrollbar
+		let flameHeight = (FlameConstants.BoxHeight) * extraRows + FlameConstants.TimelineHeight;
 		for(const col of dataFlame) {
-			const y = (FlameConstants.BoxHeight) * (col.rows.length + extraRows) + FlameConstants.TimelineHeight; // +1 for dmaRecord, +1 for blits, +1 padding
+			const y = (FlameConstants.BoxHeight) * (col.rows.length + extraRows) + FlameConstants.TimelineHeight;
 			flameHeight = Math.max(flameHeight, y);
 		}
 		return flameHeight;

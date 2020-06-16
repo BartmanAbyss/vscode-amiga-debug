@@ -274,7 +274,6 @@ interface IDrag {
 	dragMode: DragMode;
 	timestamp: number;
 	pageXOrigin: number;
-	pageYOrigin: number;
 	original?: IBounds; // View
 	xPerPixel: number;
 	lock?: LockBound; // View
@@ -376,6 +375,31 @@ export const FlameGraph: FunctionComponent<{
 	);
 	const [focused, setFocused] = useState<IBox | undefined>(rawBoxes.boxById.get(prevState?.focusedId ?? -1));
 	const [bounds, setBounds] = useState<IBounds>(prevState?.bounds ?? { ...clampX });
+
+	const scrollRef = useRef<HTMLDivElement & { ignoreNextScroll: boolean }>();
+	const scrollChildRef = useRef<HTMLDivElement>();
+	const onScroll = useCallback(() => {
+		if(scrollRef.current.ignoreNextScroll) {
+			scrollRef.current.ignoreNextScroll = false;
+			return;
+		}
+		const range = bounds.maxX - bounds.minX;
+		const width = canvasSize.width / range;
+		const scroll = bounds.minX * width;
+		const minX = scrollRef.current.scrollLeft / width;
+		const maxX = minX + range;
+		setBounds({ minX, maxX });
+	}, [bounds, canvasSize, scrollRef.current]);
+	useEffect(() => {
+		const range = bounds.maxX - bounds.minX;
+		const width = canvasSize.width / range;
+		const scroll = bounds.minX * width;
+		scrollChildRef.current.style.width = width + 'px';
+		if(scroll !== scrollRef.current.scrollLeft) {
+			scrollRef.current.ignoreNextScroll = true;
+			scrollRef.current.scrollLeft = scroll;
+		}
+	}, [bounds, canvasSize]);
 
 	const gl = useMemo(
 		() =>
@@ -737,7 +761,7 @@ export const FlameGraph: FunctionComponent<{
 			return;
 		}
 
-		const { dragMode, original, pageXOrigin, xPerPixel, pageYOrigin, lock } = drag;
+		const { dragMode, original, pageXOrigin, xPerPixel, lock } = drag;
 		const onMove = (evt: MouseEvent) => {
 			if(dragMode === DragMode.View) {
 				const range = original.maxX - original.minX;
@@ -755,7 +779,7 @@ export const FlameGraph: FunctionComponent<{
 				setBounds({ minX, maxX });
 			} else if(dragMode === DragMode.Time) {
 				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-				const newTime = Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration);
+				const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration), MODEL.duration);
 				setTime(newTime);
 			}
 		};
@@ -815,11 +839,14 @@ export const FlameGraph: FunctionComponent<{
 			const scale = evt.deltaY / -400;
 			//const mouseWheelZoomSpeed = 1 / 120;
 			//const scale = Math.pow(1.4, -evt.deltaY * mouseWheelZoomSpeed) - 1;
-			//console.log(scale);
-			setBounds({
+			const newBounds: IBounds = {
 				minX: Math.max(clampX.minX, bounds.minX + scale * (center - bounds.minX)),
 				maxX: Math.min(clampX.maxX, bounds.maxX - scale * (bounds.maxX - center)),
-			});
+			};
+			console.log("clampX", clampX, "scale", scale, "newBounds", newBounds);
+			// don't zoom in more than 10 cycles on screen
+			if((newBounds.maxX - newBounds.minX) * MODEL.duration > 10)
+				setBounds(newBounds);
 
 			evt.preventDefault();
 		},
@@ -832,7 +859,6 @@ export const FlameGraph: FunctionComponent<{
 				dragMode: DragMode.View,
 				timestamp: Date.now(),
 				pageXOrigin: evt.pageX,
-				pageYOrigin: evt.pageY,
 				xPerPixel: (bounds.maxX - bounds.minX) / canvasSize.width,
 				original: bounds,
 				lock: LockBound.None,
@@ -848,10 +874,7 @@ export const FlameGraph: FunctionComponent<{
 				return;
 			}
 
-			const isClick =
-				Date.now() - drag.timestamp < 500 &&
-				Math.abs(evt.pageX - drag.pageXOrigin) < 100 &&
-				Math.abs(evt.pageY - drag.pageYOrigin) < 100;
+			const isClick = Date.now() - drag.timestamp < 500 && Math.abs(evt.pageX - drag.pageXOrigin) < 100;
 
 			if (!isClick) {
 				return;
@@ -909,16 +932,33 @@ export const FlameGraph: FunctionComponent<{
 		}
 	}, [rawBoxes, columns, drag || bounds, focused]);
 
+	// DragHandle
+	const startTime = (evt: MouseEvent) => {
+		// copy from above, but we need to set new time immediately, 'drag' doesn't do anything until the next mouse move comes along
+		const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
+		const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration), MODEL.duration);
+		setTime(newTime);
+
+		setDrag({
+			dragMode: DragMode.Time,
+			timestamp: Date.now(),
+			pageXOrigin: evt.pageX,
+			xPerPixel: -1 / canvasSize.width,
+		});
+		evt.preventDefault();
+		evt.stopPropagation();
+	};
+
+	const range = bounds.maxX - bounds.minX;
+	const timeInPixel = (time / MODEL.duration - bounds.minX) * canvasSize.width / range;
+
 	return (
 		<Fragment>
-			<DragHandle
-				bounds={bounds}
-				time={time / MODEL.duration}
-				current={drag}
-				canvasWidth={canvasSize.width}
-				canvasHeight={canvasSize.height}
-				startDrag={setDrag}
-			/>
+			<Fragment>
+				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} />
+				<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} />
+				<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
+			</Fragment>
 			<canvas
 				ref={webCanvas}
 				style={{ cursor: hovered ? 'pointer' : 'default' }}
@@ -944,6 +984,9 @@ export const FlameGraph: FunctionComponent<{
 					zIndex: -1,
 				}}
 			/>
+			<div ref={scrollRef} onScroll={onScroll} style={{height: Constants.BoxHeight, lineHeight: 0, width: canvasSize.width, position: 'absolute', top: canvasSize.height - Constants.BoxHeight * 2, overflowX: 'scroll', overflowY: 'hide' }}>
+				<div ref={scrollChildRef} style={{ display: 'inline-block'}}></div>
+			</div>
 			{hovered && (
 				createPortal(
 					<Tooltip
@@ -959,81 +1002,6 @@ export const FlameGraph: FunctionComponent<{
 			)}
 		</Fragment>
 	);
-};
-
-const DragHandle: FunctionComponent<{
-	canvasWidth: number;
-	canvasHeight: number;
-	bounds: IBounds;
-	time: number;
-	current: IDrag | undefined;
-	startDrag: (bounds: IDrag) => void;
-}> = ({ current, bounds, time, startDrag, canvasWidth, canvasHeight }) => {
-	const start = useCallback(
-		(evt: MouseEvent, lck: LockBound, original: IBounds = bounds) => {
-			startDrag({
-				dragMode: DragMode.View,
-				timestamp: Date.now(),
-				pageXOrigin: evt.pageX,
-				pageYOrigin: evt.pageY,
-				original,
-				xPerPixel: -1 / canvasWidth,
-				lock: lck | LockBound.Y,
-			});
-			evt.preventDefault();
-			evt.stopPropagation();
-		},
-		[canvasWidth, bounds],
-	);
-
-	const startTime = (evt: MouseEvent) => {
-		startDrag({
-			dragMode: DragMode.Time,
-			timestamp: Date.now(),
-			pageXOrigin: evt.pageX,
-			pageYOrigin: evt.pageY,
-			xPerPixel: -1 / canvasWidth,
-		});
-		evt.preventDefault();
-		evt.stopPropagation();
-	};
-
-	const range = bounds.maxX - bounds.minX;
-	const lock = current?.lock ?? 0;
-
-	const timeInPixel = (time - bounds.minX) * canvasWidth / (bounds.maxX - bounds.minX);
-	
-	return (<Fragment>
-		<div class={classes(styles.handle, current && styles.active)} style={{ height: Constants.TimelineHeight }}>
-			<div
-				className={classes(styles.bg, lock === LockBound.Y && styles.active)}
-				onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.Y), [start])}
-				style={{ transform: `scaleX(${range}) translateX(${(bounds.minX / range) * 100}%)` }}
-			/>
-			<div
-				className={classes(styles.bookend, lock & LockBound.MaxX && styles.active)}
-				style={{ transform: `translateX(${bounds.minX * 100}%)` }}
-			>
-				<div
-					style={{ left: 0 }}
-					onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.MaxX), [start])}
-				/>
-			</div>
-			<div
-				className={classes(styles.bookend, lock & LockBound.MinX && styles.active)}
-				style={{ transform: `translateX(${(bounds.maxX - 1) * 100}%)` }}
-			>
-				<div
-					style={{ right: 0 }}
-					onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.MinX), [start])}
-				/>
-			</div>
-		</div>
-		<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }}
-			onMouseDown={startTime}
-		/>
-		<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasHeight, transform: `translateX(${timeInPixel}px)` }}/>
-	</Fragment>);
 };
 
 function symbolize(address: number, amiga: IAmigaProfileExtra) {

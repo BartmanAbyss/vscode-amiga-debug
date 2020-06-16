@@ -54,6 +54,12 @@
   opacity: 0.6;
 }
 
+.timeBack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  cursor: col-resize;
+}
 .timeHandle {
   position: absolute;
   top: 0;
@@ -68,72 +74,4 @@
   width: 1px;
   height: 100%;
   background-color: white;
-}
-
-.handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  opacity: 0;
-  transition: 150ms opacity;
-}
-
-.handle.active,
-.handle:hover {
-  opacity: 1;
-}
-
-.handle .bookend,
-.handle .bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: 0;
-  box-sizing: border-box;
-}
-
-.handle .bg {
-  cursor: pointer;
-  border-top: 1px solid var(--vscode-editorHoverWidget-border);
-  border-bottom: 1px solid var(--vscode-editorHoverWidget-border);
-}
-
-.handle .bg.active {
-  background-color: var(--vscode-inputOption-activeBackground);
-  border-color: var(--vscode-inputOption-activeBackground);
-  opacity: 1;
-}
-
-.handle .bookend {
-  pointer-events: none;
-}
-
-.handle .bookend > div {
-  pointer-events: all;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  background: var(--vscode-editorHoverWidget-border);
-  cursor: col-resize;
-}
-
-.handle .bookend.active > div {
-  background-color: var(--vscode-inputOption-activeBackground);
-}
-
-:global(.vscode-high-contrast) .handle {
-  opacity: 1;
-}
-
-:global(.vscode-high-contrast) .handle .bg {
-  background: none;
-  opacity: 1 !important;
-}
-
-:global(.vscode-high-contrast) .handle .bookend > div {
-  background: var(--vscode-editorHoverWidget-border);
 }
