@@ -29,7 +29,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - WinUAE warp-mode control from your Amiga project (speed up precalc during development)
 - WinUAE debug overlay, full control from your Amiga project
 - Frame Profiler: function-level + DMA cycles profiling
-- Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations
+- Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes
 - Size Profiler: profile the size of your executable by functions, data and references
 - Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (open `.shrinklerstats` files)
 - Terminal window with access to the build tools
@@ -179,6 +179,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* tooltips for blitter-rects?
 * .shrinklerstats profiler doesn't work
 * fix stray callstack in bobble (can't reproduce)
 * show compression ratio in `.shrinklerstats` profile visualizer

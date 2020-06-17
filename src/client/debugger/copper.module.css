@@ -77,11 +77,36 @@
 	position: relative; /* to allow for 'position: absolute' in .zoom */
 }
 
-.screen > canvas {
+.screen_canvas {
 	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
 	background-size: 30px 30px;
 	animation: barberpole 0.5s linear infinite;
 	cursor: crosshair;
+}
+
+.overdraw_canvas {
+	position: absolute;
+	left: 0;
+	pointer-events: none;
+/*	animation: fade 1s infinite;*/
+}
+
+.blitrect {
+	position: absolute;
+	background-color: transparent;
+	border: 1px solid black;
+	outline: 1px solid white;
+	opacity: 0.5;
+	pointer-events: none;	
+}
+
+.blitrect_active {
+	position: absolute;
+	background-color: transparent;
+	border: 2px solid black;
+	outline: 2px solid white;
+	animation: fade 1s infinite;
+	pointer-events: none;	
 }
 
 .zoom {
@@ -116,6 +141,12 @@
 .zoom dt {
 	font-weight: bold;
 	margin-right: 0.5em;
+}
+
+@keyframes fade { 
+	0%   { opacity: 1; }
+	50%  { opacity: 0.6; }
+	100% { opacity: 1; }
 }
 
 @keyframes barberpole {

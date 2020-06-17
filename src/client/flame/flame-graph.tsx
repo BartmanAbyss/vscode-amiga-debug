@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetBlits, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 
@@ -195,17 +195,13 @@ const buildDmaBoxes = () => {
 };
 
 const buildBlitBoxes = () => {
-	if(!MODEL.amiga || !MODEL.amiga.dmaRecords)
+	if(!MODEL.blits)
 		return [];
-	const dmaRecords = MODEL.amiga.dmaRecords;
-
-	const customRegs = new Uint16Array(MODEL.amiga.customRegs);
-	const blits = GetBlits(customRegs, MODEL.amiga.dmaRecords);
 
 	const duration = 7_093_790 / 50 * (7_093_790 / 50 / MODEL.duration);
 	const boxes: IBox[] = [];
 
-	for(const blit of blits) {
+	for(const blit of MODEL.blits) {
 		const color = dmaTypes[DmaTypes.BLITTER].subtypes[0].color; // TODO: subtype
 
 		const x1 = blit.cycleStart * 2 / duration; // * 2: convert from DMA cycles to CPU cycles
@@ -956,7 +952,7 @@ export const FlameGraph: FunctionComponent<{
 		<Fragment>
 			<Fragment>
 				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} />
-				<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} />
+				<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} />
 				<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
 			</Fragment>
 			<canvas

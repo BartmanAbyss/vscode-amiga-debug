@@ -5,9 +5,8 @@ import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 declare const MODEL: IProfileModel;
 
-import { Blit, GetBlits, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
+import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
-import { CustomRegisters } from '../customRegisters';
 
 export const BlitterVis: FunctionComponent<{
 	blit: Blit;
@@ -92,17 +91,12 @@ export const BlitterVis: FunctionComponent<{
 };
 
 export const BlitterList: FunctionComponent<{}> = ({ }) => {
-	const blits = useMemo(() => {
-		const customRegs = new Uint16Array(MODEL.amiga.customRegs);
-		return GetBlits(customRegs, MODEL.amiga.dmaRecords);
-	}, [MODEL]);
-
 	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blits.map((b) => <div><BlitterVis blit={b} /></div>)}
+				{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
 			</div>
 		</Fragment>
 	);

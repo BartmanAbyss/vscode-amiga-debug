@@ -160,6 +160,10 @@ export const dmaTypes: DmaType[] = [
 	},
 ];
 
+export enum BlitterChannel {
+	A, B, C, D
+}
+
 export interface Blit {
 	cycleStart: number;
 	vposStart: number;
@@ -185,6 +189,7 @@ export interface Copper {
 	insn: CopperInstruction;
 }
 
+// blits are sorted
 export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const customRegL = (reg: number) => (customRegs[(reg - 0xdff000) >>> 1] << 16) | customRegs[(reg + 2 - 0xdff000) >>> 1];
@@ -381,7 +386,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 
 export function GetScreenFromBlit(blit: Blit): IScreen {
 	const numPlanes = 5;
-	const channel = 3; // visualize D channel
+	const channel = BlitterChannel.D; // visualize D channel
 	const width = blit.BLTSIZH * 16;
 	const height = blit.BLTSIZV / numPlanes;
 	const planes = [];

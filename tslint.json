@@ -30,7 +30,8 @@
 		"ban-types": false,
 		"no-namespace": false,
 		"no-trailing-whitespace": false,
-		"no-shadowed-variable": false
+		"no-shadowed-variable": false,
+		"one-variable-per-declaration": false
 	},
 	"defaultSeverity": "warning"
 }
