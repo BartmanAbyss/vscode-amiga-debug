@@ -26,7 +26,7 @@ import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
 import { CustomRegisters } from '../customRegisters';
-import { Screen } from '../debugger/copper';
+import { Screen } from '../debugger/resources';
 
 export const enum Constants {
 	BoxHeight = 16,

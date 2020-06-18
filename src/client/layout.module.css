@@ -28,3 +28,19 @@
   position: relative;
   min-height: 0;
 }
+
+.split {
+  /* wrapper */
+  flex-basis: 0;
+  flex-grow: 1;
+  overflow: hidden;
+
+  /* split */
+  display: flex;
+  flex-direction: row;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+}

@@ -5,7 +5,7 @@
   .react-tabs__tab-list {
 	background: var(--vscode-editorGroupHeader-tabsBackground);
 	border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder);
-	margin: 0 0 10px;
+	margin: 0 0 5px;
 	padding: 0;
   }
   
