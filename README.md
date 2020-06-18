@@ -179,6 +179,8 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* Debugger: detect TRAP#7 (GCC undefined behavior), detect null-ptr access (GCC undefined behavior)
+* asm-singlestepping: sometimes doesn't find correct line
 * tooltips for blitter-rects?
 * .shrinklerstats profiler doesn't work
 * fix stray callstack in bobble (can't reproduce)
