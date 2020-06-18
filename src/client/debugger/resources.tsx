@@ -457,7 +457,7 @@ export const GfxResources: FunctionComponent<{
 	const onChangeOverlay = (event) => { const overlay = event.target.value as string; state.overlay = overlay; setOverlay(overlay); };
 
 	return (<Fragment>
-		<div style={{ 'font-size': 'var(--vscode-editor-font-size)' }}>
+		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			Bitmap:&nbsp;
 			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
 			&nbsp;
