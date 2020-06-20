@@ -1,0 +1,24 @@
+.container {
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+}
+
+.fixed {
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);   
+	white-space: pre;
+}
+
+.past {
+	opacity: 1.0;
+}
+
+.future {
+	opacity: 0.75;
+}
+
+.cur {
+	background-color: var(--vscode-editor-selectionBackground);
+	color: var(--vscode-editor-selectionForeground);
+}

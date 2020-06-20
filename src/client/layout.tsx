@@ -17,13 +17,14 @@ import './react-tabs.css';
 
 import Split from 'react-split';
 
-import { CopperList } from './debugger/copper';
+import { CopperView } from './debugger/copper';
 import { BlitterList } from './debugger/blitter';
 import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { TimeView } from './table/time-view';
 import { createTopDownGraph } from './table/topDownGraph';
 import { buildColumns } from './flame/stacks';
-import { GfxResources } from './debugger/resources';
+import { GfxResourcesView } from './debugger/resources';
+import { CustomRegsView } from './debugger/customregs';
 
 export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [regex, setRegex] = useState(false);
@@ -75,18 +76,22 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-						<GfxResources time={time} />
+						<GfxResourcesView time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<BlitterList />
 					</TabPanel>
 				</Tabs>
-				<Tabs defaultIndex={0} className={styles.tabs}>
+				<Tabs defaultIndex={1} className={styles.tabs}>
 					<TabList>
 						<Tab>Copper</Tab>
+						<Tab>Custom Registers</Tab>
 					</TabList>
 					<TabPanel style={{ overflow: 'auto' }}>
-						<CopperList time={time} />
+						<CopperView time={time} />
+					</TabPanel>
+					<TabPanel style={{ overflow: 'auto' }}>
+						<CustomRegsView time={time} />
 					</TabPanel>
 				</Tabs>
 			</Split>

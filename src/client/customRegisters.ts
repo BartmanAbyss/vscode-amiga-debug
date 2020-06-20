@@ -4,10 +4,24 @@
  * Routines for labelling amiga internals.
  */
 
+export enum CustomReadWrite {
+	read = 1,
+	write = 2,
+	ecs = 4,
+	aga = 8
+}
+
+export enum CustomSpecial {
+	pth = 1,
+	ptl = 2,
+	ecs = 4,
+	aga = 8
+}
+
 export interface CustomData {
 	name: string;
 	adr: number;
-	rw?: number;
+	rw?: CustomReadWrite;
 	special?: number;
 }
 
@@ -309,6 +323,17 @@ export class CustomRegisters {
 			const d = CustomRegisters.customMapByAddr.get(address);
 			if (d) {
 				return d.name;
+			}
+		}
+		return undefined;
+	}
+
+	public static getCustomReadWrite(address: number): CustomReadWrite | undefined {
+		CustomRegisters.prepareCustomMap();
+		if (CustomRegisters.customMapByAddr) {
+			const d = CustomRegisters.customMapByAddr.get(address);
+			if (d) {
+				return d.rw;
 			}
 		}
 		return undefined;

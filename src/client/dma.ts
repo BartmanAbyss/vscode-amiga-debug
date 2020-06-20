@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { CustomRegisters } from './customRegisters';
+import { CustomRegisters, CustomReadWrite } from './customRegisters';
 import { CopperInstruction, CopperMove } from "./copperDisassembler";
 
 export class Memory {
@@ -426,6 +426,25 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 	}
 
 	return memoryAfter;
+}
+
+// returs custom registers after DMA requests up to endCycle
+export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
+	const customRegsAfter = customRegs.slice(); // initial copy
+
+	let i = 0;
+	for(let y = 0; y < NR_DMA_REC_VPOS && i < endCycle; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < endCycle; x++, i++) { // long and short lines alternate
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.reg === undefined)
+				continue;
+
+			if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write)
+				customRegsAfter[dmaRecord.reg >>> 1] = dmaRecord.dat;
+		}
+	}
+
+	return customRegsAfter;
 }
 
 function GetAmigaColor(color: number): number {

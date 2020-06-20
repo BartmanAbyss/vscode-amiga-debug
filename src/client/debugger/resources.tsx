@@ -348,7 +348,7 @@ interface IState {
 }
 const Context = createContext<IState>({});
 
-export const GfxResources: FunctionComponent<{
+export const GfxResourcesView: FunctionComponent<{
 	time: number
 }> = ({ time }) => {
 	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
