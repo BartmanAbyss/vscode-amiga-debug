@@ -30,10 +30,14 @@ export const CopperList: FunctionComponent<{
 	}
 
 	useEffect(() => {
-		if(curInsn === -1 || !containerRef.current)
+		if(copper.length === 0 || !containerRef.current)
 			return;
 
-		(containerRef.current.children[curInsn] as any).scrollIntoViewIfNeeded(true);
+		// smooth scrolling if just clicking on the timeline, instant scrolling when dragging
+		const now = performance.now();
+		const behavior: ScrollBehavior = (containerRef.current['lastUpdate'] === undefined || now - containerRef.current['lastUpdate'] > 100) ? 'smooth' : 'auto';
+		containerRef.current['lastUpdate'] = now;
+		containerRef.current.children[Math.max(0, curInsn)].scrollIntoView({ behavior, block: 'center' });
 	}, [curInsn, containerRef.current]);
 
 	return (<div ref={containerRef} class={styles.container}>
