@@ -48,8 +48,6 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 
 	const [time, setTime] = useState(0);
 
-/*	<BlitterList /> */
-
 	return (
 		<Fragment>
 			<div className={styles.filter}>
@@ -66,17 +64,21 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
 				<FlameGraph data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
-			{MODEL.amiga ? <Split sizes={[75,25]} gutterSize={2} cursor="w-resize" className={styles.split}>
+			{MODEL.amiga ? <Split sizes={[70,30]} gutterSize={2} cursor="w-resize" className={styles.split}>
 				<Tabs defaultIndex={1} className={styles.tabs}>
 					<TabList>
 						<Tab>Profiler</Tab>
 						<Tab>Resources</Tab>
+						<Tab>Blitter</Tab>
 					</TabList>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 						<GfxResources time={time} />
+					</TabPanel>
+					<TabPanel style={{ overflow: 'auto' }}>
+						<BlitterList />
 					</TabPanel>
 				</Tabs>
 				<Tabs defaultIndex={0} className={styles.tabs}>

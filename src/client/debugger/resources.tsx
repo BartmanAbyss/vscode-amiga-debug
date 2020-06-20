@@ -464,7 +464,7 @@ export const GfxResources: FunctionComponent<{
 			Palette:&nbsp;
 			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
 			&nbsp;
-			Overlay:
+			Overlay:&nbsp;
 			<select className="select" alt="Overlay" aria-label="Overlay" value={overlay} onChange={onChangeOverlay}>
 				<option value="">None</option>
 				<option value="blitrects">Blit Rects</option>

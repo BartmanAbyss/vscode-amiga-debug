@@ -33,12 +33,7 @@ export class CopperInstruction {
 		}
 	}
 	public getAsmInstruction(): string {
-		return `dc.w \$${this.format(this.first)},\$${this.format(this.second)}`;
-	}
-	protected getPaddedAsmInstruction(): string {
-		const inst = this.getAsmInstruction();
-		const pad = " ".repeat(20 - inst.length);
-		return inst + pad;
+		return `\$${this.format(this.first)},\$${this.format(this.second)}`;
 	}
 	protected format(value: number): string {
 		return value.toString(16).padStart(4, '0');
@@ -66,9 +61,9 @@ export class CopperMove extends CopperInstruction {
 		} else {
 			l = `\$${this.format(this.DA)}`;
 		}
-		const inst = this.getPaddedAsmInstruction();
+		const inst = this.getAsmInstruction();
 		const value = `\$${this.format(this.RD)}`;
-		return `${inst}; ${l} := ${value}`;
+		return `${inst}; ${l} = ${value}`;
 	}
 }
 export class CopperCondition extends CopperInstruction {
@@ -102,7 +97,7 @@ export class CopperWait extends CopperCondition {
 		super(CopperInstructionType.WAIT, first, second);
 	}
 	public toString(): string {
-		const inst = this.getPaddedAsmInstruction();
+		const inst = this.getAsmInstruction();
 		if (this.isEnd()) {
 			return `${inst}; End of CopperList`;
 		} else {
@@ -126,8 +121,8 @@ export class CopperSkip extends CopperCondition {
 		super(CopperInstructionType.SKIP, first, second);
 	}
 	public toString(): string {
-		const inst = this.getPaddedAsmInstruction();
-		return `${inst}; Skip if vpos >= 0x${this.vertical.toString(16)} and hpos >= 0x${this.horizontal.toString(16)}`;
+		const inst = this.getAsmInstruction();
+		return `${inst}; Skip if vpos >= $${this.vertical.toString(16)} and hpos >= $${this.horizontal.toString(16)}`;
 	}
 }
 

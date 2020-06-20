@@ -1,159 +1,24 @@
 .container {
 	background: var(--vscode-editor-background);
 	color: var(--vscode-editor-foreground);
-	font-family: var(--vscode-editor-font-family);
-	font-size: var(--vscode-editor-font-size);
-	font-weight: var(--vscode-editor-font-weight);   
-	white-space: pre;
 }
 
 .fixed {
 	font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size);
 	font-weight: var(--vscode-editor-font-weight);   
-}
-
-.right {
-	text-align: right;
-}
-
-.tooltip {
-	z-index: 100;
-	position: absolute;
-	box-sizing: border-box;
-	box-shadow: 0 .25em .5em 0 black;
-	padding: 5px;
-	background: var(--vscode-editorWidget-background);
-	border: 1px solid var(--vscode-editorWidget-border);
-	pointer-events: none;
-}
-  
-.gfxresource_menu {
-	width: initial !important;
-	box-shadow: 0 .25em .5em 0 black;
-}
-
-.gfxresource {
-	width: 450px;
-	display: grid;
-	grid-template-columns: auto 100px 70px 80px; /* name, information, size, address */
-	column-gap: 0.3em;
-}
-
-.gfxresource_brief {
-	width: 175px;
-	display: grid;
-	grid-template-columns: auto 0 0 0;
-}
-
-.gfxresource dd, .gfxresource_brief dd, .gfxresource dt, .gfxresource_brief dt {
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
-.gfxresource dd, .gfxresource_brief dd {
-	opacity: 0.8;
+.past {
+	opacity: 1.0;
 }
 
-.palette {
-	display: inline-grid;
-	grid-template-columns: 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px;
-	gap: 1px;
-	vertical-align: super;
+.future {
+	opacity: 0.75;
 }
 
-.palette > div {
-	width: 5px;
-	height: 6px;
-}
-
-:root {
-	--stripe1: rgba(255, 255, 255, 0.1);
-	--stripe2: rgba(255, 255, 255, 0.2);
-}
-
-.screen {
-	position: relative; /* to allow for 'position: absolute' in .zoom */
-}
-
-.screen_canvas {
-	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
-	background-size: 30px 30px;
-	animation: barberpole 0.5s linear infinite;
-	cursor: crosshair;
-}
-
-.overdraw_canvas {
-	position: absolute;
-	left: 0;
-	pointer-events: none;
-/*	animation: fade 1s infinite;*/
-}
-
-.blitrect {
-	position: absolute;
-	background-color: transparent;
-	border: 1px solid black;
-	outline: 1px solid white;
-	opacity: 0.5;
-	pointer-events: none;	
-}
-
-.blitrect_active {
-	position: absolute;
-	background-color: transparent;
-	border: 2px solid black;
-	outline: 2px solid white;
-	animation: fade 1s infinite;
-	pointer-events: none;	
-}
-
-.zoom {
-	position: absolute;
-	box-shadow: 0 0 1em 0 black;
-	background: var(--vscode-editor-background);
-}
-
-.zoom canvas {
-	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
-	background-size: 30px 30px;
-}
-
-.zoom div {
-	margin-left: 6px;
-	margin-right: 6px;
-	margin-bottom: 3px;
-}
-
-.zoom dl {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	grid-row-gap: 0.4em;
-}
-  
-.zoom dd {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-  
-.zoom dt {
-	font-weight: bold;
-	margin-right: 0.5em;
-}
-
-@keyframes fade { 
-	0%   { opacity: 1; }
-	50%  { opacity: 0.6; }
-	100% { opacity: 1; }
-}
-
-@keyframes barberpole {
-	from {
-		background-position: 0 0;
-	}
-	to {
-		background-position: 60px 30px;
-	}
+.cur {
+	background-color: var(--vscode-editor-selectionBackground);
+	color: var(--vscode-editor-selectionForeground);
 }
