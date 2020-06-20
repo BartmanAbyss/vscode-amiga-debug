@@ -16,6 +16,7 @@ export const CopperList: FunctionComponent<{
 	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
 	const containerRef = useRef<HTMLDivElement>();
 
+	// get copper instruction that is executing at 'time'
 	let curInsn = -1;
 	for(let i = 0; i < copper.length - 1; i++) {
 		if(copper[i].cycle <= time / 2 && copper[i + 1].cycle > time / 2) {
@@ -24,7 +25,7 @@ export const CopperList: FunctionComponent<{
 		}
 	}
 	if(curInsn === -1) {
-		// end of copperlist
+		// end of copperlist?
 		if(copper.length > 0 && copper[copper.length - 1].cycle <= time / 2)
 			curInsn = copper.length - 1;
 	}

@@ -46,7 +46,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		return flameHeight;
 	}, [MODEL]);
 
-	const [time, setTime] = useState(0);
+	const [time, setTime] = useState(0); // in CPU-cycles (DMA-cycle = CPU-cycle / 2)
 
 	return (
 		<Fragment>
