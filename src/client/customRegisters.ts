@@ -338,4 +338,15 @@ export class CustomRegisters {
 		}
 		return undefined;
 	}
+
+	public static getCustomSpecial(address: number): CustomSpecial | undefined {
+		CustomRegisters.prepareCustomMap();
+		if (CustomRegisters.customMapByAddr) {
+			const d = CustomRegisters.customMapByAddr.get(address);
+			if (d) {
+				return d.special;
+			}
+		}
+		return undefined;
+	}
 }

@@ -82,7 +82,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<BlitterList />
 					</TabPanel>
 				</Tabs>
-				<Tabs defaultIndex={1} className={styles.tabs}>
+				<Tabs defaultIndex={0} className={styles.tabs}>
 					<TabList>
 						<Tab>Copper</Tab>
 						<Tab>Custom Registers</Tab>
@@ -91,7 +91,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<CopperView time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>
-						<CustomRegsView time={time} />
+						<CustomRegsView time={time} setTime={setTime} />
 					</TabPanel>
 				</Tabs>
 			</Split>

@@ -60,7 +60,7 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const memory = useMemo(() => GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, time / 2), [time]);
+	const memory = useMemo(() => GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, time >> 1), [time]);
 
 	const getPixel = useMemo(() => (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
@@ -136,8 +136,8 @@ export const Screen: FunctionComponent<{
 		const overdrawHeight = screen.height;
 		const overdraw = new Uint16Array(overdrawWidth * overdrawHeight);
 		let i = 0;
-		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < time / 2; cycleY++) {
-			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS - ((cycleY % 2) ? 1 : 0) && i < time / 2; cycleX++, i++) { // long and short lines alternate
+		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < time >> 1; cycleY++) {
+			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS - ((cycleY % 2) ? 1 : 0) && i < time >> 1; cycleX++, i++) { // long and short lines alternate
 				const dmaRecord = MODEL.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 				if (dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
 					continue;
@@ -205,7 +205,7 @@ export const Screen: FunctionComponent<{
 			return blitRects;
 
 		for (const blit of MODEL.blits) {
-			if (blit.cycleStart > time / 2)
+			if (blit.cycleStart > time >> 1)
 				break;
 
 			// is this blit affecting our screen?
@@ -226,7 +226,7 @@ export const Screen: FunctionComponent<{
 			if (x === -1 || y === -1)
 				continue;
 
-			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > time / 2 });
+			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > time >> 1 });
 		}
 		return blitRects;
 	}, [screen, time, overlay]);

@@ -1,6 +1,7 @@
 import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters, CustomReadWrite } from './customRegisters';
 import { CopperInstruction, CopperMove } from "./copperDisassembler";
+import { IAmigaProfileExtra } from "./types";
 
 export class Memory {
 	private chipMemAddr = 0x00000000;
@@ -433,8 +434,8 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 	const customRegsAfter = customRegs.slice(); // initial copy
 
 	let i = 0;
-	for(let y = 0; y < NR_DMA_REC_VPOS && i < endCycle; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < endCycle; x++, i++) { // long and short lines alternate
+	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i <= endCycle; x++, i++) { // long and short lines alternate
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg === undefined)
 				continue;
@@ -445,6 +446,33 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 	}
 
 	return customRegsAfter;
+}
+
+export function GetPrevCustomRegWriteTime(index: number, cycle: number, dmaRecords: DmaRecord[]): number | undefined {
+	let i = 0;
+	let prevCycle: number | undefined;
+
+	for(let y = 0; y < NR_DMA_REC_VPOS && i < cycle; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < cycle; x++, i++) { // long and short lines alternate
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.reg === (index << 1))
+				prevCycle = i;
+		}
+	}
+	return prevCycle;
+}
+
+export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecords: DmaRecord[]): number | undefined {
+	let i = 0;
+
+	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(i > cycle && dmaRecord.reg === (index << 1))
+				return i;
+		}
+	}
+	return undefined;
 }
 
 function GetAmigaColor(color: number): number {
@@ -490,4 +518,12 @@ export function GetPaletteFromCopper(copper: Copper[]): number[] {
 		}
 	}
 	return palette;
+}
+
+export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
+	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
+	if(resource)
+		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
+	else
+		return `\$${address.toString(16).padStart(8, '0')}`;
 }

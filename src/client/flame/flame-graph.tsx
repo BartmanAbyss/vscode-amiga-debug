@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 
@@ -1000,14 +1000,6 @@ export const FlameGraph: FunctionComponent<{
 	);
 };
 
-function symbolize(address: number, amiga: IAmigaProfileExtra) {
-	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
-	if(resource)
-		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
-	else
-		return `\$${address.toString(16).padStart(8, '0')}`;
-}
-
 const Tooltip: FunctionComponent<{
 	canvasRect: DOMRect;
 	left: number;
@@ -1158,7 +1150,7 @@ const Tooltip: FunctionComponent<{
 					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>{symbolize(amiga.dmaRecord.addr & 0x00ffffff, MODEL.amiga)}</dd>
+							<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODEL.amiga)}</dd>
 						</Fragment>
 					)}
 					{dmaReg && (<Fragment>
@@ -1187,7 +1179,7 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<Fragment>
 						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
-						<dd className={styles.time}>{symbolize(amiga.blit.BLTxPT[channel], MODEL.amiga)} 
+						<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODEL.amiga)} 
 						{channel === 0 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</Fragment>)}
 						{channel === 1 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</Fragment>)}
 						<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>

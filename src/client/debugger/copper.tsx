@@ -6,7 +6,7 @@ import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 declare const MODEL: IProfileModel;
 
-import { CopperDisassembler } from '../copperDisassembler';
+import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper, Copper } from '../dma';
 
@@ -19,14 +19,14 @@ export const CopperView: FunctionComponent<{
 	// get copper instruction that is executing at 'time'
 	let curInsn = -1;
 	for(let i = 0; i < copper.length - 1; i++) {
-		if(copper[i].cycle <= time / 2 && copper[i + 1].cycle > time / 2) {
+		if(copper[i].cycle <= time >> 1 && copper[i + 1].cycle > time >> 1) {
 			curInsn = i;
 			break;
 		}
 	}
 	if(curInsn === -1) {
 		// end of copperlist?
-		if(copper.length > 0 && copper[copper.length - 1].cycle <= time / 2)
+		if(copper.length > 0 && copper[copper.length - 1].cycle <= time >> 1)
 			curInsn = copper.length - 1;
 	}
 
@@ -42,8 +42,9 @@ export const CopperView: FunctionComponent<{
 	}, [curInsn, containerRef.current]);
 
 	return (<div ref={containerRef} class={styles.container}>
-		{copper.map((c) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > time / 2 ? styles.future : styles.past))}>
+		{copper.map((c) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > (time >> 1) ? styles.future : styles.past))}>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': ' + c.insn.toString()}
+			{(c.insn.instructionType === CopperInstructionType.MOVE && (c.insn as CopperMove).label.startsWith('COLOR')) ? <span style={{marginLeft: 4, background: `#${(c.insn as CopperMove).RD.toString(16).padStart(3, '0')}`}}>&nbsp;&nbsp;</span> : ''}
 		</div>)}
 	</div>);
 };
