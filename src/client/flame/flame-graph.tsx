@@ -416,6 +416,11 @@ export const FlameGraph: FunctionComponent<{
 
 	const openBox = useCallback(
 		(box: IBox, evt: { altKey: boolean }) => {
+			if(box.loc.callFrame.scriptId === '#blit') {
+				PubSub.publish('showBlit', box.amiga.blit);
+				return;
+			}
+
 			const src = box.loc.src;
 			if (!src?.source.path) {
 				return;
@@ -1214,8 +1219,8 @@ const Tooltip: FunctionComponent<{
 					</Fragment>)}
 				</Fragment>)}
 			</dl>
-			{label && (<div className={styles.hint}>
-				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
+			{(label || isBlit) && (<div className={styles.hint}>
+				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to {isBlit ? 'blit' : 'file'}
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>

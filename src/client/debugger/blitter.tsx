@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h } from 'preact';
+import { Fragment, FunctionComponent, h, createContext } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import styles from './copper.module.css';
 
@@ -7,6 +7,16 @@ declare const MODEL: IProfileModel;
 
 import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
+
+import 'pubsub-js';
+
+// store state because component will get unmounted when tab switches
+interface IState {
+	blit?: Blit;
+}
+// when BlitterList is not mounted, just update state!
+const Context = createContext<IState>({});
+PubSub.subscribe('showBlit', (msg, data: Blit) => (Context as any).__['blit'] = data); // somehow _defaultValue gets converted to __ (webpack?)
 
 export const BlitterVis: FunctionComponent<{
 	blit: Blit;
@@ -77,7 +87,7 @@ export const BlitterVis: FunctionComponent<{
 			}
 			context.putImageData(imgData, 0, 0);
 		}
-	}, [canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
+	}, [blit, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
 
 	return (
 		<Fragment>
@@ -91,12 +101,20 @@ export const BlitterVis: FunctionComponent<{
 };
 
 export const BlitterList: FunctionComponent<{}> = ({ }) => {
-	// <ReactJson src={blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
+	//{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
+	//<ReactJson src={MODEL.blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
+	const state = useContext<IState>(Context);
+
+	const [blit, setBlit] = useState<Blit>(state.blit);
+	useEffect(() => {
+		const token = PubSub.subscribe('showBlit', (msg, data: Blit) => { state.blit = data; setBlit(data); });
+		return () => PubSub.unsubscribe(token);
+	}, []);
 
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
+				{blit !== undefined && <div><BlitterVis blit={blit} /></div>}
 			</div>
 		</Fragment>
 	);

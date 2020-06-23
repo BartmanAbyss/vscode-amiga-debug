@@ -262,6 +262,7 @@
 		"@types/node": "^13.11.10",
 		"@types/react-tabs": "^2.3.1",
 		"@types/vscode": "^1.45.1",
+		"@types/pubsub-js": "^1.8.0",
 		"aphrodite": "^2.4.0",
 		"clean-webpack-plugin": "^3.0.0",
 		"concurrently": "^5.1.0",
@@ -285,13 +286,14 @@
 		"webpack": "^4.42.0",
 		"webpack-bundle-analyzer": "^3.8.0",
 		"webpack-cli": "^3.3.11",
-		"webpack-dev-server": "^3.11.0"
+		"webpack-dev-server": "^3.11.0",
+		"pubsub-js": "^1.8.0"
 	},
 	"dependencies": {
 		"vscode-cpptools": "^4.0.1",
-		"vscode-jsonrpc": "^5.0.1",
 		"vscode-debugadapter": "^1.40.0",
-		"vscode-debugprotocol": "^1.40.0"
+		"vscode-debugprotocol": "^1.40.0",
+		"vscode-jsonrpc": "^5.0.1"
 	},
 	"extensionDependencies": [
 		"ms-vscode.cpptools"

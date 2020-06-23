@@ -1,5 +1,5 @@
 import { h, FunctionComponent, Fragment } from 'preact';
-import { useState, useMemo } from 'preact/hooks';
+import { useState, useMemo, useEffect } from 'preact/hooks';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
@@ -26,6 +26,9 @@ import { buildColumns } from './flame/stacks';
 import { GfxResourcesView } from './debugger/resources';
 import { CustomRegsView } from './debugger/customregs';
 
+import 'pubsub-js';
+import { Blit } from './dma';
+
 export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
@@ -49,6 +52,24 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 
 	const [time, setTime] = useState(0); // in CPU-cycles (DMA-cycle = CPU-cycle / 2)
 
+	enum LeftTab {
+		profiler,
+		resources,
+		blitter
+	}
+	enum RightTab {
+		copper,
+		customRegs,
+	}
+
+	const [leftTab, setLeftTab] = useState(LeftTab.profiler);
+	const [rightTab, setRightTab] = useState(RightTab.copper);
+
+	useEffect(() => {
+		const token = PubSub.subscribe('showBlit', () => setLeftTab(LeftTab.blitter));
+		return () => PubSub.unsubscribe(token);
+	}, []);
+
 	return (
 		<Fragment>
 			<div className={styles.filter}>
@@ -66,7 +87,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 				<FlameGraph data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
 			{MODEL.amiga ? <Split sizes={[70,30]} gutterSize={2} cursor="w-resize" className={styles.split}>
-				<Tabs defaultIndex={1} className={styles.tabs}>
+				<Tabs selectedIndex={leftTab} onSelect={(tabIndex) => setLeftTab(tabIndex)} className={styles.tabs}>
 					<TabList>
 						<Tab>Profiler</Tab>
 						<Tab>Resources</Tab>
@@ -82,7 +103,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<BlitterList />
 					</TabPanel>
 				</Tabs>
-				<Tabs defaultIndex={0} className={styles.tabs}>
+				<Tabs selectedIndex={rightTab} onSelect={(tabIndex) => setRightTab(tabIndex)} className={styles.tabs}>
 					<TabList>
 						<Tab>Copper</Tab>
 						<Tab>Custom Registers</Tab>
