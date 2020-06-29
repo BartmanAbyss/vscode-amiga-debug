@@ -179,6 +179,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* show blitter priority in profiler
 * maybe use .amigaasm syntax highlighting for .s files
 * Debugger: detect TRAP#7 (GCC undefined behavior), detect null-ptr access (GCC undefined behavior)
 * asm-singlestepping: sometimes doesn't find correct line
