@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Profiler, SourceMap, UnwindTable, ProfileFile } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
 import { buildModel } from '../../client/model';
+import { profileShrinkler } from '../../backend/shrinkler';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
 const testOutDir = path.resolve(__dirname, "../../../src/test/suite/data/output/data");
@@ -180,6 +181,17 @@ function test_profile_size(base: string, elf: string) {
 	fs.writeFileSync(path.join(testHtmlDir, base + '.size.amigaprofile.html'), html);
 }
 
+function test_profile_shrinkler(base: string) {
+	makeDirs();
+	const data = fs.readFileSync(path.join(testDataDir, base + '.shrinklerstats'));
+	const json = JSON.parse(data.toString());
+	const profile = profileShrinkler(json);
+	const model = buildModel(profile);
+	fs.writeFileSync(path.join(testOutDir, base + '.shrinkler.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
+	const html = htmlPage(base, [ "data/" + base + ".shrinkler.amigaprofile.model", "client.bundle.js" ]);
+	fs.writeFileSync(path.join(testHtmlDir, base + '.shrinkler.amigaprofile.html'), html);
+}
+
 function test_unwind(elf: string) {
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf), symbolTable);
@@ -210,5 +222,8 @@ suite("Profiler", () => {
 	});
 	test("Size: bitshmup.elf", () => {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');
+	});
+	test("Shrinkler: bobble.shrinklerstats", () => {
+		test_profile_shrinkler('bobble');
 	});
 });

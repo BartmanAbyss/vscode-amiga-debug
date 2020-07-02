@@ -83,7 +83,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 					/>
 				</div>
 			</div>
-			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0}}>
+			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0, minHeight: `${flameHeight}px`}}>
 				<FlameGraph data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
 			{MODEL.amiga ? <Split sizes={[70,30]} gutterSize={2} cursor="w-resize" className={styles.split}>

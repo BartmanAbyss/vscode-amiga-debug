@@ -551,16 +551,18 @@ export const FlameGraph: FunctionComponent<{
 		webContext.stroke();
 
 		// time marker
-		webContext.globalAlpha = 1.0;
-		const x = (time / MODEL.duration - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
-		const text = formatValue(time, MODEL.duration, displayUnit);
-		webContext.beginPath();
-		const textMetrics = webContext.measureText(text);
-		webContext.fillStyle = cssVariables['editor-background'];
-		webContext.fillRect(x, 0, textMetrics.width + 2 * 6, Constants.TimelineHeight);
-		webContext.fillStyle = cssVariables['editor-foreground'];
-		webContext.fillText(text, x + 6, Constants.TimelineHeight / 2);
-		webContext.stroke();
+		if(MODEL.amiga) {
+			webContext.globalAlpha = 1.0;
+			const x = (time / MODEL.duration - bounds.minX) * canvasSize.width / (bounds.maxX - bounds.minX);
+			const text = formatValue(time, MODEL.duration, displayUnit);
+			webContext.beginPath();
+			const textMetrics = webContext.measureText(text);
+			webContext.fillStyle = cssVariables['editor-background'];
+			webContext.fillRect(x, 0, textMetrics.width + 2 * 6, Constants.TimelineHeight);
+			webContext.fillStyle = cssVariables['editor-foreground'];
+			webContext.fillText(text, x + 6, Constants.TimelineHeight / 2);
+			webContext.stroke();
+		}
 	}, [webContext, MODEL, canvasSize, bounds, cssVariables, displayUnit, time]);
 
 	// Update the canvas size when the window size changes, and on initial render
@@ -957,8 +959,10 @@ export const FlameGraph: FunctionComponent<{
 		<Fragment>
 			<Fragment>
 				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} />
-				<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} />
-				<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
+				{MODEL.amiga && <Fragment>
+					<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} />
+					<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
+				</Fragment>}
 			</Fragment>
 			<canvas
 				ref={webCanvas}
@@ -985,7 +989,7 @@ export const FlameGraph: FunctionComponent<{
 					zIndex: -1,
 				}}
 			/>
-			<div ref={scrollRef} onScroll={onScroll} style={{height: Constants.BoxHeight, lineHeight: 0, width: canvasSize.width, position: 'absolute', top: canvasSize.height - Constants.BoxHeight * 2, overflowX: 'scroll', overflowY: 'hide' }}>
+			<div ref={scrollRef} onScroll={onScroll} class={styles.scrollbar} style={{height: Constants.BoxHeight, lineHeight: 0, width: canvasSize.width, position: 'absolute', top: canvasSize.height - Constants.BoxHeight * 2, overflowX: 'scroll', overflowY: 'hide' }}>
 				<div ref={scrollChildRef} style={{ display: 'inline-block'}}></div>
 			</div>
 			{hovered && (

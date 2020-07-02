@@ -22,7 +22,7 @@ interface Stats {
 	hunks: Hunk[];
 }
 
-export function profileShrinkler(stats: Stats) {
+export function profileShrinkler(stats: Stats): ICpuProfileRaw {
 	interface DataSymbol {
 		callstack: CallFrame;
 		address: number;
