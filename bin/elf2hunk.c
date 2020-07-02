@@ -643,7 +643,7 @@ static int wlong(int fd, ULONG val)
 	return write(fd, &val, sizeof(val));
 }
 
-int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkheader **hh, int shid, int symtabndx)
+int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkheader **hh, int shid, int symtabndx, int flags)
 {
 	int i, err, syms;
 	struct symbol *sym = hh[symtabndx]->data;
@@ -677,7 +677,8 @@ int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkh
 			continue;
 		char name2[512];
 		snprintf(name2, sizeof(name2), "%s@%x", name, s.size);
-		D(bug("\t0x%08x: %s\n", (int)s.value, name2));
+		if(flags & F_VERBOSE)
+			printf("\t0x%08x: %s\n", (int)s.value, name2);
 		lsize = (strlen(name2) + 4) / 4;
 		wlong(hunk_fd, lsize);
 		err = write(hunk_fd, name2, lsize * 4);
@@ -809,10 +810,10 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				   that only one symbol table per file is allowed. However, it
 				   also states that this may change in future... we already handle it.
 		*/
-		D(bug("sh[%2d].type = 0x%08x, .offset = 0x%08x, .size = 0x%08x, .name = '%s'\n",
-			(int)i, (int)sh[i].type, (int)sh[i].offset, (int)sh[i].size, strtab[eh.shstrndx] ? (strtab[eh.shstrndx] + sh[i].name) : ""));
-		if(sh[i].type == SHT_SYMTAB || sh[i].type == SHT_STRTAB || sh[i].type == SHT_SYMTAB_SHNDX)
-		{
+		if(flags & F_VERBOSE)
+			printf("sh[%2d].type = 0x%08x, .offset = 0x%08x, .size = 0x%08x, .name = '%s'\n",
+			(int)i, (int)sh[i].type, (int)sh[i].offset, (int)sh[i].size, strtab[eh.shstrndx] ? (strtab[eh.shstrndx] + sh[i].name) : "");
+		if(sh[i].type == SHT_SYMTAB || sh[i].type == SHT_STRTAB || sh[i].type == SHT_SYMTAB_SHNDX) {
 			hh[i] = calloc(sizeof(struct hunkheader), 1);
 			hh[i]->type = (sh[i].type == SHT_SYMTAB) ? HUNK_SYMBOL : 0;
 			hh[i]->memflags = 0;
@@ -825,12 +826,11 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				if(symtab_shndx == -1)
 					symtab_shndx = i;
 				else
-					D(bug("[ELF2HUNK] file contains multiple symtab shndx tables. only using the first one\n"));
+					printf("[ELF2HUNK] file contains multiple symtab shndx tables. only using the first one\n");
 			}
 		} else {
 			/* Load the section in memory if needed, and make an hunk out of it */
-			if((sh[i].flags & SHF_ALLOC) && sh[i].size > 0)
-			{
+			if((sh[i].flags & SHF_ALLOC) && sh[i].size > 0) {
 				hh[i] = calloc(sizeof(struct hunkheader), 1);
 				hh[i]->size = sh[i].size;
 				hh[i]->hunk = hunks++;
@@ -884,7 +884,8 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 		}
 
 		total_size = (total_size + 3) & ~3; // round up to longword
-		D(bug("Total size: $%08x\n", total_size);)
+		if(flags & F_VERBOSE)
+			printf("Total size: $%08x\n", total_size);
 
 		// create combined data
 		char* total_data = calloc(1, total_size);
@@ -893,7 +894,8 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 			if(hh[i] == NULL || hh[i]->hunk < 0)
 				continue;
 
-			D(bug("HUNK_%d: addr = $%08x, size = $%08x\n", hh[i]->type, sh[i].addr, hh[i]->size);)
+			if(flags & F_VERBOSE)
+				printf("HUNK_%d: addr = $%08x, size = $%08x\n", hh[i]->type, sh[i].addr, hh[i]->size);
 
 			if(!hh[i]->data)
 				continue;
@@ -943,7 +945,8 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 			}
 		}
 
-		D(bug("HUNK_HEADER: \"%s\", hunks=%d, first=%d, last=%d\n", libname, hunks, 0, hunks - 1));
+		if(flags & F_VERBOSE)
+			printf("HUNK_HEADER: '%s', hunks=%d, first=%d, last=%d\n", libname, hunks, 0, hunks - 1);
 
 		wlong(hunk_fd, HUNK_HEADER);
 		if(libname == NULL) {
@@ -981,7 +984,8 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 				break;
 			}
 
-			D(bug("\tHunk #%d, %s, lsize=%d %s%s\n", hh[i]->hunk, names[hh[i]->type - HUNK_CODE], (int)(hh[i]->size + 4) / 4, (count & HUNKF_CHIP) ? "HUNKF_CHIP " : "", (count & HUNKF_FAST) ? "HUNKF_FAST" : ""));
+			if(flags & F_VERBOSE)
+				printf("\tHunk #%d (ELF section #%d '%s'), %s, lsize=%d%s%s\n", hh[i]->hunk, i, strtab[eh.shstrndx] ? (strtab[eh.shstrndx] + sh[i].name) : "", names[hh[i]->type - HUNK_CODE], (int)(hh[i]->size + 4) / 4, (count & HUNKF_CHIP) ? ", HUNKF_CHIP " : "", (count & HUNKF_FAST) ? ", HUNKF_FAST" : "");
 			wlong(hunk_fd, count);
 
 			if((count & HUNKF_MEMFLAGS) == HUNKF_MEMFLAGS)
@@ -1000,32 +1004,35 @@ int elf2hunk(int file, int hunk_fd, const char *libname, int flags)
 
 			switch(hh[i]->type) {
 			case HUNK_BSS:
-				D(bug("HUNK_BSS: %d longs\n", (int)((hh[i]->size + 4) / 4));)
-					for(s = 0; s < int_shnum; s++) {
-						if(hh[s] && hh[s]->type == HUNK_SYMBOL)
-							sym_dump(hunk_fd, &eh, sh, hh, i, s);
-					}
+				if(flags & F_VERBOSE)
+					printf("#%d HUNK_BSS: %d longs\n", hh[i]->hunk, (int)((hh[i]->size + 4) / 4));
+				for(s = 0; s < int_shnum; s++) {
+					if(hh[s] && hh[s]->type == HUNK_SYMBOL)
+						sym_dump(hunk_fd, &eh, sh, hh, i, s, flags);
+				}
 
 				wlong(hunk_fd, HUNK_END);
 				hunks++;
 				break;
 			case HUNK_CODE:
 			case HUNK_DATA:
-				D(bug("#%d HUNK_%s: %d longs\n", hh[i]->hunk, hh[i]->type == HUNK_CODE ? "CODE" : "DATA", (int)((hh[i]->size + 4) / 4)));
+				if(flags & F_VERBOSE)
+					printf("#%d HUNK_%s: %d longs\n", hh[i]->hunk, hh[i]->type == HUNK_CODE ? "CODE" : "DATA", (int)((hh[i]->size + 4) / 4));
 				err = write(hunk_fd, hh[i]->data, ((hh[i]->size + 4) / 4) * 4);
 
 				if(err < 0)
 					return EXIT_FAILURE;
 				for(s = 0; s < int_shnum; s++) {
 					if(hh[s] && hh[s]->type == HUNK_SYMBOL)
-						sym_dump(hunk_fd, &eh, sh, hh, i, s);
+						sym_dump(hunk_fd, &eh, sh, hh, i, s, flags);
 				}
 				reloc_dump(hunk_fd, hh, i);
 				wlong(hunk_fd, HUNK_END);
-				D(bug("\tHUNK_END\n"));
+				if(flags & F_VERBOSE)
+					printf("\tHUNK_END\n");
 				break;
 			default:
-				D(bug("Unsupported allocatable hunk type %d\n", (int)hh[i]->type));
+				printf("Unsupported allocatable hunk type %d\n", (int)hh[i]->type);
 				return EXIT_FAILURE;
 			}
 		}
@@ -1123,7 +1130,7 @@ static int copy(const char *src, const char *dst, int flags)
 	int mode, ret;
 
 	if(flags & F_VERBOSE)
-		printf("%s ->\n  %s\n", src, dst);
+		printf("%s -> %s\n", src, dst);
 
 	if(stat(src, &st) >= 0) {
 		mode = st.st_mode;
