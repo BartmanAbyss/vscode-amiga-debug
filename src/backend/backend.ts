@@ -21,6 +21,11 @@ export interface Breakpoint {
 	number?: number;
 }
 
+export interface Watchpoint {
+	variable?: string;
+	number?: number;
+}
+
 export interface Stack {
 	level: number;
 	address: string;
@@ -46,7 +51,7 @@ export interface IBackend {
 	next(threadId: number, instruction: boolean): Thenable<boolean>;
 	step(threadId: number, instruction: boolean): Thenable<boolean>;
 	stepOut(threadId: number): Thenable<boolean>;
-	addBreakPoint(breakpoint: Breakpoint): Promise<Breakpoint|null>;
+	addBreakpoint(breakpoint: Breakpoint): Promise<Breakpoint|null>;
 	removeBreakpoints(breakpoints: number[]): Promise<boolean>;
 	getStack(threadId: number, startLevel: number, maxLevels: number): Thenable<Stack[]>;
 	getStackVariables(thread: number, frame: number): Thenable<Variable[]>;

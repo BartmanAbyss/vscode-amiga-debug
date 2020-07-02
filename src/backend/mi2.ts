@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as net from "net";
 import { posix } from "path";
 import * as nativePath from "path";
-import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section } from "./backend";
+import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section, Watchpoint } from "./backend";
 import { MINode, parseMI } from "./mi_parse";
 const path = posix;
 
@@ -176,14 +176,14 @@ export class MI2 extends EventEmitter implements IBackend {
 		return this.sendCommand("gdb-set var " + name + "=" + rawValue);
 	}
 
-	public setBreakPointCondition(bkptNum, condition): Thenable<any> {
+	public setBreakpointCondition(bkptNum, condition): Thenable<any> {
 		if (this.trace) {
 			this.log("stderr", "setBreakPointCondition");
 		}
 		return this.sendCommand("break-condition " + bkptNum + " " + condition);
 	}
 
-	public addBreakPoint(breakpoint: Breakpoint): Promise<Breakpoint | null> {
+	public addBreakpoint(breakpoint: Breakpoint): Promise<Breakpoint | null> {
 		if (this.trace) {
 			this.log("stderr", "addBreakPoint");
 		}
@@ -216,7 +216,7 @@ export class MI2 extends EventEmitter implements IBackend {
 					breakpoint.number = bkptNum;
 
 					if (breakpoint.condition) {
-						this.setBreakPointCondition(bkptNum, breakpoint.condition).then((result) => {
+						this.setBreakpointCondition(bkptNum, breakpoint.condition).then((result) => {
 							if (result.resultRecords.resultClass === "done") {
 								resolve(breakpoint);
 							} else {
@@ -226,6 +226,33 @@ export class MI2 extends EventEmitter implements IBackend {
 					} else {
 						resolve(breakpoint);
 					}
+				} else {
+					resolve(null);
+				}
+			}, reject);
+		});
+	}
+
+	public addWatchpoint(variable: string, access: string): Promise<Watchpoint | null> {
+		if (this.trace)
+			this.log("stderr", "addWatchPoint");
+		return new Promise((resolve, reject) => {
+			let param = '';
+			if(access === 'read')
+				param = '-r';
+			else if(access === 'readWrite')
+				param = '-a';
+			else if(access === 'write')
+				param = '';
+			else throw new Error('Internal Error: illegal access for addWatchpoint');
+			this.sendCommand(`break-watch ${param} ${variable}`).then((result) => {
+				if (result.resultRecords.resultClass === "done") {
+					const bkptNum = parseInt(result.result("wpt.number"));
+					const watchpoint: Watchpoint = {
+						variable,
+						number: bkptNum
+					};
+					resolve(watchpoint);
 				} else {
 					resolve(null);
 				}
@@ -550,11 +577,12 @@ export class MI2 extends EventEmitter implements IBackend {
 									this.emit("running", parsed);
 								} else if (record.asyncClass === "stopped") {
 									const reason = parsed.record("reason");
-									if (this.trace) {
+									if (this.trace)
 										this.log("stderr", "stop: " + reason);
-									}
 									if (reason === "breakpoint-hit") {
 										this.emit("breakpoint", parsed);
+									} else if (reason === "watchpoint-trigger") {
+										this.emit("watchpoint", parsed);
 									} else if (reason === "end-stepping-range") {
 										this.emit("step-end", parsed);
 									} else if (reason === "function-finished") {

@@ -21,7 +21,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
 - State-of-the-art code generation by GCC with Link-Time-Optimizations (LTO) for increased performance and smaller code size
 - IntelliSense
-- Full source-level and assembly-level debugging with callstack, breakpoints, watches, registers, memory view with GDB-enabled WinUAE
+- Full source-level and assembly-level debugging with callstack, breakpoints, data breakpoints (watchpoints), watches, registers, memory view with GDB-enabled WinUAE
 - Fully AmigaOS compatible via included .h files
 - `INCBIN`, `INCBIN_CHIP` support
 - Output to debug console from WinUAE
@@ -179,7 +179,9 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
-* data breakpoints
+* memory, disassembly: use VSCode built-in requests
+* data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
+* modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
 * maybe use .amigaasm syntax highlighting for .s files
 * Debugger: detect TRAP#7 (GCC undefined behavior), detect null-ptr access (GCC undefined behavior)

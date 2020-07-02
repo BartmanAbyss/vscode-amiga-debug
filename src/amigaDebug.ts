@@ -6,7 +6,7 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 import { ContinuedEvent, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Breakpoint, MIError, Variable, VariableObject } from './backend/backend';
+import { Breakpoint, MIError, Variable, VariableObject, Watchpoint } from './backend/backend';
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
@@ -74,6 +74,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected currentThreadId: number = 1;
 
 	protected breakpointMap: Map<string, Breakpoint[]> = new Map();
+	protected watchpoints: Watchpoint[] = [];
 	protected fileExistsCache: Map<string, boolean> = new Map();
 
 	private args: LaunchRequestArguments;
@@ -94,6 +95,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.miDebugger.on('stopped', this.stopEvent.bind(this));
 		this.miDebugger.on('msg', this.handleMsg.bind(this));
 		this.miDebugger.on('breakpoint', this.handleBreakpoint.bind(this));
+		this.miDebugger.on('watchpoint', this.handleWatchpoint.bind(this));
 		this.miDebugger.on('step-end', this.handleBreak.bind(this));
 		this.miDebugger.on('step-out-end', this.handleBreak.bind(this));
 		this.miDebugger.on('signal-stop', this.handlePause.bind(this));
@@ -110,6 +112,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsConditionalBreakpoints = true;
 		response.body.supportsFunctionBreakpoints = true;
+		response.body.supportsDataBreakpoints = true;
 		response.body.supportsEvaluateForHovers = true;
 		response.body.supportsSetVariable = true;
 		response.body.supportsRestartRequest = true;
@@ -263,7 +266,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		//this.miDebugger.printCalls = true;
 		//this.miDebugger.debugOutput = true;
-		//this.miDebugger.trace = true;
+		this.miDebugger.trace = true;
 
 		this.miDebugger.once('sections-loaded', (sections) => {
 			if(sections.length > 0) {
@@ -281,7 +284,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 		const commands = [
 			'enable-pretty-printing',
-			//'interpreter-exec console "set debug remote 1"',
+			'interpreter-exec console "set debug remote 1"',
 			'interpreter-exec console "target remote localhost:2345"',
 		];
 
@@ -566,6 +569,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendEvent(new CustomStoppedEvent('breakpoint', this.currentThreadId));
 	}
 
+	protected handleWatchpoint(info: MINode) {
+		this.stopped = true;
+		this.stoppedReason = 'data breakpoint';
+		this.sendEvent(new StoppedEvent('data breakpoint', this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent('data breakpoint', this.currentThreadId));
+	}
+
 	protected handleBreak(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'step';
@@ -644,7 +654,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const createBreakpoints = async (shouldContinue) => {
 			const all: Array<Promise<Breakpoint | null>> = [];
 			args.breakpoints.forEach((brk) => {
-				all.push(this.miDebugger.addBreakPoint({ raw: brk.name, condition: brk.condition, countCondition: brk.hitCondition }));
+				all.push(this.miDebugger.addBreakpoint({ raw: brk.name, condition: brk.condition, countCondition: brk.hitCondition }));
 			});
 
 			try {
@@ -702,7 +712,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					if(parts.length === 1 && parts[0].startsWith('0x')) {
 						if (args.breakpoints) {
 							args.breakpoints.forEach((brk) => {
-								all.push(this.miDebugger.addBreakPoint({
+								all.push(this.miDebugger.addBreakpoint({
 									condition: brk.condition,
 									countCondition: brk.hitCondition,
 									raw: parts[0]
@@ -738,7 +748,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 							args.breakpoints.forEach((brk) => {
 								const lineAndAddress = getLineAndAddress(brk.line);
 								if(lineAndAddress !== undefined) {
-									all.push(this.miDebugger.addBreakPoint({
+									all.push(this.miDebugger.addBreakpoint({
 										file: args.source.path, // disassembly, just for editor
 										line: lineAndAddress.line,
 										condition: brk.condition,
@@ -753,7 +763,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					// real source
 					if (args.breakpoints) {
 						args.breakpoints.forEach((brk) => {
-							all.push(this.miDebugger.addBreakPoint({
+							all.push(this.miDebugger.addBreakpoint({
 								file: args.source.path || "",
 								line: brk.line,
 								condition: brk.condition,
@@ -798,6 +808,40 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		};
 
 		if (this.debugReady) { process(); } else { this.miDebugger.once('debug-ready', process); }
+	}
+
+	protected async dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments, request?: DebugProtocol.Request): Promise<void> {
+		response.body = {
+			dataId: args.name,
+			description: `When ${args.name} changes`,
+			accessTypes: ['read', 'write', 'readWrite']
+		};
+		this.sendResponse(response);
+	}
+
+	protected async setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request): Promise<void> {
+		// clear old watchpoints
+		await this.miDebugger.removeBreakpoints(this.watchpoints.map((wp) => wp.number!));
+		this.watchpoints = [];
+
+		// add new watchpoints
+		const all: Array<Promise<Watchpoint | null>> = [];
+		if (args.breakpoints) {
+			args.breakpoints.forEach((brk) => {
+				all.push(this.miDebugger.addWatchpoint(brk.dataId, brk.accessType as string));
+			});
+		}
+		this.watchpoints = await Promise.all(all);
+
+		// response
+		response.body = { breakpoints: [] };
+		for(const wp of this.watchpoints) {
+			response.body.breakpoints.push({
+				id: wp.number,
+				verified: true
+			});
+		}
+		this.sendResponse(response);
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
