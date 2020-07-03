@@ -159,6 +159,19 @@ const UWORD copper2[] __attribute__((section (".MEMF_CHIP"))) = {
 INCBIN(player, "player610.6.no_cia.bin")
 INCBIN_CHIP(module, "testmod.p61")
 
+void* doynaxdepack(const void* input, void* output) { // returns end of output data, input needs to be 16-bit aligned!
+	volatile register const void* _a0 __asm("a0") = input;
+	volatile register       void* _a1 __asm("a1") = output;
+	__asm volatile (
+		"movem.l %%d0-%%d7/%%a2-%%a6,-(%%sp)\n"
+		"jsr _doynaxdepack_asm\n"
+		"movem.l (%%sp)+,%%d0-%%d7/%%a2-%%a6"
+	: "+rf"(_a0), "+rf"(_a1)
+	:
+	: "cc", "memory");
+	return (void*)_a1;
+}
+
 int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
 	volatile register const void* _a0 __asm("a0") = module;
 	volatile register const void* _a1 __asm("a1") = NULL;
