@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.1.0-preview12",
+	"version": "1.1.0-preview13",
 	"engines": {
 		"vscode": "^1.45.1"
 	},
@@ -20,6 +20,7 @@
 		"onCommand:amiga.initProject",
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
+		"onCommand:amiga.shrinkler",
 		"onCustomEditor:amiga.profile",
 		"workspaceContains:.vscode/amiga.json"
 	],
@@ -68,6 +69,11 @@
 				"category": "Amiga",
 				"command": "amiga.profileSize",
 				"title": "Amiga: Profile File Size"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.shrinkler",
+				"title": "Amiga: Shrinkle File"
 			},
 			{
 				"category": "Amiga",
@@ -233,8 +239,12 @@
 					"command": "amiga.profileSize",
 					"group": "1_amiga",
 					"when": "resourceExtname == '.elf'"
-				}
-			]
+				},
+				{
+					"command": "amiga.shrinkler",
+					"group": "1_amiga",
+					"when": "resourceExtname == '.exe'"
+				}			]
 		},
 		"views": {
 			"debug": [

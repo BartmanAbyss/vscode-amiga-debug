@@ -70,28 +70,35 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
 	}
 
-	public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
-		// Setup initial content for the webview
-		webviewPanel.webview.options = {
-			enableScripts: true,
-		};
+	private async updateWebview(document: vscode.TextDocument, webview: vscode.Webview) {
 		let json = JSON.parse(document.getText());
 		if(json.hunks) {
 			json = profileShrinkler(json);
 		}
 		const model = buildModel(json);
-		const profile = JSON.parse(document.getText());
-		webviewPanel.webview.html = await bundlePage(webviewPanel.webview, path.join(this.context.extensionPath, 'dist'), {
-			//DOCUMENT: profile,
-			MODEL: model,
-		});
+		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODEL: model });
 		this.lenses.registerLenses(this.createLensCollection(model));
+	}
+
+	public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
+		// Setup initial content for the webview
+		webviewPanel.webview.options = {
+			enableScripts: true,
+		};
+		this.updateWebview(document, webviewPanel.webview);
+
+		// rebuild HTML when document changes (this is usually when file is externally modified, as our editor is read-only)
+		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
+			if (e.document.uri.toString() === document.uri.toString()) {
+				this.updateWebview(e.document, webviewPanel.webview);
+			}
+		});
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
-				case 'openDocument':
-					showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
-					return;
+			case 'openDocument':
+				showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
+				return;
 			}
 		});
 	}

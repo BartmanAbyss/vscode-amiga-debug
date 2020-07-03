@@ -5,7 +5,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.1.0
 - support relocation for an arbitrary number of sections/hunks (fixes [#11](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/11))
 - support data breakpoints/watchpoints (during debugging, right-click on a variable and select `Break when value changes`)
-- added custom version of Shrinkler executable cruncher by Blueberry that generates `.shrinklerstats` files that can be opened with VS Code for size profiling
+- support for a custom version of Shrinkler executable cruncher by Blueberry that generates `.shrinklerstats` files that can be opened with VS Code for size profiling. Right-click an EXE file in the explorer, and select `Amiga: Shrinkle File`, then select a Shrinkler configurations. See `.vscode/amiga.json` in the template project for examples of how to specify shrinkler configurations.
 - added blitter timeline to profiler
 - better scolling/zooming in profiler
 - graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.

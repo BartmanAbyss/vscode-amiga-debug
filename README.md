@@ -31,7 +31,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - Frame Profiler: function-level + DMA cycles profiling
 - Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes, copper list, custom registers
 - Size Profiler: profile the size of your executable by functions, data and references
-- Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (open `.shrinklerstats` files)
+- Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (right-click Amiga EXE files in the explorer)
 - Terminal window with access to the build tools
 - Extension automatically mounts executable's directory as `dh1:`, allowing for reading and writing files.
 

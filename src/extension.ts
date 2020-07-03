@@ -2,6 +2,7 @@
 
 import { AmigaDebugSession } from './amigaDebug';
 
+import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as Net from 'net';
 import * as os from 'os';
@@ -30,6 +31,9 @@ const EMBED_DEBUG_ADAPTER = true;
 interface AmigaConfiguration {
 	includePath?: string[];
 	defines?: string[];
+	shrinkler?: {
+		[config: string]: string;
+	}
 }
 
 class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
@@ -97,6 +101,7 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private memoryProvider: MemoryContentProvider;
+	private outputChannel: vscode.OutputChannel;
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath: string = '';
@@ -105,6 +110,7 @@ class AmigaDebugExtension {
 	constructor(private context: vscode.ExtensionContext) {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
+		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		this.extensionPath = context.extensionPath;
 
@@ -124,6 +130,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
+			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
@@ -142,7 +149,10 @@ class AmigaDebugExtension {
 
 			// code lenses (from profiler)
 			vscode.languages.registerCodeLensProvider('*', lenses),
-			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear())
+			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear()),
+
+			// output channel
+			this.outputChannel
 		);
 	}
 
@@ -305,9 +315,84 @@ class AmigaDebugExtension {
 			const profiler = new Profiler(sourceMap, symbolTable);
 			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
 			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
-			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp));
+			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
 		} catch(error) {
 			vscode.window.showErrorMessage(`Error during size profiling: ${error.message}`);
+		}
+	}
+
+	private async shrinkler(uri: vscode.Uri) {
+		if(uri.scheme !== 'file') {
+			vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
+			return;
+		}
+		const binPath = path.join(this.extensionPath, 'bin');
+
+		try {
+			const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+			const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+			let config: AmigaConfiguration;
+			try {
+				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+			} catch(e) { /**/ }
+			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
+				vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
+				return;
+			}
+
+			const items: vscode.QuickPickItem[] = [];
+
+			// tslint:disable-next-line: forin
+			for(const key in config.shrinkler) {
+				items.push({ label: key, description: config.shrinkler[key] });
+			}
+			
+			const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
+			if(result === undefined)
+				return;
+			const output = uri.fsPath + '.shrinkled';
+			const args = [...result.description.split(' '), uri.fsPath, output];
+			const cmd = `${binPath}\\shrinkler.exe`;
+
+			const writeEmitter = new vscode.EventEmitter<string>();
+			let p: cp.ChildProcess;
+			const pty: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+				open: () => {
+					writeEmitter.fire(`\u001b[1m> Executing ${cmd} ${args.join(' ')} <\u001b[0m\r\n`);
+					writeEmitter.fire(`\u001b[31mPress CTRL+C to abort\u001b[0m\r\n\r\n`);
+					//p = cp.exec(cmd);
+					p = cp.spawn(cmd, args);
+					p.stderr.on('data', (data: string) => {
+						writeEmitter.fire(data);
+					});
+					p.stdout.on('data', (data: string) => {
+						writeEmitter.fire(data);
+					});
+					p.on('exit', (_code: number, signal: string) => {
+						if (signal === 'SIGTERM') {
+							writeEmitter.fire('\r\nSuccessfully killed process\r\n');
+							writeEmitter.fire('-----------------------\r\n');
+							writeEmitter.fire('\r\n');
+						} else {
+							vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+						}
+					});
+				},
+				close: () => {},
+				handleInput: (char: string) => {
+					if(char === '\x03')
+						p.kill('SIGTERM');
+				}
+			};
+
+			const terminal = vscode.window.createTerminal({
+				name: 'Amiga',
+				pty
+			});
+			terminal.show();
+		} catch(error) {
+			vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
 		}
 	}
 

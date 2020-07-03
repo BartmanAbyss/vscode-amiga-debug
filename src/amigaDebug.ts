@@ -266,7 +266,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		//this.miDebugger.printCalls = true;
 		//this.miDebugger.debugOutput = true;
-		this.miDebugger.trace = true;
+		//this.miDebugger.trace = true;
 
 		this.miDebugger.once('sections-loaded', (sections) => {
 			if(sections.length > 0) {
@@ -284,7 +284,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 		const commands = [
 			'enable-pretty-printing',
-			'interpreter-exec console "set debug remote 1"',
+			//'interpreter-exec console "set debug remote 1"',
 			'interpreter-exec console "target remote localhost:2345"',
 		];
 
