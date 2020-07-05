@@ -116,7 +116,7 @@ class AmigaDebugExtension {
 		this.extensionPath = context.extensionPath;
 
 		const lenses = new ProfileCodeLensProvider();
-		const assemblyLanguageProvider = new AmigaAssemblyLanguageProvider();
+		const assemblyLanguageProvider = new AmigaAssemblyLanguageProvider(this.extensionPath);
 		const assemblyLanguageSelector: vscode.DocumentSelector = { language: AmigaAssemblyLanguageProvider.getLanguageId() };
 
 		context.subscriptions.push(
@@ -158,6 +158,7 @@ class AmigaDebugExtension {
 			vscode.languages.registerDocumentSemanticTokensProvider(assemblyLanguageSelector, assemblyLanguageProvider, AmigaAssemblyLanguageProvider.getSemanticTokensLegend()),
 			vscode.languages.registerDocumentSymbolProvider(assemblyLanguageSelector, assemblyLanguageProvider),
 			vscode.languages.registerDefinitionProvider(assemblyLanguageSelector, assemblyLanguageProvider),
+			assemblyLanguageProvider.diagnosticCollection,
 
 			// output channel
 			this.outputChannel

@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as childProcess from 'child_process';
+import path = require('path');
 
 enum TokenTypes {
 	function,
@@ -25,34 +27,51 @@ interface Token {
 }
 
 class SourceContext {
+	public static extensionPath: string;
 	public labels = new Map<string, number>(); // label -> line
 	public tokens: Token[] = [];
 	private text: string;
+
+	constructor(public fileName: string, private diagnosticCollection: vscode.DiagnosticCollection) {
+	}
 
 	public setText(text: string) {
 		this.text = text;
 	}
 
 	public parse() {
-		this.labels = this.getLabels();
-		this.tokens = this.getTokens();
-	}
+		const objdump = childProcess.spawnSync(
+			path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe"), 
+			['-', '-o', 'nul', '--register-prefix-optional', '-asnm'], 
+			{
+				input: this.text,
+				maxBuffer: 10*1024*1024 
+			});
 
-	private getLabels(): Map<string, number> {
-		const map = new Map<string, number>();
+		const stdout = objdump.stdout.toString().replace(/\r/g, '').split('\n');
+		const stderr = objdump.stderr.toString().replace(/\r/g, '').split('\n');
 
-		const lines = this.text.split(/\r\n|\r|\n/);
-		for(let l = 0; l < lines.length; l++) {
-			const line = lines[l];
-			const match = line.match(/(?:^|\s+)([a-zA-Z0-9_]+):/);
+		// get labels
+		this.labels.clear();
+		for(const line of stdout) {
+			const match = line.match(/{standard input}:([0-9]+).*:[0-9a-fA-F]+\s+(.*)$/);
 			if(match) {
-				// TODO: filter comments
-				// TODO: filter out local labels
-				map.set(match[1], l);
-				//console.log(match[1]);
+				this.labels.set(match[2], parseInt(match[1]) - 1);
 			}
 		}
-		return map;
+
+		// get error/warning messages
+		const errors: vscode.Diagnostic[] = [];
+		for(const line of stderr) {
+			const match = line.match(/{standard input}:([0-9]+): (.*)$/);
+			if(match) {
+				console.log("stderr", match[1], match[2]);
+				errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
+			}
+		}
+		this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);
+
+		this.tokens = this.getTokens();
 	}
 
 	private getTokens(): Token[] {
@@ -74,12 +93,15 @@ class SourceContext {
 
 export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSymbolProvider {
 	private sourceContexts = new Map<string, SourceContext>();
+	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(AmigaAssemblyLanguageProvider.getLanguageId());
 
 	public static getLanguageId() {
 		return 'amiga.assembly';
 	}
 
-	constructor() {
+	constructor(extensionPath: string) {
+		SourceContext.extensionPath = extensionPath;
+
 		const changeTimers = new Map<string, any>(); // Keyed by file name.
 
 		// parse documents that are already open when extension is activated
@@ -121,7 +143,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		let context = this.sourceContexts.get(fileName);
 		if(context)
 			return context;
-		context = new SourceContext();
+		context = new SourceContext(fileName, this.diagnosticCollection);
 		this.sourceContexts.set(fileName, context);
 		return context;
 	}
