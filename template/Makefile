@@ -51,4 +51,4 @@ $(c_objects) : obj/%.o : %.c
 
 $(s_objects): obj/%.o : %.s
 	$(info Assembling $<)
-	@$(CC) $(CCFLAGS) $(ASFLAGS) -xassembler-with-cpp -c -o $@ $(CURDIR)/$<
+	@$(CC) $(CCFLAGS) $(ASFLAGS) -c -o $@ $(CURDIR)/$<
