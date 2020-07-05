@@ -1,0 +1,50 @@
+{
+	"name": "Amiga Assembly",
+	"scopeName": "source.amiga-assembly",
+	"uuid": "97a023d0-11a0-4f91-bd27-b4f2f387d5d3",
+	"patterns": [
+		{
+			"name": "comment.line.pipe",
+			"match": "\\|[^\n]*\n"
+		},
+		{
+			"name": "comment.block.c",
+			"begin": "(\\/\\*)",
+			"beginCaptures": {
+				"1": {
+					"name": "comment.begin.c"
+				}
+			},
+			"end": "(\\*\\/)",
+			"endCaptures": {
+				"1": {
+					"name": "comment.end.c"
+				}
+			}
+		},
+		{
+			"comment": "Numeric constant",
+			"name": "constant.numeric",
+			"match": "(#)?((-?0x[0-9A-Fa-f]+)|(-?[0-9]+))"
+		},
+		{
+			"comment": "Register",
+			"name": "variable.language",
+			"match": "(?i)\\b([ad][0-7]|SP|PC|vbr|fp[0-7])\\b"
+		},
+		{
+			"comment": "Meta",
+			"name": "meta.preprocessor",
+			"begin": "(?:^|\\s)(\\.[a-zA-Z0-9_]+)",
+			"end": "($|\\|)",
+			"beginCaptures": {
+				"1": { "name": "" }
+			}
+		},
+		{
+			"comment": "Label",
+			"name": "entity.name.function",
+			"match": "(^|\\s)([a-zA-Z0-9_]+:)"
+		}
+	]
+}

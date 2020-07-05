@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- support IntelliSense for assembly sources (currently working: `Go to Symbol`, `Go to Definition`, semantic highlighting)
 - support relocation for an arbitrary number of sections/hunks (fixes [#11](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/11))
 - support data breakpoints/watchpoints (during debugging, right-click on a variable and select `Break when value changes`)
 - support for a custom version of Shrinkler executable cruncher by Blueberry that generates `.shrinklerstats` files that can be opened with VS Code for size profiling. Right-click an EXE file in the explorer, and select `Amiga: Shrinkle File`, then select a Shrinkler configurations. See `.vscode/amiga.json` in the template project for examples of how to specify shrinkler configurations.

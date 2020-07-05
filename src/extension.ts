@@ -15,6 +15,7 @@ import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { MemoryContentProvider } from './memory_content_provider';
 import { ProfileCodeLensProvider} from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
+import { AmigaAssemblyLanguageProvider } from './assembly_language_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
@@ -33,7 +34,7 @@ interface AmigaConfiguration {
 	defines?: string[];
 	shrinkler?: {
 		[config: string]: string;
-	}
+	};
 }
 
 class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
@@ -115,6 +116,8 @@ class AmigaDebugExtension {
 		this.extensionPath = context.extensionPath;
 
 		const lenses = new ProfileCodeLensProvider();
+		const assemblyLanguageProvider = new AmigaAssemblyLanguageProvider();
+		const assemblyLanguageSelector: vscode.DocumentSelector = { language: 'amiga.assembly' };
 
 		context.subscriptions.push(
 			// text editors
@@ -150,6 +153,11 @@ class AmigaDebugExtension {
 			// code lenses (from profiler)
 			vscode.languages.registerCodeLensProvider('*', lenses),
 			vscode.commands.registerCommand('extension.amiga.profile.clearCodeLenses', () => lenses.clear()),
+
+			// assembly language
+			vscode.languages.registerDocumentSemanticTokensProvider(assemblyLanguageSelector, assemblyLanguageProvider, AmigaAssemblyLanguageProvider.getSemanticTokensLegend()),
+			vscode.languages.registerDocumentSymbolProvider(assemblyLanguageSelector, assemblyLanguageProvider),
+			vscode.languages.registerDefinitionProvider(assemblyLanguageSelector, assemblyLanguageProvider),
 
 			// output channel
 			this.outputChannel
@@ -369,7 +377,7 @@ class AmigaDebugExtension {
 					p.stdout.on('data', (data: string) => {
 						writeEmitter.fire(data);
 					});
-					p.on('exit', (_code: number, signal: string) => {
+					p.on('exit', (code: number, signal: string) => {
 						if (signal === 'SIGTERM') {
 							writeEmitter.fire('\r\nSuccessfully killed process\r\n');
 							writeEmitter.fire('-----------------------\r\n');
