@@ -117,7 +117,7 @@ class AmigaDebugExtension {
 
 		const lenses = new ProfileCodeLensProvider();
 		const assemblyLanguageProvider = new AmigaAssemblyLanguageProvider();
-		const assemblyLanguageSelector: vscode.DocumentSelector = { language: 'amiga.assembly' };
+		const assemblyLanguageSelector: vscode.DocumentSelector = { language: AmigaAssemblyLanguageProvider.getLanguageId() };
 
 		context.subscriptions.push(
 			// text editors
