@@ -59,6 +59,14 @@ void WaitVbl() {
 	}
 }
 
+void WaitLine(USHORT line) {
+	while (1) {
+		volatile ULONG vpos=*(volatile ULONG*)0xDFF004;
+		if(((vpos >> 8) & 511) == line)
+			break;
+	}
+}
+
 inline void WaitBlt() {
 	UWORD tst=*(volatile UWORD*)&custom->dmaconr; //for compatiblity a1000
 	(void)tst;
@@ -305,6 +313,11 @@ inline USHORT* screenScanDefault(USHORT* copListEnd) {
 	return copListEnd;
 }
 
+static void Wait10() { WaitLine(0x10); }
+static void Wait11() { WaitLine(0x11); }
+static void Wait12() { WaitLine(0x12); }
+static void Wait13() { WaitLine(0x13); }
+
 int main() {
 	SysBase = *((struct ExecBase**)4UL);
 	custom = (struct Custom*)0xdff000;
@@ -341,7 +354,7 @@ int main() {
 
 	// register graphics resources with WinUAE for nicer gfx debugger experience
 	debug_register_bitmap(image, "image.bpl", 320, 256, 5, 0);
-	//debug_register_palette(colors, "image.pal", 32, 0); // meh, fast mem...
+	debug_register_palette(colors, "image.pal", 32, 0);
 	debug_register_copperlist(copper1, "copper1", 1024, 0);
 	debug_register_copperlist(copper2, "copper2", sizeof(copper2), 0);
 
@@ -392,9 +405,18 @@ int main() {
 		int f = frameCounter & 255;
 
 		// WinUAE debug overlay test
-		debug_clear();
+/*		debug_clear();
 		debug_filled_rect(f + 100, 200*2, f + 400, 220*2, 0x0000ff00); // 0x00RRGGBB
 		debug_text(f+ 130, 209*2, "This is a WinUAE debug overlay", 0x00ff00ff);
+
+		for(int i = 0; i < 1000; i++) {
+			*(volatile ULONG*)8 = *(volatile ULONG*)0xDFF004;
+		}*/
+
+		Wait10();
+		Wait11();
+		Wait12();
+		Wait13();
 	}
 
 	p61End();

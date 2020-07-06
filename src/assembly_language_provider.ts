@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
-import path = require('path');
+import * as path from 'path';
 
 enum TokenTypes {
 	function,

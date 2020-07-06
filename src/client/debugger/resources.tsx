@@ -137,7 +137,7 @@ export const Screen: FunctionComponent<{
 		const overdraw = new Uint16Array(overdrawWidth * overdrawHeight);
 		let i = 0;
 		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < time >> 1; cycleY++) {
-			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS - ((cycleY % 2) ? 1 : 0) && i < time >> 1; cycleX++, i++) { // long and short lines alternate
+			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS && i < time >> 1; cycleX++, i++) {
 				const dmaRecord = MODEL.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 				if (dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
 					continue;

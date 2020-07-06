@@ -5,6 +5,7 @@ import * as path from 'path';
 import { SymbolTable } from './symbols';
 import { ICpuProfileRaw, IProfileNode } from '../client/types';
 import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxResourceFlags } from './profile_types';
+import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -246,8 +247,11 @@ export class ProfileFile {
 	public gfxResources: GfxResource[] = [];
 	public profileArray: Uint32Array;
 
-	public static NR_DMA_REC_HPOS = 228;
-	public static NR_DMA_REC_VPOS = 313;
+	// CPU cycles per frame: 142102 (according to winuae profiler)
+	//   we get 142024-142028, good enough for now?
+	// DMA cycles per frame: 227*313*2=142101
+	// http://eab.abime.net/showthread.php?t=51883 confirms 313 lines in PAL default
+
 	private static sizeofDmaRec = 20;
 	private static sizeofResource = 52;
 
@@ -264,8 +268,8 @@ export class ProfileFile {
 		const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(dmaLen !== ProfileFile.sizeofDmaRec)
 			throw new Error("dmaLen mismatch");
-		if(dmaCount !== ProfileFile.NR_DMA_REC_HPOS * ProfileFile.NR_DMA_REC_VPOS)
-			throw new Error("dmaCount mismatch");
+		if(dmaCount !== NR_DMA_REC_HPOS * NR_DMA_REC_VPOS)
+			throw new Error(`dmaCount mismatch (${dmaCount} != ${NR_DMA_REC_HPOS * NR_DMA_REC_VPOS})`);
 		const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
 		for(let i = 0; i < dmaCount; i++) {
 			const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
@@ -422,14 +426,26 @@ export class Profiler {
 	}
 
 	public profileTime(profileFile: ProfileFile): string {
-		const functionMap: Map<string, number> = new Map();
-		const cyclesPerFunction: number[] = [];
+		const sameCallstack = (callstack1: CallFrame, callstack2: CallFrame) => {
+			if(callstack1.frames.length !== callstack2.frames.length)
+				return false;
+			for(let i = 0; i < callstack1.frames.length; i++) {
+				if(callstack1.frames[i] !== callstack2.frames[i])
+					return false;
+			}
+			return true;
+		};
+		//const functionMap: Map<string, number> = new Map();
+
+		// same index
+		const cycles: number[] = [];
 		const locations: CallFrame[] = [];
+		let lastLocation = -1;
 
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
 
-		let iii = 0;
+		let totalCycles = 0;
 		for(const p of profileFile.profileArray) {
 			if(p < 0xffff0000) {
 				let pc = p;
@@ -442,27 +458,29 @@ export class Profiler {
 						callstack.frames[0].func += " (inlined)";
 				}
 			} else {
-				if(callstack.frames.length === 1 && lastCallstack.frames.length > 1 && callstack[0] === lastCallstack[lastCallstack.frames.length - 1]) // glitches in unwind
+				if(callstack.frames.length === 1 && lastCallstack.frames.length > 1 && callstack.frames[0] === lastCallstack.frames[lastCallstack.frames.length - 1]) // glitches in unwind
 					callstack.frames = [...lastCallstack.frames];
 
-				const key = getCallFrameKey(callstack);
-				let functionId = functionMap.get(key);
-				if(functionId === undefined) {
+				if(callstack.frames.length === 0) // not in our code
+					callstack.frames.push({ func: 'unknown', file: 'unknown', line: 0 });
+
+				if(sameCallstack(callstack, lastCallstack)) {
+					cycles[lastLocation] += (0xffffffff - p) | 0;
+				} else {
 					const callstackCopy = { frames: [...callstack.frames] };
-					functionId = locations.push(callstackCopy) - 1;
-					cyclesPerFunction.push(0);
-					functionMap.set(key, functionId);
+					lastLocation = locations.push(callstackCopy) - 1;
+					cycles.push((0xffffffff - p) | 0);
 				}
-				cyclesPerFunction[functionId] += (0xffffffff - p) | 0;
+				totalCycles += (0xffffffff - p) | 0;
 
 				lastCallstack.frames = [...callstack.frames];
 				callstack.frames.length = 0;
 			}
-			iii++;
 		}
+		console.log("totalCycles", totalCycles);
 
 		const out: ICpuProfileRaw = { 
-			...profileCommon(cyclesPerFunction, locations),
+			...profileCommon(cycles, locations),
 			$amiga: {
 				chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
 				bogoMem: Buffer.from(profileFile.bogoMem).toString('base64'),

@@ -204,16 +204,15 @@ suite("Profiler", () => {
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
 	});
-/*	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-1591782448506', 'test.elf');
+	test("Time: test.elf", () => {
+		test_profile_time('amiga-profile-2020.07.06-20.46.11', 'test.elf');
 	});
-	test("Time: test2.elf", () => {
+/*	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
 	});
 	test("bitshmup.elf", () => {
 		test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
 	});
-*/
 	test("Time: bobble.elf", () => {
 		test_profile_time('amiga-profile-2020.06.15-11.16.54', 'private/bobble.elf');
 	});
@@ -222,7 +221,7 @@ suite("Profiler", () => {
 	});
 	test("Size: bitshmup.elf", () => {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');
-	});
+	});*/
 	test("Shrinkler: bobble.shrinklerstats", () => {
 		test_profile_shrinkler('bobble');
 	});

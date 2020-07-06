@@ -132,7 +132,7 @@ const buildDmaBoxes = () => {
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 
 			if(dmaRecord.type === undefined && dmaRecord.evt === undefined)

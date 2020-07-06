@@ -73,7 +73,7 @@ export const scaleValue = (value: number, total: number, unit: DisplayUnit) => {
 	switch(unit) {
 	case DisplayUnit.Microseconds: return value / cyclesPerMicroSecond;
 	case DisplayUnit.Cycles: return value;
-	case DisplayUnit.Lines: return value / cyclesPerMicroSecond / 200 * 312.5 / 100;
+	case DisplayUnit.Lines: return value / cyclesPerMicroSecond / 200 * 312.5 / 100; // PAL defaults to 313 lines, if VPOSW LOF-bit is not set, it's 312 lines; 7.09MHz/50=312.5 lines
 	case DisplayUnit.PercentFrame: return value / cyclesPerMicroSecond / 200;
 	case DisplayUnit.Bytes: return Math.round(value);
 	case DisplayUnit.BytesHex: return Math.round(value);

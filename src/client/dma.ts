@@ -50,7 +50,7 @@ export interface DmaType {
 	subtypes: DmaSubtype[];
 }
 
-export const NR_DMA_REC_HPOS = 228;
+export const NR_DMA_REC_HPOS = 227;
 export const NR_DMA_REC_VPOS = 313;
 
 export namespace DmaEvents {
@@ -219,7 +219,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) {
 				customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
@@ -298,7 +298,7 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS - 0xdff000) {
 				const first  = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
@@ -409,7 +409,7 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS && i < endCycle; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < endCycle; x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS && i < endCycle; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.addr === undefined)
 				continue;
@@ -435,7 +435,7 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i <= endCycle; x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS && i <= endCycle; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg === undefined)
 				continue;
@@ -453,7 +453,7 @@ export function GetPrevCustomRegWriteTime(index: number, cycle: number, dmaRecor
 	let prevCycle: number | undefined;
 
 	for(let y = 0; y < NR_DMA_REC_VPOS && i < cycle; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0) && i < cycle; x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS && i < cycle; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg === (index << 1))
 				prevCycle = i;
@@ -466,7 +466,7 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 	let i = 0;
 
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(i > cycle && dmaRecord.reg === (index << 1))
 				return i;

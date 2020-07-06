@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from '../model';
-import { dmaTypes } from '../dma';
+import { dmaTypes, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
 
 export class TopDownNode implements IGraphNode {
 	public static root() {
@@ -109,14 +109,10 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 	parent.childrenSize++;
 	parent.children[dmaRootLoc.id] = dmaRoot;
 
-	// from profile.ts
-	const NR_DMA_REC_HPOS = 228;
-	const NR_DMA_REC_VPOS = 313;
-
 	const dmaTimes: number[] = new Array(0x100).fill(0);
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
-		for(let x = 0; x < NR_DMA_REC_HPOS - ((y % 2) ? 1 : 0); x++, i++) { // long and short lines alternate
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.type === undefined)
 				continue;
