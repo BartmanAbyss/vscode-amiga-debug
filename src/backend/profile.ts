@@ -494,7 +494,7 @@ export class Profiler {
 				dmaRecords: profileFile.dmaRecords,
 				gfxResources: profileFile.gfxResources,
 				symbols: this.symbolTable.symbols,
-				sections: this.symbolTable.sections
+				sections: this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"))
 			}
 		};
 		return JSON.stringify(out/*, null, 2*/);

@@ -521,9 +521,25 @@ export function GetPaletteFromCopper(copper: Copper[]): number[] {
 }
 
 export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
-	const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
-	if(resource)
-		return `${resource.name}+\$${(address - resource.address).toString(16)}`;
-	else
-		return `\$${address.toString(16).padStart(8, '0')}`;
+	const addressString = `\$${address.toString(16).padStart(8, '0')}`;
+
+	if(address !== 0) {
+		const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
+		if(resource)
+			return `${resource.name}+\$${(address - resource.address).toString(16)} (${addressString})`;
+
+		const section = amiga.sections.find((r) => address >= r.address && address < r.address + r.size);
+		if(section) {
+			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
+			if(symbol)
+				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${addressString})`;
+			return `${section.name}+\$${(address - section.address).toString(16)} (${addressString})`;
+		}
+
+		const customReg = CustomRegisters.getCustomName(address);
+		if(customReg)
+			return `${customReg} (${addressString})`;
+	}
+
+	return addressString;
 }

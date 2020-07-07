@@ -158,6 +158,7 @@ function test_profile_time(base: string, elf: string) {
 	const profileFile = new ProfileFile(path.join(testDataDir, base));
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
+	symbolTable.relocate(symbolTable.getRelocatedSections(profileFile.sectionBases));
 
 	const profiler = new Profiler(sourceMap, symbolTable);
 	const json = profiler.profileTime(profileFile);
@@ -205,7 +206,7 @@ suite("Profiler", () => {
 		test_unwind('private/bitshmup.elf');
 	});
 	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-2020.07.06-20.46.11', 'test.elf');
+		test_profile_time('amiga-profile-2020.07.07-13.21.14', 'test.elf');
 	});
 /*	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');

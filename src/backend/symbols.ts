@@ -130,6 +130,17 @@ export class SymbolTable {
 		});
 	}
 
+	public getRelocatedSections(relocatedBases: Uint32Array): Section[] {
+		const sections: Section[] = [];
+		for(const section of this.sections) {
+			if(section.flags.find((v) => v === "ALLOC") && section.size > 0) // this line has to match binutils-gdb/gdb/remote.c
+				sections.push({ ...section, address: relocatedBases[sections.length] });
+		}
+		if(sections.length !== relocatedBases.length)
+			throw(new Error(`SymbolTable.getLocatedSections: number of sections mismatch (${relocatedBases.length} != ${sections.length})`));
+		return sections;
+	}
+
 	public getFunctionAtAddress(address: number, relocated: boolean): SymbolInformation | null {
 		const matches = this.symbols.filter((s) => {
 			let symAddress = s.address;
