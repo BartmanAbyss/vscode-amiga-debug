@@ -5,6 +5,7 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from './location-mapping';
 import { DmaRecord, GfxResource } from '../backend/profile_types';
+import { SymbolInformation, Section } from '../symbols';
 
 export const enum Constants {
 	CurrentDataVersion = 1,
@@ -53,6 +54,8 @@ export interface IAmigaProfileExtra {
 	customRegs: number[];
 	dmaRecords: DmaRecord[];
 	gfxResources: GfxResource[];
+	symbols: SymbolInformation[];
+	sections: Section[];
 }
 
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {

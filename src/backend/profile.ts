@@ -36,7 +36,7 @@ export class SourceMap {
 		const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
 		fs.writeFileSync(tmp, str);
 
-		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 10*1024*1024 });
+		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 100*1024*1024 });
 		fs.unlinkSync(tmp);
 		if(objdump.status !== 0)
 			throw objdump.error;
@@ -246,6 +246,7 @@ export class ProfileFile {
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
 	public profileArray: Uint32Array;
+	public sectionBases: Uint32Array;
 
 	// CPU cycles per frame: 142102 (according to winuae profiler)
 	//   we get 142024-142028, good enough for now?
@@ -314,6 +315,10 @@ export class ProfileFile {
 			}
 			this.gfxResources.push(resource);
 		}
+		const sectionCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.sectionBases = new Uint32Array(sectionCount);
+		for(let i = 0; i < sectionCount; i++, bufferOffset += 4)
+			this.sectionBases[i] = buffer.readUInt32LE(bufferOffset);
 		const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
 			throw new Error("profileCount mismatch");
@@ -487,7 +492,9 @@ export class Profiler {
 				dmacon: profileFile.dmacon,
 				customRegs: Array.from(profileFile.customRegs), 
 				dmaRecords: profileFile.dmaRecords,
-				gfxResources: profileFile.gfxResources
+				gfxResources: profileFile.gfxResources,
+				symbols: this.symbolTable.symbols,
+				sections: this.symbolTable.sections
 			}
 		};
 		return JSON.stringify(out/*, null, 2*/);

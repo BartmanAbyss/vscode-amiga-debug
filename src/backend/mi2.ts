@@ -4,8 +4,9 @@ import * as fs from "fs";
 import * as net from "net";
 import { posix } from "path";
 import * as nativePath from "path";
-import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Section, Watchpoint } from "./backend";
+import { Breakpoint, IBackend, MIError, Stack, Variable, VariableObject, Watchpoint } from "./backend";
 import { MINode, parseMI } from "./mi_parse";
+import { Section } from "../symbols";
 const path = posix;
 
 export function escape(str: string) {

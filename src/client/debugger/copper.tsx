@@ -43,7 +43,9 @@ export const CopperView: FunctionComponent<{
 
 	return (<div ref={containerRef} class={styles.container}>
 		{copper.map((c) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > (time >> 1) ? styles.future : styles.past))}>
-			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': ' + c.insn.toString()}
+			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
+			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
+			{c.insn.toString()}
 			{(c.insn.instructionType === CopperInstructionType.MOVE && (c.insn as CopperMove).label.startsWith('COLOR')) ? <span style={{marginLeft: 4, background: `#${(c.insn as CopperMove).RD.toString(16).padStart(3, '0')}`}}>&nbsp;&nbsp;</span> : ''}
 		</div>)}
 	</div>);

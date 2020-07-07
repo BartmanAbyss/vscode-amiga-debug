@@ -179,6 +179,7 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf
 ```
 
 ## Known Issues/TODOs
+* ignore copper prefetch (esp. after COPxJMP)
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler

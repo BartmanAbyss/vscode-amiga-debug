@@ -53,3 +53,14 @@ export interface NodeSetting {
 	expanded?: boolean;
 	format?: NumberFormat;
 }
+
+export interface Section {
+	name: string;
+	address: number;
+	size: number;
+	vma?: number;
+	lma?: number;
+	fileOffset?: number;
+	align?: number;
+	flags?: string[];
+}

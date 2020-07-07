@@ -9,9 +9,12 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - support for a custom version of Shrinkler executable cruncher by Blueberry that generates `.shrinklerstats` files that can be opened with VS Code for size profiling. Right-click an EXE file in the explorer, and select `Amiga: Shrinkle File`, then select a Shrinkler configurations. See `.vscode/amiga.json` in the template project for examples of how to specify shrinkler configurations.
 - added blitter timeline to profiler
 - better scolling/zooming in profiler
+- fixed CPU profiling (callstacks got merged)
+- fixed blitter crash after setting a breakpoint in interrupt
 - graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.
 - several DMA request were not displayed in the timeline (bitplanes > 1, sprites > 1, refresh > 1)
 - template project: added ThePlayer61 module replayer. To convert your own modules, use [p61con](https://www.pouet.net/prod.php?which=19922)
+- increased buffer size for addr2line.exe (profiling could fail on "big" executables)
 - IntelliSense: previous versions would write `"compilerPath"` to every `.vscode/c_cpp_properties.json`, even if it wasn't an Amiga project. Now, the whole process has been simplified. Please use the following `.vscode/c_cpp_properties.json` file:
 ```json
 {
