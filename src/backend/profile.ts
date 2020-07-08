@@ -247,9 +247,13 @@ export class ProfileFile {
 	public gfxResources: GfxResource[] = [];
 	public profileArray: Uint32Array;
 	public sectionBases: Uint32Array;
+	public systemStackLower: number;
+	public systemStackUpper: number;
+	public stackLower: number;
+	public stackUpper: number;
 
 	// CPU cycles per frame: 142102 (according to winuae profiler)
-	//   we get 142024-142028, good enough for now?
+	//   we get 142094 (8 missing), good enough for now?
 	// DMA cycles per frame: 227*313*2=142101
 	// http://eab.abime.net/showthread.php?t=51883 confirms 313 lines in PAL default
 
@@ -319,6 +323,10 @@ export class ProfileFile {
 		this.sectionBases = new Uint32Array(sectionCount);
 		for(let i = 0; i < sectionCount; i++, bufferOffset += 4)
 			this.sectionBases[i] = buffer.readUInt32LE(bufferOffset);
+		this.systemStackLower = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.systemStackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.stackLower = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.stackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
 			throw new Error("profileCount mismatch");
@@ -453,21 +461,26 @@ export class Profiler {
 		let totalCycles = 0;
 		for(const p of profileFile.profileArray) {
 			if(p < 0xffff0000) {
-				let pc = p;
-				if(callstack.frames.length)
-					pc -= 2; // unwinding gets PC of next instruction, we want the previous!
-				const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
-				for(let i = l.frames.length - 1; i >= 0; i--) {
-					callstack.frames.unshift( { ...l.frames[i] });
-					if(i !== 0)
-						callstack.frames[0].func += " (inlined)";
+				if(p === 0x7fffffff) {
+					// IRQ processing
+					callstack.frames.push({ func: '[IRQ]', file: '', line: 0 });
+				} else {
+					let pc = p;
+					if(callstack.frames.length)
+						pc -= 2; // unwinding gets PC of next instruction, we want the previous!
+					const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+					for(let i = l.frames.length - 1; i >= 0; i--) {
+						callstack.frames.unshift( { ...l.frames[i] });
+						if(i !== 0)
+							callstack.frames[0].func += " (inlined)";
+					}
 				}
 			} else {
 				if(callstack.frames.length === 1 && lastCallstack.frames.length > 1 && callstack.frames[0] === lastCallstack.frames[lastCallstack.frames.length - 1]) // glitches in unwind
 					callstack.frames = [...lastCallstack.frames];
 
 				if(callstack.frames.length === 0) // not in our code
-					callstack.frames.push({ func: 'unknown', file: 'unknown', line: 0 });
+					callstack.frames.push({ func: '[External]', file: '', line: 0 });
 
 				if(sameCallstack(callstack, lastCallstack)) {
 					cycles[lastLocation] += (0xffffffff - p) | 0;
@@ -482,6 +495,7 @@ export class Profiler {
 				callstack.frames.length = 0;
 			}
 		}
+		//console.log("totalCycles", totalCycles);
 
 		// filter symbols
 		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));
@@ -498,6 +512,10 @@ export class Profiler {
 				gfxResources: profileFile.gfxResources,
 				symbols,
 				sections,
+				systemStackLower: profileFile.systemStackLower,
+				systemStackUpper: profileFile.systemStackUpper,
+				stackLower: profileFile.stackLower,
+				stackUpper: profileFile.stackUpper,
 				uniqueCallFrames: this.sourceMap.uniqueLines,
 				callFrames: this.sourceMap.lines
 			}

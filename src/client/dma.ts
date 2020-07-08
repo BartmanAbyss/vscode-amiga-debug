@@ -524,6 +524,11 @@ export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
 	const addressString = `\$${address.toString(16).padStart(8, '0')}`;
 
 	if(address !== 0) {
+		if(address >= amiga.systemStackLower && address < amiga.systemStackUpper)
+			return `SYSSTACK-\$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
+		if(address >= amiga.stackLower && address < amiga.stackUpper)
+			return `STACK-\$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
+
 		const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 		if(resource)
 			return `${resource.name}+\$${(address - resource.address).toString(16)} (${addressString})`;
@@ -533,11 +538,11 @@ export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
 			if(section.name === '.text') {
 				const offset = address - section.address;
 				const callFrame = amiga.uniqueCallFrames[amiga.callFrames[offset >> 1]];
-				return `${callFrame.frames.map((fr) => fr.func).join(">")} (.text+\$${offset.toString(16)}) (${addressString})`;
+				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+\$${offset.toString(16)}) (${addressString})`;
 			}
 			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
 			if(symbol)
-				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${addressString})`;
+				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+\$${symbol.address.toString(16)}) (${addressString})`;
 			return `${section.name}+\$${(address - section.address).toString(16)} (${addressString})`;
 		}
 

@@ -56,6 +56,10 @@ export interface IAmigaProfileExtra {
 	gfxResources: GfxResource[];
 	symbols: SymbolInformation[];
 	sections: Section[];
+	systemStackLower: number;
+	systemStackUpper: number;
+	stackLower: number;
+	stackUpper: number;
 	uniqueCallFrames: CallFrame[];
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 }

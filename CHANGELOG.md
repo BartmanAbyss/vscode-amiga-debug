@@ -11,6 +11,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - better scolling/zooming in profiler
 - fixed CPU profiling (callstacks got merged)
 - profiler now has symbol table and can resolve addresses
+- profiler now synchronized to DMA
 - fixed blitter crash after setting a breakpoint in interrupt or profiling
 - graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.
 - several DMA request were not displayed in the timeline (bitplanes > 1, sprites > 1, refresh > 1)
