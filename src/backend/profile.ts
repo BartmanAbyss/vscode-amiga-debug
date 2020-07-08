@@ -79,7 +79,7 @@ export class SourceMap {
 interface Unwind {
 	cfaReg: number;
 	cfaOfs: number;
-	r13: number;
+	r13: number; // a5 (fp)
 	ra: number;
 }
 
@@ -96,7 +96,7 @@ export class UnwindTable {
 	constructor(private objdumpPath: string, private executable: string, private symbols: SymbolTable) {
 		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeSize = textSection.size;
-		const invalidUnwind: Unwind= {
+		const invalidUnwind: Unwind = {
 			cfaOfs: -1,
 			cfaReg: -1,
 			r13: -1,
@@ -172,6 +172,10 @@ export class UnwindTable {
 			while(line < outputs.length && outputs[line] !== "") {
 				const next = parseLine();
 				while(pc < next.loc) {
+					if(unwind[pc >> 1] !== invalidUnwind) {
+						//console.log("overlap at $" + pc.toString(16) + ". skipping rest of FDE");
+						return;
+					}
 					unwind[pc >> 1] = unw;
 					pc += 2;
 				}
@@ -179,6 +183,10 @@ export class UnwindTable {
 				unw = next.unwind;
 			}
 			while(pc < pcEnd) {
+				if(unwind[pc >> 1] !== invalidUnwind) {
+					//console.log("overlap at $" + pc.toString(16) + ". skipping rest of FDE");
+					return;
+				}
 				unwind[pc >> 1] = unw;
 				pc += 2;
 			}
@@ -199,6 +207,9 @@ export class UnwindTable {
 			this.unwind[i++] = u.r13;
 			this.unwind[i++] = u.ra;
 		}
+		//console.log(unwind[0x3de>>1]);
+		//console.log(unwind[0x3e0>>1]);
+		//console.log(unwind[0x3e4>>1]);
 		//console.log(JSON.stringify(unwind, null, 2));
 		//console.log(JSON.stringify(this.unwind, null, 2));
 	}

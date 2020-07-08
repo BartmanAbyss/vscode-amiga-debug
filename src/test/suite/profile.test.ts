@@ -199,12 +199,16 @@ function test_unwind(elf: string) {
 }
 
 suite("Profiler", () => {
-	test("unwind test.elf", () => {
+	test("unwind bobble.debug.elf", () => {
+		test_unwind('private/bobble.debug.elf');
+	});
+
+/*	test("unwind test.elf", () => {
 		test_unwind('test.elf');
 	});
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
-	});
+	});*/
 	test("Time: test.elf", () => {
 		test_profile_time('amiga-profile-2020.07.08-13.48.25', 'test.elf');
 	});
