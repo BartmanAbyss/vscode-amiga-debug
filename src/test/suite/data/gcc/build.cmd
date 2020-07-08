@@ -1,0 +1,2 @@
+c:\amiga-mingw\build-gcc-10.1.0\gcc\cc1.exe -quiet item.c -quiet -dumpbase item.c -dP -dD -dA -mcpu=68000 -auxbase-strip item.o -g -Og -Wall -Wno-strict-aliasing -Wno-pointer-sign -Wno-unused-function -Wno-volatile-register-var -Wno-switch -Werror=incompatible-pointer-types -Werror=return-type -version -fomit-frame-pointer -fno-tree-loop-distribution -fdata-sections -ffunction-sections -fno-exceptions -fdump-rtl-dwarf2 -fdwarf2-cfi-asm  -o item.s
+rem ..\..\..\..\..\bin\opt\bin\m68k-amiga-elf-objdump --dwarf=frames-interp item.o >item.frames
