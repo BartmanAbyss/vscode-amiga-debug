@@ -889,8 +889,6 @@ export const FlameGraph: FunctionComponent<{
 			} else if (box) {
 				//zoomToBox(box);
 				setFocused(box);
-			} else {
-				setBounds({ ...clampX });
 			}
 
 			setHovered(undefined);
@@ -958,9 +956,9 @@ export const FlameGraph: FunctionComponent<{
 	return (
 		<Fragment>
 			<Fragment>
-				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} />
+				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} onWheel={onWheel} />
 				{MODEL.amiga && <Fragment>
-					<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} />
+					<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} onWheel={onWheel} />
 					<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
 				</Fragment>}
 			</Fragment>

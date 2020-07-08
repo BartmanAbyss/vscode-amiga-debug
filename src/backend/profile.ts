@@ -482,7 +482,10 @@ export class Profiler {
 				callstack.frames.length = 0;
 			}
 		}
-		console.log("totalCycles", totalCycles);
+
+		// filter symbols
+		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));
+		const symbols = this.symbolTable.symbols.filter((symbol) => symbol.size > 0 && sections.find((section) => symbol.section === section.name));
 
 		const out: ICpuProfileRaw = { 
 			...profileCommon(cycles, locations),
@@ -493,8 +496,10 @@ export class Profiler {
 				customRegs: Array.from(profileFile.customRegs), 
 				dmaRecords: profileFile.dmaRecords,
 				gfxResources: profileFile.gfxResources,
-				symbols: this.symbolTable.symbols,
-				sections: this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"))
+				symbols,
+				sections,
+				uniqueCallFrames: this.sourceMap.uniqueLines,
+				callFrames: this.sourceMap.lines
 			}
 		};
 		return JSON.stringify(out/*, null, 2*/);

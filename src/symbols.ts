@@ -29,8 +29,8 @@ export enum SymbolScope {
 }
 
 export interface SymbolInformation {
-	address: number;
-	base: number; // comes from relocation
+	address: number; // relative to start of section
+	base: number; // comes from relocation, is address of section
 	size: number;
 	name: string;
 	section: string;

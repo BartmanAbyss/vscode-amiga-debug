@@ -4,7 +4,7 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from './location-mapping';
-import { DmaRecord, GfxResource } from '../backend/profile_types';
+import { DmaRecord, GfxResource, CallFrame } from '../backend/profile_types';
 import { SymbolInformation, Section } from '../symbols';
 
 export const enum Constants {
@@ -56,6 +56,8 @@ export interface IAmigaProfileExtra {
 	gfxResources: GfxResource[];
 	symbols: SymbolInformation[];
 	sections: Section[];
+	uniqueCallFrames: CallFrame[];
+	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 }
 
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {

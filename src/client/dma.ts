@@ -530,6 +530,11 @@ export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
 
 		const section = amiga.sections.find((r) => address >= r.address && address < r.address + r.size);
 		if(section) {
+			if(section.name === '.text') {
+				const offset = address - section.address;
+				const callFrame = amiga.uniqueCallFrames[amiga.callFrames[offset >> 1]];
+				return `${callFrame.frames.map((fr) => fr.func).join(">")} (.text+\$${offset.toString(16)}) (${addressString})`;
+			}
 			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
 			if(symbol)
 				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${addressString})`;

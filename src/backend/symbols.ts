@@ -125,19 +125,22 @@ export class SymbolTable {
 		this.symbols.forEach((symbol) => {
 			const section = this.sections.find((s) => s.name === symbol.section);
 			if(section) {
-				symbol.base = section.address - section.vma;
+				symbol.base = section.address/* - section.vma*/;
 			}
 		});
 	}
 
 	public getRelocatedSections(relocatedBases: Uint32Array): Section[] {
 		const sections: Section[] = [];
+		let count = 0;
 		for(const section of this.sections) {
 			if(section.flags.find((v) => v === "ALLOC") && section.size > 0) // this line has to match binutils-gdb/gdb/remote.c
-				sections.push({ ...section, address: relocatedBases[sections.length] });
+				sections.push({ ...section, address: relocatedBases[count++] });
+			else
+				sections.push({ ...section, address: section.vma }); // just fallback
 		}
-		if(sections.length !== relocatedBases.length)
-			throw(new Error(`SymbolTable.getLocatedSections: number of sections mismatch (${relocatedBases.length} != ${sections.length})`));
+		if(count !== relocatedBases.length)
+			throw(new Error(`SymbolTable.getLocatedSections: number of sections mismatch (${relocatedBases.length} != ${count})`));
 		return sections;
 	}
 

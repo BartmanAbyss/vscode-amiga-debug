@@ -206,7 +206,7 @@ suite("Profiler", () => {
 		test_unwind('private/bitshmup.elf');
 	});
 	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-2020.07.07-13.21.14', 'test.elf');
+		test_profile_time('amiga-profile-2020.07.08-10.42.18', 'test.elf');
 	});
 /*	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
