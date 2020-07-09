@@ -181,7 +181,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
-* multi-frame profiling: allow user to select number of frames; why is VSCode refusing to load files with 10 frames (50 MB)?
+* multi-frame profiling: allow user to select number of frames; speed up loading of profiling data?
 * ignore copper prefetch (esp. after COPxJMP)
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * modify breakpoints while running (doesn't properly stop and resume)

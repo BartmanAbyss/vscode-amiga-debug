@@ -66,12 +66,32 @@ const showPositionInFile = async (
 	return true;
 };
 
-export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
-	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
+class ProfileDocument implements vscode.CustomDocument {
+	constructor(public uri: vscode.Uri) {
 	}
 
-	private async updateWebview(document: vscode.TextDocument, webview: vscode.Webview) {
-		let profiles = JSON.parse(document.getText());
+	public content: string;
+
+	public async load() {
+		this.content = (await fs.readFile(this.uri.fsPath)).toString();
+	}
+
+	public dispose(): void {
+		throw new Error("Method not implemented.");
+	}
+}
+
+export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvider<ProfileDocument> {
+	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
+	}
+	public async openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): Promise<ProfileDocument> {
+		const doc = new ProfileDocument(uri);
+		await doc.load();
+		return doc;
+	}
+
+	private async updateWebview(document: ProfileDocument, webview: vscode.Webview) {
+		let profiles = JSON.parse(document.content);
 		if(profiles.hunks)
 			profiles = [profileShrinkler(profiles)];
 		const models: IProfileModel[] = [];
@@ -82,7 +102,7 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 			this.lenses.registerLenses(this.createLensCollection(models[0]));
 	}
 
-	public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
+	public async resolveCustomEditor(document: ProfileDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
@@ -90,11 +110,11 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 		this.updateWebview(document, webviewPanel.webview);
 
 		// rebuild HTML when document changes (this is usually when file is externally modified, as our editor is read-only)
-		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
+/*		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
 			if (e.document.uri.toString() === document.uri.toString()) {
 				this.updateWebview(e.document, webviewPanel.webview);
 			}
-		});
+		});*/
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
