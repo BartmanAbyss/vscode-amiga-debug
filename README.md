@@ -181,6 +181,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* get profile code lenses working again
 * multi-frame profiling: allow user to select number of frames; speed up loading of profiling data?
 * ignore copper prefetch (esp. after COPxJMP)
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
