@@ -1,5 +1,6 @@
-import { h, FunctionComponent, Fragment } from 'preact';
-import { useState, useMemo, useEffect, useCallback } from 'preact/hooks';
+import { h, FunctionComponent, Fragment, JSX } from 'preact';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
@@ -75,11 +76,32 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		setFrame(parseInt(event.srcElement.attributes.data.nodeValue));
 	}, [setFrame]);
 
+	const frameHover = useRef<HTMLImageElement>();
+
+	const onEnterFrame = useCallback((evt: JSX.TargetedMouseEvent<HTMLImageElement>) => {
+		const rect = evt.currentTarget.getBoundingClientRect();
+		console.log("enter", rect);
+		frameHover.current.src = evt.currentTarget.src;
+		frameHover.current.parentElement.style.visibility = '';
+		frameHover.current.parentElement.style.left = Math.min(window.innerWidth - 20 - evt.currentTarget.naturalWidth, rect.left) + 'px';
+		frameHover.current.parentElement.style.top = (rect.bottom + 10) + 'px';
+	}, [frameHover]);
+	const onLeaveFrame = useCallback((evt: JSX.TargetedMouseEvent<HTMLImageElement>) => {
+		console.log("leave");
+		frameHover.current.parentElement.style.visibility = 'hidden';
+		frameHover.current.src = '';
+	}, [frameHover]);
+
 	return (
 		<Fragment>
-			{MODELS[0].amiga && MODELS.length > 1 && <div class={styles.frames}>
-				{MODELS.map((M, idx) => <img onClick={onClickFrame} data={idx.toString()} src={M.amiga.screenshot} style={{height: 64}} />)}
-			</div>}
+			{MODELS[0].amiga && MODELS.length > 1 && <Fragment>
+				<div class={styles.frames}>
+					{MODELS.map((MODEL, fr) => <img onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={MODEL.amiga.screenshot} title={`Frame ${fr}`} />)}
+				</div>
+				{createPortal(<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>
+					<img ref={frameHover} />
+				</div>, document.body)}
+			</Fragment>}
 			<div className={styles.filter}>
 				<div className={styles.f}>
 					<Filter value={text} placeholder="Filter functions or files" onChange={setFilter}

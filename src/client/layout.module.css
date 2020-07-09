@@ -14,15 +14,6 @@
   padding-bottom: 10px;
 }
 
-.frames {
-  flex-shrink: 0;
-}
-
-.frames img {
-  cursor: pointer;
-  margin-right: 10px;
-}
-
 .f {
   display: flex;
   align-items: center;
@@ -52,4 +43,27 @@
 .tabs {
   display: flex;
   flex-direction: column;
+}
+
+/* list of frames in profile */
+.frames {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.frames img {
+  cursor: pointer;
+  margin-right: 10px;
+  height: 64px;
+}
+
+.tooltip {
+	z-index: 100;
+	position: absolute;
+	box-sizing: border-box;
+	box-shadow: 0 .25em .5em 0 black;
+	padding: 5px;
+	background: var(--vscode-editorWidget-background);
+	border: 1px solid var(--vscode-editorWidget-border);
+	pointer-events: none;
 }
