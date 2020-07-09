@@ -7,8 +7,8 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra } from './types';
-import { maybeFileUrlToPath } from './path';
-import { ISourceLocation, addRelativeDiskPath } from './location-mapping';
+//import { maybeFileUrlToPath } from './path';
+import { ISourceLocation } from './location-mapping';
 import { Memory, Blit } from './dma';
 
 /**
@@ -153,8 +153,8 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
 				lineNumber: callFrame.lineNumber,
 				columnNumber: callFrame.columnNumber,
 				source: {
-					name: maybeFileUrlToPath(callFrame.url),
-					path: maybeFileUrlToPath(callFrame.url),
+					name: callFrame.url,
+					path: callFrame.url,
 					sourceReference: 0,
 				},
 			},

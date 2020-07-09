@@ -77,9 +77,9 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 
 	return (
 		<Fragment>
-			<div class={styles.frames}>
+			{MODELS[0].amiga && MODELS.length > 1 && <div class={styles.frames}>
 				{MODELS.map((M, idx) => <img onClick={onClickFrame} data={idx.toString()} src={M.amiga.screenshot} style={{height: 64}} />)}
-			</div>
+			</div>}
 			<div className={styles.filter}>
 				<div className={styles.f}>
 					<Filter value={text} placeholder="Filter functions or files" onChange={setFilter}

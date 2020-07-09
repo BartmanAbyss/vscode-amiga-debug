@@ -1,6 +1,6 @@
 import { ICpuProfileRaw } from '../client/types';
 import { CallFrame } from './profile_types';
-import { profileCommon } from './profile';
+import { profileCommon } from "./profile_common";
 
 interface Symbol {
 	origPos: number;

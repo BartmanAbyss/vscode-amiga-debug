@@ -92,7 +92,7 @@ const vscodeStyle = `<style id="_defaultStyles">
 		background-color: var(--vscode-scrollbarSlider-activeBackground);
 	}</style>`;
 
-function htmlPage(title: string, scripts: string[]) {
+function htmlPage(title: string, scripts: string[], profiles: string) {
 	let html = `<!DOCTYPE html>
 	<html lang="en" style="${vscodeHtmlStyle}">
 	<head>
@@ -135,6 +135,10 @@ function htmlPage(title: string, scripts: string[]) {
 		</script>
 	</head>
 	<body style="overflow: hidden">
+			<script>
+				let MODELS = [];
+				let PROFILE_URL = "${profiles}";
+			</script>
 	`;
 	for(const script of scripts)
 		html += `<script src="${script}"></script>\n`;
@@ -163,12 +167,7 @@ function test_profile_time(base: string, elf: string) {
 	const profiler = new Profiler(sourceMap, symbolTable);
 	const json = profiler.profileTime(profileArchive);
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
-	const profiles = JSON.parse(json);
-	const models: IProfileModel[] = [];
-	for(const p of profiles)
-		models.push(buildModel(p));
-	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.model'), `const MODELS = ${JSON.stringify(models)};`);
-	const html = htmlPage(base, [ "data/" + base + ".time.amigaprofile.model", "client.bundle.js" ]);
+	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".time.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
 }
 
@@ -179,21 +178,16 @@ function test_profile_size(base: string, elf: string) {
 	const profiler = new Profiler(sourceMap, symbolTable);
 	const json = profiler.profileSize(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile'), json);
-	const model = buildModel(JSON.parse(json));
-	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage(base, [ "data/" + base + ".size.amigaprofile.model", "client.bundle.js" ]);
+	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".size.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.size.amigaprofile.html'), html);
 }
 
 function test_profile_shrinkler(base: string) {
 	makeDirs();
 	const data = fs.readFileSync(path.join(testDataDir, base + '.shrinklerstats'));
-	const json = JSON.parse(data.toString());
-	const profile = profileShrinkler(json);
-	const model = buildModel(profile);
-	fs.writeFileSync(path.join(testOutDir, base + '.shrinkler.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
-	const html = htmlPage(base, [ "data/" + base + ".shrinkler.amigaprofile.model", "client.bundle.js" ]);
-	fs.writeFileSync(path.join(testHtmlDir, base + '.shrinkler.amigaprofile.html'), html);
+	fs.writeFileSync(path.join(testOutDir, base + '.shrinklerstats'), data);
+	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".shrinklerstats");
+	fs.writeFileSync(path.join(testHtmlDir, base + '.shrinklerstats.html'), html);
 }
 
 function test_unwind(elf: string) {
@@ -214,6 +208,10 @@ suite("Profiler", () => {
 	test("Time: test.elf", () => {
 		test_profile_time('amiga-profile-2020.07.09-16.52.05', 'test.elf');
 	});
+	test("Size: test.elf", () => {
+		test_profile_size('test', 'test.elf');
+	});
+
 /*	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
 	});
@@ -223,9 +221,6 @@ suite("Profiler", () => {
 	
 	test("Time: bobble.elf", () => {
 		test_profile_time('amiga-profile-2020.07.09-13.17.51', 'private/bobble.elf');
-	});
-	test("Size: test3.elf", () => {
-		test_profile_size('test3', 'test3.elf');
 	});
 	test("Size: bitshmup.elf", () => {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');

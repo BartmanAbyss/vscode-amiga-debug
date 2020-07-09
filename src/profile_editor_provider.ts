@@ -31,7 +31,7 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	<head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
+	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
 	  <title>Custom Editor: ${bundlePath}</title>
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
@@ -70,11 +70,7 @@ class ProfileDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
 	}
 
-	public content: string;
-
-	public async load() {
-		this.content = (await fs.readFile(this.uri.fsPath)).toString();
-	}
+	// we don't need the content of the document, we just pass the URL to the WebView
 
 	public dispose() {}
 }
@@ -84,21 +80,11 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 	}
 
 	public async openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): Promise<ProfileDocument> {
-		const doc = new ProfileDocument(uri);
-		await doc.load();
-		return doc;
+		return new ProfileDocument(uri);
 	}
 
 	private async updateWebview(document: ProfileDocument, webview: vscode.Webview) {
-		let profiles = JSON.parse(document.content);
-		if(profiles.hunks)
-			profiles = [profileShrinkler(profiles)];
-		const models: IProfileModel[] = [];
-		for(const p of profiles)
-			models.push(buildModel(p));
-		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODELS: models });
-		if(profiles[0].$amiga)
-			this.lenses.registerLenses(this.createLensCollection(models[0]));
+		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODELS: [], PROFILE_URL: webview.asWebviewUri(document.uri).toString() });
 	}
 
 	public async resolveCustomEditor(document: ProfileDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
