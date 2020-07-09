@@ -1,0 +1,89 @@
+diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.c gcc-10.1.0-barto/gcc/config/m68k/m68k.c
+--- gcc-10.1.0/gcc/config/m68k/m68k.c	2020-05-07 12:49:59.000000000 +0200
++++ gcc-10.1.0-barto/gcc/config/m68k/m68k.c	2020-07-09 12:52:15.717037000 +0200
+@@ -1279,8 +1279,17 @@
+ 	      addr = gen_rtx_POST_INC (Pmode, stack_pointer_rtx);
+ 	    else
+ 	      addr = plus_constant (Pmode, frame_pointer_rtx, -offset);
+-	    emit_move_insn (gen_rtx_REG (SImode, D0_REG + i),
++	    rtx_insn *insn = emit_move_insn (gen_rtx_REG (SImode, D0_REG + i),
+ 			    gen_frame_mem (SImode, addr));
++		//BARTO-BEGIN
++		if (restore_from_sp) {
++			rtx x = plus_constant (Pmode, stack_pointer_rtx, GET_MODE_SIZE (SImode)); 
++			x = gen_rtx_SET (stack_pointer_rtx, x);
++			add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++			RTX_FRAME_RELATED_P (insn) = 1;
++		}
++		//BARTO-END
++		
+ 	    offset -= GET_MODE_SIZE (SImode);
+ 	  }
+     }
+@@ -1293,12 +1302,18 @@
+ 			 -(current_frame.offset + fsize),
+ 			 current_frame.reg_no, D0_REG,
+ 			 current_frame.reg_mask, false, false);
+-      else if (restore_from_sp)
+-	m68k_emit_movem (stack_pointer_rtx, 0,
++      else if (restore_from_sp) {
++	rtx_insn *insn = m68k_emit_movem (stack_pointer_rtx, 0,
+ 			 current_frame.reg_no, D0_REG,
+ 			 current_frame.reg_mask, false,
+ 			 !TARGET_COLDFIRE);
+-      else
++		//BARTO-BEGIN
++		rtx x = plus_constant (Pmode, stack_pointer_rtx, current_frame.reg_no * GET_MODE_SIZE (SImode)); 
++		x = gen_rtx_SET (stack_pointer_rtx, x);
++		add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++		RTX_FRAME_RELATED_P (insn) = 1;
++		//BARTO-END
++      } else
+ 	m68k_emit_movem (frame_pointer_rtx,
+ 			 -(current_frame.offset + fsize),
+ 			 current_frame.reg_no, D0_REG,
+@@ -1347,10 +1362,17 @@
+   emit_insn (gen_blockage ());
+   if (frame_pointer_needed)
+     emit_insn (gen_unlink (frame_pointer_rtx));
+-  else if (fsize_with_regs)
+-    emit_insn (gen_addsi3 (stack_pointer_rtx,
++  else if (fsize_with_regs) {
++    rtx_insn *insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
+ 			   stack_pointer_rtx,
+ 			   GEN_INT (fsize_with_regs)));
++	//BARTO-BEGIN
++	rtx x = plus_constant (Pmode, stack_pointer_rtx, fsize_with_regs); 
++	x = gen_rtx_SET (stack_pointer_rtx, x);
++	add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++	RTX_FRAME_RELATED_P (insn) = 1;
++	//BARTO-END
++  }
+ 
+   if (crtl->calls_eh_return)
+     emit_insn (gen_addsi3 (stack_pointer_rtx,
+diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.h gcc-10.1.0-barto/gcc/config/m68k/m68k.h
+--- gcc-10.1.0/gcc/config/m68k/m68k.h	2020-05-07 12:49:59.000000000 +0200
++++ gcc-10.1.0-barto/gcc/config/m68k/m68k.h	2020-07-09 12:28:58.556508900 +0200
+@@ -398,7 +398,7 @@
+ /* Most m68k targets use %a6 as a frame pointer.  The AmigaOS
+    ABI uses %a6 for shared library calls, therefore the frame
+    pointer is shifted to %a5 on this target.  */
+-#define FRAME_POINTER_REGNUM A6_REG
++#define FRAME_POINTER_REGNUM A5_REG
+ 
+ /* Base register for access to arguments of the function.
+  * This isn't a hardware register. It will be eliminated to the
+diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.md gcc-10.1.0-barto/gcc/config/m68k/m68k.md
+--- gcc-10.1.0/gcc/config/m68k/m68k.md	2020-05-07 12:49:59.000000000 +0200
++++ gcc-10.1.0-barto/gcc/config/m68k/m68k.md	2020-07-09 12:29:24.637407900 +0200
+@@ -133,7 +133,8 @@
+   [(D0_REG		0)
+    (A0_REG		8)
+    (A1_REG		9)
+-   (PIC_REG		13)
++   (PIC_REG		12)
++   (A5_REG		13)
+    (A6_REG		14)
+    (SP_REG		15)
+    (FP0_REG		16)

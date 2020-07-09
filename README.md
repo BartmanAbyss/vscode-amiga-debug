@@ -79,7 +79,7 @@ Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
 P61.testmod - Module by Skylord/Sector 7 
 
 This extension contains binaries of:
-- modified [GCC 10.1.0](https://github.com/BartmanAbyss/gcc)
+- modified [GCC 10.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
   - Copyright (C) 2020 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 - modified [GNU Binutils 2.34.50.20200508](https://github.com/BartmanAbyss/binutils-gdb)
@@ -139,9 +139,9 @@ make install
 cd gcc
 ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc
+mkdir -p build-gcc-10.1.0
 cd build-gcc
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-10.1.0/configure \
   --target=m68k-amiga-elf \
   --disable-nls \
   --enable-languages=c,c++ \
