@@ -31,7 +31,7 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	<head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
+	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
 	  <title>Custom Editor: ${bundlePath}</title>
 	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
 	</head>
@@ -71,13 +71,15 @@ export class ProfileEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private async updateWebview(document: vscode.TextDocument, webview: vscode.Webview) {
-		let json = JSON.parse(document.getText());
-		if(json.hunks) {
-			json = profileShrinkler(json);
-		}
-		const model = buildModel(json);
-		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODEL: model });
-		this.lenses.registerLenses(this.createLensCollection(model));
+		let profiles = JSON.parse(document.getText());
+		if(profiles.hunks)
+			profiles = [profileShrinkler(profiles)];
+		const models: IProfileModel[] = [];
+		for(const p of profiles)
+			models.push(buildModel(p));
+		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODELS: models });
+		if(profiles[0].$amiga)
+			this.lenses.registerLenses(this.createLensCollection(models[0]));
 	}
 
 	public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {

@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Profiler, SourceMap, UnwindTable, ProfileFile } from '../../backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
-import { buildModel } from '../../client/model';
+import { buildModel, IProfileModel } from '../../client/model';
 import { profileShrinkler } from '../../backend/shrinkler';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
@@ -155,16 +155,19 @@ function makeDirs() {
 
 function test_profile_time(base: string, elf: string) {
 	makeDirs();
-	const profileFile = new ProfileFile(path.join(testDataDir, base));
+	const profileArchive = new ProfileFile(path.join(testDataDir, base));
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
-	symbolTable.relocate(symbolTable.getRelocatedSections(profileFile.sectionBases));
+	symbolTable.relocate(symbolTable.getRelocatedSections(profileArchive.sectionBases));
 
 	const profiler = new Profiler(sourceMap, symbolTable);
-	const json = profiler.profileTime(profileFile);
+	const json = profiler.profileTime(profileArchive);
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
-	const model = buildModel(JSON.parse(json));
-	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.model'), `const MODEL = ${JSON.stringify(model)};`);
+	const profiles = JSON.parse(json);
+	const models: IProfileModel[] = [];
+	for(const p of profiles)
+		models.push(buildModel(p));
+	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile.model'), `const MODELS = ${JSON.stringify(models)};`);
 	const html = htmlPage(base, [ "data/" + base + ".time.amigaprofile.model", "client.bundle.js" ]);
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
 }
@@ -199,18 +202,17 @@ function test_unwind(elf: string) {
 }
 
 suite("Profiler", () => {
-	test("unwind bobble.debug.elf", () => {
+/*	test("unwind bobble.debug.elf", () => {
 		test_unwind('private/bobble.debug.elf');
 	});
-
-/*	test("unwind test.elf", () => {
+	test("unwind test.elf", () => {
 		test_unwind('test.elf');
 	});
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
 	});*/
 	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-2020.07.08-13.48.25', 'test.elf');
+		test_profile_time('amiga-profile-2020.07.09-16.52.05', 'test.elf');
 	});
 /*	test("Time: test2.elf", () => {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
@@ -218,8 +220,9 @@ suite("Profiler", () => {
 	test("bitshmup.elf", () => {
 		test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
 	});
+	
 	test("Time: bobble.elf", () => {
-		test_profile_time('amiga-profile-2020.06.15-11.16.54', 'private/bobble.elf');
+		test_profile_time('amiga-profile-2020.07.09-13.17.51', 'private/bobble.elf');
 	});
 	test("Size: test3.elf", () => {
 		test_profile_size('test3', 'test3.elf');

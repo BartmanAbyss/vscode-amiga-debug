@@ -11,16 +11,18 @@ import { Memory, GetBlits } from './dma';
 
 console.log("client.tsx START: " + new Date().toLocaleString());
 
-declare const MODEL: IProfileModel;
-if (MODEL.amiga) {
-	MODEL.duration = /*Math.max(*/7_093_790 / 50;//, MODEL.duration); // DMA TEST
-	// decode memory to binary
-	const chipMem = Uint8Array.from(atob(MODEL.amiga.chipMem), (c) => c.charCodeAt(0));
-	const bogoMem = Uint8Array.from(atob(MODEL.amiga.bogoMem), (c) => c.charCodeAt(0));
-	MODEL.memory = new Memory(chipMem, bogoMem);
-	// get blits
-	const customRegs = new Uint16Array(MODEL.amiga.customRegs);
-	MODEL.blits = GetBlits(customRegs, MODEL.amiga.dmaRecords);
+declare const MODELS: IProfileModel[];
+for(const MODEL of MODELS) {
+	if (MODEL.amiga) {
+		MODEL.duration = /*Math.max(*/7_093_790 / 50;//, MODEL.duration); // DMA TEST
+		// decode memory to binary
+		const chipMem = Uint8Array.from(atob(MODEL.amiga.chipMem), (c) => c.charCodeAt(0));
+		const bogoMem = Uint8Array.from(atob(MODEL.amiga.bogoMem), (c) => c.charCodeAt(0));
+		MODEL.memory = new Memory(chipMem, bogoMem);
+		// get blits
+		const customRegs = new Uint16Array(MODEL.amiga.customRegs);
+		MODEL.blits = GetBlits(customRegs, MODEL.amiga.dmaRecords);
+	}
 }
 
 const container = document.createElement('div');

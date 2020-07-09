@@ -10,7 +10,7 @@ import { Breakpoint, MIError, Variable, VariableObject, Watchpoint } from './bac
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap, UnwindTable, ProfileFile } from './backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
@@ -355,7 +355,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				});
 				break;
 			case 'start-profile':
-				this.customStartProfileRequest(response, true);
+				this.customStartProfileRequest(response, args, true);
 				break;
 			default:
 				response.body = { error: 'Invalid command.' };
@@ -422,7 +422,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected async customStartProfileRequest(response: DebugProtocol.Response, autoStop: boolean) {
+	protected async customStartProfileRequest(response: DebugProtocol.Response, args: any, autoStop: boolean) {
 		try {
 			if(autoStop && !this.stopped) {
 				// GDB reports stopping of target after a while
@@ -432,7 +432,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.miDebugger.removeAllListeners("running");
 				this.miDebugger.once("signal-stop", async () => {
 					// try again after target execution has stopped
-					await this.customStartProfileRequest(response, false);
+					await this.customStartProfileRequest(response, args, false);
 					this.miDebugger.continue(this.currentThreadId);
 				});
 				this.miDebugger.once("running", async () => {
@@ -448,6 +448,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				await this.miDebugger.interrupt(this.currentThreadId);
 				return;
 			}
+
+			const numFrames = args?.numFrames || 1;
 
 			const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 			const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
@@ -465,22 +467,21 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 			// path to profile file
 			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
-			await this.miDebugger.sendUserInput(`monitor profile "${tmpQuoted}.unwind" "${tmpQuoted}"`);
+			await this.miDebugger.sendUserInput(`monitor profile ${numFrames} "${tmpQuoted}.unwind" "${tmpQuoted}"`);
 			//fs.unlinkSync(tmp + ".unwind");
 
 			// read profile file
-			const profileFile = new ProfileFile(tmp);
+			const profileArchive = new ProfileFile(tmp);
 			//fs.unlinkSync(tmp);
 
 			// resolve and generate output
 			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
 			const profiler = new Profiler(sourceMap, this.symbolTable);
-			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile));
+			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive));
 
 			// open output
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 
-			//await this.miDebugger.continue(this.currentThreadId);
 			this.sendResponse(response);
 		} catch (error) {
 			response.body = { error };

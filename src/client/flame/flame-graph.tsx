@@ -12,7 +12,7 @@ import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 
 import { Category, ILocation, IProfileModel } from '../model';
-declare const MODEL: IProfileModel;
+declare const MODELS: IProfileModel[];
 
 import { IOpenDocumentMessage, IAmigaProfileExtra } from '../types';
 import { useCssVariables } from '../useCssVariables';
@@ -120,7 +120,7 @@ const buildBoxes = (columns: ReadonlyArray<IColumn>, rowOffset: number) => {
 	};
 };
 
-const buildDmaBoxes = () => {
+const buildDmaBoxes = (MODEL: IProfileModel) => {
 	if(!MODEL.amiga || !MODEL.amiga.dmaRecords)
 		return [];
 	const dmaRecords = MODEL.amiga.dmaRecords;
@@ -194,7 +194,7 @@ const buildDmaBoxes = () => {
 	return boxes;
 };
 
-const buildBlitBoxes = () => {
+const buildBlitBoxes = (MODEL: IProfileModel) => {
 	if(!MODEL.blits)
 		return [];
 
@@ -317,12 +317,13 @@ export interface ICanvasSize {
 const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
+	frame: number;
 	data: ReadonlyArray<IColumn>;
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 	time;
 	setTime;
-}> = ({ data, filter, displayUnit, time, setTime }) => {
+}> = ({ frame, data, filter, displayUnit, time, setTime }) => {
 	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
@@ -359,9 +360,9 @@ export const FlameGraph: FunctionComponent<{
 		[data, filter]
 	);
 
-	const rawBoxes = useMemo(() => buildBoxes(columns, MODEL.amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
-	const dmaBoxes = useMemo(() => buildDmaBoxes(), [MODEL]);
-	const blitBoxes = useMemo(() => buildBlitBoxes(), [MODEL]);
+	const rawBoxes = useMemo(() => buildBoxes(columns, MODELS[0].amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
+	const dmaBoxes = useMemo(() => buildDmaBoxes(MODELS[frame]), [frame]);
+	const blitBoxes = useMemo(() => buildBlitBoxes(MODELS[frame]), [frame]);
 	const clampX = useMemo(
 		() => ({
 			minX: 0, //columns[0]?.x1 ?? 0,
@@ -509,6 +510,8 @@ export const FlameGraph: FunctionComponent<{
 
 	// Re-render the zoom indicator when bounds change
 	useEffect(() => {
+		const MODEL = MODELS[frame];
+
 		if (!webContext)
 			return;
 
@@ -563,7 +566,7 @@ export const FlameGraph: FunctionComponent<{
 			webContext.fillText(text, x + 6, Constants.TimelineHeight / 2);
 			webContext.stroke();
 		}
-	}, [webContext, MODEL, canvasSize, bounds, cssVariables, displayUnit, time]);
+	}, [webContext, frame, canvasSize, bounds, cssVariables, displayUnit, time]);
 
 	// Update the canvas size when the window size changes, and on initial render
 	useEffect(() => {
@@ -726,7 +729,7 @@ export const FlameGraph: FunctionComponent<{
 			const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
 
 			let rowOffset = 0;
-			if(MODEL.amiga) {
+			if(MODELS[0].amiga) {
 				// dmaRecord
 				if(fromTop < Constants.TimelineHeight + 1 * Constants.TimelineHeight) {
 					const box = Math.abs(binarySearch(dmaBoxes, (b) => b.x2 - x)) - 1;
@@ -782,7 +785,7 @@ export const FlameGraph: FunctionComponent<{
 				setBounds({ minX, maxX });
 			} else if(dragMode === DragMode.Time) {
 				const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-				const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration), MODEL.duration);
+				const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODELS[frame].duration), MODELS[frame].duration);
 				setTime(newTime);
 			}
 		};
@@ -801,7 +804,7 @@ export const FlameGraph: FunctionComponent<{
 			document.removeEventListener('mouseleave', onUp);
 			document.removeEventListener('mouseup', onUp);
 		};
-	}, [clampX, drag, canvasSize.width]);
+	}, [clampX, drag, canvasSize.width, frame]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -848,12 +851,12 @@ export const FlameGraph: FunctionComponent<{
 			};
 			console.log("clampX", clampX, "scale", scale, "newBounds", newBounds);
 			// don't zoom in more than 10 cycles on screen
-			if((newBounds.maxX - newBounds.minX) * MODEL.duration > 10)
+			if((newBounds.maxX - newBounds.minX) * MODELS[frame].duration > 10)
 				setBounds(newBounds);
 
 			evt.preventDefault();
 		},
-		[clampX, webCanvas.current, drag || bounds],
+		[clampX, webCanvas.current, drag || bounds, frame],
 	);
 
 	const onMouseDown = useCallback(
@@ -934,10 +937,10 @@ export const FlameGraph: FunctionComponent<{
 	}, [rawBoxes, columns, drag || bounds, focused]);
 
 	// DragHandle
-	const startTime = (evt: MouseEvent) => {
+	const startTime = useCallback((evt: MouseEvent) => {
 		// copy from above, but we need to set new time immediately, 'drag' doesn't do anything until the next mouse move comes along
 		const x = evt.clientX - webCanvas.current.getBoundingClientRect().left;
-		const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODEL.duration), MODEL.duration);
+		const newTime = clamp(0, Math.round((bounds.minX + x / canvasSize.width * (bounds.maxX - bounds.minX)) * MODELS[frame].duration), MODELS[frame].duration);
 		setTime(newTime);
 
 		setDrag({
@@ -948,16 +951,16 @@ export const FlameGraph: FunctionComponent<{
 		});
 		evt.preventDefault();
 		evt.stopPropagation();
-	};
+	}, [frame]);
 
 	const range = bounds.maxX - bounds.minX;
-	const timeInPixel = (time / MODEL.duration - bounds.minX) * canvasSize.width / range;
+	const timeInPixel = (time / MODELS[frame].duration - bounds.minX) * canvasSize.width / range;
 
 	return (
 		<Fragment>
 			<Fragment>
 				<div class={styles.timeBack} style={{ height: Constants.TimelineHeight }} onMouseDown={startTime} onWheel={onWheel} />
-				{MODEL.amiga && <Fragment>
+				{MODELS[0].amiga && <Fragment>
 					<div class={styles.timeHandle} style={{ height: Constants.TimelineHeight, transform: `translateX(${timeInPixel - 2}px)` }} onMouseDown={startTime} onWheel={onWheel} />
 					<div class={styles.timeLine} style={{ top: Constants.TimelineHeight, height: canvasSize.height - Constants.TimelineHeight - Constants.BoxHeight, transform: `translateX(${timeInPixel}px)` }}/>
 				</Fragment>}
@@ -1001,6 +1004,7 @@ export const FlameGraph: FunctionComponent<{
 						location={hovered.box.loc}
 						amiga={hovered.box.amiga}
 						displayUnit={displayUnit}
+						frame={frame}
 					/>, document.body)
 			)}
 		</Fragment>
@@ -1016,7 +1020,8 @@ const Tooltip: FunctionComponent<{
 	amiga: IBoxAmiga;
 	src: HighlightSource;
 	displayUnit: DisplayUnit;
-}> = ({ left, lowerY, upperY, src, location, amiga, canvasRect, displayUnit }) => {
+	frame: number;
+}> = ({ left, lowerY, upperY, src, location, amiga, canvasRect, displayUnit, frame }) => {
 	const label = getLocationText(location);
 	const isDma = amiga?.dmaRecord !== undefined;
 	const isBlit = amiga?.blit !== undefined;
@@ -1157,7 +1162,7 @@ const Tooltip: FunctionComponent<{
 					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
 						<Fragment>
 							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODEL.amiga)}</dd>
+							<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODELS[frame].amiga)}</dd>
 						</Fragment>
 					)}
 					{dmaReg && (<Fragment>
@@ -1186,7 +1191,7 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<Fragment>
 						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
-						<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODEL.amiga)} 
+						<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga)} 
 						{channel === 0 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</Fragment>)}
 						{channel === 1 && (<Fragment><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</Fragment>)}
 						<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>
@@ -1212,12 +1217,12 @@ const Tooltip: FunctionComponent<{
 						</dd>
 					</Fragment>)}
 					<dt className={styles.time}>Total {dataName(displayUnit)}</dt>
-					<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, MODEL.duration, displayUnit)}</dd>
+					<dd className={styles.time}>{formatValue(location.selfTime + location.aggregateTime, MODELS[frame].duration, displayUnit)}</dd>
 					<dt className={styles.time}>Self {dataName(displayUnit)}</dt>
-					<dd className={styles.time}>{formatValue(location.selfTime, MODEL.duration, displayUnit)}</dd>
+					<dd className={styles.time}>{formatValue(location.selfTime, MODELS[frame].duration, displayUnit)}</dd>
 					{location.aggregateTime > 0 && (<Fragment>
 						<dt className={styles.time}>Aggregate {dataName(displayUnit)}</dt>
-						<dd className={styles.time}>{formatValue(location.aggregateTime, MODEL.duration, displayUnit)}</dd>
+						<dd className={styles.time}>{formatValue(location.aggregateTime, MODELS[frame].duration, displayUnit)}</dd>
 					</Fragment>)}
 				</Fragment>)}
 			</dl>
@@ -1226,7 +1231,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} useZoom={false} time={amiga.blit.cycleEnd * 2} />
+			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={amiga.blit.cycleEnd * 2} />
 		</div>}
 	</Fragment>);
 };

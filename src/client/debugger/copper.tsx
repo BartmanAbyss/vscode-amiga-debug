@@ -4,16 +4,17 @@ import '../styles.css';
 import styles from './copper.module.css';
 
 import { IProfileModel } from '../model';
-declare const MODEL: IProfileModel;
+declare const MODELS: IProfileModel[];
 
 import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper, Copper } from '../dma';
 
 export const CopperView: FunctionComponent<{
+	frame: number,
 	time: number
-}> = ({ time }) => {
-	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
+}> = ({ frame, time }) => {
+	const copper = useMemo(() => GetCopper(MODELS[frame].memory.chipMem, MODELS[frame].amiga.dmaRecords), [frame]);
 	const containerRef = useRef<HTMLDivElement>();
 
 	// get copper instruction that is executing at 'time'

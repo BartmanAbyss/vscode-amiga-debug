@@ -4,7 +4,7 @@ import '../styles.css';
 import styles from './resources.module.css';
 
 import { IProfileModel } from '../model';
-declare const MODEL: IProfileModel;
+declare const MODELS: IProfileModel[];
 
 import { CustomRegisters } from '../customRegisters';
 import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS } from '../dma';
@@ -30,7 +30,8 @@ export const Screen: FunctionComponent<{
 	useZoom?: boolean;
 	time: number;
 	overlay?: string;
-}> = ({ screen, mask, palette, scale = 2, useZoom = true, time, overlay = '' }) => {
+	frame: number;
+}> = ({ screen, mask, palette, scale = 2, useZoom = true, time, overlay = '', frame }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -60,7 +61,7 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const memory = useMemo(() => GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, time >> 1), [time]);
+	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
 
 	const getPixel = useMemo(() => (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
@@ -138,7 +139,7 @@ export const Screen: FunctionComponent<{
 		let i = 0;
 		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < time >> 1; cycleY++) {
 			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS && i < time >> 1; cycleX++, i++) {
-				const dmaRecord = MODEL.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
+				const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 				if (dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
 					continue;
 
@@ -204,7 +205,7 @@ export const Screen: FunctionComponent<{
 		if (overlay !== 'blitrects')
 			return blitRects;
 
-		for (const blit of MODEL.blits) {
+		for (const blit of MODELS[frame].blits) {
 			if (blit.cycleStart > time >> 1)
 				break;
 
@@ -229,7 +230,7 @@ export const Screen: FunctionComponent<{
 			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > time >> 1 });
 		}
 		return blitRects;
-	}, [screen, time, overlay]);
+	}, [screen, time, frame, overlay]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -292,6 +293,7 @@ export const Screen: FunctionComponent<{
 
 interface GfxResourceWithPayload {
 	resource: GfxResource;
+	frame: number;
 	screen?: IScreen;
 	mask?: IScreen;
 	palette?: number[];
@@ -330,7 +332,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
 		</div>
 		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
-			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs))} scale={1} useZoom={false} time={0} />
+			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[option.frame].amiga.customRegs))} scale={1} useZoom={false} time={0} frame={option.frame} />
 		</div>, document.body)}
 	</Fragment>);
 };
@@ -349,12 +351,13 @@ interface IState {
 const Context = createContext<IState>({});
 
 export const GfxResourcesView: FunctionComponent<{
+	frame: number,
 	time: number
-}> = ({ time }) => {
-	const copper = useMemo(() => GetCopper(MODEL.memory.chipMem, MODEL.amiga.dmaRecords), [MODEL]);
+}> = ({ frame, time }) => {
+	const copper = useMemo(() => GetCopper(MODELS[frame].memory.chipMem, MODELS[frame].amiga.dmaRecords), [frame]);
 	const bitmaps = useMemo(() => {
 		const bitmaps: GfxResourceWithPayload[] = [];
-		MODEL.amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+		MODELS[frame].amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
 			const width = resource.bitmap.width;
 			const height = resource.bitmap.height;
 			const modulos = [];
@@ -384,7 +387,7 @@ export const GfxResourcesView: FunctionComponent<{
 				}
 				mask = { width, height, planes: maskPlanes, modulos };
 			}
-			bitmaps.push({ resource, screen, mask });
+			bitmaps.push({ resource, frame, screen, mask });
 		});
 		const copperScreen = GetScreenFromCopper(copper);
 		const copperResource: GfxResource = {
@@ -399,9 +402,9 @@ export const GfxResourcesView: FunctionComponent<{
 				numPlanes: copperScreen.planes.length
 			}
 		};
-		bitmaps.unshift({ resource: copperResource, screen: copperScreen });
+		bitmaps.unshift({ resource: copperResource, frame, screen: copperScreen });
 		return bitmaps;
-	}, [MODEL]);
+	}, [frame]);
 
 	const palettes = useMemo(() => {
 		const palettes: GfxResourceWithPayload[] = [];
@@ -417,9 +420,9 @@ export const GfxResourcesView: FunctionComponent<{
 				numEntries: copperPalette.length
 			}
 		};
-		palettes.push({ resource: copperResource, palette: copperPalette });
+		palettes.push({ resource: copperResource, frame, palette: copperPalette });
 
-		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(MODEL.amiga.customRegs));
+		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),
 			size: 32 * 2,
@@ -430,15 +433,15 @@ export const GfxResourcesView: FunctionComponent<{
 				numEntries: 32
 			}
 		};
-		palettes.push({ resource: customRegsResource, palette: customRegsPalette });
+		palettes.push({ resource: customRegsResource, frame, palette: customRegsPalette });
 
-		MODEL.amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
-			const palette = GetPaletteFromMemory(MODEL.memory, resource.address, resource.palette.numEntries);
-			palettes.push({ resource, palette });
+		MODELS[frame].amiga.gfxResources.filter((r) => r.type === GfxResourceType.palette).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
+			const palette = GetPaletteFromMemory(MODELS[frame].memory, resource.address, resource.palette.numEntries);
+			palettes.push({ resource, frame, palette });
 		});
 
 		return palettes;
-	}, [MODEL]);
+	}, [frame]);
 
 	const state = useContext<IState>(Context);
 	if (state.bitmap === undefined)
@@ -472,7 +475,7 @@ export const GfxResourcesView: FunctionComponent<{
 			</select>
 		</div>
 		<div style={{overflow: 'auto'}}>
-			<Screen screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} time={time} overlay={overlay} />
+			<Screen frame={frame} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} time={time} overlay={overlay} />
 		</div>
 	</Fragment>);
 };

@@ -6,32 +6,33 @@ import * as ChevronLeft from '../icons/chevron-left.svg';
 import * as ChevronRight from '../icons/chevron-right.svg';
 
 import { IProfileModel } from '../model';
-declare const MODEL: IProfileModel;
+declare const MODELS: IProfileModel[];
 
 import { CustomRegisters, CustomReadWrite, CustomSpecial } from '../customRegisters';
 import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime } from '../dma';
 
 const CustomReg: FunctionComponent<{
+	frame: number,
 	time: number,
 	setTime,
 	index: number,
 	prevRegs: number[],
 	customRegs: number[],
-}> = ({ time, setTime, index, prevRegs, customRegs }) => {
+}> = ({ frame, time, setTime, index, prevRegs, customRegs }) => {
 	const navPrev = useCallback(() => {
-		let newCycle = GetPrevCustomRegWriteTime(index, time >> 1, MODEL.amiga.dmaRecords);
+		let newCycle = GetPrevCustomRegWriteTime(index, time >> 1, MODELS[frame].amiga.dmaRecords);
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
-			newCycle = Math.max(newCycle || (time >> 1), GetPrevCustomRegWriteTime(index + 1, time >> 1, MODEL.amiga.dmaRecords));
+			newCycle = Math.max(newCycle || (time >> 1), GetPrevCustomRegWriteTime(index + 1, time >> 1, MODELS[frame].amiga.dmaRecords));
 		if(newCycle !== undefined)
 			setTime(newCycle << 1);
-	}, [time]);
+	}, [time, frame]);
 	const navNext = useCallback(() => {
-		let newCycle = GetNextCustomRegWriteTime(index, time >> 1, MODEL.amiga.dmaRecords);
+		let newCycle = GetNextCustomRegWriteTime(index, time >> 1, MODELS[frame].amiga.dmaRecords);
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
-			newCycle = Math.min(newCycle || (time >> 1), GetNextCustomRegWriteTime(index + 1, time >> 1, MODEL.amiga.dmaRecords));
+			newCycle = Math.min(newCycle || (time >> 1), GetNextCustomRegWriteTime(index + 1, time >> 1, MODELS[frame].amiga.dmaRecords));
 		if(newCycle !== undefined)
 			setTime(newCycle << 1);
-	}, [time]);
+	}, [time, frame]);
 
 	const Nav = <div class={styles.nav}>
 		<button class={styles.button} onMouseDown={navPrev} type="button" dangerouslySetInnerHTML={{__html: ChevronLeft}} />
@@ -42,7 +43,7 @@ const CustomReg: FunctionComponent<{
 		return (<div class={styles.line}>
 			<div class={styles.reg + ' ' + ((customRegs[index] !== prevRegs[index] || customRegs[index + 1] !== prevRegs[index + 1]) ? styles.cur : '')}>
 				{(CustomRegisters.getCustomName(0xdff000 + (index << 1))).slice(0, -1).padEnd(8)} (${(index << 1).toString(16).padStart(3, '0')}):&nbsp;
-				{SymbolizeAddress((customRegs[index] << 16) | customRegs[index + 1], MODEL.amiga)}
+				{SymbolizeAddress((customRegs[index] << 16) | customRegs[index + 1], MODELS[frame].amiga)}
 			</div>
 			{Nav}
 		</div>);
@@ -58,11 +59,12 @@ const CustomReg: FunctionComponent<{
 };
 
 export const CustomRegsView: FunctionComponent<{
+	frame: number,
 	time: number,
 	setTime
-}> = ({ time, setTime }) => {
-	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODEL.amiga.customRegs, MODEL.amiga.dmaRecords, Math.max(0, (time >> 1) - 1)), [time]);
-	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODEL.amiga.customRegs, MODEL.amiga.dmaRecords, time >> 1), [time]);
+}> = ({ frame, time, setTime }) => {
+	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, Math.max(0, (time >> 1) - 1)), [time, frame]);
+	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
 
 	const wantCustom = (index: number) => {
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.ptl)
@@ -73,6 +75,6 @@ export const CustomRegsView: FunctionComponent<{
 	};
 
 	return (<div class={styles.container}>
-		{customRegs.map((c, index) => wantCustom(index) ? <CustomReg time={time} setTime={setTime} index={index} prevRegs={prevRegs} customRegs={customRegs} /> : '')}
+		{customRegs.map((c, index) => wantCustom(index) ? <CustomReg frame={frame} time={time} setTime={setTime} index={index} prevRegs={prevRegs} customRegs={customRegs} /> : '')}
 	</div>);
 };

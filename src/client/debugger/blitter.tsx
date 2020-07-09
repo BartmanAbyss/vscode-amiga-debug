@@ -3,7 +3,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import styles from './copper.module.css';
 
 import { IProfileModel } from '../model';
-declare const MODEL: IProfileModel;
+declare const MODELS: IProfileModel[];
 
 import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
@@ -20,10 +20,11 @@ PubSub.subscribe('showBlit', (msg, data: Blit) => (Context as any).__['blit'] = 
 
 export const BlitterVis: FunctionComponent<{
 	blit: Blit;
-}> = ({ blit }) => {
-	const memoryBefore = GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, blit.cycleStart);
-	const memoryAfter = GetMemoryAfterDma(MODEL.memory, MODEL.amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
-	const customRegs = new Uint16Array(MODEL.amiga.customRegs);
+	frame: number;
+}> = ({ blit, frame }) => {
+	const memoryBefore = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleStart);
+	const memoryAfter = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
+	const customRegs = new Uint16Array(MODELS[frame].amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
 	const numPlanes = 5;
@@ -100,7 +101,9 @@ export const BlitterVis: FunctionComponent<{
 	);
 };
 
-export const BlitterList: FunctionComponent<{}> = ({ }) => {
+export const BlitterList: FunctionComponent<{
+	frame: number;
+}> = ({ frame }) => {
 	//{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
 	//<ReactJson src={MODEL.blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 	const state = useContext<IState>(Context);
@@ -114,7 +117,7 @@ export const BlitterList: FunctionComponent<{}> = ({ }) => {
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blit !== undefined && <div><BlitterVis blit={blit} /></div>}
+				{blit !== undefined && <div><BlitterVis blit={blit} frame={frame} /></div>}
 			</div>
 		</Fragment>
 	);

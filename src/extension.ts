@@ -132,6 +132,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
+			vscode.commands.registerCommand('amiga.startProfileMulti', this.startProfileMulti.bind(this)),
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
@@ -308,7 +309,11 @@ class AmigaDebugExtension {
 	}
 
 	private startProfile() {
-		vscode.debug.activeDebugSession!.customRequest('start-profile', { });
+		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 1 });
+	}
+
+	private startProfileMulti() {
+		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 3 });
 	}
 
 	private async profileSize(uri: vscode.Uri) {

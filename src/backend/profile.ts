@@ -225,9 +225,7 @@ struct dma_rec {
 	uae_u16 extra;
 	uae_s8 intlev;
 };
-*/
 
-/*
 struct barto_debug_resource {
 	unsigned int address;
 	unsigned int size;
@@ -247,7 +245,8 @@ struct barto_debug_resource {
 };
 */
 
-export class ProfileFile {
+// represents 1 frame worth of profiling data
+export class ProfileFrame {
 	public chipMemSize: number;
 	public chipMem: Uint8Array;
 	public bogoMemSize: number;
@@ -257,16 +256,21 @@ export class ProfileFile {
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
 	public profileArray: Uint32Array;
-	public sectionBases: Uint32Array;
-	public systemStackLower: number;
-	public systemStackUpper: number;
-	public stackLower: number;
-	public stackUpper: number;
+	public screenshot: Uint8Array;
 
 	// CPU cycles per frame: 142102 (according to winuae profiler)
 	//   we get 142094 (8 missing), good enough for now?
 	// DMA cycles per frame: 227*313*2=142101
 	// http://eab.abime.net/showthread.php?t=51883 confirms 313 lines in PAL default
+}
+
+export class ProfileFile {
+	public sectionBases: Uint32Array;
+	public systemStackLower: number;
+	public systemStackUpper: number;
+	public stackLower: number;
+	public stackUpper: number;
+	public frames: ProfileFrame[] = [];
 
 	private static sizeofDmaRec = 20;
 	private static sizeofResource = 52;
@@ -274,62 +278,7 @@ export class ProfileFile {
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
-		this.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
-		this.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
-		this.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipMemSize); bufferOffset += this.chipMemSize;
-		this.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		this.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, this.bogoMemSize); bufferOffset += this.bogoMemSize;
-		const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		if(dmaLen !== ProfileFile.sizeofDmaRec)
-			throw new Error("dmaLen mismatch");
-		if(dmaCount !== NR_DMA_REC_HPOS * NR_DMA_REC_VPOS)
-			throw new Error(`dmaCount mismatch (${dmaCount} != ${NR_DMA_REC_HPOS * NR_DMA_REC_VPOS})`);
-		const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
-		for(let i = 0; i < dmaCount; i++) {
-			const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
-			const dat = dmaBuffer.readUInt32LE(i * dmaLen + 4);
-			const addr = dmaBuffer.readUInt32LE(i * dmaLen + 8);
-			const evt = dmaBuffer.readUInt16LE(i * dmaLen + 12);
-			const type = dmaBuffer.readInt16LE(i * dmaLen + 14);
-			const extra = dmaBuffer.readUInt16LE(i * dmaLen + 16);
-			const intlev = dmaBuffer.readInt8(i * dmaLen + 18);
-
-			if(reg !== 0xffff) {
-				this.dmaRecords.push({ reg, dat, addr, evt, type, extra, intlev });
-			} else if(evt) {
-				this.dmaRecords.push({ evt });
-			} else {
-				this.dmaRecords.push({});
-			}
-		}
-		const resourceLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		const resourceCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		if(resourceLen !== ProfileFile.sizeofResource)
-			throw new Error("resourceLen mismatch");
-		const resourceBuffer = Buffer.from(buffer.buffer, bufferOffset, resourceLen * resourceCount); bufferOffset += resourceLen * resourceCount;
-		for(let i = 0; i < resourceCount; i++) {
-			const address = resourceBuffer.readUInt32LE(i * resourceLen + 0);
-			const size = resourceBuffer.readUInt32LE(i * resourceLen + 4);
-			const name = resourceBuffer.toString('utf8', i * resourceLen + 8, resourceBuffer.indexOf(0, i * resourceLen + 8));
-			const type = resourceBuffer.readUInt16LE(i * resourceLen + 40) as GfxResourceType;
-			const flags = resourceBuffer.readUInt16LE(i * resourceLen + 42) as GfxResourceFlags;
-			const resource: GfxResource = { address, size, name, type, flags };
-			switch(type) {
-			case GfxResourceType.bitmap:
-				const width = resourceBuffer.readUInt16LE(i * resourceLen + 44);
-				const height = resourceBuffer.readUInt16LE(i * resourceLen + 46);
-				const numPlanes = resourceBuffer.readUInt16LE(i * resourceLen + 48);
-				resource.bitmap = { width, height, numPlanes };
-				break;
-			case GfxResourceType.palette:
-				const numEntries = resourceBuffer.readUInt16LE(i * resourceLen + 44);
-				resource.palette = { numEntries };
-				break;
-			}
-			this.gfxResources.push(resource);
-		}
+		const numFrames = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		const sectionCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.sectionBases = new Uint32Array(sectionCount);
 		for(let i = 0; i < sectionCount; i++, bufferOffset += 4)
@@ -338,14 +287,79 @@ export class ProfileFile {
 		this.systemStackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.stackLower = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.stackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
-			throw new Error("profileCount mismatch");
-		// profileArray may be unaligned, so manually read entries
-		//this.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
-		this.profileArray = new Uint32Array(profileCount);
-		for(let i = 0; i < profileCount; i++)
-			this.profileArray[i] = buffer.readUInt32LE(bufferOffset + i * 4);
+
+		for(let i = 0; i < numFrames; i++) {
+			const frame = new ProfileFrame();
+			frame.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
+			frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
+			frame.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			frame.chipMem = new Uint8Array(buffer.buffer, bufferOffset, frame.chipMemSize); bufferOffset += frame.chipMemSize;
+			frame.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			frame.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, frame.bogoMemSize); bufferOffset += frame.bogoMemSize;
+			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			if(dmaLen !== ProfileFile.sizeofDmaRec)
+				throw new Error("dmaLen mismatch");
+			if(dmaCount !== NR_DMA_REC_HPOS * NR_DMA_REC_VPOS)
+				throw new Error(`dmaCount mismatch (${dmaCount} != ${NR_DMA_REC_HPOS * NR_DMA_REC_VPOS})`);
+			const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
+			for(let i = 0; i < dmaCount; i++) {
+				const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
+				const dat = dmaBuffer.readUInt32LE(i * dmaLen + 4);
+				const addr = dmaBuffer.readUInt32LE(i * dmaLen + 8);
+				const evt = dmaBuffer.readUInt16LE(i * dmaLen + 12);
+				const type = dmaBuffer.readInt16LE(i * dmaLen + 14);
+				const extra = dmaBuffer.readUInt16LE(i * dmaLen + 16);
+				const intlev = dmaBuffer.readInt8(i * dmaLen + 18);
+
+				if(reg !== 0xffff) {
+					frame.dmaRecords.push({ reg, dat, addr, evt, type, extra, intlev });
+				} else if(evt) {
+					frame.dmaRecords.push({ evt });
+				} else {
+					frame.dmaRecords.push({});
+				}
+			}
+			const resourceLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			const resourceCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			if(resourceLen !== ProfileFile.sizeofResource)
+				throw new Error("resourceLen mismatch");
+			const resourceBuffer = Buffer.from(buffer.buffer, bufferOffset, resourceLen * resourceCount); bufferOffset += resourceLen * resourceCount;
+			for(let i = 0; i < resourceCount; i++) {
+				const address = resourceBuffer.readUInt32LE(i * resourceLen + 0);
+				const size = resourceBuffer.readUInt32LE(i * resourceLen + 4);
+				const name = resourceBuffer.toString('utf8', i * resourceLen + 8, resourceBuffer.indexOf(0, i * resourceLen + 8));
+				const type = resourceBuffer.readUInt16LE(i * resourceLen + 40) as GfxResourceType;
+				const flags = resourceBuffer.readUInt16LE(i * resourceLen + 42) as GfxResourceFlags;
+				const resource: GfxResource = { address, size, name, type, flags };
+				switch(type) {
+				case GfxResourceType.bitmap:
+					const width = resourceBuffer.readUInt16LE(i * resourceLen + 44);
+					const height = resourceBuffer.readUInt16LE(i * resourceLen + 46);
+					const numPlanes = resourceBuffer.readUInt16LE(i * resourceLen + 48);
+					resource.bitmap = { width, height, numPlanes };
+					break;
+				case GfxResourceType.palette:
+					const numEntries = resourceBuffer.readUInt16LE(i * resourceLen + 44);
+					resource.palette = { numEntries };
+					break;
+				}
+				frame.gfxResources.push(resource);
+			}
+			const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			//if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
+			//	throw new Error("profileCount mismatch");
+			// profileArray may be unaligned, so manually read entries
+			//frame.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
+			frame.profileArray = new Uint32Array(profileCount);
+			for(let i = 0; i < profileCount; i++) {
+				frame.profileArray[i] = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			}
+			const screenshotSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			frame.screenshot = new Uint8Array(buffer.buffer, bufferOffset, screenshotSize); bufferOffset += screenshotSize;
+
+			this.frames.push(frame);
+		}
 	}
 }
 
@@ -450,6 +464,15 @@ export class Profiler {
 	}
 
 	public profileTime(profileFile: ProfileFile): string {
+		const out: ICpuProfileRaw[] = [];
+
+		for(const frame of profileFile.frames)
+			out.push(this.profileTimeFrame(profileFile, frame));
+
+		return JSON.stringify(out/*, null, 2*/);
+	}
+
+	private profileTimeFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {
 		const sameCallstack = (callstack1: CallFrame, callstack2: CallFrame) => {
 			if(callstack1.frames.length !== callstack2.frames.length)
 				return false;
@@ -470,7 +493,7 @@ export class Profiler {
 		const lastCallstack: CallFrame = { frames: [] };
 
 		let totalCycles = 0;
-		for(const p of profileFile.profileArray) {
+		for(const p of frame.profileArray) {
 			if(p < 0xffff0000) {
 				if(p === 0x7fffffff) {
 					// IRQ processing
@@ -512,12 +535,12 @@ export class Profiler {
 		const out: ICpuProfileRaw = { 
 			...profileCommon(cycles, locations),
 			$amiga: {
-				chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
-				bogoMem: Buffer.from(profileFile.bogoMem).toString('base64'),
-				dmacon: profileFile.dmacon,
-				customRegs: Array.from(profileFile.customRegs), 
-				dmaRecords: profileFile.dmaRecords,
-				gfxResources: profileFile.gfxResources,
+				chipMem: Buffer.from(frame.chipMem).toString('base64'),
+				bogoMem: Buffer.from(frame.bogoMem).toString('base64'),
+				dmacon: frame.dmacon,
+				customRegs: Array.from(frame.customRegs), 
+				dmaRecords: frame.dmaRecords,
+				gfxResources: frame.gfxResources,
 				symbols,
 				sections,
 				systemStackLower: profileFile.systemStackLower,
@@ -528,7 +551,9 @@ export class Profiler {
 				callFrames: this.sourceMap.lines
 			}
 		};
-		return JSON.stringify(out/*, null, 2*/);
+		if(frame.screenshot)
+			out.$amiga.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
+		return out;
 	}
 
 	public profileSize(objdumpPath: string, elfPath: string) {
@@ -685,7 +710,7 @@ export class Profiler {
 				sizePerFunction.push(section.size - lastAddress);
 			}
 		}
-		const out: ICpuProfileRaw = profileCommon(sizePerFunction, locations);
+		const out: ICpuProfileRaw[] = [profileCommon(sizePerFunction, locations)];
 		return JSON.stringify(out, null, 2);
 	}
 }
