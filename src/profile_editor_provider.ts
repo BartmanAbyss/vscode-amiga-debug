@@ -76,14 +76,13 @@ class ProfileDocument implements vscode.CustomDocument {
 		this.content = (await fs.readFile(this.uri.fsPath)).toString();
 	}
 
-	public dispose(): void {
-		throw new Error("Method not implemented.");
-	}
+	public dispose() {}
 }
 
 export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvider<ProfileDocument> {
 	constructor(private readonly context: vscode.ExtensionContext, private readonly lenses: ProfileCodeLensProvider) {
 	}
+
 	public async openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): Promise<ProfileDocument> {
 		const doc = new ProfileDocument(uri);
 		await doc.load();
