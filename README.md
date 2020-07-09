@@ -109,7 +109,7 @@ This extension contains binaries of:
 Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
 Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
 
-Here are the command-lines used to compile the external tools:
+Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`)
 
 ### MinGW on WSL (Ubuntu 18.04)
 ```
@@ -120,20 +120,18 @@ apt install build-essential flex bison expect dejagnu texinfo mingw-w64
 ```
 mkdir -p build-binutils-2.34
 cd build-binutils-2.34
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-2.34/configure --disable-multilib --disable-nls --enable-lto --prefix=/opt/amiga/10.1.0 --target=m68k-amiga-elf --host=x86_64-w64-mingw32
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-2.34/configure --disable-multilib --disable-nls --enable-lto --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --host=x86_64-w64-mingw32
 make -j6
-sudo make install
+make install
 ```
 
 ### GDB
 ```
 mkdir build-binutils-gdb
 cd build-binutils-gdb
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/opt/amiga/10.1.0 --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
 make -j6
-sudo make install
-sudo strip /opt/amiga/10.1.0/bin/*.exe
-sudo strip /opt/amiga/10.1.0/m68k-amiga-elf/bin/*.exe
+make install
 ```
 
 ### GCC
@@ -141,14 +139,14 @@ sudo strip /opt/amiga/10.1.0/m68k-amiga-elf/bin/*.exe
 cd gcc
 ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-10.1.0
-cd build-gcc-10.1.0
+mkdir -p build-gcc
+cd build-gcc
 LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
   --target=m68k-amiga-elf \
   --disable-nls \
   --enable-languages=c,c++ \
   --enable-lto \
-  --prefix=/opt/amiga/10.1.0 \
+  --prefix=/mnt/c/amiga-mingw/opt \
   --disable-libssp \
   --disable-gcov \
   --disable-multilib \
@@ -167,15 +165,19 @@ sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
 mv gcc/Makefile.tmp gcc/Makefile
 gcc/gcc-cross.exe -dumpspecs >gcc/specs
 make all-gcc -j6
-sudo make install-gcc
-sudo strip /opt/amiga/10.1.0/bin/*.exe
-sudo strip /opt/amiga/10.1.0/m68k-amiga-elf/bin/*.exe
-sudo strip /opt/amiga/10.1.0/libexec/gcc/m68k-amiga-elf/10.1.0/*.exe
+make install-gcc
 ```
 
 ### elf2hunk
 ```
 LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf2hunk -DDEBUG=0 elf2hunk.c -lws2_32
+```
+
+### Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
+```
+rm -r /mnt/c/amiga-mingw/opt/include
+rm -r /mnt/c/amiga-mingw/opt/share
+find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs

@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/opt/amiga/10.1.0/libexec/gcc/m68k-amiga-elf/10.1.0'
+libdir='/mnt/c/amiga-mingw/opt/libexec/gcc/m68k-amiga-elf/10.1.0'

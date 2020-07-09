@@ -487,9 +487,6 @@ export class Profiler {
 					}
 				}
 			} else {
-				if(callstack.frames.length === 1 && lastCallstack.frames.length > 1 && callstack.frames[0] === lastCallstack.frames[lastCallstack.frames.length - 1]) // glitches in unwind
-					callstack.frames = [...lastCallstack.frames];
-
 				if(callstack.frames.length === 0) // not in our code
 					callstack.frames.push({ func: '[External]', file: '', line: 0 });
 

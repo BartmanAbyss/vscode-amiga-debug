@@ -10,6 +10,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - added blitter timeline to profiler
 - better scolling/zooming in profiler
 - fixed CPU profiling (callstacks got merged)
+- GCC: fixed unwind information generated in epilogues
 - profiler now has symbol table and can resolve addresses
 - profiler now synchronized to DMA
 - fixed blitter crash after setting a breakpoint in interrupt or profiling
