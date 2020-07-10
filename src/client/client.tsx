@@ -49,7 +49,6 @@ declare let MODELS: IProfileModel[];
 		// TODO: set lenses when frame changed in layout.tsx
 		if(MODELS[0].amiga) {
 			const lenses = createLenses(MODELS[0], DisplayUnit.PercentFrame);
-			console.log(lenses);
 			VsCodeApi.postMessage<ISetCodeLenses>({
 				type: 'setCodeLenses',
 				lenses

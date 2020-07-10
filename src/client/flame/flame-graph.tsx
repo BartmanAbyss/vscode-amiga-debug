@@ -849,7 +849,7 @@ export const FlameGraph: FunctionComponent<{
 				minX: Math.max(clampX.minX, bounds.minX + scale * (center - bounds.minX)),
 				maxX: Math.min(clampX.maxX, bounds.maxX - scale * (bounds.maxX - center)),
 			};
-			console.log("clampX", clampX, "scale", scale, "newBounds", newBounds);
+			//console.log("clampX", clampX, "scale", scale, "newBounds", newBounds);
 			// don't zoom in more than 10 cycles on screen
 			if((newBounds.maxX - newBounds.minX) * MODELS[frame].duration > 10)
 				setBounds(newBounds);
