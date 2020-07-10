@@ -591,6 +591,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.stoppedReason = 'TRAP #7 (undefined behavior)';
 		else if(signalName === 'SIGSEGV')
 			this.stoppedReason = 'NULL access (undefined behavior)';
+		else if(signalName === 'SIGBUS')
+			this.stoppedReason = 'address error';
 		else
 			this.stoppedReason = 'user request';
 		this.stopped = true;
