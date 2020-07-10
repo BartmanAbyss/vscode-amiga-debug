@@ -1,6 +1,6 @@
 import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters, CustomReadWrite } from './customRegisters';
-import { CopperInstruction, CopperMove } from "./copperDisassembler";
+import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileExtra } from "./types";
 
 export class Memory {
@@ -297,6 +297,7 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 	const regCOPINS = CustomRegisters.getCustomAddress("COPINS");
 
 	let i = 0;
+	let lastinsn: CopperInstruction = null;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
@@ -304,13 +305,17 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 				const first  = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
 				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
 				const insn = CopperInstruction.parse(first, second);
-				insns.push({
-					cycle: i,
-					vpos: y,
-					hpos: x,
-					address: dmaRecord.addr,
-					insn
-				});
+				// skip fake instruction after copper jump
+				if(!(lastinsn && lastinsn.instructionType === CopperInstructionType.MOVE && (lastinsn as CopperMove).label.startsWith("COPJMP"))) {
+					insns.push({
+						cycle: i,
+						vpos: y,
+						hpos: x,
+						address: dmaRecord.addr,
+						insn
+					});
+				}
+				lastinsn = insn;
 			}
 		}
 	}
