@@ -421,21 +421,21 @@ const TimeViewRow: FunctionComponent<{
 			aria-level={depth + 1}
 			aria-expanded={expanded.has(node)}
 		>
-			{!root.origAggregateTime && <div className={styles.duration} aria-labelledby="self-time-header">
+			{!root.origAggregateTime ? <div className={styles.duration} aria-labelledby="self-time-header">
 				<ImpactBar impact={node.selfTime / root.aggregateTime} />
 				{formatValue(node.selfTime, root.aggregateTime, displayUnit)}
-			</div>}
-			{root.origAggregateTime && <div className={styles.duration}>
+			</div> : ''}
+			{root.origAggregateTime ? <div className={styles.duration}>
 				<ImpactBar impact={node.origAggregateTime / root.origAggregateTime} />
 				{formatValue(node.origAggregateTime, root.origAggregateTime, displayUnit)}
-			</div>}
+			</div> : ''}
 			<div className={styles.duration} aria-labelledby="total-time-header">
 				<ImpactBar impact={node.aggregateTime / root.aggregateTime} />
 				{formatValue(node.aggregateTime, root.aggregateTime, displayUnit)}
 			</div>
-			{root.origAggregateTime && <div className={classes(styles.duration, styles.short)}>
+			{root.origAggregateTime ? <div className={classes(styles.duration, styles.short)}>
 				{formatValue(node.aggregateTime, node.origAggregateTime, DisplayUnit.Percent)}
-			</div>}
+			</div> : ''}
 
 			{!location ? (
 				<div className={styles.location} style={{ marginLeft: depth * 15 }}>
