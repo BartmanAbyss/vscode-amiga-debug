@@ -65,7 +65,13 @@ export interface IAmigaProfileExtra {
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 }
 
+// extra information for shrinklerstats to track uncompressed data
+export interface IShrinklerProfileExtra {
+	origTimeDeltas: number[];
+}
+
 export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
+	$shrinkler?: IShrinklerProfileExtra;
 	$vscode?: IJsDebugAnnotations;
 	$amiga?: IAmigaProfileExtra;
 	nodes: IProfileNode[];

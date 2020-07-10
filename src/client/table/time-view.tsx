@@ -255,7 +255,7 @@ export const TimeView: FunctionComponent<{
 
 	return (
 		<Fragment>
-			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} />
+			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} shrinkler={data[0].origAggregateTime > 0} />
 			<div className={styles.rows}>
 				{rendered.filter((n) => n.node.filtered || expanded.has(n.node) || filterExpanded.has(n.node)).map((row) => (
 					<TimeViewRow
@@ -277,30 +277,41 @@ export const TimeView: FunctionComponent<{
 const TimeViewHeader: FunctionComponent<{
 	sortFn: SortFn;
 	onChangeSort: (newFn: SortFn) => void;
-	displayUnit: DisplayUnit
-}> = ({ sortFn, onChangeSort, displayUnit }) => (
-	<div className={styles.row}>
-		<div
-			id="self-time-header"
-			className={classes(styles.heading, styles.timing)}
-			aria-sort={sortFn === SortFn.Self ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(sortFn === SortFn.Self ? SortFn.Agg : SortFn.Self), [sortFn])}
-		>
-			{sortFn === SortFn.Self && <Icon i={ChevronDown} />}
-			Self {dataName(displayUnit)}
+	displayUnit: DisplayUnit;
+	shrinkler: boolean;
+}> = ({ sortFn, onChangeSort, displayUnit, shrinkler }) => {
+	return (
+		<div className={styles.row}>
+			{!shrinkler && <div
+				id="self-time-header"
+				className={classes(styles.heading, styles.timing)}
+				aria-sort={sortFn === SortFn.Self ? 'descending' : undefined}
+				onClick={useCallback(() => onChangeSort(sortFn === SortFn.Self ? SortFn.Agg : SortFn.Self), [sortFn])}
+			>
+				{sortFn === SortFn.Self && <Icon i={ChevronDown} />}
+				Self {dataName(displayUnit)}
+			</div>}
+			{shrinkler && <div className={classes(styles.heading, styles.timing)}>
+				Original {dataName(displayUnit)}
+			</div>}
+			<div
+				id="total-time-header"
+				className={classes(styles.heading, styles.timing)}
+				aria-sort={sortFn === SortFn.Agg ? 'descending' : undefined}
+				onClick={useCallback(() => onChangeSort(sortFn === SortFn.Agg ? SortFn.Self : SortFn.Agg), [sortFn])}
+			>
+				{sortFn === SortFn.Agg && <Icon i={ChevronDown} />}
+				{shrinkler ? '' : 'Total '}{dataName(displayUnit)}
+			</div>
+			{shrinkler && <div className={classes(styles.heading, styles.timing_short)}>
+				Ratio
+			</div>}
+			<div className={styles.heading}>
+				{shrinkler ? 'Hunk/Symbol' : 'File'}
+			</div>
 		</div>
-		<div
-			id="total-time-header"
-			className={classes(styles.heading, styles.timing)}
-			aria-sort={sortFn === SortFn.Agg ? 'descending' : undefined}
-			onClick={useCallback(() => onChangeSort(sortFn === SortFn.Agg ? SortFn.Self : SortFn.Agg), [sortFn])}
-		>
-			{sortFn === SortFn.Agg && <Icon i={ChevronDown} />}
-			Total {dataName(displayUnit)}
-		</div>
-		<div className={styles.heading}>File</div>
-	</div>
-);
+	);
+};
 
 const TimeViewRow: FunctionComponent<{
 	node: IGraphNode;
@@ -410,14 +421,22 @@ const TimeViewRow: FunctionComponent<{
 			aria-level={depth + 1}
 			aria-expanded={expanded.has(node)}
 		>
-			<div className={styles.duration} aria-labelledby="self-time-header">
+			{!root.origAggregateTime && <div className={styles.duration} aria-labelledby="self-time-header">
 				<ImpactBar impact={node.selfTime / root.aggregateTime} />
 				{formatValue(node.selfTime, root.aggregateTime, displayUnit)}
-			</div>
+			</div>}
+			{root.origAggregateTime && <div className={styles.duration}>
+				<ImpactBar impact={node.origAggregateTime / root.origAggregateTime} />
+				{formatValue(node.origAggregateTime, root.origAggregateTime, displayUnit)}
+			</div>}
 			<div className={styles.duration} aria-labelledby="total-time-header">
 				<ImpactBar impact={node.aggregateTime / root.aggregateTime} />
 				{formatValue(node.aggregateTime, root.aggregateTime, displayUnit)}
 			</div>
+			{root.origAggregateTime && <div className={classes(styles.duration, styles.short)}>
+				{formatValue(node.aggregateTime, node.origAggregateTime, DisplayUnit.Percent)}
+			</div>}
+
 			{!location ? (
 				<div className={styles.location} style={{ marginLeft: depth * 15 }}>
 					{expand} <span className={styles.fn} dangerouslySetInnerHTML={{__html: node.callFrame.functionName}}></span>

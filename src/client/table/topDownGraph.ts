@@ -12,6 +12,8 @@ export class TopDownNode implements IGraphNode {
 			category: Category.System,
 			selfTime: 0,
 			aggregateTime: 0,
+			origSelfTime: 0,
+			origAggregateTime: 0,
 			ticks: 0,
 			callFrame: {
 				functionName: '(root)',
@@ -26,6 +28,8 @@ export class TopDownNode implements IGraphNode {
 	public children: { [id: number]: TopDownNode } = {};
 	public aggregateTime = 0;
 	public selfTime = 0;
+	public origAggregateTime = 0; // for shrinkler only
+	public origSelfTime = 0;
 	public ticks = 0;
 	public childrenSize = 0;
 	public filtered = true;
@@ -51,6 +55,8 @@ export class TopDownNode implements IGraphNode {
 	public addNode(node: IComputedNode) {
 		this.selfTime = node.selfTime;
 		this.aggregateTime = node.aggregateTime;
+		this.origSelfTime = node.origSelfTime;
+		this.origAggregateTime = node.origAggregateTime;
 	}
 
 	public toJSON(): IGraphNode {
@@ -59,6 +65,8 @@ export class TopDownNode implements IGraphNode {
 			childrenSize: this.childrenSize,
 			aggregateTime: this.aggregateTime,
 			selfTime: this.selfTime,
+			origAggregateTime: this.origAggregateTime,
+			origSelfTime: this.origSelfTime,
 			ticks: this.ticks,
 			id: this.id,
 			category: this.category,
@@ -230,6 +238,8 @@ export const createTopDownGraph = (model: IProfileModel) => {
 		processNode(cpuRoot, node, model);
 		cpuRoot.selfTime += node.aggregateTime;
 		cpuRoot.aggregateTime += node.aggregateTime;
+		cpuRoot.origSelfTime += node.origAggregateTime;
+		cpuRoot.origAggregateTime += node.origAggregateTime;
 	}
 	if(model.amiga) {
 		//root.selfTime = cpuRoot.selfTime;

@@ -91,7 +91,7 @@ export const formatValue = (value: number, total: number, unit: DisplayUnit) => 
 	case DisplayUnit.PercentFrame: return decimalFormat.format(value) + '%';
 	case DisplayUnit.Bytes: return integerFormat.format(value) + 'b';
 	case DisplayUnit.BytesHex: return '$' + value.toString(16);
-	case DisplayUnit.Percent: return value / total * 100 + '%';
+	case DisplayUnit.Percent: return decimalFormat.format(value) + '%';
 	default: return decimalFormat.format(value);
 	}
 };

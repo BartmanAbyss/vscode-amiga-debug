@@ -25,6 +25,12 @@
   width: 110px;
 }
 
+.duration.short,
+.heading.timing_short {
+  text-align: right;
+  width: 70px;
+}
+
 .heading.timing {
   cursor: pointer;
 }

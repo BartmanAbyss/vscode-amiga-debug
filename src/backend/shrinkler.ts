@@ -25,18 +25,30 @@ interface Stats {
 export function profileShrinkler(stats: Stats): ICpuProfileRaw {
 	interface DataSymbol {
 		callstack: CallFrame;
-		address: number;
+		pos: number;
 		size: number;
+		origPos: number;
+		origSize: number;
 	}
 	type SymbolMap = DataSymbol[];
 	const sectionMap: SymbolMap[] = [];
 
-	const sizePerFunction: number[] = [];
+	const origSizes: number[] = [];
+	const sizes: number[] = [];
 	const locations: CallFrame[] = [];
 
 	for(const hunk of stats.hunks) {
 		const symbols: SymbolMap = [];
+		const seen = new Map<string, number>();
 		for(const symbol of hunk.symbols) {
+			let name = symbol.name;
+			const prev = seen.get(name);
+			if(prev) {
+				name += ` (${prev + 1})`;
+				seen.set(name, prev + 1);
+			} else {
+				seen.set(name, 1);
+			}
 			const callstack: CallFrame = {
 				frames: [
 					{
@@ -45,16 +57,18 @@ export function profileShrinkler(stats: Stats): ICpuProfileRaw {
 						line: 0
 					},
 					{
-						func: symbol.name,
+						func: name,
 						file: '',
-						line: symbol.compressedPos
+						line: symbol.origPos
 					}
 				]
 			};
 			symbols.push({
 				callstack,
-				address: symbol.compressedPos,
-				size: symbol.compressedSize
+				pos: symbol.compressedPos,
+				size: Math.max(0, symbol.compressedSize),
+				origPos: symbol.origPos,
+				origSize: symbol.origSize,
 			});
 		}
 		sectionMap.push(symbols);
@@ -63,49 +77,56 @@ export function profileShrinkler(stats: Stats): ICpuProfileRaw {
 	for(let i = 0; i < stats.hunks.length; i++) {
 		const section = sectionMap[i];
 		const hunk = stats.hunks[i];
-		const sectionSymbols = section.sort((a, b) => a.address - b.address);
+		if(hunk.name.startsWith("BSS"))
+			continue;
+		const sectionSymbols = section.sort((a, b) => a.origPos - b.origPos);
 		let lastEmptySymbol: DataSymbol = null;
 		let lastSymbol: DataSymbol = null;
 		// guess size of reloc-referenced symbols
 		for(const symbol of sectionSymbols) {
-			if(lastSymbol && symbol.address === lastSymbol.address) {
+			if(lastSymbol && symbol.pos === lastSymbol.pos) {
 				if(lastSymbol.callstack.frames[lastSymbol.callstack.frames.length - 1].func !== symbol.callstack.frames[symbol.callstack.frames.length - 1].func)
 					lastSymbol.callstack.frames[lastSymbol.callstack.frames.length - 1].func += ", " + symbol.callstack.frames[symbol.callstack.frames.length - 1].func;
 				continue;
 			}
 			if(lastEmptySymbol) {
-				lastEmptySymbol.size = symbol.address - lastEmptySymbol.address;
+				lastEmptySymbol.size = symbol.pos - lastEmptySymbol.pos;
+				lastEmptySymbol.origSize = symbol.origPos - lastEmptySymbol.origPos;
 				lastEmptySymbol = null;
 			}
-			if(symbol.size === 0)
-				lastEmptySymbol = symbol;
+//			if(symbol.size <= 0)
+//				lastEmptySymbol = symbol;
 			lastSymbol = symbol;
 		}
-		if(lastEmptySymbol)
-			lastEmptySymbol.size = hunk.compressedSize - lastEmptySymbol.address;
+		if(lastEmptySymbol) {
+			lastEmptySymbol.size = hunk.compressedSize - lastEmptySymbol.pos;
+			lastEmptySymbol.origSize = hunk.origSize - lastEmptySymbol.origPos;
+		}
 
 		// add symbols to profile
 		let lastAddress = 0;
+		let lastOrigAddress = 0;
 		lastSymbol = null;
 		for(const symbol of sectionSymbols) {
-			if(lastSymbol && lastSymbol.address === symbol.address)
-				continue;
-			if(symbol.size === 0)
-				continue;
-			if(symbol.address > lastAddress) { // gap (unknown symbol)
-				locations.push({ frames: [ { func: hunk.name, file: '', line: lastAddress } ] });
-				sizePerFunction.push(symbol.address - lastAddress);
+			if(symbol.pos > lastAddress + 1) { // gap (unknown symbol), +1 because there may be rounding errors
+				locations.push({ frames: [ { func: hunk.name, file: '', line: lastAddress }, { func: '[Unknown]', file:'', line: lastAddress } ] });
+				sizes.push(symbol.pos - lastAddress);
+				origSizes.push(symbol.origPos - lastOrigAddress);
 			}
 			locations.push(symbol.callstack);
-			sizePerFunction.push(symbol.size);
-			lastAddress = symbol.address + symbol.size;
+			sizes.push(symbol.size);
+			origSizes.push(symbol.origSize);
+			if(symbol.pos >= 0)
+				lastAddress = symbol.pos + symbol.size;
+			lastOrigAddress = symbol.origPos + symbol.origSize;
 			lastSymbol = symbol;
 		}
-		if(lastAddress < hunk.compressedSize) {
-			locations.push({ frames: [ { func: hunk.name, file: '', line: lastAddress } ] });
-			sizePerFunction.push(hunk.compressedSize - lastAddress);
-		}
+		if(lastAddress + 1 < hunk.compressedSize) {
+			locations.push({ frames: [ { func: hunk.name, file: '', line: lastAddress }, { func: '[Unknown]', file:'', line: lastAddress } ] });
+			sizes.push(hunk.compressedSize - lastAddress);
+			origSizes.push(hunk.origSize - lastOrigAddress);
+}
 	}
-	const out: ICpuProfileRaw = profileCommon(sizePerFunction, locations);
+	const out: ICpuProfileRaw = profileCommon(sizes, locations, origSizes);
 	return out;
 }

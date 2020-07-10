@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens } from './types';
+import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
 import { ISourceLocation } from './location-mapping';
 import { Memory, Blit } from './dma';
 import { DisplayUnit, scaleValue } from './display';
@@ -26,6 +26,8 @@ export interface IComputedNode {
 	id: number;
 	selfTime: number;
 	aggregateTime: number;
+	origSelfTime?: number; // for shrinkler only
+	origAggregateTime?: number;
 	children: number[];
 	parent?: number;
 	locationId: number;
@@ -38,6 +40,8 @@ export interface ILocation {
 	id: number;
 	selfTime: number;
 	aggregateTime: number;
+	origSelfTime?: number; // for shrinkler only
+	origAggregateTime?: number;
 	ticks: number;
 	category: Category;
 	callFrame: Cdp.Runtime.CallFrame;
@@ -67,6 +71,7 @@ export interface IProfileModel {
 	duration: number;
 
 	amiga?: IAmigaProfileExtra;
+	shrinkler?: IShrinklerProfileExtra;
 
 	// these fields get filled in client.tsx
 	memory?: Memory;
@@ -89,6 +94,20 @@ const computeAggregateTime = (index: number, nodes: IComputedNode[]): number => 
 	}
 
 	return (row.aggregateTime = total);
+};
+
+const computeOrigAggregateTime = (index: number, nodes: IComputedNode[]): number => {
+	const row = nodes[index];
+	if (row.origAggregateTime) {
+		return row.origAggregateTime;
+	}
+
+	let total = row.origSelfTime;
+	for (const child of row.children) {
+		total += computeOrigAggregateTime(child, nodes);
+	}
+
+	return (row.origAggregateTime = total);
 };
 
 const getBestLocation = (
@@ -197,6 +216,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			timeDeltas: profile.timeDeltas || [],
 			rootPath: profile.$vscode?.rootPath,
 			duration: profile.endTime - profile.startTime,
+			shrinkler: profile.$shrinkler,
 			amiga: profile.$amiga,
 		};
 	}
@@ -209,6 +229,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			id,
 			selfTime: 0,
 			aggregateTime: 0,
+			origSelfTime: 0,
+			origAggregateTime: 0,
 			ticks: 0,
 			category: categorize(l.callFrame, src),
 			callFrame: l.callFrame,
@@ -239,6 +261,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			id,
 			selfTime: 0,
 			aggregateTime: 0,
+			origSelfTime: 0,
+			origAggregateTime: 0,
 			locationId: node.locationId as number,
 			children: node.children?.map(mapId) || [],
 		};
@@ -264,12 +288,29 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		nodes[nodeId].selfTime += delta;
 	}
 
+	if(profile.$shrinkler) {
+		for (let i = 1; i < profile.$shrinkler.origTimeDeltas.length; i++) {
+			const nodeId = mapId(profile.samples[i]);
+			const delta = profile.$shrinkler.origTimeDeltas[i - 1];
+			nodes[nodeId].origSelfTime += delta;
+		}
+	}
+
 	// 3. Add the aggregate times for all node children and locations
 	for (let i = 0; i < nodes.length; i++) {
 		const node = nodes[i];
 		const location = locations[node.locationId];
 		location.aggregateTime += computeAggregateTime(i, nodes);
 		location.selfTime += node.selfTime;
+	}
+
+	if(profile.$shrinkler) {
+		for (let i = 0; i < nodes.length; i++) {
+			const node = nodes[i];
+			const location = locations[node.locationId];
+			location.origAggregateTime += computeOrigAggregateTime(i, nodes);
+			location.origSelfTime += node.origSelfTime;
+		}
 	}
 
 	return {
@@ -280,6 +321,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
 		amiga: profile.$amiga,
+		shrinkler: profile.$shrinkler,
 	};
 };
 

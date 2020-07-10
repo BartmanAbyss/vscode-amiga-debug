@@ -181,6 +181,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* profiling: lines of functions seem to be off (see template/main.c: function main)
 * code lenses: update when display unit changes, when frame changes
 * multi-frame profiling: allow user to select number of frames
 * ignore copper prefetch (esp. after COPxJMP)
@@ -192,7 +193,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * asm-singlestepping: sometimes doesn't find correct line
 * tooltips for blitter-rects?
 * fix stray callstack in bobble (can't reproduce)
-* show compression ratio in `.shrinklerstats` profile visualizer
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
