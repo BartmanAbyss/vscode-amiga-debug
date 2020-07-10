@@ -14,7 +14,7 @@ import {
 	useEffect,
 } from 'preact/hooks';
 import { VsCodeApi } from '../vscodeApi';
-import { ILocation, IGraphNode } from '../model';
+import { IGraphNode } from '../model';
 import { classes } from '../util';
 import { IOpenDocumentMessage } from '../types';
 import { addToSet, removeFromSet, toggleInSet } from '../array';
@@ -321,16 +321,15 @@ const TimeViewRow: FunctionComponent<{
 	onExpandChange,
 	displayUnit,
 }) => {
-	const vscode = useContext(VsCodeApi);
 	const onClick = useCallback(
 		(evt: MouseEvent) =>
-			vscode.postMessage<IOpenDocumentMessage>({
+			VsCodeApi.postMessage<IOpenDocumentMessage>({
 				type: 'openDocument',
 				callFrame: node.callFrame,
 				location: node.src,
 				toSide: evt.altKey,
 			}),
-		[vscode, node],
+		[node],
 	);
 
 	const onToggleExpand = useCallback((event: MouseEvent) => {

@@ -9,6 +9,8 @@ import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel } from './model';
 import { Memory, GetBlits } from './dma';
 import { profileShrinkler } from '../backend/shrinkler';
+import { VsCodeApi } from './vscodeApi';
+import { ISetCodeLenses, Lens } from './types';
 
 console.log("client.tsx START: " + new Date().toLocaleString());
 
@@ -24,8 +26,7 @@ declare let MODELS: IProfileModel[];
 	{
 		const response = await fetch(PROFILE_URL);
 		let PROFILES = await response.json();
-		if(PROFILES.hunks) {
-			// shrinklerstats
+		if(PROFILES.hunks) { // shrinklerstats
 			PROFILES = [ profileShrinkler(PROFILES) ];
 		}
 		for(const p of PROFILES)
@@ -42,6 +43,30 @@ declare let MODELS: IProfileModel[];
 				const customRegs = new Uint16Array(MODEL.amiga.customRegs);
 				MODEL.blits = GetBlits(customRegs, MODEL.amiga.dmaRecords);
 			}
+		}
+
+		// TODO: set lenses when frame changed in layout.tsx
+		if(MODELS[0].amiga) {
+			const lenses: Lens[] = [];
+			for (const location of MODELS[0].locations || []) {
+				const src = location.src;
+				if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+					continue;
+				}
+				lenses.push({
+					file: location.src.source.path.toLowerCase().replace(/\\/g, '/'),
+					line: location.src.lineNumber - 1,
+					data: {
+						self: location.selfTime,
+						agg: location.aggregateTime,
+						ticks: location.ticks
+					}
+				});
+			}
+			VsCodeApi.postMessage<ISetCodeLenses>({
+				type: 'setCodeLenses',
+				lenses
+			});
 		}
 	}
 	document.body.removeChild(loader);

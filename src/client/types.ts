@@ -91,4 +91,21 @@ export interface IReopenWithEditor {
 	requireExtension?: string;
 }
 
-export type Message = IOpenDocumentMessage | IReopenWithEditor;
+export interface LensData { 
+	self: number; 
+	agg: number; 
+	ticks: number; 
+}
+
+export interface Lens {
+	file: string;
+	line: number;
+	data: LensData;
+}
+
+export interface ISetCodeLenses {
+	type: 'setCodeLenses';
+	lenses: Lens[];
+}
+
+export type Message = IOpenDocumentMessage | IReopenWithEditor | ISetCodeLenses;

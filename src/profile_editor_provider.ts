@@ -1,10 +1,7 @@
-//import { Protocol as Cdp } from 'devtools-protocol';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { buildModel, ILocation, IProfileModel } from './client/model';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { LensCollection } from './lens_collection';
-import { profileShrinkler } from './backend/shrinkler';
 
 const decimalFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 2,
@@ -18,6 +15,7 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 import { promises as fs } from 'fs';
 import { randomBytes } from 'crypto';
 import { ISourceLocation } from './client/location-mapping';
+import { Lens, LensData } from './client/types';
 
 export const bundlePage = async (webview: vscode.Webview, bundlePath: string, constants: { [key: string]: unknown }) => {
 	const bundle = await fs.readFile(path.join(bundlePath, 'client.bundle.js'), 'utf-8');
@@ -91,6 +89,7 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
+			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)) ]
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
@@ -106,14 +105,15 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 			case 'openDocument':
 				showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
 				return;
+			case 'setCodeLenses':
+				this.lenses.registerLenses(this.createLensCollection(message.lenses));
+				return;
 			}
 		});
 	}
 
-	private createLensCollection(model: IProfileModel) {
-		interface LensData { self: number; agg: number; ticks: number; }
-
-		const lenses = new LensCollection<LensData>((dto) => {
+	private createLensCollection(lenses: Lens[]) {
+		const lensCollection = new LensCollection<LensData>((dto) => {
 			let title: string;
 			if (dto.self > 0 || dto.agg > 0) {
 				title = `${decimalFormat.format(dto.self / 200)}% Self Time, ${decimalFormat.format(dto.agg / 200)}% Total`;
@@ -126,35 +126,21 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 			return { command: '', title };
 		});
 
-		const merge = (location: ILocation) => (existing?: LensData) => ({
-			ticks: (existing?.ticks || 0) + location.ticks,
-			self: (existing?.self || 0) + location.selfTime,
-			agg: (existing?.agg || 0) + location.aggregateTime,
+		const merge = (data: LensData) => (existing?: LensData) => ({
+			ticks: (existing?.ticks || 0) + data.ticks,
+			self: (existing?.self || 0) + data.self,
+			agg: (existing?.agg || 0) + data.agg,
 		});
 
-		for (const location of model.locations || []) {
-			const mergeFn = merge(location);
-/*			lenses.set(
-				location.callFrame.url,
-				new vscode.Position(
-					Math.max(0, location.callFrame.lineNumber),
-					Math.max(0, location.callFrame.columnNumber),
-				),
-				mergeFn,
-			);*/
-
-			const src = location.src;
-			if (!src || src.source.sourceReference !== 0 || !src.source.path) {
-				continue;
-			}
-
-			lenses.set(
-				src.source.path.toLowerCase().replace(/\\/g, '/'),
-				new vscode.Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
+		for (const lens of lenses) {
+			const mergeFn = merge(lens.data);
+			lensCollection.set(
+				lens.file,
+				new vscode.Position(lens.line, 0),
 				mergeFn,
 			);
 		}
 
-		return lenses;
+		return lensCollection;
 	}
 }

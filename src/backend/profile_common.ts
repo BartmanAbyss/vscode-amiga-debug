@@ -21,9 +21,9 @@ export function profileCommon(weightPerLocation: number[], sourceLocations: Call
 
 	const getCallFrame = (callFrame: SourceLine) => {
 		return {
-			scriptId: callFrame.file,
+			scriptId: callFrame.file.toLowerCase().replace(/\\/g, "/"),
 			functionName: callFrame.func,
-			url: callFrame.file.includes(':') ? "file:///" + callFrame.file.replace(/\\/g, "/") : callFrame.file,
+			url: callFrame.file.toLowerCase().replace(/\\/g, "/"),
 			lineNumber: callFrame.line,
 			columnNumber: 0
 		};

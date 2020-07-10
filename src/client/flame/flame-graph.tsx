@@ -14,7 +14,7 @@ import { MiddleOut } from '../middleOutCompression';
 import { Category, ILocation, IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { IOpenDocumentMessage, IAmigaProfileExtra } from '../types';
+import { IOpenDocumentMessage } from '../types';
 import { useCssVariables } from '../useCssVariables';
 import { useLazyEffect } from '../useLazyEffect';
 import { useWindowSize } from '../useWindowSize';
@@ -324,7 +324,7 @@ export const FlameGraph: FunctionComponent<{
 	time;
 	setTime;
 }> = ({ frame, data, filter, displayUnit, time, setTime }) => {
-	const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
+	const vscode = VsCodeApi as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();
 
 	const webCanvas = useRef<HTMLCanvasElement>();
