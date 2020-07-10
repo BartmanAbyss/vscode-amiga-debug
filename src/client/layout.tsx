@@ -37,7 +37,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [text, setFilter] = useState('');
 	const [displayUnit, setDisplayUnit] = useState<DisplayUnit>(MODELS[0].amiga ? DisplayUnit.PercentFrame : DisplayUnit.Bytes);
 
-	const filter: IRichFilter = { text, caseSensitive, regex };
+	const filter: IRichFilter = useMemo(() => ({ text, caseSensitive, regex }), [text, caseSensitive, regex]);
 
 	const dataFlame = useMemo(() => buildColumns(MODELS[frame]), [frame]);
 	const dataTable = useMemo(() => Object.values(createTopDownGraph(MODELS[frame]).children), [frame]);

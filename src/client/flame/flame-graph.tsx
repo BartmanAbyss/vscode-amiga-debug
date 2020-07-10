@@ -338,27 +338,23 @@ export const FlameGraph: FunctionComponent<{
 	const cssVariables = useCssVariables();
 
 	//const [time, setTime] = useState(0);
-
-	const columns = useMemo(
-		() => {
-			const filterFn = compileFilter(filter);
-			const getFilterText = (node: ILocation) => [
-				node.callFrame.functionName,
-				node.callFrame.url,
-				node.src?.source.path ?? '',
-			];
-			const filtered = [...data];
-			for(const column of filtered) {
-				for(const row of column.rows) {
-					if(typeof row === 'number')
-						continue;
-					row.filtered = getFilterText(row).some(filterFn);
-				}
+	const columns = useMemo(() => {
+		const filterFn = compileFilter(filter);
+		const getFilterText = (node: ILocation) => [
+			node.callFrame.functionName,
+			node.callFrame.url,
+			node.src?.source.path ?? '',
+		];
+		const filtered = [...data];
+		for(const column of filtered) {
+			for(const row of column.rows) {
+				if(typeof row === 'number')
+					continue;
+				row.filtered = getFilterText(row).some(filterFn);
 			}
-			return filtered;
-		},
-		[data, filter]
-	);
+		}
+		return filtered;
+	}, [data, filter]);
 
 	const rawBoxes = useMemo(() => buildBoxes(columns, MODELS[0].amiga ? 2 : 0), [columns]); // +2: make room for dmaRecords, blits
 	const dmaBoxes = useMemo(() => buildDmaBoxes(MODELS[frame]), [frame]);
