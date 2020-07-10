@@ -89,20 +89,20 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected initDebugger() {
-		this.miDebugger.on('launcherror', this.launchError.bind(this));
+		this.miDebugger.on('launcherror', this.launchErrorEvent.bind(this));
 		this.miDebugger.on('quit', this.quitEvent.bind(this));
 		this.miDebugger.on('exited-normally', this.quitEvent.bind(this));
 		this.miDebugger.on('stopped', this.stopEvent.bind(this));
-		this.miDebugger.on('msg', this.handleMsg.bind(this));
-		this.miDebugger.on('breakpoint', this.handleBreakpoint.bind(this));
-		this.miDebugger.on('watchpoint', this.handleWatchpoint.bind(this));
-		this.miDebugger.on('step-end', this.handleBreak.bind(this));
-		this.miDebugger.on('step-out-end', this.handleBreak.bind(this));
-		this.miDebugger.on('signal-stop', this.handlePause.bind(this));
-		this.miDebugger.on('running', this.handleRunning.bind(this));
-		this.miDebugger.on('thread-created', this.handleThreadCreated.bind(this));
-		this.miDebugger.on('thread-exited', this.handleThreadExited.bind(this));
-		this.miDebugger.on('thread-selected', this.handleThreadSelected.bind(this));
+		this.miDebugger.on('msg', this.msgEvent.bind(this));
+		this.miDebugger.on('breakpoint', this.breakpointEvent.bind(this));
+		this.miDebugger.on('watchpoint', this.watchpointEvent.bind(this));
+		this.miDebugger.on('step-end', this.stepEndEvent.bind(this));
+		this.miDebugger.on('step-out-end', this.stepEndEvent.bind(this));
+		this.miDebugger.on('signal-stop', this.signalStopEvent.bind(this));
+		this.miDebugger.on('running', this.runningEvent.bind(this));
+		this.miDebugger.on('thread-created', this.threadCreatedEvent.bind(this));
+		this.miDebugger.on('thread-exited', this.threadExitedEvent.bind(this));
+		this.miDebugger.on('thread-selected', this.threadSelectedEvent.bind(this));
 		this.sendEvent(new InitializedEvent());
 	}
 
@@ -547,7 +547,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected handleMsg(type: string, msg: string) {
+	protected msgEvent(type: string, msg: string) {
 		// ignore GDB console output
 		if(type === 'console')
 			return;
@@ -557,49 +557,56 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	// events from miDebugger
-	protected handleRunning(info: MINode) {
+	protected runningEvent(info: MINode) {
 		this.stopped = false;
 		this.sendEvent(new ContinuedEvent(this.currentThreadId));
 		this.sendEvent(new CustomContinuedEvent(this.currentThreadId, true));
 	}
 
-	protected handleBreakpoint(info: MINode) {
+	protected breakpointEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'breakpoint';
-		this.sendEvent(new StoppedEvent('breakpoint', this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent('breakpoint', this.currentThreadId));
+		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 	}
 
-	protected handleWatchpoint(info: MINode) {
+	protected watchpointEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'data breakpoint';
-		this.sendEvent(new StoppedEvent('data breakpoint', this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent('data breakpoint', this.currentThreadId));
+		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 	}
 
-	protected handleBreak(info: MINode) {
+	protected stepEndEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'step';
-		this.sendEvent(new StoppedEvent('step', this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent('step', this.currentThreadId));
+		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 	}
 
-	protected handlePause(info: MINode) {
+	protected signalStopEvent(info: MINode) {
+		const signalName = info.record('signal-name');
+		//const signalMeaning = info.record('signal-meaning');
+		if(signalName === 'SIGEMT')
+			this.stoppedReason = 'TRAP #7 (undefined behavior)';
+		else if(signalName === 'SIGSEGV')
+			this.stoppedReason = 'NULL access (undefined behavior)';
+		else
+			this.stoppedReason = 'user request';
 		this.stopped = true;
-		this.stoppedReason = 'user request';
-		this.sendEvent(new StoppedEvent('user request', this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent('user request', this.currentThreadId));
+		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 	}
 
-	protected handleThreadCreated(info: { threadId: number, threadGroupId: number }) {
+	protected threadCreatedEvent(info: { threadId: number, threadGroupId: number }) {
 		this.sendEvent(new ThreadEvent('started', info.threadId));
 	}
 
-	protected handleThreadExited(info: { threadId: number, threadGroupId: number }) {
+	protected threadExitedEvent(info: { threadId: number, threadGroupId: number }) {
 		this.sendEvent(new ThreadEvent('exited', info.threadId));
 	}
 
-	protected handleThreadSelected(info: { threadId: number }) {
+	protected threadSelectedEvent(info: { threadId: number }) {
 		this.currentThreadId = info.threadId;
 		this.sendEvent(new ThreadEvent('selected', info.threadId));
 	}
@@ -616,8 +623,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			} else {
 				this.stopped = true;
 				this.stoppedReason = 'exception';
-				this.sendEvent(new StoppedEvent('exception', this.currentThreadId));
-				this.sendEvent(new CustomStoppedEvent('exception', this.currentThreadId));
+				this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+				this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 			}
 		}
 	}
@@ -627,9 +634,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.sendEvent(new TerminatedEvent());
 	}
 
-	protected launchError(err: any) {
-		this.handleMsg('stderr', 'Could not start debugger process, does the program exist in filesystem?\n');
-		this.handleMsg('stderr', err.toString() + '\n');
+	protected launchErrorEvent(err: any) {
+		this.msgEvent('stderr', 'Could not start debugger process, does the program exist in filesystem?\n');
+		this.msgEvent('stderr', err.toString() + '\n');
 		this.quitEvent();
 	}
 

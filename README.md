@@ -181,6 +181,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* Debugger: detect GURU
 * profiling: lines of functions seem to be off (see template/main.c: function main)
 * code lenses: update when display unit changes, when frame changes
 * multi-frame profiling: allow user to select number of frames
@@ -188,7 +189,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
 * custom registers: handle DMACON (see flame-graph.tsx@buildDmaBoxes)
-* Debugger: detect TRAP#7 (GCC undefined behavior), detect null-ptr access (GCC undefined behavior)
 * asm-singlestepping: sometimes doesn't find correct line
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
