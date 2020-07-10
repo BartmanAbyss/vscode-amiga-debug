@@ -951,7 +951,7 @@ export const FlameGraph: FunctionComponent<{
 		});
 		evt.preventDefault();
 		evt.stopPropagation();
-	}, [frame]);
+	}, [frame, canvasSize.width]);
 
 	const range = bounds.maxX - bounds.minX;
 	const timeInPixel = (time / MODELS[frame].duration - bounds.minX) * canvasSize.width / range;

@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS } from '../dma';
+import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -422,7 +422,8 @@ export const GfxResourcesView: FunctionComponent<{
 		};
 		palettes.push({ resource: copperResource, frame, palette: copperPalette });
 
-		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs));
+		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, time >> 1);
+		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),
 			size: 32 * 2,
@@ -441,7 +442,7 @@ export const GfxResourcesView: FunctionComponent<{
 		});
 
 		return palettes;
-	}, [frame]);
+	}, [frame, time]);
 
 	const state = useContext<IState>(Context);
 	if (state.bitmap === undefined)
@@ -453,6 +454,9 @@ export const GfxResourcesView: FunctionComponent<{
 
 	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(state.bitmap);
 	const [palette, setPalette] = useState<GfxResourceWithPayload>(state.palette);
+	// update custom registers palette on time change
+	if(palette.resource.address === CustomRegisters.getCustomAddress("COLOR00"))
+		palette.palette = palettes.find((p) => p.resource.address === CustomRegisters.getCustomAddress("COLOR00")).palette;
 	const onChangeBitmap = (selected: GfxResourceWithPayload) => { state.bitmap = selected; setBitmap(selected); };
 	const onChangePalette = (selected: GfxResourceWithPayload) => { state.palette = selected; setPalette(selected); };
 
