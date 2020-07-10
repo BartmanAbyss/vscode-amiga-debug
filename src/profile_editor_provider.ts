@@ -116,7 +116,7 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 		const lensCollection = new LensCollection<LensData>((dto) => {
 			let title: string;
 			if (dto.self > 0 || dto.agg > 0) {
-				title = `${decimalFormat.format(dto.self / 200)}% Self Time, ${decimalFormat.format(dto.agg / 200)}% Total`;
+				title = `${decimalFormat.format(dto.self)}% Self Time, ${decimalFormat.format(dto.agg)}% Total`;
 			} else if (dto.ticks) {
 				title = `${integerFormat.format(dto.ticks)} Ticks`;
 			} else {

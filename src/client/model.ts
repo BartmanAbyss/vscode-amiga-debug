@@ -1,15 +1,12 @@
-// client MUST NOT import anything else than interfaces!
-// otherwise 'fs' will be imported, which is not available in WebViews
-
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra } from './types';
-//import { maybeFileUrlToPath } from './path';
+import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens } from './types';
 import { ISourceLocation } from './location-mapping';
 import { Memory, Blit } from './dma';
+import { DisplayUnit, scaleValue } from './display';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -285,3 +282,23 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		amiga: profile.$amiga,
 	};
 };
+
+export function createLenses(model: IProfileModel, unit: DisplayUnit): Lens[] {
+	const lenses: Lens[] = [];
+	for (const location of model.locations || []) {
+		const src = location.src;
+		if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+			continue;
+		}
+		lenses.push({
+			file: location.src.source.path.toLowerCase().replace(/\\/g, '/'),
+			line: location.src.lineNumber - 1,
+			data: {
+				self: scaleValue(location.selfTime, model.duration, unit),
+				agg: scaleValue(location.aggregateTime, model.duration, unit),
+				ticks: location.ticks
+			}
+		});
+	}
+	return lenses;
+}

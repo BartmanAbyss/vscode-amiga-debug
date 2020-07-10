@@ -6,11 +6,12 @@ if (process.env.NODE_ENV === 'development') {
 import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
-import { IProfileModel, buildModel } from './model';
+import { IProfileModel, buildModel, createLenses } from './model';
 import { Memory, GetBlits } from './dma';
 import { profileShrinkler } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
-import { ISetCodeLenses, Lens } from './types';
+import { ISetCodeLenses } from './types';
+import { DisplayUnit } from './display';
 
 console.log("client.tsx START: " + new Date().toLocaleString());
 
@@ -47,22 +48,8 @@ declare let MODELS: IProfileModel[];
 
 		// TODO: set lenses when frame changed in layout.tsx
 		if(MODELS[0].amiga) {
-			const lenses: Lens[] = [];
-			for (const location of MODELS[0].locations || []) {
-				const src = location.src;
-				if (!src || src.source.sourceReference !== 0 || !src.source.path) {
-					continue;
-				}
-				lenses.push({
-					file: location.src.source.path.toLowerCase().replace(/\\/g, '/'),
-					line: location.src.lineNumber - 1,
-					data: {
-						self: location.selfTime,
-						agg: location.aggregateTime,
-						ticks: location.ticks
-					}
-				});
-			}
+			const lenses = createLenses(MODELS[0], DisplayUnit.PercentFrame);
+			console.log(lenses);
 			VsCodeApi.postMessage<ISetCodeLenses>({
 				type: 'setCodeLenses',
 				lenses
