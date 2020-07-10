@@ -188,15 +188,13 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
-* maybe use .amigaasm syntax highlighting for .s files
+* custom registers: handle DMACON
 * Debugger: detect TRAP#7 (GCC undefined behavior), detect null-ptr access (GCC undefined behavior)
 * asm-singlestepping: sometimes doesn't find correct line
 * tooltips for blitter-rects?
-* fix stray callstack in bobble (can't reproduce)
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * when stepping out of IRQ handler, stack frames are corrupt until next step
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
-* sometimes fail at start: Unable to open 'main.amigaasm': Cannot read property 'customRequest' of undefined.
 * restartRequest not implemented
 * vscode.debug.activeDebugSession is undefined when program is stopped on entry
 * not getting handleThreadSelected(), thread ID now set in class
