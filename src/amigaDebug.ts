@@ -178,9 +178,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			break;
 		case 'a1200':
 			config['quickstart'] = 'a1200,0'; // 68020, 2MB Chip
+			//config['quickstart'] = 'a1200,3'; // 68040, 2MB Chip 32MB FAST
+			//config['quickstart'] = 'a1200,2'; // 68030, 2MB Chip 32MB FAST
+			//config['quickstart'] = 'a1200,1'; // 68020, 2MB Chip 4MB FAST
+			//config['quickstart'] = 'a3000,2'; // 68030, 2MB Chip
 			break;
 		case 'a4000':
 			config['quickstart'] = 'a4000,0'; // 68030, 68882, 2MB Chip 8MB FAST
+			//config['quickstart'] = 'a4000,1'; // 68040, 2MB Chip 8MB FAST
 			break;
 		}
 
