@@ -212,6 +212,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['input.1.keyboard.0.button.201.PREV'] = 'SPC_WARP.0';
 		// filesystems
 		delete config['uaehf0'];
+		delete config['uaehf1'];
+		// delete old filesystem, then add new filesystem so order is correct in config (otherwise won't boot)
+		delete config['filesystem'];
+		delete config['filesystem2'];
 		config['filesystem'] = 'rw,dh0:' + dh0Path;
 		config['filesystem2'] = 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128';
 		// debugging options
