@@ -335,6 +335,9 @@ class AmigaDebugExtension {
 		}
 	}
 
+	private shrinklerTerminal: vscode.Terminal;
+	private shrinklerFinished = false;
+
 	private async shrinkler(uri: vscode.Uri) {
 		if(uri.scheme !== 'file') {
 			vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
@@ -373,8 +376,8 @@ class AmigaDebugExtension {
 			const pty: vscode.Pseudoterminal = {
 				onDidWrite: writeEmitter.event,
 				open: () => {
-					writeEmitter.fire(`\u001b[1m> Executing ${cmd} ${args.join(' ')} <\u001b[0m\r\n`);
-					writeEmitter.fire(`\u001b[31mPress CTRL+C to abort\u001b[0m\r\n\r\n`);
+					writeEmitter.fire(`\x1b[1m> Executing ${cmd} ${args.join(' ')} <\x1b[0m\r\n`);
+					writeEmitter.fire(`\x1b[31mPress CTRL+C to abort\x1b[0m\r\n\r\n`);
 					//p = cp.exec(cmd);
 					p = cp.spawn(cmd, args);
 					p.stderr.on('data', (data: string) => {
@@ -391,6 +394,7 @@ class AmigaDebugExtension {
 						} else {
 							vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
 						}
+						this.shrinklerFinished = true;
 					});
 				},
 				close: () => {},
@@ -400,11 +404,17 @@ class AmigaDebugExtension {
 				}
 			};
 
-			const terminal = vscode.window.createTerminal({
+			if(this.shrinklerTerminal && this.shrinklerFinished) {
+				this.shrinklerTerminal.dispose();
+				this.shrinklerTerminal = null;
+				this.shrinklerFinished = false;
+			}
+
+			this.shrinklerTerminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				pty
 			});
-			terminal.show();
+			this.shrinklerTerminal.show();
 		} catch(error) {
 			vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
 		}
@@ -511,6 +521,8 @@ class AmigaDebugExtension {
 	private receivedCustomEvent(e: vscode.DebugSessionCustomEvent) {
 		if (vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.type !== 'amiga') { return; }
 		switch (e.event) {
+			case 'custom-output':
+				this.receivedOutputEvent(e);
 			case 'custom-stop':
 				this.receivedStopEvent(e);
 				break;
@@ -520,6 +532,10 @@ class AmigaDebugExtension {
 			default:
 				break;
 		}
+	}
+
+	private receivedOutputEvent(e: vscode.DebugSessionCustomEvent) {
+		this.outputChannel.append(e.body.output);
 	}
 
 	private receivedStopEvent(e: vscode.DebugSessionCustomEvent) {

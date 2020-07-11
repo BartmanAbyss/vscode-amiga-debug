@@ -192,7 +192,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * asm-singlestepping: sometimes doesn't find correct line
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
-* when stepping out of IRQ handler, stack frames are corrupt until next step
+* when stepping out of IRQ handler, stack frames are corrupt until next step: how can we teach GDB to know about RTE?
 * disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
 * restartRequest not implemented
 * vscode.debug.activeDebugSession is undefined when program is stopped on entry

@@ -5,6 +5,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.1.0
 - Debugger now breaks at 'TRAP #7' opcode and NULL access (considered undefined behavior in GCC)
 - Debugger now breaks at AddressError (68000 unaligned memory access)
+- Debug Console now shows all output from WinUAE as well (exceptions, etc.)
+- GDB output can now be found in the `Output` pane under `Amiga`
 - support IntelliSense for assembly sources (currently working: `Go to Symbol`, `Go to Definition`, semantic highlighting)
 - support relocation for an arbitrary number of sections/hunks (fixes [#11](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/11))
 - support data breakpoints/watchpoints (during debugging, right-click on a variable and select `Break when value changes`)

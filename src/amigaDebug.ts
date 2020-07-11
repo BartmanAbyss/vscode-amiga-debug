@@ -33,6 +33,13 @@ const STATIC_HANDLES_START = 0x010000;
 const STATIC_HANDLES_FINISH = 0x01FFFF;
 const VAR_HANDLES_START = 0x020000;
 
+class CustomOutputEvent extends OutputEvent {
+	constructor(output: string, category?: string, data?: any) {
+		super(output, category, data);
+		this.event = 'custom-output';
+	}
+}
+
 class CustomStoppedEvent extends Event implements DebugProtocol.Event {
 	public readonly body: {
 		reason: string,
@@ -548,12 +555,21 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected msgEvent(type: string, msg: string) {
-		// ignore GDB console output
-		if(type === 'console')
-			return;
-		if (type === 'target') { type = 'stdout'; }
-		if (type === 'log') { type = 'stderr'; }
-		this.sendEvent(new OutputEvent(msg, type));
+		console.log("msgEvent", type, msg);
+		if(type === 'console' || type === 'log') {
+			// send GDB console output and debugger log to 'Amiga' output channel (not debug console)
+			this.sendEvent(new CustomOutputEvent(msg, type));
+		} else {
+			if (type === 'target') {
+				if(msg.startsWith("DBG: ")) { // user output (KPrintF, etc.)
+					msg = msg.substr(5);
+					type = 'stdout';
+				} else { // WinUAE output
+					type = 'stderr';
+				}
+			}
+			this.sendEvent(new OutputEvent(msg, type));
+		}
 	}
 
 	// events from miDebugger
