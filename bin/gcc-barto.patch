@@ -64,7 +64,7 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.c gcc-10.1.0-barto/gcc/config/m68k/m68
      emit_insn (gen_addsi3 (stack_pointer_rtx,
 diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.h gcc-10.1.0-barto/gcc/config/m68k/m68k.h
 --- gcc-10.1.0/gcc/config/m68k/m68k.h	2020-05-07 12:49:59.000000000 +0200
-+++ gcc-10.1.0-barto/gcc/config/m68k/m68k.h	2020-07-09 12:28:58.556508900 +0200
++++ gcc-10.1.0-barto/gcc/config/m68k/m68k.h	2020-07-11 20:02:06.255666700 +0200
 @@ -398,7 +398,7 @@
  /* Most m68k targets use %a6 as a frame pointer.  The AmigaOS
     ABI uses %a6 for shared library calls, therefore the frame
@@ -74,6 +74,17 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.h gcc-10.1.0-barto/gcc/config/m68k/m68
  
  /* Base register for access to arguments of the function.
   * This isn't a hardware register. It will be eliminated to the
+@@ -733,8 +733,9 @@
+ #define DWARF_FRAME_RETURN_COLUMN 24
+ #define DWARF_ALT_FRAME_RETURN_COLUMN 25
+
+-/* Before the prologue, the top of the frame is at 4(%sp).  */
+-#define INCOMING_FRAME_SP_OFFSET 4
++/* Before the prologue, the top of the frame is at 4(%sp), except in interrupt handlers: 6(%sp)  */
++#define DEFAULT_INCOMING_FRAME_SP_OFFSET 4
++#define INCOMING_FRAME_SP_OFFSET (m68k_get_function_kind(current_function_decl) == m68k_fk_interrupt_handler ? 6 : 4)
+
+ #define EPILOGUE_USES(REGNO) m68k_epilogue_uses (REGNO)  
 diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.md gcc-10.1.0-barto/gcc/config/m68k/m68k.md
 --- gcc-10.1.0/gcc/config/m68k/m68k.md	2020-05-07 12:49:59.000000000 +0200
 +++ gcc-10.1.0-barto/gcc/config/m68k/m68k.md	2020-07-09 12:29:24.637407900 +0200
