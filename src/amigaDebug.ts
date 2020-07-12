@@ -1191,13 +1191,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if (node.resultRecords.resultClass === 'done') {
 			const rv = node.resultRecords.results[0][1];
 			const pc = parseInt(rv[0][1][1]);
-			const sr = parseInt(rv[1][1][1]);
-			if(sr & (1 << 13)) {
-				// in Interrupt handler (supervisor mode)
-				await this.miDebugger.sendCommand("break-insert -t *0xeeeeeeee");
-				await this.miDebugger.sendCommand("exec-continue");
-				this.sendResponse(response);
-			} else if(pc >= 0xF80000) {
+			//const sr = parseInt(rv[1][1][1]);
+			if(pc >= 0xF80000) {
 				// in Kickstart
 				await this.miDebugger.sendCommand("break-insert -t *0xffffffff");
 				await this.miDebugger.sendCommand("exec-continue");
