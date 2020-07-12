@@ -571,7 +571,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		} else {
 			if (type === 'target') {
 				if(msg.startsWith("DBG: ")) { // user output (KPrintF, etc.)
-					msg = msg.substr(5);
+					msg = msg.substr(5); // remove "DBG: " prefix added by uaelib.cpp
 					type = 'stdout';
 				} else { // WinUAE output
 					type = 'stderr';
