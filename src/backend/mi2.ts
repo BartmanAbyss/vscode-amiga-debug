@@ -108,7 +108,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public interrupt(threadId: number): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "interrupt");
+			this.log("log", "interrupt");
 		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand(`exec-interrupt --thread ${threadId}`).then((info) => {
@@ -119,7 +119,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public continue(threadId: number): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "continue");
+			this.log("log", "continue");
 		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand(`exec-continue --thread ${threadId}`).then((info) => {
@@ -130,7 +130,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public next(threadId: number, instruction?: boolean): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "next");
+			this.log("log", "next");
 		}
 		return new Promise((resolve, reject) => {
 			const baseCmd = instruction ? "exec-next-instruction" : "exec-next";
@@ -142,7 +142,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public step(threadId: number, instruction?: boolean): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "step");
+			this.log("log", "step");
 		}
 		return new Promise((resolve, reject) => {
 			const baseCmd = instruction ? "exec-step-instruction" : "exec-step";
@@ -154,7 +154,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public stepOut(threadId: number): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "stepOut");
+			this.log("log", "stepOut");
 		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand(`exec-finish --thread ${threadId}`).then((info) => {
@@ -165,28 +165,28 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public restart(commands: string[]): Thenable<boolean> {
 		if (this.trace) {
-			this.log("stderr", "restart");
+			this.log("log", "restart");
 		}
 		return this._sendCommandSequence(commands);
 	}
 
 	public changeVariable(name: string, rawValue: string): Thenable<any> {
 		if (this.trace) {
-			this.log("stderr", "changeVariable");
+			this.log("log", "changeVariable");
 		}
 		return this.sendCommand("gdb-set var " + name + "=" + rawValue);
 	}
 
 	public setBreakpointCondition(bkptNum, condition): Thenable<any> {
 		if (this.trace) {
-			this.log("stderr", "setBreakPointCondition");
+			this.log("log", "setBreakPointCondition");
 		}
 		return this.sendCommand("break-condition " + bkptNum + " " + condition);
 	}
 
 	public addBreakpoint(breakpoint: Breakpoint): Promise<Breakpoint | null> {
 		if (this.trace) {
-			this.log("stderr", "addBreakPoint");
+			this.log("log", "addBreakPoint");
 		}
 		return new Promise((resolve, reject) => {
 			let location = "";
@@ -197,7 +197,7 @@ export class MI2 extends EventEmitter implements IBackend {
 					const match = numRegex.exec(breakpoint.countCondition)![0];
 					if (match.length !== breakpoint.countCondition.length) {
 						// tslint:disable-next-line:max-line-length
-						this.log("stderr", "Unsupported break count expression: '" + breakpoint.countCondition + "'. Only supports 'X' for breaking once after X times or '>X' for ignoring the first X breaks");
+						this.log("log", "Unsupported break count expression: '" + breakpoint.countCondition + "'. Only supports 'X' for breaking once after X times or '>X' for ignoring the first X breaks");
 						location += "-t ";
 					} else if (parseInt(match) !== 0) {
 						location += "-t -i " + parseInt(match) + " ";
@@ -236,7 +236,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public addWatchpoint(variable: string, access: string): Promise<Watchpoint | null> {
 		if (this.trace)
-			this.log("stderr", "addWatchPoint");
+			this.log("log", "addWatchpoint");
 		return new Promise((resolve, reject) => {
 			let param = '';
 			if(access === 'read')
@@ -263,7 +263,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public removeBreakpoints(breakpoints: number[]): Promise<boolean> {
 		if (this.trace) {
-			this.log("stderr", "removeBreakPoint");
+			this.log("log", "removeBreakpoints");
 		}
 		return new Promise((resolve, reject) => {
 			if (breakpoints.length === 0) {
@@ -306,7 +306,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public getStack(threadId: number, startLevel?: number, maxLevels?: number): Thenable<Stack[]> {
 		if (this.trace) {
-			this.log("stderr", "getStack");
+			this.log("log", "getStack");
 		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand(`stack-list-frames --thread ${threadId} ${startLevel} ${maxLevels}`).then((result) => {
@@ -338,7 +338,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public async getStackVariables(thread: number, frame: number): Promise<Variable[]> {
 		if (this.trace) {
-			this.log("stderr", "getStackVariables");
+			this.log("log", "getStackVariables");
 		}
 
 		const result = await this.sendCommand(`stack-list-variables --thread ${thread} --frame ${frame} --simple-values`);
@@ -379,7 +379,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public examineMemory(from: number, length: number): Thenable<any> {
 		if (this.trace) {
-			this.log("stderr", "examineMemory");
+			this.log("log", "examineMemory");
 		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand("data-read-memory-bytes 0x" + from.toString(16) + " " + length).then((result) => {
@@ -390,14 +390,14 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public evalExpression(name: string): Thenable<any> {
 		if (this.trace) {
-			this.log("stderr", "evalExpression");
+			this.log("log", "evalExpression");
 		}
 		return this.sendCommand("data-evaluate-expression " + name, true);
 	}
 
 	public async varCreate(expression: string, name: string = "-"): Promise<VariableObject> {
 		if (this.trace) {
-			this.log("stderr", "varCreate");
+			this.log("log", "varCreate");
 		}
 		const res = await this.sendCommand(`var-create ${name} @ "${expression}"`);
 		return new VariableObject(res.result(""));
@@ -405,14 +405,14 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public async varEvalExpression(name: string): Promise<MINode> {
 		if (this.trace) {
-			this.log("stderr", "varEvalExpression");
+			this.log("log", "varEvalExpression");
 		}
 		return this.sendCommand(`var-evaluate-expression ${name}`);
 	}
 
 	public async varListChildren(name: string): Promise<VariableObject[]> {
 		if (this.trace) {
-			this.log("stderr", "varListChildren");
+			this.log("log", "varListChildren");
 		}
 		// TODO: add `from` and `to` arguments
 		const res = await this.sendCommand(`var-list-children --all-values ${name}`);
@@ -423,14 +423,14 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	public async varUpdate(name: string = "*"): Promise<MINode> {
 		if (this.trace) {
-			this.log("stderr", "varUpdate");
+			this.log("log", "varUpdate");
 		}
 		return this.sendCommand(`var-update --all-values ${name}`);
 	}
 
 	public async varAssign(name: string, rawValue: string): Promise<MINode> {
 		if (this.trace) {
-			this.log("stderr", "varAssign");
+			this.log("log", "varAssign");
 		}
 		return this.sendCommand(`var-assign ${name} ${rawValue}`);
 	}
@@ -465,7 +465,7 @@ export class MI2 extends EventEmitter implements IBackend {
 				if (node && node.resultRecords && node.resultRecords.resultClass === "error") {
 					if (suppressFailure) {
 						if(this.trace)
-							this.log("stderr", `WARNING: Error executing command '${command}'`);
+							this.log("log", `WARNING: Error executing command '${command}'`);
 						resolve(node);
 					} else {
 						reject(new MIError(node.result("msg") || "Internal error", command));
@@ -484,7 +484,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 	private stdout(data) {
 		if (this.trace) {
-			this.log("stderr", "<= " + data);
+			this.log("log", "<= " + data);
 		}
 		if (typeof data === "string") {
 			this.buffer += data;
@@ -515,7 +515,7 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.errbuf = this.errbuf.substr(end + 1);
 		}
 		if (this.errbuf.length) {
-			this.logNoNewLine("stderr", this.errbuf);
+			this.logNoNewLine("log", this.errbuf);
 			this.errbuf = "";
 		}
 	}
@@ -565,7 +565,7 @@ export class MI2 extends EventEmitter implements IBackend {
 					}
 				}
 				if (!handled && parsed.resultRecords && parsed.resultRecords.resultClass === "error") {
-					this.log("stderr", parsed.result("msg") || line);
+					this.log("log", parsed.result("msg") || line);
 				}
 				if (parsed.outOfBandRecord) {
 					parsed.outOfBandRecord.forEach((record) => {
@@ -579,7 +579,7 @@ export class MI2 extends EventEmitter implements IBackend {
 								} else if (record.asyncClass === "stopped") {
 									const reason = parsed.record("reason");
 									if (this.trace)
-										this.log("stderr", "stop: " + reason);
+										this.log("log", "stop: " + reason);
 									if (reason === "breakpoint-hit") {
 										this.emit("breakpoint", parsed);
 									} else if (reason === "watchpoint-trigger") {
@@ -593,7 +593,7 @@ export class MI2 extends EventEmitter implements IBackend {
 									} else if (reason === "exited-normally") {
 										this.emit("exited-normally", parsed);
 									} else if (reason === "exited") { // exit with error code != 0
-										this.log("stderr", "Program exited with code " + parsed.record("exit-code"));
+										this.log("log", "Program exited with code " + parsed.record("exit-code"));
 										this.emit("exited-normally", parsed);
 									} else {
 										if(reason !== undefined)

@@ -523,6 +523,7 @@ class AmigaDebugExtension {
 		switch (e.event) {
 			case 'custom-output':
 				this.receivedOutputEvent(e);
+				break;
 			case 'custom-stop':
 				this.receivedStopEvent(e);
 				break;

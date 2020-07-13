@@ -564,7 +564,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected msgEvent(type: string, msg: string) {
-		console.log("msgEvent", type, msg);
+		//console.log("msgEvent", type, msg);
 		if(type === 'console' || type === 'log') {
 			// send GDB console output and debugger log to 'Amiga' output channel (not debug console)
 			this.sendEvent(new CustomOutputEvent(msg, type));
@@ -846,9 +846,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments, request?: DebugProtocol.Request): Promise<void> {
+		let name = args.name;
+		if (args.variablesReference >= VAR_HANDLES_START) {
+			const parent = this.variableHandles.get(args.variablesReference) as VariableObject;
+			name = `${parent.exp}.${name}`;
+		}
+
 		response.body = {
-			dataId: args.name,
-			description: `When ${args.name} changes`,
+			dataId: name,
+			description: `When ${name} changes`,
 			accessTypes: ['read', 'write', 'readWrite']
 		};
 		this.sendResponse(response);
@@ -856,6 +862,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request): Promise<void> {
 		// clear old watchpoints
+		try {
 		await this.miDebugger.removeBreakpoints(this.watchpoints.map((wp) => wp.number!));
 		this.watchpoints = [];
 
@@ -863,7 +870,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const all: Array<Promise<Watchpoint | null>> = [];
 		if (args.breakpoints) {
 			args.breakpoints.forEach((brk) => {
-				all.push(this.miDebugger.addWatchpoint(brk.dataId, brk.accessType as string));
+				all.push(this.miDebugger.addWatchpoint(brk.dataId, /*brk.accessType as string*/'write')); // hmm.. there seems to be a bug in VSCode where we don't get accessType
 			});
 		}
 		this.watchpoints = await Promise.all(all);
@@ -877,6 +884,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			});
 		}
 		this.sendResponse(response);
+		} catch (e) {
+			this.sendErrorResponse(response, 1, `Unable to set data breakpoints: ${e}`);
+		}
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
@@ -946,7 +956,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				}
 				if (disassemble) {
 					const tryFunction = async () => {
-						const symbolInfo = await this.getDisassemblyForFunction(element.function, element.fileName);
+						let symbolInfo = await this.getDisassemblyForFunction(element.function, element.fileName);
+						if(!symbolInfo) {
+							// not found, this could be inlined function that no longer exists, so try by address instead
+							const funcInfo = this.symbolTable.getFunctionAtAddress(parseInt(element.address.substr(2), 16), true);
+							if(funcInfo)
+								symbolInfo = await this.getDisassemblyForFunction(funcInfo.name, funcInfo.file);
+						}
+
 						if(symbolInfo) {
 							let line = -1;
 							if (symbolInfo.lines) {
