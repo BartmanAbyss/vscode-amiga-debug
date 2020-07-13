@@ -189,14 +189,13 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
-* custom registers: handle DMACON (see flame-graph.tsx@buildDmaBoxes)
-* asm-singlestepping: sometimes doesn't find correct line
+* customregs.tsx: handle DMACON (see flame-graph.tsx@buildDmaBoxes)
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
-* disassemble address always creates new disassembly even if just stepping. check title of current disassembly window if current PC is in range.
 * restartRequest not implemented
 * vscode.debug.activeDebugSession is undefined when program is stopped on entry
 * not getting handleThreadSelected(), thread ID now set in class
 * sometimes Pause/Resume button doesn't correctly switch to "Pause" icon while amiga program is running
 * step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
 * memory, disassembly: use VSCode built-in requests <= not implemented in VSCode, only in DebugAdapter specification
+* in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
