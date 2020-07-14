@@ -21,9 +21,9 @@ PubSub.subscribe('showBlit', (msg, data: Blit) => (Context as any).__['blit'] = 
 export const BlitterVis: FunctionComponent<{
 	blit: Blit;
 	frame: number;
-}> = ({ blit, frame }) => {
-	const memoryBefore = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleStart);
-	const memoryAfter = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleEnd || 0xffffffff);
+	time: number;
+}> = ({ blit, frame, time }) => {
+	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
 	const customRegs = new Uint16Array(MODELS[frame].amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
@@ -66,7 +66,7 @@ export const BlitterVis: FunctionComponent<{
 					const BLTxDAT = [];
 					for(let p = 0; p < numPlanes; p++) {
 						const addr = BLTxPT + x * 2 + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
-						let raw = (channel < 3) ? memoryBefore.readWord(addr) : memoryAfter.readWord(addr);
+						let raw = memory.readWord(addr);
 						if(channel === 0) {
 							if(x === 0)
 								raw &= blit.BLTAFWM;
@@ -88,7 +88,7 @@ export const BlitterVis: FunctionComponent<{
 			}
 			context.putImageData(imgData, 0, 0);
 		}
-	}, [blit, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
+	}, [blit, memory, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
 
 	return (
 		<Fragment>
@@ -103,7 +103,8 @@ export const BlitterVis: FunctionComponent<{
 
 export const BlitterList: FunctionComponent<{
 	frame: number;
-}> = ({ frame }) => {
+	time: number;
+}> = ({ frame, time }) => {
 	//{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
 	//<ReactJson src={MODEL.blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 	const state = useContext<IState>(Context);
@@ -117,7 +118,7 @@ export const BlitterList: FunctionComponent<{
 	return (
 		<Fragment>
 			<div class={styles.container}>
-				{blit !== undefined && <div><BlitterVis blit={blit} frame={frame} /></div>}
+				{blit !== undefined && <div><BlitterVis blit={blit} frame={frame} time={time} /></div>}
 			</div>
 		</Fragment>
 	);

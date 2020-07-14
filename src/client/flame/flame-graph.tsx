@@ -884,6 +884,7 @@ export const FlameGraph: FunctionComponent<{
 
 			const box = getBoxUnderCursor(evt);
 			if (box && (evt.ctrlKey || evt.metaKey)) {
+				setFocused(box);
 				openBox(box, evt);
 			} else if (box) {
 				//zoomToBox(box);

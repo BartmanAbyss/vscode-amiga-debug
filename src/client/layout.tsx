@@ -128,7 +128,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<GfxResourcesView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>
-						<BlitterList frame={frame} />
+						<BlitterList frame={frame} time={time} />
 					</TabPanel>
 				</Tabs>
 				<Tabs selectedIndex={rightTab} onSelect={(tabIndex) => setRightTab(tabIndex)} className={styles.tabs}>
