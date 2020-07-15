@@ -124,6 +124,7 @@ enum barto_cmd {
 	barto_cmd_filled_rect,
 	barto_cmd_text,
 	barto_cmd_register_resource,
+	barto_cmd_set_idle,
 };
 
 enum debug_resource_type {
@@ -168,6 +169,15 @@ void debug_text(short left, short top, const char* text, unsigned int color) {
 	debug_cmd(barto_cmd_text, (((unsigned int)left) << 16) | ((unsigned int)top), (unsigned int)text, color);
 }
 
+// profiler
+void debug_start_idle() {
+	debug_cmd(barto_cmd_set_idle, 1, 0, 0);
+}
+
+void debug_stop_idle() {
+	debug_cmd(barto_cmd_set_idle, 0, 0, 0);
+}
+
 // gfx debugger
 static void my_strncpy(char* destination, const char* source, unsigned long num) {
 	while(*source && --num > 0)
@@ -183,6 +193,10 @@ void debug_register_bitmap(const void* addr, const char* name, short width, shor
 		.flags = flags,
 		.bitmap = { width, height, numPlanes }
 	};
+
+	if (flags & debug_resource_bitmap_masked)
+		resource.size *= 2;
+
 	my_strncpy(resource.name, name, sizeof(resource.name));
 	debug_cmd(barto_cmd_register_resource, (unsigned int)&resource, 0, 0);
 }

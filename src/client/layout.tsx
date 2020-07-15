@@ -6,8 +6,10 @@ import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './layout.module.css';
 
-import { IProfileModel } from './model';
+import { IProfileModel, buildModel } from './model';
+import { ICpuProfileRaw } from './types';
 declare const MODELS: IProfileModel[];
+declare let PROFILES: ICpuProfileRaw[];
 
 import { DisplayUnit, DisplayUnitType } from './display';
 import { UnitSelect } from './unit-select';
@@ -28,7 +30,7 @@ import { GfxResourcesView } from './debugger/resources';
 import { CustomRegsView } from './debugger/customregs';
 
 import 'pubsub-js';
-import { Blit } from './dma';
+import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
 
 export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [frame, setFrame] = useState(0);
@@ -73,7 +75,10 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	}, []);
 
 	const onClickFrame = useCallback((event) => {
-		setFrame(parseInt(event.srcElement.attributes.data.nodeValue));
+		const fr = parseInt(event.srcElement.attributes.data.nodeValue);
+		if(!MODELS[fr])
+			MODELS[fr] = buildModel(PROFILES[fr]);
+		setFrame(fr);
 	}, [setFrame]);
 
 	const frameHover = useRef<HTMLImageElement>();
@@ -90,11 +95,28 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		frameHover.current.src = '';
 	}, [frameHover]);
 
+	const cpuColorInt = dmaTypes[DmaTypes.CPU].subtypes[DmaSubTypes.CPU_CODE].color;
+	const cpuColor = '#' + 
+		((cpuColorInt >>> 0) & 0xff).toString(16).padStart(2, '0') +
+		((cpuColorInt >>> 8) & 0xff).toString(16).padStart(2, '0') +
+		((cpuColorInt >>> 16) & 0xff).toString(16).padStart(2, '0');
+
+	const blitColorInt = dmaTypes[DmaTypes.BLITTER].subtypes[DmaSubTypes.BLITTER].color;
+	const blitColor = '#' + 
+		((blitColorInt >>> 0) & 0xff).toString(16).padStart(2, '0') +
+		((blitColorInt >>> 8) & 0xff).toString(16).padStart(2, '0') +
+		((blitColorInt >>> 16) & 0xff).toString(16).padStart(2, '0');
+
 	return (
 		<Fragment>
-			{MODELS[0].amiga && MODELS.length > 1 && <Fragment>
+			{PROFILES[0].$amiga && PROFILES.length > 1 && <Fragment>
 				<div class={styles.frames}>
-					{MODELS.map((MODEL, fr) => <img onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={MODEL.amiga.screenshot} title={`Frame ${fr + 1}`} />)}
+					{PROFILES.map((PROFILE, fr) => <div class={styles.frame}>
+						<img onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
+						<div class={styles.label}>{fr + 1}</div>
+						<div style={{width: (100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))) + '%', backgroundColor: cpuColor, height: '5px'}} />
+						<div style={{width: (100 * GetBlitCycles(PROFILE.$amiga.dmaRecords) / (7_093_790 / 2 / 50)) + '%', backgroundColor: blitColor, height: '5px'}} />
+					</div>)}
 				</div>
 				{createPortal(<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>
 					<img ref={frameHover} />
@@ -124,7 +146,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 					<TabPanel style={{ overflow: 'auto' }}>
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
-					<TabPanel style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+					<TabPanel style={{ overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
 						<GfxResourcesView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>

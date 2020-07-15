@@ -5,7 +5,7 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
 import { ISourceLocation } from './location-mapping';
-import { Memory, Blit } from './dma';
+import { Memory, Blit, GetBlits } from './dma';
 import { DisplayUnit, scaleValue } from './display';
 
 /**
@@ -313,7 +313,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		}
 	}
 
-	return {
+	const model: IProfileModel = {
 		nodes,
 		locations,
 		samples: profile.samples.map(mapId),
@@ -323,6 +323,18 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		amiga: profile.$amiga,
 		shrinkler: profile.$shrinkler,
 	};
+	if (model.amiga) {
+		model.duration = 7_093_790 / 50; // DMA TEST
+		// decode memory to binary
+		const chipMem = Uint8Array.from(atob(model.amiga.chipMem), (c) => c.charCodeAt(0));
+		const bogoMem = Uint8Array.from(atob(model.amiga.bogoMem), (c) => c.charCodeAt(0));
+		model.memory = new Memory(chipMem, bogoMem);
+		// get blits
+		const customRegs = new Uint16Array(model.amiga.customRegs);
+		model.blits = GetBlits(customRegs, model.amiga.dmaRecords);
+	}
+
+	return model;
 };
 
 export function createLenses(model: IProfileModel, unit: DisplayUnit): Lens[] {

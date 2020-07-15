@@ -313,7 +313,7 @@ class AmigaDebugExtension {
 	}
 
 	private startProfileMulti() {
-		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 10 });
+		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 50 });
 	}
 
 	private async profileSize(uri: vscode.Uri) {

@@ -55,6 +55,7 @@ export interface IAmigaProfileExtra {
 	customRegs: number[];
 	dmaRecords: DmaRecord[];
 	gfxResources: GfxResource[];
+	idleCycles: number;
 	symbols: SymbolInformation[];
 	sections: Section[];
 	systemStackLower: number;

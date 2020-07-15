@@ -21,7 +21,7 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	const bundle = await fs.readFile(path.join(bundlePath, 'client.bundle.js'), 'utf-8');
 	const nonce = randomBytes(16).toString('hex');
 	const constantDecls = Object.keys(constants)
-		.map((key) => `const ${key} = ${JSON.stringify(constants[key])};`)
+		.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
 		.join('\n');
 
 	const html = `<!DOCTYPE html>
@@ -82,7 +82,11 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 	}
 
 	private async updateWebview(document: ProfileDocument, webview: vscode.Webview) {
-		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { MODELS: [], PROFILE_URL: webview.asWebviewUri(document.uri).toString() });
+		webview.html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { 
+			PROFILES: [],
+			MODELS: [], 
+			PROFILE_URL: webview.asWebviewUri(document.uri).toString() 
+		});
 	}
 
 	public async resolveCustomEditor(document: ProfileDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {

@@ -289,7 +289,7 @@
 		"compile": "concurrently -r \"npm:compile:*\"",
 		"compile:ext": "tsc -p ./",
 		"compile:client": "webpack --mode=development",
-		"watch": "concurrently -r -r \"npm:watch:*\"",
+		"watch": "concurrently -r \"npm:watch:*\"",
 		"watch:ext": "tsc -watch -p ./",
 		"watch:client": "webpack --watch --mode=development --info-verbosity verbose",
 		"serve": "webpack-dev-server --mode=development",

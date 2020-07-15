@@ -19,6 +19,10 @@ void debug_rect(short left, short top, short right, short bottom, unsigned int c
 void debug_filled_rect(short left, short top, short right, short bottom, unsigned int color);
 void debug_text(short left, short top, const char* text, unsigned int color);
 
+// profiler
+void debug_start_idle();
+void debug_stop_idle();
+
 // Graphics debugger
 enum debug_resource_flags {
     debug_resource_bitmap_interleaved = 1 << 0,

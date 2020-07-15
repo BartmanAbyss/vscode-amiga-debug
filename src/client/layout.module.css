@@ -48,13 +48,30 @@
 /* list of frames in profile */
 .frames {
   flex-shrink: 0;
+  line-height: 0;
   margin-bottom: 10px;
+  white-space: nowrap;
+  overflow-x: auto;
 }
 
 .frames img {
   cursor: pointer;
-  margin-right: 10px;
-  height: 64px;
+  height: 48px;
+}
+
+.frames .frame {
+  display: inline-block;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  position: relative;
+}
+
+.frames .frame .label {
+  position: absolute;
+  pointer-events: none;
+  top: 2px;
+  left: 2px;
+  line-height: 100%;
 }
 
 .tooltip {

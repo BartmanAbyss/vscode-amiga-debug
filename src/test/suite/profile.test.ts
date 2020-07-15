@@ -136,6 +136,7 @@ function htmlPage(title: string, scripts: string[], profiles: string) {
 	</head>
 	<body style="overflow: hidden">
 			<script>
+				let PROFILES = [];
 				let MODELS = [];
 				let PROFILE_URL = "${profiles}";
 			</script>

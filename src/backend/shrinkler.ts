@@ -18,7 +18,7 @@ interface Hunk {
 	symbols: Symbol[];
 }
 
-interface Stats {
+export interface Stats {
 	hunks: Hunk[];
 }
 

@@ -256,6 +256,7 @@ export class ProfileFrame {
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
+	public idleCycles: number;
 	public profileArray: Uint32Array;
 	public screenshot: Uint8Array;
 
@@ -293,10 +294,14 @@ export class ProfileFile {
 			const frame = new ProfileFrame();
 			frame.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
 			frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
+
+			// memory
 			frame.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			frame.chipMem = new Uint8Array(buffer.buffer, bufferOffset, frame.chipMemSize); bufferOffset += frame.chipMemSize;
 			frame.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			frame.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, frame.bogoMemSize); bufferOffset += frame.bogoMemSize;
+
+			// DMA
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			if(dmaLen !== ProfileFile.sizeofDmaRec)
@@ -321,6 +326,8 @@ export class ProfileFile {
 					frame.dmaRecords.push({});
 				}
 			}
+
+			// resources
 			const resourceLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			const resourceCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			if(resourceLen !== ProfileFile.sizeofResource)
@@ -347,6 +354,10 @@ export class ProfileFile {
 				}
 				frame.gfxResources.push(resource);
 			}
+
+			frame.idleCycles = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+
+			// profiles
 			const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			//if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
 			//	throw new Error("profileCount mismatch");
@@ -446,6 +457,7 @@ export class Profiler {
 				customRegs: Array.from(frame.customRegs), 
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,
+				idleCycles: frame.idleCycles,
 				symbols,
 				sections,
 				systemStackLower: profileFile.systemStackLower,

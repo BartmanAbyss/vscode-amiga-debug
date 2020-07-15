@@ -465,39 +465,62 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return;
 			}
 
-			const numFrames = args?.numFrames || 1;
+			await vscode.window.withProgress({
+				location: vscode.ProgressLocation.Notification,
+				title: "Profiling"
+			}, async (progress, token) => {
+				const numFrames = args?.numFrames || 1;
 
-			const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
-			const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
-			const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+				const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
+				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 
-			const date = new Date();
-			const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" + 
-				date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
+				const date = new Date();
+				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" + 
+					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 
-			const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
+				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
 
-			// write unwind table for WinUAE
-			const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);
-			fs.writeFileSync(tmp + ".unwind", unwind.unwind);
+				// write unwind table for WinUAE
+				const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);
+				fs.writeFileSync(tmp + ".unwind", unwind.unwind);
 
-			// path to profile file
-			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
-			await this.miDebugger.sendUserInput(`monitor profile ${numFrames} "${tmpQuoted}.unwind" "${tmpQuoted}"`);
-			//fs.unlinkSync(tmp + ".unwind");
+				progress.report({ message: 'Starting profile...'});
 
-			// read profile file
-			const profileArchive = new ProfileFile(tmp);
-			//fs.unlinkSync(tmp);
+				const debuggerProgress = (type: string, message: string) => {
+					if(message.startsWith("PRF: ")) {
+						const match = message.match(/(\d+)\/(\d+)/);
+						if(match)
+							progress.report({ increment: 100 / parseInt(match[2]), message: `Profiling frame ${match[1]} of ${match[2]} `});
+						else
+							progress.report({ message });
+					}
+				};
 
-			// resolve and generate output
-			const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
-			const profiler = new Profiler(sourceMap, this.symbolTable);
-			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive));
+				this.miDebugger.on('msg', debuggerProgress);
 
-			// open output
-			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
+				// path to profile file
+				const tmpQuoted = tmp.replace(/\\/g, '\\\\');
+				await this.miDebugger.sendUserInput(`monitor profile ${numFrames} "${tmpQuoted}.unwind" "${tmpQuoted}"`);
+				//fs.unlinkSync(tmp + ".unwind");
 
+				this.miDebugger.off('msg', debuggerProgress);
+
+				progress.report({ message: 'Reading profile...'});
+
+				// read profile file
+				const profileArchive = new ProfileFile(tmp);
+				//fs.unlinkSync(tmp);
+
+				// resolve and generate output
+				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
+				const profiler = new Profiler(sourceMap, this.symbolTable);
+				progress.report({ message: 'Writing profile...'});
+				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive));
+
+				// open output
+				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
+			});
 			this.sendResponse(response);
 		} catch (error) {
 			response.body = { error };
@@ -573,6 +596,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				if(msg.startsWith("DBG: ")) { // user output (KPrintF, etc.)
 					msg = msg.substr(5); // remove "DBG: " prefix added by uaelib.cpp
 					type = 'stdout';
+				} else if(msg.startsWith("PRF: ")) { // don't display profiler output, handled by profiler
+					return;
 				} else { // WinUAE output
 					type = 'stderr';
 				}

@@ -292,6 +292,31 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 	return blits;
 }
 
+export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
+	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE");
+	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH");
+
+	let cycles = 0;
+	let i = 0;
+	let lastStart = -1;
+	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			const isBlitStart = (dmaRecord.reg === regBLTSIZE - 0xdff000) || (dmaRecord.reg === regBLTSIZH - 0xdff000);
+			if(isBlitStart) {
+				lastStart = i;
+			}
+			if(dmaRecord.evt & DmaEvents.BLITIRQ) {
+				if(lastStart !== -1) {
+					cycles += i + 8 - lastStart;
+					lastStart = -1;
+				}
+			}
+		}
+	}
+	return cycles;
+}
+
 export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[] {
 	const insns: Copper[] = [];
 	const regCOPINS = CustomRegisters.getCustomAddress("COPINS");
