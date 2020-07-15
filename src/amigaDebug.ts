@@ -504,8 +504,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				await this.miDebugger.sendUserInput(`monitor profile ${numFrames} "${tmpQuoted}.unwind" "${tmpQuoted}"`);
 				//fs.unlinkSync(tmp + ".unwind");
 
-				this.miDebugger.off('msg', debuggerProgress);
-
 				progress.report({ message: 'Reading profile...'});
 
 				// read profile file
@@ -520,6 +518,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
+				this.miDebugger.off('msg', debuggerProgress);
 			});
 			this.sendResponse(response);
 		} catch (error) {

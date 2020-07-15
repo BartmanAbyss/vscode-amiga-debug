@@ -81,6 +81,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		setFrame(fr);
 	}, [setFrame]);
 
+	// don't use createPortal, causes too much re-render
 	const frameHover = useRef<HTMLImageElement>();
 
 	const onEnterFrame = useCallback((evt: JSX.TargetedMouseEvent<HTMLImageElement>) => {
@@ -89,11 +90,11 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		frameHover.current.parentElement.style.visibility = '';
 		frameHover.current.parentElement.style.left = Math.min(window.innerWidth - 20 - evt.currentTarget.naturalWidth, rect.left) + 'px';
 		frameHover.current.parentElement.style.top = (rect.bottom + 10) + 'px';
-	}, [frameHover]);
+	}, [frameHover.current]);
 	const onLeaveFrame = useCallback((evt: JSX.TargetedMouseEvent<HTMLImageElement>) => {
 		frameHover.current.parentElement.style.visibility = 'hidden';
 		frameHover.current.src = '';
-	}, [frameHover]);
+	}, [frameHover.current]);
 
 	const colorToHex = (color: number) => '#' + 
 		((color >>> 0) & 0xff).toString(16).padStart(2, '0') +
@@ -103,6 +104,15 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const cpuColor = colorToHex(dmaTypes[DmaTypes.CPU].subtypes[DmaSubTypes.CPU_CODE].color);
 	const blitColor = colorToHex(dmaTypes[DmaTypes.BLITTER].subtypes[DmaSubTypes.BLITTER].color);
 
+	const frameBlitCycles = useMemo(() => {
+		const cycles: number[] = [];
+		if(PROFILES[0].$amiga) {
+			for(const p of PROFILES)
+				cycles.push(GetBlitCycles(p.$amiga.dmaRecords));
+		}
+		return cycles;
+	}, []);
+
 	return (
 		<Fragment>
 			{PROFILES[0].$amiga && PROFILES.length > 1 && <Fragment>
@@ -111,12 +121,12 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent') }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
 						<div class={styles.label}>{fr + 1}</div>
 						<div style={{width: (100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))) + '%', backgroundColor: cpuColor, height: '5px'}} />
-						<div style={{width: (100 * GetBlitCycles(PROFILE.$amiga.dmaRecords) / (7_093_790 / 2 / 50)) + '%', backgroundColor: blitColor, height: '5px'}} />
+						<div style={{width: (100 * frameBlitCycles[fr] / (7_093_790 / 2 / 50)) + '%', backgroundColor: blitColor, height: '5px'}} />
 					</div>)}
 				</div>
-				{createPortal(<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>
+				<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>
 					<img ref={frameHover} />
-				</div>, document.body)}
+				</div>
 			</Fragment>}
 			<div className={styles.filter}>
 				<div className={styles.f}>
