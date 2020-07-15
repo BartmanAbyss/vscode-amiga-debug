@@ -95,24 +95,20 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		frameHover.current.src = '';
 	}, [frameHover]);
 
-	const cpuColorInt = dmaTypes[DmaTypes.CPU].subtypes[DmaSubTypes.CPU_CODE].color;
-	const cpuColor = '#' + 
-		((cpuColorInt >>> 0) & 0xff).toString(16).padStart(2, '0') +
-		((cpuColorInt >>> 8) & 0xff).toString(16).padStart(2, '0') +
-		((cpuColorInt >>> 16) & 0xff).toString(16).padStart(2, '0');
+	const colorToHex = (color: number) => '#' + 
+		((color >>> 0) & 0xff).toString(16).padStart(2, '0') +
+		((color >>> 8) & 0xff).toString(16).padStart(2, '0') +
+		((color >>> 16) & 0xff).toString(16).padStart(2, '0');
 
-	const blitColorInt = dmaTypes[DmaTypes.BLITTER].subtypes[DmaSubTypes.BLITTER].color;
-	const blitColor = '#' + 
-		((blitColorInt >>> 0) & 0xff).toString(16).padStart(2, '0') +
-		((blitColorInt >>> 8) & 0xff).toString(16).padStart(2, '0') +
-		((blitColorInt >>> 16) & 0xff).toString(16).padStart(2, '0');
+	const cpuColor = colorToHex(dmaTypes[DmaTypes.CPU].subtypes[DmaSubTypes.CPU_CODE].color);
+	const blitColor = colorToHex(dmaTypes[DmaTypes.BLITTER].subtypes[DmaSubTypes.BLITTER].color);
 
 	return (
 		<Fragment>
 			{PROFILES[0].$amiga && PROFILES.length > 1 && <Fragment>
 				<div class={styles.frames}>
 					{PROFILES.map((PROFILE, fr) => <div class={styles.frame}>
-						<img onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
+						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent') }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
 						<div class={styles.label}>{fr + 1}</div>
 						<div style={{width: (100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))) + '%', backgroundColor: cpuColor, height: '5px'}} />
 						<div style={{width: (100 * GetBlitCycles(PROFILE.$amiga.dmaRecords) / (7_093_790 / 2 / 50)) + '%', backgroundColor: blitColor, height: '5px'}} />

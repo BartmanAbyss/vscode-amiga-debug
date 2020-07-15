@@ -57,6 +57,7 @@
 .frames img {
   cursor: pointer;
   height: 48px;
+  box-sizing: border-box;
 }
 
 .frames .frame {
@@ -70,7 +71,7 @@
   position: absolute;
   pointer-events: none;
   top: 2px;
-  left: 2px;
+  left: 4px;
   line-height: 100%;
 }
 
