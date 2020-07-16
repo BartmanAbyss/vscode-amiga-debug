@@ -6,3 +6,17 @@
     font-weight: var(--vscode-editor-font-weight);   
     white-space: pre;
 }
+
+/* copy from copper.module.css */
+.past {
+	opacity: 1.0;
+}
+
+.future {
+	opacity: 0.75;
+}
+
+.cur {
+	background-color: var(--vscode-editor-selectionBackground);
+	color: var(--vscode-editor-selectionForeground);
+}

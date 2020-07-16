@@ -69,10 +69,10 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [leftTab, setLeftTab] = useState(LeftTab.profiler);
 	const [rightTab, setRightTab] = useState(RightTab.copper);
 
-	useEffect(() => {
+	/*useEffect(() => {
 		const token = PubSub.subscribe('showBlit', () => setLeftTab(LeftTab.blitter));
 		return () => PubSub.unsubscribe(token);
-	}, []);
+	}, []);*/
 
 	const onClickFrame = useCallback((event) => {
 		const fr = parseInt(event.srcElement.attributes.data.nodeValue);

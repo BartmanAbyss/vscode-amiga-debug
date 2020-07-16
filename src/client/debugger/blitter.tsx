@@ -5,25 +5,36 @@ import styles from './copper.module.css';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs } from '../dma';
+import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory } from '../dma';
 import ReactJson from 'react-json-view'; // DEBUG only
 
 import 'pubsub-js';
 
 // store state because component will get unmounted when tab switches
-interface IState {
+/*interface IState {
 	blit?: Blit;
 }
 // when BlitterList is not mounted, just update state!
 const Context = createContext<IState>({});
-PubSub.subscribe('showBlit', (msg, data: Blit) => (Context as any).__['blit'] = data); // somehow _defaultValue gets converted to __ (webpack?)
-
+//PubSub.subscribe('showBlit', (msg, data: Blit) => (Context as any).__['blit'] = data); // somehow _defaultValue gets converted to __ (webpack?)
+*/
 export const BlitterVis: FunctionComponent<{
 	blit: Blit;
 	frame: number;
 	time: number;
 }> = ({ blit, frame, time }) => {
-	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
+	const memories = useMemo(() => {
+		if(time === -1) {
+			return [
+				GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleStart),
+				GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleEnd || 0xffffffff)
+			];
+		} else {
+			const memory = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1);
+			return [memory, memory];
+		}
+	}, [blit, time, frame]);
+
 	const customRegs = new Uint16Array(MODELS[frame].amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
@@ -66,7 +77,7 @@ export const BlitterVis: FunctionComponent<{
 					const BLTxDAT = [];
 					for(let p = 0; p < numPlanes; p++) {
 						const addr = BLTxPT + x * 2 + p * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
-						let raw = memory.readWord(addr);
+						let raw = (channel < 3) ? memories[0].readWord(addr) : memories[1].readWord(addr);
 						if(channel === 0) {
 							if(x === 0)
 								raw &= blit.BLTAFWM;
@@ -88,7 +99,7 @@ export const BlitterVis: FunctionComponent<{
 			}
 			context.putImageData(imgData, 0, 0);
 		}
-	}, [blit, memory, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
+	}, [blit, time, frame, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
 
 	return (
 		<Fragment>
@@ -105,21 +116,39 @@ export const BlitterList: FunctionComponent<{
 	frame: number;
 	time: number;
 }> = ({ frame, time }) => {
+	const blits = MODELS[frame].blits;
+	const containerRef = useRef<HTMLDivElement>();
+
 	//{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
 	//<ReactJson src={MODEL.blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
-	const state = useContext<IState>(Context);
+	//const state = useContext<IState>(Context);
 
-	const [blit, setBlit] = useState<Blit>(state.blit);
+	/*const [blit, setBlit] = useState<Blit>(state.blit);
 	useEffect(() => {
 		const token = PubSub.subscribe('showBlit', (msg, data: Blit) => { state.blit = data; setBlit(data); });
 		return () => PubSub.unsubscribe(token);
-	}, []);
+	}, []);*/
 
-	return (
-		<Fragment>
-			<div class={styles.container}>
-				{blit !== undefined && <div><BlitterVis blit={blit} frame={frame} time={time} /></div>}
-			</div>
-		</Fragment>
-	);
+	// get blit that is executing at 'time'
+	let curBlit = -1;
+	for(let i = 0; i < blits.length; i++) {
+		if(blits[i].cycleStart <= (time >> 1) && blits[i].cycleEnd > (time >> 1)) {
+			curBlit = i;
+			break;
+		}
+	}
+
+	useEffect(() => {
+		if(blits.length === 0 || !containerRef.current || curBlit === -1)
+			return;
+
+		// no smooth scrolling here, 2 at the same time don't work (copper is also smooth scrolling)
+		containerRef.current.children[Math.max(0, curBlit)].scrollIntoView({ behavior: 'auto', block: 'center' });
+	}, [curBlit, containerRef.current]);
+
+	return (<div ref={containerRef} class={styles.container}>
+		{blits.map((blit, i) => <div class={i === curBlit ? styles.cur : (blit.cycleEnd < (time >> 1) ? styles.past : styles.future)}>
+			<BlitterVis blit={blit} frame={frame} time={i === curBlit ? time : -1} />
+		</div>)}
+	</div>);
 };
