@@ -15,6 +15,9 @@ import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
 
+// global debug switch
+const DEBUG = false;
+
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	config?: string; // A500 (default), A1200, etc.
 	program: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
@@ -280,9 +283,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
 
-		//this.miDebugger.printCalls = true;
-		//this.miDebugger.debugOutput = true;
-		//this.miDebugger.trace = true;
+		if(DEBUG) {
+			//this.miDebugger.printCalls = true;
+			//this.miDebugger.debugOutput = true;
+			//this.miDebugger.trace = true;
+		}
 
 		this.miDebugger.once('sections-loaded', (sections) => {
 			if(sections.length > 0) {
@@ -502,13 +507,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				// path to profile file
 				const tmpQuoted = tmp.replace(/\\/g, '\\\\');
 				await this.miDebugger.sendUserInput(`monitor profile ${numFrames} "${tmpQuoted}.unwind" "${tmpQuoted}"`);
-				//fs.unlinkSync(tmp + ".unwind");
+				if(!DEBUG)
+					fs.unlinkSync(tmp + ".unwind");
 
 				progress.report({ message: 'Reading profile...'});
 
 				// read profile file
 				const profileArchive = new ProfileFile(tmp);
-				//fs.unlinkSync(tmp);
+				if(!DEBUG)
+					fs.unlinkSync(tmp);
 
 				// resolve and generate output
 				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
