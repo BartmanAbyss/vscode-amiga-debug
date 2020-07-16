@@ -36,9 +36,7 @@ declare let MODELS: IProfileModel[];
 		}
 
 		// build model for first profile
-		console.time('buildModel');
 		MODELS.push(buildModel(PROFILES[0]));
-		console.timeEnd('buildModel');
 
 		// add dummy models for rest of profiles
 		// will be built in layout.tsx as needed

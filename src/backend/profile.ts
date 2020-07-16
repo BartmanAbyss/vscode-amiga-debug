@@ -248,10 +248,6 @@ struct barto_debug_resource {
 
 // represents 1 frame worth of profiling data
 export class ProfileFrame {
-	public chipMemSize: number;
-	public chipMem: Uint8Array;
-	public bogoMemSize: number;
-	public bogoMem: Uint8Array;
 	public dmacon: number;
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
@@ -272,6 +268,10 @@ export class ProfileFile {
 	public systemStackUpper: number;
 	public stackLower: number;
 	public stackUpper: number;
+	public chipMemSize: number;
+	public chipMem: Uint8Array;
+	public bogoMemSize: number;
+	public bogoMem: Uint8Array;
 	public frames: ProfileFrame[] = [];
 
 	private static sizeofDmaRec = 20;
@@ -290,16 +290,16 @@ export class ProfileFile {
 		this.stackLower = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.stackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 
+		// memory
+		this.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipMemSize); bufferOffset += this.chipMemSize;
+		this.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, this.bogoMemSize); bufferOffset += this.bogoMemSize;
+
 		for(let i = 0; i < numFrames; i++) {
 			const frame = new ProfileFrame();
 			frame.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
 			frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
-
-			// memory
-			frame.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-			frame.chipMem = new Uint8Array(buffer.buffer, bufferOffset, frame.chipMemSize); bufferOffset += frame.chipMemSize;
-			frame.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-			frame.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, frame.bogoMemSize); bufferOffset += frame.bogoMemSize;
 
 			// DMA
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
@@ -385,6 +385,10 @@ export class Profiler {
 		for(const frame of profileFile.frames)
 			out.push(this.profileTimeFrame(profileFile, frame));
 
+		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
+		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
+		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
+
 		return JSON.stringify(out/*, null, 2*/);
 	}
 
@@ -451,8 +455,6 @@ export class Profiler {
 		const out: ICpuProfileRaw = { 
 			...profileCommon(cycles, locations),
 			$amiga: {
-				chipMem: Buffer.from(frame.chipMem).toString('base64'),
-				bogoMem: Buffer.from(frame.bogoMem).toString('base64'),
 				dmacon: frame.dmacon,
 				customRegs: Array.from(frame.customRegs), 
 				dmaRecords: frame.dmaRecords,

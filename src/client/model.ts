@@ -5,8 +5,9 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
 import { ISourceLocation } from './location-mapping';
-import { Memory, Blit, GetBlits } from './dma';
+import { Memory, Blit, GetBlits, GetMemoryAfterDma } from './dma';
 import { DisplayUnit, scaleValue } from './display';
+import { DmaRecord } from '../backend/profile_types';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -221,6 +222,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		};
 	}
 
+	console.time('buildModel');
+
 	const sourceLocations = ensureSourceLocations(profile);
 	const locations: ILocation[] = sourceLocations.map((l, id) => {
 		const src = getBestLocation(profile, l.locations);
@@ -326,16 +329,30 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	if (model.amiga) {
 		model.duration = 7_093_790 / 50; // DMA TEST
 		// decode memory to binary
-		const chipMem = Uint8Array.from(atob(model.amiga.chipMem), (c) => c.charCodeAt(0));
-		const bogoMem = Uint8Array.from(atob(model.amiga.bogoMem), (c) => c.charCodeAt(0));
-		model.memory = new Memory(chipMem, bogoMem);
+		if(model.amiga.chipMem) {
+			const chipMem = Uint8Array.from(atob(model.amiga.chipMem), (c) => c.charCodeAt(0));
+			const bogoMem = Uint8Array.from(atob(model.amiga.bogoMem), (c) => c.charCodeAt(0));
+			model.memory = new Memory(chipMem, bogoMem);
+		}
 		// get blits
 		const customRegs = new Uint16Array(model.amiga.customRegs);
 		model.blits = GetBlits(customRegs, model.amiga.dmaRecords);
 	}
 
+	console.timeEnd('buildModel');
+
 	return model;
 };
+
+export function getMemory(base: Memory, dmas: DmaRecord[][]): Memory {
+	console.time('getMemory');
+	let memory = base;
+	for(const dmaRecords of dmas) {
+		memory = GetMemoryAfterDma(memory, dmaRecords, 0xffffffff);
+	}
+	console.timeEnd('getMemory');
+	return memory;
+}
 
 export function createLenses(model: IProfileModel, unit: DisplayUnit): Lens[] {
 	const lenses: Lens[] = [];
