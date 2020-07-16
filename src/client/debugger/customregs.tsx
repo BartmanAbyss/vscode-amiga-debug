@@ -63,8 +63,8 @@ export const CustomRegsView: FunctionComponent<{
 	time: number,
 	setTime
 }> = ({ frame, time, setTime }) => {
-	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, Math.max(0, (time >> 1) - 1)), [time, frame]);
-	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
+	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, Math.max(0, (time >> 1) - 1)), [time, frame]);
+	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
 
 	const wantCustom = (index: number) => {
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.ptl)

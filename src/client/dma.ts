@@ -460,8 +460,11 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 }
 
 // returs custom registers after DMA requests up to endCycle
-export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
+export function GetCustomRegsAfterDma(customRegs: number[], dmacon: number, dmaRecords: DmaRecord[], endCycle: number): number[] {
+	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+
 	const customRegsAfter = customRegs.slice(); // initial copy
+	customRegsAfter[regDMACON >>> 1] = dmacon;
 
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
@@ -470,7 +473,12 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 			if(dmaRecord.reg === undefined)
 				continue;
 
-			if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write)
+			if(dmaRecord.reg === regDMACON) {
+				if (dmaRecord.dat & 0x8000)
+					customRegsAfter[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
+				else
+					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
+			} else if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write)
 				customRegsAfter[dmaRecord.reg >>> 1] = dmaRecord.dat;
 		}
 	}

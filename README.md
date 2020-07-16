@@ -189,7 +189,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
-* customregs.tsx: handle DMACON (see flame-graph.tsx@buildDmaBoxes)
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * restartRequest not implemented
