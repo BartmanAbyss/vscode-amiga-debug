@@ -7,3 +7,8 @@ declare module '*.vert' {
   const __src: string;
   export default __src;
 }
+
+declare module '*.md' {
+  const __src: string;
+  export default __src;
+}

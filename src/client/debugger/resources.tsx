@@ -305,8 +305,8 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 	const [hover, setHover] = useState<{ x: number, y: number }>({ x: -1, y: -1 });
 
 	const onMouseEnter = (evt: JSX.TargetedMouseEvent<HTMLDivElement>) => {
-		const rect = evt.currentTarget.getBoundingClientRect();
-		setHover({ x: rect.right + 10, y: rect.top });
+		const rect = evt.currentTarget.parentElement.parentElement.getBoundingClientRect();
+		setHover({ x: rect.right + 5, y: rect.top + 5 });
 	};
 	const onMouseLeave = () => {
 		setHover({ x: -1, y: -1 });

@@ -10,6 +10,7 @@ import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from 
 import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
+import Markdown from 'markdown-to-jsx';
 
 import { Category, ILocation, IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
@@ -27,6 +28,7 @@ import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
 import { CustomRegisters } from '../customRegisters';
 import { Screen } from '../debugger/resources';
+import { GetCustomRegDoc } from '../docs';
 
 export const enum Constants {
 	BoxHeight = 16,
@@ -1025,6 +1027,7 @@ const Tooltip: FunctionComponent<{
 	const isFunction = !isDma && !isBlit;
 
 	let dmaReg = '';
+	let dmaDoc = '';
 	let dmaData = '';
 	let dmaEvents = '';
 
@@ -1082,6 +1085,7 @@ const Tooltip: FunctionComponent<{
 				}
 			} else {
 				dmaReg = CustomRegisters.getCustomName(0xdff000 + amiga.dmaRecord.reg) + ' ($' + amiga.dmaRecord.reg.toString(16).padStart(3, '0') + ')';
+				dmaDoc = GetCustomRegDoc(amiga.dmaRecord.reg) || '';
 			}
 		}
 		if(amiga.dmaRecord.evt) {
@@ -1180,6 +1184,9 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>
 					<dd className={styles.time}>{location.callFrame.columnNumber}</dd>
+					{dmaDoc !== '' && <div class={styles.md}>
+						<Markdown>{dmaDoc}</Markdown>
+					</div>}
 				</Fragment>)}
 				{isBlit && (<Fragment>
 					<dt className={styles.time}>Size</dt>

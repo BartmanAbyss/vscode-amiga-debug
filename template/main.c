@@ -406,19 +406,16 @@ int main() {
 		WaitVbl();
 		int f = frameCounter & 255;
 
-		// WinUAE debug overlay test
-/*		debug_clear();
-		debug_filled_rect(f + 100, 200*2, f + 400, 220*2, 0x0000ff00); // 0x00RRGGBB
-		debug_text(f+ 130, 209*2, "This is a WinUAE debug overlay", 0x00ff00ff);
-
-		for(int i = 0; i < 1000; i++) {
-			*(volatile ULONG*)8 = *(volatile ULONG*)0xDFF004;
-		}*/
-
 		Wait10();
 		Wait11();
 		Wait12();
 		Wait13();
+
+		// WinUAE debug overlay test
+		debug_clear();
+		debug_filled_rect(f + 100, 200*2, f + 400, 220*2, 0x0000ff00); // 0x00RRGGBB
+		debug_rect(f + 90, 190*2, f + 400, 220*2, 0x000000ff); // 0x00RRGGBB
+		debug_text(f+ 130, 209*2, "This is a WinUAE debug overlay", 0x00ff00ff);
 	}
 
 	p61End();

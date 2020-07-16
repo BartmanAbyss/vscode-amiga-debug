@@ -7,6 +7,7 @@
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
 	"version": "1.1.0-preview21",
+	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
 	},
@@ -308,6 +309,7 @@
 		"css-loader": "^3.4.2",
 		"devtools-protocol": "0.0.748504",
 		"glob": "^7.1.6",
+		"markdown-to-jsx": "^6.11.4",
 		"mocha": "^7.1.2",
 		"preact": "^10.3.4",
 		"pubsub-js": "^1.8.0",

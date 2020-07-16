@@ -64,7 +64,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
-Copper Disassembly is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
+Copper Disassembly and hardwar register documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 

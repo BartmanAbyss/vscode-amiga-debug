@@ -47,7 +47,7 @@ module.exports = (env, argv) => {
 					loader: 'svg-inline-loader',
 				},
 				{
-				  test: /\.(vert|frag)$/,
+				  test: /\.(vert|frag|md)$/,
 				  loader: 'raw-loader',
 				},
 		  

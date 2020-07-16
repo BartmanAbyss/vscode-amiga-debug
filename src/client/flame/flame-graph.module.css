@@ -27,6 +27,10 @@
   margin-right: 0.5em;
 }
 
+.tooltip .md {
+  grid-column: span 2;
+}
+
 .tooltip .eh {
   font-weight: bold;
   margin-left: 1em;
