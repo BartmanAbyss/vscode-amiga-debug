@@ -146,7 +146,7 @@ export const BlitterList: FunctionComponent<{
 
 	return (<div ref={containerRef} class={styles.container}>
 		{blits.map((blit, i) => <div class={i === curBlit ? styles.cur : (blit.cycleEnd < (time >> 1) ? styles.past : styles.future)}>
-			<BlitterVis blit={blit} frame={frame} time={i === curBlit ? time : -1} />
+			<BlitterVis blit={blit} frame={frame} time={/*i === curBlit ? */time/* : -1*/} />
 		</div>)}
 	</div>);
 };
