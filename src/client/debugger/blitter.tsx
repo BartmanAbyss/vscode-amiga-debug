@@ -6,7 +6,6 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory } from '../dma';
-import ReactJson from 'react-json-view'; // DEBUG only
 
 import 'pubsub-js';
 
@@ -120,7 +119,6 @@ export const BlitterList: FunctionComponent<{
 	const containerRef = useRef<HTMLDivElement>();
 
 	//{MODEL.blits.map((b) => <div><BlitterVis blit={b} /></div>)}
-	//<ReactJson src={MODEL.blits} name="blits" theme="monokai" enableClipboard={false} displayObjectSize={false} displayDataTypes={false} />
 	//const state = useContext<IState>(Context);
 
 	/*const [blit, setBlit] = useState<Blit>(state.blit);
