@@ -25,7 +25,7 @@ declare let MODELS: IProfileModel[];
 	loader.setAttribute('class', styles.spinner);
 
 	document.body.appendChild(loader);
-	{
+	try {
 		console.time('fetch+json');
 		const response = await fetch(PROFILE_URL);
 		PROFILES = await response.json();
@@ -52,13 +52,20 @@ declare let MODELS: IProfileModel[];
 				lenses
 			});
 		}
-	}
-	document.body.removeChild(loader);
 
-	const container = document.createElement('div');
-	container.classList.add(styles.wrapper);
-	document.body.appendChild(container);
-	
-	// FLAME+TABLE
-	render(<CpuProfileLayout />, container);
+		const container = document.createElement('div');
+		container.classList.add(styles.wrapper);
+		document.body.appendChild(container);
+		
+		// FLAME+TABLE
+		render(<CpuProfileLayout />, container);
+	} catch(e) {
+		const error = document.createElement('div');
+		error.setAttribute('class', styles.error);
+		error.innerText = `Failed to load ${PROFILE_URL}`;
+		document.body.appendChild(error);
+	} finally {
+		document.body.removeChild(loader);
+	}
+
 })();
