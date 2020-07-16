@@ -18,6 +18,10 @@ module.exports = (env, argv) => {
 				"react-dom": "preact/compat",
 			}
 		},
+		performance: {
+			maxAssetSize: 1000000,
+			maxEntrypointSize: 1000000
+		},
 		module: {
 			rules: [
 				{
