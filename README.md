@@ -116,16 +116,7 @@ Here are the command-lines used to compile the external tools (We're building wi
 apt install build-essential flex bison expect dejagnu texinfo mingw-w64
 ```
 
-### Binutils
-```
-mkdir -p build-binutils-2.34
-cd build-binutils-2.34
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-2.34/configure --disable-multilib --disable-nls --enable-lto --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --host=x86_64-w64-mingw32
-make -j6
-make install
-```
-
-### GDB
+### Binutils+GDB
 ```
 mkdir build-binutils-gdb
 cd build-binutils-gdb

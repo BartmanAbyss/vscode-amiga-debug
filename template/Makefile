@@ -1,4 +1,6 @@
-# to generate assembler sources: -Wa,-ahl=$@.s
+# to generate assembler listing with LTO, add to LDFLAGS: -Wa,-adhln=$@.listing,--listing-rhs-width=200
+# for better annotations add -dA -dP
+# to generate assembler source with LTO, add to LDFLAGS: -save-temps=cwd
 
 forward-to-backward = $(subst /,\,$1)
 
@@ -31,7 +33,7 @@ $(OUT).exe: $(OUT).elf
 $(OUT).elf: $(objects)
 	$(info Linking a.mingw.elf)
 	@$(CC) $(CCFLAGS) $(LDFLAGS) $(objects) -o $@
-	@m68k-amiga-elf-objdump --disassemble -S $@ >$(OUT).s 
+	@m68k-amiga-elf-objdump --disassemble --no-show-raw-ins --visualize-jumps -S $@ >$(OUT).s 
 
 clean:
 	$(info Cleaning...)
