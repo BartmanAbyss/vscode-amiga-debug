@@ -20,6 +20,7 @@ import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider,
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
+import { ObjdumpContentProvider } from './objdump_content_provider';
 
 /*
  * Set the following compile time flag to true if the
@@ -103,6 +104,7 @@ class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private memoryProvider: MemoryContentProvider;
 	private outputChannel: vscode.OutputChannel;
+	private objdumpContentProvider: ObjdumpContentProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath: string = '';
@@ -111,6 +113,7 @@ class AmigaDebugExtension {
 	constructor(private context: vscode.ExtensionContext) {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
+		this.objdumpContentProvider = new ObjdumpContentProvider();
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		this.extensionPath = context.extensionPath;
@@ -123,6 +126,7 @@ class AmigaDebugExtension {
 			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
+			vscode.workspace.registerTextDocumentContentProvider('objdump', this.objdumpContentProvider),
 
 			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
@@ -135,6 +139,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.startProfileMulti', this.startProfileMulti.bind(this)),
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
+			vscode.commands.registerCommand('amiga.disassembleElf', (uri: vscode.Uri) => this.disassembleElf(uri)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
@@ -142,7 +147,7 @@ class AmigaDebugExtension {
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
-			vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => { if (e && e.textEditor.document.fileName.endsWith('.amigamem')) { this.memoryProvider.handleSelection(e); } }),
+			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
 			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
 
 			// debugger
@@ -187,6 +192,15 @@ class AmigaDebugExtension {
 				vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: `${uri.scheme}://${uri.authority}${uri.path}` });
 			}
 		}
+		if(editor === undefined || editor.document.uri.scheme !== 'objdump')
+			this.objdumpContentProvider.handleEditorChanged(editor);
+	}
+
+	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
+		if (e.textEditor.document.uri.scheme === 'examinememory') 
+			this.memoryProvider.handleSelection(e);
+		else if(e.textEditor.document.uri.scheme === 'objdump')
+			this.objdumpContentProvider.handleSelection(e);
 	}
 
 	private async showDisassembly() {
@@ -333,6 +347,15 @@ class AmigaDebugExtension {
 		} catch(error) {
 			vscode.window.showErrorMessage(`Error during size profiling: ${error.message}`);
 		}
+	}
+
+	private async disassembleElf(uri: vscode.Uri) {
+		if(uri.scheme !== 'file') {
+			vscode.window.showErrorMessage(`Error during disassembly: Don't know how to open ${uri.toString()}`);
+			return;
+		}
+		const uri2 = vscode.Uri.parse('objdump:///' + uri.fsPath);
+		await vscode.commands.executeCommand("vscode.open", uri2, { preview: false } as vscode.TextDocumentShowOptions);
 	}
 
 	private shrinklerTerminal: vscode.Terminal;

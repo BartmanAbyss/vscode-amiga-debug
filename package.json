@@ -22,6 +22,7 @@
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
 		"onCommand:amiga.shrinkler",
+		"onCommand:amiga.disassembleElf",
 		"onCustomEditor:amiga.profile",
 		"workspaceContains:.vscode/amiga.json"
 	],
@@ -76,6 +77,11 @@
 				"category": "Amiga",
 				"command": "amiga.profileSize",
 				"title": "Amiga: Profile File Size"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.disassembleElf",
+				"title": "Amiga: Disassemble ELF File"
 			},
 			{
 				"category": "Amiga",
@@ -265,6 +271,11 @@
 			"explorer/context": [
 				{
 					"command": "amiga.profileSize",
+					"group": "1_amiga",
+					"when": "resourceExtname == '.elf'"
+				},
+				{
+					"command": "amiga.disassembleElf",
 					"group": "1_amiga",
 					"when": "resourceExtname == '.elf'"
 				},
