@@ -304,10 +304,21 @@ export class MI2 extends EventEmitter implements IBackend {
 		});
 	}
 
+	public getStackDepth(threadId: number): Thenable<number> {
+		if(this.trace)
+			this.log("log", "getStackDepth");
+		return new Promise((resolve, reject) => {
+			this.sendCommand(`stack-info-depth --thread ${threadId} 10000`).then((result) => {
+				const depth = result.result('depth');
+				const ret = parseInt(depth);
+				resolve(ret);
+			}, reject);
+		});
+	}
+		
 	public getStack(threadId: number, startLevel?: number, maxLevels?: number): Thenable<Stack[]> {
-		if (this.trace) {
+		if(this.trace)
 			this.log("log", "getStack");
-		}
 		return new Promise((resolve, reject) => {
 			this.sendCommand(`stack-list-frames --thread ${threadId} ${startLevel} ${maxLevels}`).then((result) => {
 				const stack = result.result("stack");
