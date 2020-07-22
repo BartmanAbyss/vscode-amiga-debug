@@ -18,31 +18,35 @@ import { ISourceLocation } from './client/location-mapping';
 import { Lens, LensData } from './client/types';
 
 export const bundlePage = async (webview: vscode.Webview, bundlePath: string, constants: { [key: string]: unknown }) => {
-	const bundle = await fs.readFile(path.join(bundlePath, 'client.bundle.js'), 'utf-8');
-	const nonce = randomBytes(16).toString('hex');
-	const constantDecls = Object.keys(constants)
-		.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
-		.join('\n');
+	try {
+		const bundle = await fs.readFile(path.join(bundlePath, 'client.bundle.js'), 'utf-8');
+		const nonce = randomBytes(16).toString('hex');
+		const constantDecls = Object.keys(constants)
+			.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
+			.join('\n');
 
-	const html = `<!DOCTYPE html>
-	<html lang="en">
-	<head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
-	  <title>Custom Editor: ${bundlePath}</title>
-	  <base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
-	</head>
-	<body style="overflow: hidden">
-	  <script type="text/javascript" nonce="${nonce}">(() => {
-	  	${constantDecls}
-	  	${bundle}
-	  })();</script>
-	</body>
-	</html>
-  	`;
+		const html = `<!DOCTYPE html>
+		<html lang="en">
+		<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
+		<title>Custom Editor: ${bundlePath}</title>
+		<base href="${webview.asWebviewUri(vscode.Uri.file(bundlePath))}/">
+		</head>
+		<body>
+		<script type="text/javascript" nonce="${nonce}">(() => {
+			${constantDecls}
+			${bundle}
+		})();</script>
+		</body>
+		</html>
+		`;
 
-	return html;
+		return html;
+	} catch(e) {
+		return `<html><body>Failed to open client.bundle.js</body></html>`;
+	}
 };
 
 const showPosition = async (

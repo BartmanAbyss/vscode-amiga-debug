@@ -5,7 +5,7 @@ const { pathToFileURL } = require('url');
 
 module.exports = (env, argv) => {
 	var config = {
-		entry: "./src/client/client.tsx",
+		entry: "./src/client/client.ts",
 		output: {
 			filename: "client.bundle.js",
 			chunkFilename: "client.bundle.[id].js"

@@ -7,20 +7,19 @@ import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel, createLenses } from './model';
-import { Memory, GetBlits } from './dma';
 import { profileShrinkler } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
 
-console.log("client.tsx START: " + new Date().toLocaleString());
-
 // from HTML page
+declare const OBJDUMP: string;
 declare const PROFILE_URL: string;
 declare let PROFILES: ICpuProfileRaw[];
 declare let MODELS: IProfileModel[];
 
-(async () => {
+async function Profiler() {
+	document.body.style.overflow = 'hidden';
 	const loader = document.createElement('div');
 	loader.setAttribute('class', styles.spinner);
 
@@ -58,7 +57,7 @@ declare let MODELS: IProfileModel[];
 		document.body.appendChild(container);
 		
 		// FLAME+TABLE
-		render(<CpuProfileLayout />, container);
+		render(h(CpuProfileLayout, null), container);
 	} catch(e) {
 		const error = document.createElement('div');
 		error.setAttribute('class', styles.error);
@@ -67,5 +66,37 @@ declare let MODELS: IProfileModel[];
 	} finally {
 		document.body.removeChild(loader);
 	}
+}
 
-})();
+async function Objdump() {
+	// dummy
+	const content = document.createElement('pre');
+	content.innerText = OBJDUMP;
+	document.body.appendChild(content);
+}
+
+function TryProfiler() {
+	try {
+		if(PROFILE_URL) {
+			Profiler();
+			return true;
+		}
+	} catch(e) {}
+	return false;
+}
+
+function TryObjdump() {
+	try {
+		if(OBJDUMP) {
+			Objdump();
+			return true;
+		}
+	} catch(e) {}
+	return false;
+}
+
+// MAIN ENTRY POINT
+console.log("client.tsx START: " + new Date().toLocaleString());
+
+if(!TryProfiler())
+	TryObjdump();

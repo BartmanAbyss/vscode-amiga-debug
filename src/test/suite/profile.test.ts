@@ -134,7 +134,7 @@ function htmlPage(title: string, scripts: string[], profiles: string) {
 			delete window.frameElement;
 		</script>
 	</head>
-	<body style="overflow: hidden">
+	<body>
 			<script>
 				let PROFILES = [];
 				let MODELS = [];
@@ -205,10 +205,10 @@ suite("Profiler", () => {
 	});
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
-	});*/
-	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-2020.07.09-16.52.05', 'test.elf');
 	});
+	test("Time: test.elf", () => {
+		test_profile_time('amiga-profile-2020.07.15-17.49.00', 'test.elf');
+	});*/
 	test("Size: test.elf", () => {
 		test_profile_size('test', 'test.elf');
 	});
@@ -219,11 +219,12 @@ suite("Profiler", () => {
 	test("bitshmup.elf", () => {
 		test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
 	});
-	
-	test("Time: bobble.elf", () => {
-		test_profile_time('amiga-profile-2020.07.09-13.17.51', 'private/bobble.elf');
+*/	
+	test("Time: bobble.debug.elf", () => {
+		test_profile_time('amiga-profile-2020.07.22-13.46.24', 'private/bobble.debug.elf');
 	});
-	test("Size: bitshmup.elf", () => {
+
+/*	test("Size: bitshmup.elf", () => {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');
 	});*/
 	test("Shrinkler: bobble.shrinklerstats", () => {

@@ -20,7 +20,7 @@ import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider,
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
-import { ObjdumpContentProvider } from './objdump_content_provider';
+import { ObjdumpEditorProvider } from './objdump_editor_provider';
 
 /*
  * Set the following compile time flag to true if the
@@ -104,7 +104,7 @@ class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private memoryProvider: MemoryContentProvider;
 	private outputChannel: vscode.OutputChannel;
-	private objdumpContentProvider: ObjdumpContentProvider;
+	private objdumpEditorProvider: ObjdumpEditorProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath: string = '';
@@ -113,7 +113,7 @@ class AmigaDebugExtension {
 	constructor(private context: vscode.ExtensionContext) {
 		this.registerProvider = new RegisterTreeProvider();
 		this.memoryProvider = new MemoryContentProvider();
-		this.objdumpContentProvider = new ObjdumpContentProvider();
+		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		this.extensionPath = context.extensionPath;
@@ -126,7 +126,7 @@ class AmigaDebugExtension {
 			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
-			vscode.workspace.registerTextDocumentContentProvider('objdump', this.objdumpContentProvider),
+			//vscode.workspace.registerTextDocumentContentProvider('objdump', this.objdumpContentProvider),
 
 			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
@@ -149,6 +149,7 @@ class AmigaDebugExtension {
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
 			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
+			vscode.window.registerCustomEditorProvider('amiga.objdump', this.objdumpEditorProvider, { webviewOptions: { retainContextWhenHidden: true }}),
 
 			// debugger
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),
@@ -193,14 +194,14 @@ class AmigaDebugExtension {
 			}
 		}
 		if(editor === undefined || editor.document.uri.scheme !== 'objdump')
-			this.objdumpContentProvider.handleEditorChanged(editor);
+			this.objdumpEditorProvider.handleEditorChanged(editor);
 	}
 
 	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
 		if (e.textEditor.document.uri.scheme === 'examinememory') 
 			this.memoryProvider.handleSelection(e);
 		else if(e.textEditor.document.uri.scheme === 'objdump')
-			this.objdumpContentProvider.handleSelection(e);
+			this.objdumpEditorProvider.handleSelection(e);
 	}
 
 	private async showDisassembly() {
@@ -354,7 +355,7 @@ class AmigaDebugExtension {
 			vscode.window.showErrorMessage(`Error during disassembly: Don't know how to open ${uri.toString()}`);
 			return;
 		}
-		const uri2 = vscode.Uri.parse('objdump:///' + uri.fsPath);
+		const uri2 = vscode.Uri.file(uri.fsPath + ".objdump");
 		await vscode.commands.executeCommand("vscode.open", uri2, { preview: false } as vscode.TextDocumentShowOptions);
 	}
 

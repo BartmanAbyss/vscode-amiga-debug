@@ -155,6 +155,16 @@
 						"filenamePattern": "*.shrinklerstats"
 					}
 				]
+			},
+			{
+				"viewType": "amiga.objdump",
+				"displayName": "Amiga ELF Disassembly",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "*.objdump"
+					}
+				]
 			}
 		],
 		"breakpoints": [
