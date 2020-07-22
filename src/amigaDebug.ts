@@ -352,15 +352,19 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendResponse(response);
 				break;
 			case 'read-memory':
+				if(!this.stopped) return;
 				this.customReadMemoryRequest(response, args['address'], args['length']);
 				break;
 			case 'write-memory':
+				if(!this.stopped) return;
 				this.customWriteMemoryRequest(response, args['address'], args['data']);
 				break;
 			case 'read-registers':
+				if(!this.stopped) return;
 				this.customReadRegistersRequest(response);
 				break;
 			case 'read-register-list':
+				if(!this.stopped) return;
 				this.customReadRegisterListRequest(response);
 				break;
 			case 'amiga-disassemble':
@@ -993,6 +997,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
+		if ((this.stopped === false) || this.disableSendStoppedEvents) {
+			// Mar 20, 2020: A recent change in VSCode changed order of things. It is asking for stack traces when we are running
+			// happens at the start of the session and runToMain is enabled. This causes falses popups/errors
+			this.sendResponse(response);    // Send a blank response instead of an error
+			return;
+		}
 		try {
 			const maxDepth = await this.miDebugger.getStackDepth(args.threadId);
 			const highFrame = Math.min(maxDepth, args.startFrame + args.levels) - 1;
@@ -1083,7 +1093,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			};
 			this.sendResponse(response);
 		} catch (err) {
-			this.sendErrorResponse(response, 12, `Failed to get Stack Trace: ${err.toString()}`);
+			if(this.stopped) // Between the time we asked for a info, a continue occured
+				this.sendErrorResponse(response, 12, `Failed to get Stack Trace: ${err.toString()}`);
 		}
 	}
 
@@ -1106,6 +1117,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
 		let id: number | string | VariableObject | ExtendedVariable;
 
 		if (args.variablesReference === GLOBAL_HANDLE_ID) {
@@ -1309,6 +1321,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
+		if(!this.stopped) return;
 		const createVariable = (arg, options?) => {
 			if (options) {
 				return this.variableHandles.create(new ExtendedVariable(arg, options));
@@ -1494,6 +1507,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
 		const symbolInfo = this.symbolTable.getGlobalVariables();
 
 		const globals: DebugProtocol.Variable[] = [];
