@@ -11,6 +11,7 @@ import { profileShrinkler } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
+import { Objdump } from './objdump';
 
 // from HTML page
 declare const OBJDUMP: string;
@@ -66,13 +67,6 @@ async function Profiler() {
 	} finally {
 		document.body.removeChild(loader);
 	}
-}
-
-async function Objdump() {
-	// dummy
-	const content = document.createElement('pre');
-	content.innerText = OBJDUMP;
-	document.body.appendChild(content);
 }
 
 function TryProfiler() {

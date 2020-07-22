@@ -54,11 +54,16 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
-		webviewPanel.webview.onDidReceiveMessage((message) => {
+		webviewPanel.webview.onDidReceiveMessage(async (message) => {
 			switch (message.type) {
-			//case 'openDocument':
-			//	showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
-			//	return;
+			case 'openDocument':
+				this.sourceEditor = await vscode.window.showTextDocument(vscode.Uri.file(message.file), {
+					viewColumn: vscode.ViewColumn.Beside,
+					preserveFocus: true,
+					preview: true,
+					selection: new vscode.Range(message.line - 1, 0, message.line, 0)
+				});
+				return;
 			//case 'setCodeLenses':
 			//	this.lenses.registerLenses(this.createLensCollection(message.lenses));
 			//	return;
@@ -76,12 +81,6 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		const match = line.text.match(/^(\S.+):([0-9]+)$/);
 		if(match) {
 			console.log(match[1], match[2]);
-			this.sourceEditor = await vscode.window.showTextDocument(vscode.Uri.file(match[1]), {
-				viewColumn: vscode.ViewColumn.Beside,
-				preserveFocus: true,
-				preview: true,
-				selection: new vscode.Range(parseInt(match[2]) - 1, 0, parseInt(match[2]), 0)
-			});
 		}
 	}
 

@@ -78,24 +78,12 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	nodes: IProfileNode[];
 }
 
-/**
- * Request from the webview to open a document
- */
+// messages from webview to vs code
 export interface IOpenDocumentMessage {
 	type: 'openDocument';
 	location?: ISourceLocation;
 	callFrame?: Cdp.Runtime.CallFrame;
 	toSide: boolean;
-}
-
-/**
- * Reopens the current document with the given editor, optionally only if
- * the given extension is installed.
- */
-export interface IReopenWithEditor {
-	type: 'reopenWith';
-	viewType: string;
-	requireExtension?: string;
 }
 
 export interface LensData { 
@@ -115,4 +103,4 @@ export interface ISetCodeLenses {
 	lenses: Lens[];
 }
 
-export type Message = IOpenDocumentMessage | IReopenWithEditor | ISetCodeLenses;
+export type Message = IOpenDocumentMessage | ISetCodeLenses;

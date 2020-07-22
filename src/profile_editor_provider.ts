@@ -49,24 +49,16 @@ export const bundlePage = async (webview: vscode.Webview, bundlePath: string, co
 	}
 };
 
-const showPosition = async (
-	doc: vscode.TextDocument,
-	lineNumber: number,
-	columnNumber: number,
-	viewColumn?: vscode.ViewColumn,
-) => {
+async function showPosition(doc: vscode.TextDocument, lineNumber: number, columnNumber: number, viewColumn?: vscode.ViewColumn) {
 	const pos = new vscode.Position(Math.max(0, lineNumber - 1), Math.max(0, columnNumber - 1));
 	await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
-};
+}
 
-const showPositionInFile = async (
-	location: ISourceLocation,
-	viewColumn?: vscode.ViewColumn,
-) => {
+async function showPositionInFile(location: ISourceLocation, viewColumn?: vscode.ViewColumn) {
 	const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(location.source.path.replace(/\//g, '\\')));
 	await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
 	return true;
-};
+}
 
 class ProfileDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
