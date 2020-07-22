@@ -89,8 +89,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	private args: LaunchRequestArguments;
 	private symbolTable: SymbolTable;
+
+	// we may need to temporarily stop the target when setting breakpoints; don't let VSCode let it know though,
+	// it will send requests for threads and registers, they will fail because we already continued..
+	protected disableSendStoppedEvents = false;
 	private stopped: boolean = false;
 	private stoppedReason: string = '';
+	private stoppedEventPending = false;
 
 	private currentFile: string;
 
@@ -131,7 +136,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): Promise<void> {
 		logger.setup(Logger.LogLevel.Warn, false);
-		//logger.setup(Logger.LogLevel.Verbose, false);
+		if(DEBUG)
+			logger.setup(Logger.LogLevel.Verbose, false);
 
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
@@ -622,22 +628,34 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected breakpointEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'breakpoint';
-		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		if(!this.disableSendStoppedEvents) {
+			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		} else {
+			this.stoppedEventPending = true;			
+		}
 	}
 
 	protected watchpointEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'data breakpoint';
-		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		if(!this.disableSendStoppedEvents) {
+			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		} else {
+			this.stoppedEventPending = true;			
+		}
 	}
 
 	protected stepEndEvent(info: MINode) {
 		this.stopped = true;
 		this.stoppedReason = 'step';
-		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		if(!this.disableSendStoppedEvents) {
+			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		} else {
+			this.stoppedEventPending = true;			
+		}
 	}
 
 	protected signalStopEvent(info: MINode) {
@@ -652,8 +670,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		else
 			this.stoppedReason = 'user request';
 		this.stopped = true;
-		this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-		this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		if(!this.disableSendStoppedEvents) {
+			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
+		} else {
+			this.stoppedEventPending = true;			
+		}
 	}
 
 	protected threadCreatedEvent(info: { threadId: number, threadGroupId: number }) {
@@ -718,6 +740,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected setFunctionBreakPointsRequest(response: DebugProtocol.SetFunctionBreakpointsResponse, args: DebugProtocol.SetFunctionBreakpointsArguments): void {
 		const createBreakpoints = async (shouldContinue) => {
+			this.disableSendStoppedEvents = false;
 			const all: Array<Promise<Breakpoint | null>> = [];
 			args.breakpoints.forEach((brk) => {
 				all.push(this.miDebugger.addBreakpoint({ raw: brk.name, condition: brk.condition, countCondition: brk.hitCondition }));
@@ -745,8 +768,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			if (this.stopped) {
 				await createBreakpoints(false);
 			} else {
-				this.miDebugger.sendCommand('exec-interrupt');
+				this.disableSendStoppedEvents = true;
 				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
+				this.miDebugger.sendCommand('exec-interrupt');
 			}
 		};
 
@@ -755,18 +779,18 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
 		const createBreakpoints = async (shouldContinue: boolean) => {
-			const normalizedPath = args.source.path || "";
 			this.debugReady = true;
-			const currentBreakpoints = (this.breakpointMap.get(normalizedPath) || [])
+			const currentBreakpoints = (this.breakpointMap.get(args.source.path) || [])
 				.filter((bp) => bp.line !== undefined)
 				.map((bp) => bp.number!);
 
 			try {
+				this.disableSendStoppedEvents = false;
 				await this.miDebugger.removeBreakpoints(currentBreakpoints);
-				this.breakpointMap.set(normalizedPath, []);
+				this.breakpointMap.set(args.source.path, []);
 
 				const all: Array<Promise<Breakpoint | null>> = [];
-				const sourcepath = decodeURIComponent(normalizedPath);
+				const sourcepath = decodeURIComponent(args.source.path);
 				if (sourcepath.startsWith('disassembly:/')) {
 					let sidx = 13;
 					if (sourcepath.startsWith('disassembly:///')) { sidx = 15; }
@@ -853,7 +877,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					})
 				};
 
-				this.breakpointMap.set(normalizedPath, finalBrks);
+				this.breakpointMap.set(args.source.path, finalBrks);
 				this.sendResponse(response);
 			} catch (msg) {
 				this.sendErrorResponse(response, 9, msg.toString());
@@ -868,8 +892,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			if (this.stopped) {
 				await createBreakpoints(false);
 			} else {
-				await this.miDebugger.sendCommand('exec-interrupt');
+				this.disableSendStoppedEvents = true;
 				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
+				await this.miDebugger.sendCommand('exec-interrupt');
 			}
 		};
 
@@ -921,7 +946,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
-		if (!this.stopped) {
+		if (!this.stopped || this.disableSendStoppedEvents) {
 			response.body = { threads: [ new Thread(1, 'Dummy') ] }; // dummy thread, otherwise "pause" doesn't work
 			this.sendResponse(response);
 		} else try {
@@ -934,6 +959,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.currentThreadId = threadIds[0];
 			} else {
 				this.currentThreadId = parseInt(currentThread);
+			}
+
+			if (this.stoppedEventPending) {
+				this.stoppedEventPending = false;
+				this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+				this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 			}
 
 			const nodes = await Promise.all(threadIds.map((id) => this.miDebugger.sendCommand(`thread-info ${id}`)));
