@@ -430,8 +430,11 @@ export class Profiler {
 					}
 				}
 			} else {
-				if(callstack.frames.length === 0) // not in our code
-					callstack.frames.push({ func: '[External]', file: '', line: 0 });
+				if(callstack.frames.length === 0) { // not in our code
+					callstack.frames.push(...lastCallstack.frames);
+					if(callstack.frames.length === 0 || callstack.frames[callstack.frames.length - 1].func !== '[External]')
+						callstack.frames.push({ func: '[External]', file: '', line: 0 });
+				}
 
 				if(sameCallstack(callstack, lastCallstack)) {
 					cycles[lastLocation] += (0xffffffff - p) | 0;

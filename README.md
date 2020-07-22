@@ -178,7 +178,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * code lenses: update when display unit changes, when frame changes
 * multi-frame profiling: allow user to select number of frames
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
-* modify breakpoints while running (doesn't properly stop and resume)
 * show blitter priority in profiler
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
