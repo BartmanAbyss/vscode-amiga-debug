@@ -994,7 +994,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
 		try {
-			const stack = await this.miDebugger.getStack(args.threadId, args.startFrame, args.levels);
+			const maxDepth = await this.miDebugger.getStackDepth(args.threadId);
+			const highFrame = Math.min(maxDepth, args.startFrame + args.levels) - 1;
+			const stack = await this.miDebugger.getStack(args.threadId, args.startFrame, highFrame);
 			const ret: StackFrame[] = [];
 			for (const element of stack) {
 				const stackId = (args.threadId << 8 | (element.level & 0xFF)) & 0xFFFF;
@@ -1076,7 +1078,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 
 			response.body = {
-				stackFrames: ret
+				stackFrames: ret,
+				totalFrames: maxDepth
 			};
 			this.sendResponse(response);
 		} catch (err) {
