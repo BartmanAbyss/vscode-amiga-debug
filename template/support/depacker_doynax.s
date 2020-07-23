@@ -36,14 +36,14 @@
 		|another word
 		
 .macro DOY_REFILL
-	DOY_REFILL1 doy_full\@
+	DOY_REFILL1 full\@
 	DOY_REFILL2
-doy_full\@:
+.Lfull\@:
 .endm
 
 .macro DOY_REFILL1 label
 	tst.w	d0
-	bne.s	\label
+	bne.s	.L\label
 .endm
 
 .macro DOY_REFILL2					|This swaps in the new bits ahead of the
@@ -61,32 +61,32 @@ _doynaxdepack_asm:
 	move.l	(a0)+,d0				|Seed the shift register
 	moveq	#0x38,d4				|Masks for match offset extraction
 	moveq	#8,d5
-	bra.s	doy_literal
+	bra.s	.Lliteral
 
 	|******** Copy a literal sequence ********
 
-doy_lcopy:								|Copy two bytes at a time, with the
+.Llcopy:							|Copy two bytes at a time, with the
 	move.b	(a0)+,(a1)+				|deferral of the length LSB helping
 	move.b	(a0)+,(a1)+				|slightly in the unrolling
-	dbf		d1,doy_lcopy
+	dbf		d1,.Llcopy
 
 	lsl.l	#2,d0					|Copy odd bytes separately in order
-	bcc.s	doy_match				|to keep the source aligned
-doy_lsingle:
+	bcc.s	.Lmatch					|to keep the source aligned
+.Llsingle:
 	move.b	(a2)+,(a1)+
 
 
 	|******** Process a match ********
 
 	|Start by refilling the bit-buffer
-doy_match:
-	DOY_REFILL1 doy_mprefix
+.Lmatch:
+	DOY_REFILL1 mprefix
 	cmp.l	a0,a3					|Take the opportunity to test for the
-	bls.s	doy_return				|end of the stream while refilling
-doy_mrefill:
+	bls.s	.Lreturn				|end of the stream while refilling
+.Lmrefill:
 	DOY_REFILL2
 
-doy_mprefix:
+.Lmprefix:
 	|Fetch the first three bits identifying the match length, and look up
 	|the corresponding table entry
 	rol.l	#3+3,d0
@@ -105,51 +105,51 @@ doy_mprefix:
 	|Decode the match length
 	DOY_REFILL
 	and.w	d5,d1					|Check the initial length bit from the
-	beq.s	doy_mcopy				|type triple
+	beq.s	.Lmcopy					|type triple
 
 	moveq	#1,d1					|This loops peeks at the next flag
 	tst.l	d0						|through the sign bit bit while keeping
-	bpl.s	doy_mendlen2			|the LSB in carry
+	bpl.s	.Lmendlen2				|the LSB in carry
 	lsl.l	#2,d0
-	bpl.s	doy_mendlen1
-doy_mgetlen:
+	bpl.s	.Lmendlen1
+.Lmgetlen:
 	addx.b	d1,d1
 	lsl.l	#2,d0
-	bmi.s	doy_mgetlen
-doy_mendlen1:
+	bmi.s	.Lmgetlen
+.Lmendlen1:
 	addx.b	d1,d1
-doy_mendlen2:
+.Lmendlen2:
 	|Copy the match data a word at a time. Note that the minimum length is
 	|two bytes
 	lsl.l	#2,d0					|The trailing length payload bit is
-	bcc.s	doy_mhalf				|stored out-of-order
-doy_mcopy:
+	bcc.s	.Lmhalf					|stored out-of-order
+.Lmcopy:
 	move.b	(a4)+,(a1)+
-doy_mhalf:
+.Lmhalf:
 	move.b	(a4)+,(a1)+
-	dbf		d1,doy_mcopy
+	dbf		d1,.Lmcopy
 
 	|Fetch a bit flag to see whether what follows is a literal run or
 	|another match
 	add.l	d0,d0
-	bcc.s	doy_match
+	bcc.s	.Lmatch
 
 
 	|******** Process a run of literal bytes ********
 
 	DOY_REFILL						|Replenish the shift-register
-doy_literal:
+.Lliteral:
 	|Extract delta-coded run length in the same swizzled format as the
 	|matches above
 	moveq	#0,d1
 	add.l	d0,d0
-	bcc.s	doy_lsingle				|Single out the one-byte case
-	bpl.s	doy_lendlen
-doy_lgetlen:
+	bcc.s	.Llsingle				|Single out the one-byte case
+	bpl.s	.Llendlen
+.Llgetlen:
 	addx.b	d1,d1
 	lsl.l	#2,d0
-	bmi.s	doy_lgetlen
-doy_lendlen:
+	bmi.s	.Llgetlen
+.Llendlen:
 	addx.b	d1,d1
 
 	|Branch off to the main copying loop unless the run length is 256 bytes
@@ -157,14 +157,14 @@ doy_lendlen:
 	|may have run out.
 	|In the latter case simply give up and stuff the payload bits back onto
 	|the stream before fetching a literal 16-bit run length instead
-doy_lcopy_near:
-	dbvs	d1,doy_lcopy
+.Llcopy_near:
+	dbvs	d1,.Llcopy
 
 	add.l	d0,d0
 	eor.w	d1,d0		
 	ror.l	#7+1,d0					|Note that the constant MSB acts as a
 	move.w	(a0)+,d1				|substitute for the unfetched stop bit
-	bra.s	doy_lcopy_near
+	bra.s	.Llcopy_near
 
 
 	|******** Offset coding tables ********
@@ -175,9 +175,10 @@ doy_lcopy_near:
 	dc.w	-(\ofs)					|Base offset
 	.endm
 
+	.type doy_table,object
 doy_table:
 	DOY_OFFSET 3,1					|Short A
-doy_return:
+.Lreturn:
 	rts
 	DOY_OFFSET 4,1					|Long A
 	dc.w	0						|(Empty hole)
