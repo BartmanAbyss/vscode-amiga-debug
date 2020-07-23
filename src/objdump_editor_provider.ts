@@ -12,7 +12,12 @@ class ObjdumpDocument implements vscode.CustomDocument {
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 
-		const objdump = childProcess.spawnSync(objdumpPath, ['--disassemble', '-l', elfPath], { maxBuffer: 10*1024*1024 });
+		const objdump = childProcess.spawnSync(objdumpPath, [
+			'--disassemble', 
+			'-l', // include lines
+			'-w', // wide output
+			elfPath], 
+			{ maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
 			throw objdump.error;
 		//const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');

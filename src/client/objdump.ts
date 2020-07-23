@@ -45,8 +45,10 @@ class ObjdumpView {
 		// merge lines by same location
 		for(const line of lines) {
 			const match = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
-			if(match) {
+			if(match || line.length === 0)
 				addCurRow();
+
+			if(match) {
 				location = {
 					file: match[1],
 					line: parseInt(match[2])
