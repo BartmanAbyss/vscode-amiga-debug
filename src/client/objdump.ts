@@ -29,22 +29,33 @@ class ObjdumpView {
 	
 		const lines = OBJDUMP.replace(/\r/g, '').split('\n');
 		let location: Location = { file: '', line: -1 };
+		let curRow: string[] = [];
+		const addCurRow = () => {
+			if(curRow.length === 0)
+				return;
+			const row = document.createElement('div');
+			row.attributes['data-row'] = this.rows.length;
+			row.innerText = curRow.join('\n');
+			this.container.appendChild(row);
+			this.rows.push(row);
+			this.locations.push({ ...location });
+			curRow = [];
+		};
+
+		// merge lines by same location
 		for(const line of lines) {
 			const match = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
 			if(match) {
+				addCurRow();
 				location = {
 					file: match[1],
 					line: parseInt(match[2])
 				};
 				continue;
 			}
-			const row = document.createElement('div');
-			row.attributes['data-row'] = this.rows.length;
-			row.innerText = line.length > 0 ? line : '\u200b';
-			this.container.appendChild(row);
-			this.rows.push(row);
-			this.locations.push({ ...location });
+			curRow.push(line.length > 0 ? line : '\u200b');
 		}
+		addCurRow();
 		document.body.appendChild(this.container);
 	}
 
