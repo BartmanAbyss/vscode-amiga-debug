@@ -42,7 +42,13 @@ class SourceContext {
 	public parse() {
 		const objdump = childProcess.spawnSync(
 			path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe"), 
-			['-', '-o', 'nul', '--register-prefix-optional', '-asnm'], 
+			[
+				'-', // input from stdin
+				'-o', 'nul', // no object output
+				'--register-prefix-optional', 
+				'-asn', // enable listing to stdout; 's' = symbol table, 'n' = turn off forms
+				'-L' // include local labels
+			], 
 			{
 				input: this.text,
 				maxBuffer: 10*1024*1024 

@@ -25,7 +25,7 @@
 		{
 			"comment": "Numeric constant",
 			"name": "constant.numeric",
-			"match": "(#)?((-?0x[0-9A-Fa-f]+)|(-?[0-9]+))"
+			"match": "\\b(#)?((-?0x[0-9A-Fa-f]+)|(-?[0-9]+))\\b"
 		},
 		{
 			"comment": "Register",
@@ -33,18 +33,14 @@
 			"match": "(?i)\\b([ad][0-7]|SP|PC|vbr|fp[0-7])\\b"
 		},
 		{
-			"comment": "Meta",
-			"name": "meta.preprocessor",
-			"begin": "(?:^|\\s)(\\.[a-zA-Z0-9_]+)",
-			"end": "($|\\|)",
-			"beginCaptures": {
-				"1": { "name": "" }
-			}
-		},
-		{
 			"comment": "Label",
 			"name": "entity.name.function",
-			"match": "(^|\\s)([a-zA-Z0-9_]+:)"
+			"match": "(^|\\s)((\\.[L_])?[a-zA-Z0-9_]+:)"
+		},
+		{
+			"comment": "Meta",
+			"name": "meta.preprocessor",
+			"match": "(?:^|\\s)(\\.(?:abort|ABORT|align|app-file|ascii|asciz|balign|byte|comm|data|def|desc|dim|double|eject|else|endef|endif|equ|equiv|err|extern|file|fill|float|global|hword|ident|if|include|int|irp|irpc|lcomm|lflags|line|linkonce|ln|mri|list|long|macro|endm|exitm|nolist|octa|org|p2align|psize|quad|rept|sbttl|scl|section|set|short|single|size|sleb128|skip|space|stab|string|symver|tag|text|title|type|val|uleb128|word))"
 		}
 	]
 }
