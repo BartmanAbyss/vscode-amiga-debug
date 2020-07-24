@@ -5,6 +5,12 @@
 	font-size: var(--vscode-editor-font-size);
 	font-weight: var(--vscode-editor-font-weight);   
   white-space: pre;
+  flex-grow: 1;
+  overflow: auto;
+}
+
+.row {
+  height: calc(var(--vscode-editor-font-size) + 3);
 }
 
 .duration {
