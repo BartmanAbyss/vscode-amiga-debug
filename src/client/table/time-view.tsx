@@ -226,7 +226,6 @@ export const TimeView: FunctionComponent<{
 		});
 	}, [focused]);
 
-	// had some strange jerking during scrolling
 	const renderRow = useCallback(
 		(row: NodeAtDepth) => (
 			<TimeViewRow
