@@ -74,36 +74,6 @@ export const AssemblyView: FunctionComponent<{
 		return content;
 	}, [frame]);
 
-	// TODO: smooth scrolling!
-
-/*	private updateSelection() {
-		if(!this.scroller)
-			this.scroller = new Scrollable(this.base.parentElement, 135);
-
-		const pcTrace = MODELS[this.props.frame].amiga.pcTrace;
-		let time = 0;
-		let pc = 0;
-		for(let i = 0; i < pcTrace.length; i += 2) {
-			pc = pcTrace[i];
-			time += pcTrace[i + 1];
-			if(time > this.props.time)
-				break;
-		}
-		if(this.oldSel) {
-			this.oldSel.classList.remove(styles.cur);
-			this.oldSel = undefined;
-		}
-		if(pc >= 0 && pc < 0x7fffffff) {
-			const xx = (this.base as ParentNode).querySelector(`[data-pc='${pc}']`) as HTMLDivElement;
-			if(xx) {
-				xx.classList.add(styles.cur);
-				this.oldSel = xx;
-				this.scroller.setScrollPositionSmooth(xx.offsetTop - this.base.parentElement.clientHeight / 2);
-			}
-		}
-	}
-*/
-
 	const pc = useMemo(() => {
 		const pcTrace = MODELS[frame].amiga.pcTrace;
 		let t = 0;
@@ -138,12 +108,27 @@ export const AssemblyView: FunctionComponent<{
 		: <div class={[styles.row, c.cycles === 0 ? styles.zero : '', c.pc === pc ? styles.cur : ''].join(' ')}>
 			<span class={styles.duration}>{integerFormat.format(c.cycles).padStart(8) + 'cy (' + integerFormat.format(c.hits).padStart(6) + ') '}</span>
 			{c.text}
-			{c.loc !== undefined ? <a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClick} class={styles.file}>{c.loc.file}:{c.loc.line}</a> : ''}
+			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClick}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>		
 	), [onClick, pc]);
 
+	const listRef = useRef<Component>();
+	const scroller = useMemo(() => listRef.current && new Scrollable(listRef.current.base as HTMLElement, 135), [listRef.current]);
+	useEffect(() => {
+		const sel = content.findIndex((c: Line) => c.pc === pc);
+		if(sel >= 0) {
+			const containerHeight = (listRef.current.base as HTMLElement).clientHeight;
+			const slack = containerHeight / 10;
+			const scrollTo = sel * height;
+			const newTop = scrollTo - containerHeight / 2;
+			if(scrollTo < scroller.getFutureScrollPosition() + slack || scrollTo > scroller.getFutureScrollPosition() + containerHeight - slack)
+				scroller?.setScrollPositionSmooth(newTop);
+		}
+	}, [pc, scroller]);
+
 	return <VirtualList
+		ref={listRef}
 		className={styles.container}
 		data={content}
 		renderRow={renderRow}

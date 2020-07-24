@@ -10,6 +10,7 @@
 }
 
 .row {
+  display: flex;
   height: calc(var(--vscode-editor-font-size) + 3);
 }
 
@@ -24,7 +25,10 @@
   font-family: var(--vscode-font-family);
   margin-left: 2em;
   font-size: 0.8em;
-  float: right;
+  direction: rtl;
+  flex-grow: 1;
+  margin-left: 2em;
+  opacity: 0.8;
 }
 
 a {

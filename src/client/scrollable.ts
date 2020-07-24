@@ -164,7 +164,7 @@ export class Scrollable {
 	private smoothScrolling: SmoothScrollingOperation = null;
 
 	constructor(private container: HTMLElement, private smoothScrollDuration: number) {
-		console.log(container.clientHeight, container.scrollHeight);
+		console.log("Scrollable", container.clientHeight, container.scrollHeight);
 		this.state = new ScrollState(container.clientHeight, container.scrollHeight, 0);
 	}
 
@@ -178,6 +178,13 @@ export class Scrollable {
 		}
 	}
 
+	public getFutureScrollPosition(): number {
+		if (this.smoothScrolling) {
+			return this.smoothScrolling.to.scrollTop;
+		}
+		return this.state.scrollTop;
+	}	
+	
 	public setScrollPositionNow(update: number): void {
 		// no smooth scrolling requested
 		const newState = this.state.withScrollPosition(update);
