@@ -48,8 +48,9 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 }
 
 export interface IAmigaProfileExtra {
-	chipMem?: string; // base64 encoded binary data
-	bogoMem?: string; // base64 encoded binary data
+	objdump?: string; // disassembly from objdump, only in frame[0]
+	chipMem?: string; // base64 encoded binary data, only in frame[0]
+	bogoMem?: string; // base64 encoded binary data, only in frame[0]
 	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
 	dmacon: number;
 	customRegs: number[];
@@ -64,6 +65,7 @@ export interface IAmigaProfileExtra {
 	stackUpper: number;
 	uniqueCallFrames: CallFrame[];
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
+	pcTrace: number[]; // 1 entry: PC relative to .text, number of cycles
 }
 
 // extra information for shrinklerstats to track uncompressed data

@@ -84,6 +84,18 @@ interface Unwind {
 	ra: number;
 }
 
+export function Disassemble(objdumpPath: string, elfPath: string) {
+	const objdump = childProcess.spawnSync(objdumpPath, [
+		'--disassemble', 
+		'-l', // include lines
+		'-w', // wide output
+		elfPath], 
+		{ maxBuffer: 10*1024*1024 });
+	if(objdump.status !== 0)
+		throw objdump.error;
+	return objdump.stdout.toString();
+}
+
 export class UnwindTable {
 	// for every possible code location
 	//   struct unwind {
@@ -94,7 +106,7 @@ export class UnwindTable {
 	public unwind: Int16Array;
 	public codeSize: number;
 
-	constructor(private objdumpPath: string, private executable: string, private symbols: SymbolTable) {
+	constructor(private objdumpPath: string, private elfPath: string, private symbols: SymbolTable) {
 		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeSize = textSection.size;
 		const invalidUnwind: Unwind = {
@@ -105,7 +117,7 @@ export class UnwindTable {
 		};
 		const unwind: Unwind[] = new Array(this.codeSize).fill(invalidUnwind);
 
-		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.executable], { maxBuffer: 10*1024*1024 });
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.elfPath], { maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
 			throw objdump.error;
 		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
@@ -379,7 +391,7 @@ export class Profiler {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable) {
 	}
 
-	public profileTime(profileFile: ProfileFile): string {
+	public profileTime(profileFile: ProfileFile, disassembly: string): string {
 		const out: ICpuProfileRaw[] = [];
 
 		for(const frame of profileFile.frames)
@@ -388,6 +400,7 @@ export class Profiler {
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
 		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
+		out[0].$amiga.objdump = disassembly;
 
 		return JSON.stringify(out/*, null, 2*/);
 	}
@@ -402,7 +415,6 @@ export class Profiler {
 			}
 			return true;
 		};
-		//const functionMap: Map<string, number> = new Map();
 
 		// same index
 		const cycles: number[] = [];
@@ -411,10 +423,14 @@ export class Profiler {
 
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
+		const pcTrace: number[] = [];
+		let lastPC: number;
 
 		let totalCycles = 0;
 		for(const p of frame.profileArray) {
 			if(p < 0xffff0000) {
+				if(lastPC === undefined)
+					lastPC = p;
 				if(p === 0x7fffffff) {
 					// IRQ processing
 					callstack.frames.push({ func: '[IRQ]', file: '', line: 0 });
@@ -430,6 +446,13 @@ export class Profiler {
 					}
 				}
 			} else {
+				const cyc = (0xffffffff - p) | 0;
+
+				if(lastPC === undefined)
+					lastPC = 0xffffffff;
+				pcTrace.push(lastPC, cyc);
+				lastPC = undefined;
+
 				if(callstack.frames.length === 0) { // not in our code
 					callstack.frames.push(...lastCallstack.frames);
 					if(callstack.frames.length === 0 || callstack.frames[callstack.frames.length - 1].func !== '[External]')
@@ -437,13 +460,13 @@ export class Profiler {
 				}
 
 				if(sameCallstack(callstack, lastCallstack)) {
-					cycles[lastLocation] += (0xffffffff - p) | 0;
+					cycles[lastLocation] += cyc;
 				} else {
 					const callstackCopy = { frames: [...callstack.frames] };
 					lastLocation = locations.push(callstackCopy) - 1;
-					cycles.push((0xffffffff - p) | 0);
+					cycles.push(cyc);
 				}
-				totalCycles += (0xffffffff - p) | 0;
+				totalCycles += cyc;
 
 				lastCallstack.frames = [...callstack.frames];
 				callstack.frames.length = 0;
@@ -470,7 +493,8 @@ export class Profiler {
 				stackLower: profileFile.stackLower,
 				stackUpper: profileFile.stackUpper,
 				uniqueCallFrames: this.sourceMap.uniqueLines,
-				callFrames: this.sourceMap.lines
+				callFrames: this.sourceMap.lines,
+				pcTrace
 			}
 		};
 		if(frame.screenshot)

@@ -1,0 +1,57 @@
+.container {
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);   
+  white-space: pre;
+}
+
+.duration {
+  color: var(--vscode-terminal-ansiYellow);
+}
+
+.file {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--vscode-font-family);
+  margin-left: 2em;
+  font-size: 0.8em;
+  float: right;
+}
+
+a {
+  color: var(--vscode-terminal-foreground);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--vscode-terminal-foreground);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+a:focus {
+  text-decoration: underline;
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+/* don't use opacity or filter, it's slow */
+.zero {
+  color: #666; /* TODO: other themes */
+}
+
+.zero a, .zero a:hover, .zero a:focus {
+  color: #666; /* TODO: other themes */
+}
+
+.zero .duration {
+  color: #660; /* TODO: other themes */
+}
+
+.cur {
+	background-color: var(--vscode-editor-selectionBackground);
+	color: var(--vscode-editor-selectionForeground);
+}

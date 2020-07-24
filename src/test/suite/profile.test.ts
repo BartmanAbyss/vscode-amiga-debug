@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile } from '../../backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from '../../backend/profile';
 import { SymbolTable } from '../../backend/symbols';
 import { buildModel, IProfileModel } from '../../client/model';
 import { profileShrinkler } from '../../backend/shrinkler';
@@ -166,7 +166,7 @@ function test_profile_time(base: string, elf: string) {
 	symbolTable.relocate(symbolTable.getRelocatedSections(profileArchive.sectionBases));
 
 	const profiler = new Profiler(sourceMap, symbolTable);
-	const json = profiler.profileTime(profileArchive);
+	const json = profiler.profileTime(profileArchive, Disassemble(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf)));
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
 	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".time.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);

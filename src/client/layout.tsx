@@ -31,6 +31,7 @@ import { CustomRegsView } from './debugger/customregs';
 
 import 'pubsub-js';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
+import { AssemblyView } from './debugger/assembly';
 
 export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [frame, setFrame] = useState(0);
@@ -58,6 +59,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 
 	enum LeftTab {
 		profiler,
+		assembly,
 		resources,
 		blitter
 	}
@@ -66,7 +68,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		customRegs,
 	}
 
-	const [leftTab, setLeftTab] = useState(LeftTab.profiler);
+	const [leftTab, setLeftTab] = useState(LeftTab./*profiler*/assembly);
 	const [rightTab, setRightTab] = useState(RightTab.copper);
 
 	/*useEffect(() => {
@@ -148,13 +150,17 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 				<Tabs selectedIndex={leftTab} onSelect={(tabIndex) => setLeftTab(tabIndex)} className={styles.tabs}>
 					<TabList>
 						<Tab>Profiler</Tab>
+						<Tab>Assembly</Tab>
 						<Tab>Resources</Tab>
 						<Tab>Blitter</Tab>
 					</TabList>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
-					<TabPanel style={{ overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+					<TabPanel style={{ overflow: 'auto', position: 'relative' /* needed for offsetTop */ }}>
+						<AssemblyView frame={frame} time={time} />
+					</TabPanel>
+					<TabPanel style={leftTab === LeftTab.resources ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<GfxResourcesView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>

@@ -10,7 +10,7 @@ import { Breakpoint, MIError, Variable, VariableObject, Watchpoint } from './bac
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
-import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile } from './backend/profile';
+import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
 import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
@@ -531,7 +531,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
 				const profiler = new Profiler(sourceMap, this.symbolTable);
 				progress.report({ message: 'Writing profile...'});
-				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive));
+				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive, Disassemble(objdumpPath, this.args.program + ".elf")));
 
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import * as childProcess from 'child_process';
 import * as path from 'path';
 import { bundlePage } from './profile_editor_provider';
+import { Disassemble } from './backend/profile';
 
 class ObjdumpDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
@@ -11,19 +11,7 @@ class ObjdumpDocument implements vscode.CustomDocument {
 		const elfPath = this.uri.fsPath.substr(0, this.uri.fsPath.length - ".objdump".length);
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
-
-		const objdump = childProcess.spawnSync(objdumpPath, [
-			'--disassemble', 
-			'-l', // include lines
-			'-w', // wide output
-			elfPath], 
-			{ maxBuffer: 10*1024*1024 });
-		if(objdump.status !== 0)
-			throw objdump.error;
-		//const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
-		//for(const line of outputs) {
-		//}
-		this.content = objdump.stdout.toString();
+		this.content = Disassemble(objdumpPath, elfPath);
 	}
 
 	public content: string;
