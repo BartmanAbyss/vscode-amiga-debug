@@ -21,7 +21,7 @@ import { addToSet, removeFromSet, toggleInSet } from '../array';
 import * as ChevronDown from '../icons/chevron-down.svg';
 import * as ChevronRight from '../icons/chevron-right.svg';
 import { Icon } from '../icons';
-//import VirtualList from 'preact-virtual-list';
+import VirtualList from 'preact-virtual-list';
 import { getLocationText, formatValue, DisplayUnit, dataName } from '../display';
 import { IRichFilter, compileFilter } from '../filter';
 
@@ -227,7 +227,7 @@ export const TimeView: FunctionComponent<{
 	}, [focused]);
 
 	// had some strange jerking during scrolling
-/*	const renderRow = useCallback(
+	const renderRow = useCallback(
 		(row: NodeAtDepth) => (
 			<TimeViewRow
 				onKeyDown={onKeyDown}
@@ -243,33 +243,17 @@ export const TimeView: FunctionComponent<{
 		[expanded, setExpanded, onKeyDown, displayUnit],
 	);
 
-	<VirtualList
-		ref={listRef}
-		className={styles.rows}
-		data={rendered}
-		renderRow={renderRow}
-		rowHeight={25}
-		overscanCount={10}
-	/>
-*/
-
 	return (
 		<Fragment>
 			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} shrinkler={data[0].origAggregateTime > 0} />
-			<div className={styles.rows}>
-				{rendered.filter((n) => n.node.filtered || expanded.has(n.node) || filterExpanded.has(n.node)).map((row) => (
-					<TimeViewRow
-						onKeyDown={onKeyDown}
-						node={row.node}
-						depth={row.depth}
-						position={row.position}
-						expanded={expanded}
-						onExpandChange={setExpanded}
-						onFocus={setFocused}
-						displayUnit={displayUnit}
-					/>
-				))}
-			</div>
+			<VirtualList
+				ref={listRef}
+				className={styles.rows}
+				data={rendered.filter((n) => n.node.filtered || expanded.has(n.node) || filterExpanded.has(n.node))}
+				renderRow={renderRow}
+				rowHeight={20}
+				overscanCount={10}
+			/>
 		</Fragment>
 	);
 };
@@ -306,7 +290,7 @@ const TimeViewHeader: FunctionComponent<{
 			{shrinkler && <div className={classes(styles.heading, styles.timing_short)}>
 				Ratio
 			</div>}
-			<div className={styles.heading}>
+			<div className={classes(styles.heading, styles.location)}>
 				{shrinkler ? 'Hunk/Symbol' : 'File'}
 			</div>
 		</div>
