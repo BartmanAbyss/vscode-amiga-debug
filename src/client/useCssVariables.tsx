@@ -8,24 +8,24 @@ import { parseVariables } from './vscodeApi';
 /**
  * Uses CSS variables from the body.
  */
+
+const initialVariables = parseVariables();
+
 export const useCssVariables = () => {
-  const [vars, setVars] = useState<{ [key: string]: string }>({});
+	const [vars, setVars] = useState<{ [key: string]: string }>(initialVariables);
+	useEffect(() => {
+		const observer = new MutationObserver(() => {
+			setVars(parseVariables());
+		});
 
-  useEffect(() => {
-    setVars(parseVariables);
+		observer.observe(document.documentElement, {
+			attributeFilter: ['style'],
+			childList: false,
+			subtree: false,
+		});
 
-    const observer = new MutationObserver(() => {
-      setVars(parseVariables());
-    });
+		return () => observer.disconnect();
+	}, []);
 
-    observer.observe(document.documentElement, {
-      attributeFilter: ['style'],
-      childList: false,
-      subtree: false,
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return vars;
+	return vars;
 };
