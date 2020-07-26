@@ -1,3 +1,18 @@
+.gfxresource_menu {
+	width: initial !important;
+  box-shadow: 0 .25em .5em 0 black;
+}
+
+.function {
+  white-space: nowrap;
+}
+
+svg {
+  display: inline-block;
+  height: 1em;
+  margin-right: 0.25em;
+}
+
 .container {
 	background: var(--vscode-editor-background);
 	color: var(--vscode-editor-foreground);
@@ -11,7 +26,7 @@
 
 .row {
   display: flex;
-  height: calc(var(--vscode-editor-font-size) + 3);
+  height: calc(var(--vscode-editor-font-size) + 3px);
 }
 
 .duration {

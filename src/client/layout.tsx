@@ -68,7 +68,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		customRegs,
 	}
 
-	const [leftTab, setLeftTab] = useState(LeftTab.profiler/*assembly*/);
+	const [leftTab, setLeftTab] = useState(LeftTab./*profiler*/assembly);
 	const [rightTab, setRightTab] = useState(RightTab.copper);
 
 	/*useEffect(() => {
@@ -157,7 +157,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 					<TabPanel style={leftTab === LeftTab.profiler ? { overflow: 'auto', display: 'flex', flexDirection: 'column' } : {}}>
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
-					<TabPanel style={leftTab === LeftTab.assembly ? { overflow: 'auto', display: 'flex' } : {}}>
+					<TabPanel style={leftTab === LeftTab.assembly ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<AssemblyView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.resources ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
