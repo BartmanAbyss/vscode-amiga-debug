@@ -177,7 +177,7 @@ export const AssemblyView: FunctionComponent<{
 	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			Function:&nbsp;
-			<FunctionDropdown options={functions} value={func} onChange={onChangeFunction} />
+			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>
 		<VirtualList ref={listRef} className={styles.container} data={content} renderRow={renderRow} rowHeight={height} overscanCount={10} />
 	</Fragment>;

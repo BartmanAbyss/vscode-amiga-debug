@@ -22,6 +22,7 @@ export interface DropdownProps<ValueType> {
 	menuClassName?: string;
 	arrowClassName?: string;
 	disabled?: boolean;
+	alwaysChange?: boolean; // report onChange even when same option is selected again
 	optionComponent: ComponentType<DropdownOptionProps<ValueType>>;
 	onChange?: (arg: ValueType) => void;
 	onFocus?: (arg: boolean) => void;
@@ -132,7 +133,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 	}
 
 	public fireChangeEvent(newState) {
-		if (newState.selected !== this.state.selected && this.props.onChange) {
+		if((this.props.alwaysChange || newState.selected !== this.state.selected) && this.props.onChange) {
 			this.props.onChange(newState.selected);
 		}
 	}
