@@ -150,7 +150,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		const OptionComponent = this.props.optionComponent;
 
 		return (
-			<div class={optionClass} onMouseDown={this.setValue.bind(this, option)} onClick={this.setValue.bind(this, option)} role='option' aria-selected={isSelected ? 'true' : 'false'}>
+			<div class={optionClass} onClick={this.setValue.bind(this, option)} role='option' aria-selected={isSelected ? 'true' : 'false'}>
 				<OptionComponent option={option} placeholder={false} />
 			</div>
 		);
