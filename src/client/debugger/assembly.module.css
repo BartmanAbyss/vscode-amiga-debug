@@ -30,7 +30,14 @@ svg {
 }
 
 .duration {
+  flex-grow: 0;
+  flex-shrink: 0;
   color: var(--vscode-terminal-ansiYellow);
+  margin-right: 8px;
+}
+
+.dim {
+  opacity: 0.7;
 }
 
 .file {

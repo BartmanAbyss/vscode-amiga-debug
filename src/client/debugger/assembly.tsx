@@ -87,14 +87,14 @@ export const AssemblyView: FunctionComponent<{
 				continue;
 			}
 
-			const insnMatch = line.match(/^ *([0-9a-f]+):\t/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
+			const insnMatch = line.match(/^ *([0-9a-f]+):\t([0-9a-f]{4} )*\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
 			if(insnMatch) {
 				const pc = parseInt(insnMatch[1], 16);
 				content.push({
 					pc,
 					hits: hits[pc >> 1],
 					cycles: cycles[pc >> 1],
-					text: line,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`,
 					loc
 				});
 				loc = undefined;
@@ -143,7 +143,9 @@ export const AssemblyView: FunctionComponent<{
 		c.pc === undefined
 		? <div class={styles.row}>{c.text + '\n'}</div>
 		: <div class={[styles.row, c.cycles === 0 ? styles.zero : '', c.pc === pc ? styles.cur : ''].join(' ')}>
-			<span class={styles.duration}>{integerFormat.format(c.cycles).padStart(8) + 'cy (' + integerFormat.format(c.hits).padStart(6) + ') '}</span>
+			<div class={styles.duration}>{c.cycles > 0 ? (integerFormat.format(c.cycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+				<span class={styles.dim}>{c.cycles > 0 ? (integerFormat.format(c.hits).padStart(6) + 'x ' + integerFormat.format(c.cycles / c.hits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+			</div>
 			{c.text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClick}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
