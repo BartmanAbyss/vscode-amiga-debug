@@ -90,9 +90,12 @@ __udivsi3:
 	negb	d2
 
 2:	movel	d1, sp@-
+	.cfi_adjust_cfa_offset 4
 	movel	d0, sp@-
+	.cfi_adjust_cfa_offset 4
 	jbsr	__udivsi3	/* divide abs(dividend) by abs(divisor) */
 	addql	#8, sp
+	.cfi_adjust_cfa_offset -8
 
 	tstb	d2
 	jpl	3f
