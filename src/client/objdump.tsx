@@ -1,6 +1,7 @@
 import { VsCodeApi } from "./vscodeApi";
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
+import { GetCycles } from "./68k";
 
 // messages from webview to vs code
 export interface IOpenDocumentMessage {
@@ -44,18 +45,29 @@ class ObjdumpView {
 
 		// merge lines by same location
 		for(const line of lines) {
-			const match = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
-			if(match || line.length === 0)
+			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
+			if(locMatch || line.length === 0)
 				addCurRow();
 
-			if(match) {
+			if(locMatch) {
 				location = {
-					file: match[1],
-					line: parseInt(match[2])
+					file: locMatch[1],
+					line: parseInt(locMatch[2])
 				};
 				continue;
 			}
-			curRow.push(line.length > 0 ? line : '\u200b');
+			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
+			if(insnMatch) {
+				const pc = parseInt(insnMatch[1], 16);
+				const hex = insnMatch[2].split(' ');
+				const insn = new Uint16Array(hex.length);
+				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
+				const cycles = GetCycles(insn);
+				const cyclesText = cycles ? `${cycles.total}(${cycles.read}/${cycles.write})` : '';
+				curRow.push(`${cyclesText.padStart(7)} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2]} ${insnMatch[3]}`);			
+			} else {
+				curRow.push(line.length > 0 ? line : '\u200b');
+			}
 		}
 		addCurRow();
 		document.body.appendChild(this.container);

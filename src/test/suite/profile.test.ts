@@ -219,12 +219,10 @@ suite("Profiler", () => {
 	test("bitshmup.elf", () => {
 		test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
 	});
-*/	
 	test("Time: bobble.debug.elf", () => {
 		test_profile_time('amiga-profile-2020.07.22-13.46.24', 'private/bobble.debug.elf');
 	});
-
-/*	test("Size: bitshmup.elf", () => {
+	test("Size: bitshmup.elf", () => {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');
 	});*/
 	test("Shrinkler: bobble.shrinklerstats", () => {
