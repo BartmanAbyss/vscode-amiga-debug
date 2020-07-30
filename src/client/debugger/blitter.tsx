@@ -1,6 +1,6 @@
 import { Fragment, FunctionComponent, h, createContext } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import styles from './copper.module.css';
+import styles from './blitter.module.css';
 
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
@@ -103,10 +103,10 @@ export const BlitterVis: FunctionComponent<{
 	return (
 		<Fragment>
 			L{blit.vposStart.toString().padStart(3, '0')}C{blit.hposStart.toString().padStart(3, '0')}:
-			<span style={{ opacity: (blit.BLTCON0 & (1 << 11)) ? 1.0 : 0.2, paddingLeft: '20px' }}>A</span> <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 << 10)) ? 1.0 : 0.2, paddingLeft: '20px' }}>B</span> <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 <<  9)) ? 1.0 : 0.2, paddingLeft: '20px' }}>C</span> <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} />
-			<span style={{ opacity: (blit.BLTCON0 & (1 <<  8)) ? 1.0 : 0.2, paddingLeft: '20px' }}>D</span> <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} />
+			<span style={{ display: (blit.BLTCON0 & (1 << 11)) ? 'inline' : 'none', paddingLeft: '20px' }}>A <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
+			<span style={{ display: (blit.BLTCON0 & (1 << 10)) ? 'inline' : 'none', paddingLeft: '20px' }}>B <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
+			<span style={{ display: (blit.BLTCON0 & (1 <<  9)) ? 'inline' : 'none', paddingLeft: '20px' }}>C <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
+			<span style={{ display: (blit.BLTCON0 & (1 <<  8)) ? 'inline' : 'none', paddingLeft: '20px' }}>D <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
 		</Fragment>
 	);
 };

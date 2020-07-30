@@ -4,7 +4,7 @@
     font-family: var(--vscode-editor-font-family);
     font-size: var(--vscode-editor-font-size);
     font-weight: var(--vscode-editor-font-weight);   
-    white-space: pre;
+    white-space: nowrap;
 }
 
 /* copy from copper.module.css */
