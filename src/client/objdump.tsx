@@ -63,8 +63,10 @@ class ObjdumpView {
 				const insn = new Uint16Array(hex.length);
 				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
 				const cycles = GetCycles(insn);
-				const cyclesText = cycles ? `${cycles.total}(${cycles.read}/${cycles.write})` : '';
-				curRow.push(`${cyclesText.padStart(7)} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2]} ${insnMatch[3]}`);			
+				let cyclesText = '';
+				if(cycles)
+					cyclesText = cycles.map((c) => `${c.total}`).join('-');
+				curRow.push(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2]} ${insnMatch[3]}`);			
 			} else {
 				curRow.push(line.length > 0 ? line : '\u200b');
 			}

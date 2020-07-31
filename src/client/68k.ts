@@ -231,7 +231,7 @@ function AddCycles(ea: Cycles, cy: Cycles): Cycles {
 	};
 }
 
-function GetCyclesStandard(insn: Uint16Array): Cycles {
+function GetCyclesStandard(insn: Uint16Array): Cycles[] {
 	enum Opxxx {
 		DestinationAddressRegister,
 		DestinationDataRegister,
@@ -258,68 +258,76 @@ function GetCyclesStandard(insn: Uint16Array): Cycles {
 	const op = ((insn[0] >> 12) & 0b1111);
 	const ea  = opmode.size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 	if(op === 0b1011) { // CMP/EOR
-		// TODO
+		if(opmode.opmode === Opxxx.DestinationEffectiveAddress) { // EOR
+			if(effectiveAddress === AddressingMode.DataRegisterDirect)
+				return [ opmode.size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 12, read: 2, write: 0 } ];
+			const cy = opmode.size === Size.Byte ? { total: 12, read: 2, write: 1 } : opmode.size === Size.Word ? { total: 16, read: 2, write: 2 } : { total: 24, read: 2, write: 4 };
+			return [ AddCycles(ea, cy) ];
+		} else if(opmode.opmode === Opxxx.DestinationDataRegister) { // CMP
+			const cy = opmode.size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 10, read: 2, write: 0 };
+			return [ AddCycles(ea, cy) ];
+		} else if(opmode.opmode === Opxxx.DestinationAddressRegister) { // CMPA
+			const cy = { total: 10, read: 2, write: 0 };
+			return [ AddCycles(ea, cy) ];
+		}
 	} else {
 		if(opmode.opmode === Opxxx.DestinationDataRegister || opmode.opmode === Opxxx.DestinationAddressRegister) {
-			const exs = opmode.size !== Size.Long && opmode.opmode === Opxxx.DestinationAddressRegister ? 4 : 0;
-			const exl = opmode.size === Size.Long && (effectiveAddress === AddressingMode.AddressRegisterDirect || effectiveAddress === AddressingMode.Immediate) ? 2 : 0;
+			const exs = opmode.size !== Size.Long && opmode.opmode === Opxxx.DestinationAddressRegister ? 4 : 0; // extra for short
+			const exl = opmode.size === Size.Long && (effectiveAddress === AddressingMode.AddressRegisterDirect || effectiveAddress === AddressingMode.Immediate) ? 2 : 0; // extra for long
 			const cy  = opmode.size !== Size.Long ? { total: 4 + exs, read: 1, write: 0 } : { total: 6 + exl, read: 1, write: 0 };
-			return AddCycles(ea, cy);
+			return [ AddCycles(ea, cy) ];
 		} else {
 			// all opcodes
 			const cy = opmode.size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
-			return AddCycles(ea, cy);
+			return [ AddCycles(ea, cy) ];
 		}
 	}
 }
 
-function GetCyclesImmediate(insn: Uint16Array): Cycles {
+function GetCyclesImmediate(insn: Uint16Array): Cycles[] {
 	const size = GetSize(insn[0], 6);
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const op = ((insn[0] >> 8) & 0b1111);
 	if(effectiveAddress === AddressingMode.DataRegisterDirect) {
 		const extra = (op === 0b0010 || op === 0b1100) ? 2 : 0; // ANDI, CMPI are 2 cycles faster for LONG
-		return size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 16 - extra, read: 3, write: 0 };
+		return [ size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 16 - extra, read: 3, write: 0 } ];
 	} else {
 		const ea = size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 		const cy = size !== Size.Long ? { total: 12, read: 2, write: 1 } : { total: 20, read: 3, write: 2 };
-		return AddCycles(ea, cy);
+		return [ AddCycles(ea, cy) ];
 	}
 }
 
-function GetCyclesAddqSubq(insn: Uint16Array): Cycles {
+function GetCyclesAddqSubq(insn: Uint16Array): Cycles[] {
 	const size = GetSize(insn[0], 6);
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	if(effectiveAddress === AddressingMode.DataRegisterDirect || effectiveAddress === AddressingMode.AddressRegisterDirect) {
-		return size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0 };
+		return [ size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0 } ];
 	} else {
 		const ea = size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 		const cy = size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
-		return AddCycles(ea, cy);
+		return [ AddCycles(ea, cy) ];
 	}
 }
 
-function GetCyclesMove(insn: Uint16Array): Cycles {
+function GetCyclesMove(insn: Uint16Array): Cycles[] {
 	const size = GetSize(insn[0], 12);
 	const destination = GetAddressingMode(insn[0], 9, 6);
 	const source = GetAddressingMode(insn[0], 0, 3);
 	if(size !== undefined && destination !== undefined && source !== undefined) {
-		if(size === Size.Long)
-			return MoveExecutionTimes[source][destination].long;
-		else
-			return MoveExecutionTimes[source][destination].short;
+		return [ size !== Size.Long ? MoveExecutionTimes[source][destination].short : MoveExecutionTimes[source][destination].long ];
 	}
 }
 
-function GetCyclesAddxSubx(insn: Uint16Array): Cycles {
+function GetCyclesAddxSubx(insn: Uint16Array): Cycles[] {
 	const size = GetSize2(insn[0], 6);
 	if(insn[0] & (1 <<3)) // Memory to memory
-		return size !== Size.Long ? { total: 18, read: 3, write: 1 } : { total: 30, read: 5, write: 2 };
+		return [ size !== Size.Long ? { total: 18, read: 3, write: 1 } : { total: 30, read: 5, write: 2 } ];
 	else // Data register to data register
-		return size !== Size.Long ? {  total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0};
+		return [ size !== Size.Long ? {  total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0} ];
 }
 
-function GetCyclesMovem(insn: Uint16Array): Cycles {
+function GetCyclesMovem(insn: Uint16Array): Cycles[] {
 	const size = (insn[0] & (1 << 6)) ? Size.Long : Size.Word;
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const n = (() => {
@@ -334,51 +342,50 @@ function GetCyclesMovem(insn: Uint16Array): Cycles {
 		switch(effectiveAddress) {
 		case AddressingMode.AddressRegisterIndirect:
 		case AddressingMode.AddressRegisterIndirectWithPostincrement:
-			return size === Size.Word ? { total: 12 + 4 * n, read: 3 + n, write: 0 } : { total: 12 + 8 * n, read: 3 + 2 * n, write: 0 };
+			return [ size === Size.Word ? { total: 12 + 4 * n, read: 3 + n, write: 0 } : { total: 12 + 8 * n, read: 3 + 2 * n, write: 0 } ];
 		case AddressingMode.AddressRegisterIndirectWithDisplacement:
 		case AddressingMode.AbsoluteShort:
 		case AddressingMode.ProgramCounterIndirectWithDisplacement:
-			return size === Size.Word ? { total: 16 + 4 * n, read: 4 + n, write: 0 } : { total: 16 + 8 * n, read: 4 + 2 * n, write: 0 };
+			return [ size === Size.Word ? { total: 16 + 4 * n, read: 4 + n, write: 0 } : { total: 16 + 8 * n, read: 4 + 2 * n, write: 0 } ];
 		case AddressingMode.AddressRegisterIndirectWithIndex:
 		case AddressingMode.ProgramCounterIndirectWithIndex:
-			return size === Size.Word ? { total: 18 + 4 * n, read: 4 + n, write: 0 } : { total: 18 + 8 * n, read: 4 + 2 * n, write: 0 };
+			return [ size === Size.Word ? { total: 18 + 4 * n, read: 4 + n, write: 0 } : { total: 18 + 8 * n, read: 4 + 2 * n, write: 0 } ];
 		case AddressingMode.AbsoluteLong:
-			return size === Size.Word ? { total: 20 + 4 * n, read: 5 + n, write: 0 } : { total: 20 + 8 * n, read: 5 + 2 * n, write: 0 };
+			return [ size === Size.Word ? { total: 20 + 4 * n, read: 5 + n, write: 0 } : { total: 20 + 8 * n, read: 5 + 2 * n, write: 0 } ];
 		}
 	} else {
 		// Register to memory
 		switch(effectiveAddress) {
 		case AddressingMode.AddressRegisterIndirect:
 		case AddressingMode.AddressRegisterIndirectWithPredecrement:
-			return size === Size.Word ? { total: 8 + 4 * n, read: 2, write: n } : { total: 8 + 8 * n, read: 2, write: 2 * n };
+			return [ size === Size.Word ? { total: 8 + 4 * n, read: 2, write: n } : { total: 8 + 8 * n, read: 2, write: 2 * n } ];
 		case AddressingMode.AddressRegisterIndirectWithDisplacement:
 		case AddressingMode.AbsoluteShort:
-			return size === Size.Word ? { total: 12 + 4 * n, read: 3, write: n } : { total: 12 + 8 * n, read: 3, write: 2 * n };
+			return [ size === Size.Word ? { total: 12 + 4 * n, read: 3, write: n } : { total: 12 + 8 * n, read: 3, write: 2 * n } ];
 		case AddressingMode.AddressRegisterIndirectWithIndex:
-			return size === Size.Word ? { total: 14 + 4 * n, read: 3, write: n } : { total: 14 + 8 * n, read: 3, write: 2 * n };
+			return [ size === Size.Word ? { total: 14 + 4 * n, read: 3, write: n } : { total: 14 + 8 * n, read: 3, write: 2 * n } ];
 		case AddressingMode.AbsoluteLong:
-			return size === Size.Word ? { total: 16 + 4 * n, read: 4, write: n } : { total: 16 + 8 * n, read: 4, write: 2 * n };
+			return [ size === Size.Word ? { total: 16 + 4 * n, read: 4, write: n } : { total: 16 + 8 * n, read: 4, write: 2 * n } ];
 		}
 	}
 }
 
-function GetCyclesDiv(insn: Uint16Array): Cycles {
+function GetCyclesDiv(insn: Uint16Array): Cycles[] {
 	const signed = ((insn[0] >> 8) & 1) ? true : false;
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const ea = EffectiveAddressCalculationTimes[effectiveAddress].long;
-	const cy = { total: signed ? 158 : 140, read: 1, write: 0 };
-	return AddCycles(ea, cy);
+	const cy = { total: signed ? 158 : 140, read: 2, write: 0 };
+	return [ AddCycles(ea, cy) ];
 }
 
-function GetCyclesMul(insn: Uint16Array): Cycles {
-	// TODO: min/max?
+function GetCyclesMul(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const ea = EffectiveAddressCalculationTimes[effectiveAddress].long;
-	const cy = { total: 70, read: 1, write: 0 };
-	return AddCycles(ea, cy);
+	const cy = [ { total: 42, read: 2, write: 0 }, { total: 74, read: 2, write: 0 } ];
+	return cy.map((c) => AddCycles(ea, c));
 }
 
-function GetCyclesSingleOperand(insn: Uint16Array): Cycles {
+function GetCyclesSingleOperand(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const isTST  = ((insn[0] >> 8) & 0b1111) === 0b1010;
 	const isTAS  = ((insn[0] >> 6) & 0b111111) === 0b101111;
@@ -386,10 +393,10 @@ function GetCyclesSingleOperand(insn: Uint16Array): Cycles {
 	const size = (isTAS || isNBCD) ? Size.Byte : GetSize2(insn[0], 6); // NBCD, TAS = byte only
 	if(effectiveAddress === AddressingMode.DataRegisterDirect || effectiveAddress === AddressingMode.AddressRegisterDirect) {
 		if(isNBCD)
-			return { total: 6, read: 1, write: 0 };
+			return [ { total: 6, read: 1, write: 0 } ];
 		if(isTST)
-			return { total: 4, read: 1, write: 0 };
-		return size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 6, read: 1, write: 0 };
+			return [ { total: 4, read: 1, write: 0 } ];
+		return [ size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 6, read: 1, write: 0 } ];
 	}
 	const ea = size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 	const cy = (() => {
@@ -399,94 +406,118 @@ function GetCyclesSingleOperand(insn: Uint16Array): Cycles {
 			return { total: 14, read: 2, write: 1 };
 		return size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
 	})();
-	return AddCycles(ea, cy);
+	return [ AddCycles(ea, cy) ];
 }
 
-function GetCyclesShiftRotate(insn: Uint16Array): Cycles {
+function GetCyclesShiftRotate(insn: Uint16Array): Cycles[] {
 	const isMemory = (((insn[0] >> 6) & 0b11) === 0b11) ? true : false;
 	if(isMemory) {
 		const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 		const ea = EffectiveAddressCalculationTimes[effectiveAddress].short; // memory always short
 		const cy = { total: 8, read: 1, write: 1 };
-		return AddCycles(ea, cy);
+		return [ AddCycles(ea, cy) ];
 	}
 	const size = GetSize2(insn[0], 6);
-	const count = (() => {
+	const counts = (() => {
 		if((insn[0] & (1 << 5)) === 0) { // immediate rotate count
 			let n = (insn[0] >>> 9) & 0b111;
 			if(n === 0)
 				n = 8;
-			return n;
+			return [ n ];
 		} else {
-			return 8; // TODO
+			return [ 1, 8 ];
 		}
 	})();
-	return size !== Size.Long ? { total: 6 + 2 * count, read: 1, write: 0 } : { total: 8 + 2 * count, read: 1, write: 0 };
+	return counts.map((n) => size !== Size.Long ? { total: 6 + 2 * n, read: 1, write: 0 } : { total: 8 + 2 * n, read: 1, write: 0 });
 }
 
-function GetCyclesJmp(insn: Uint16Array): Cycles {
+function GetCyclesJmp(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	switch(effectiveAddress) {
 	case AddressingMode.AddressRegisterIndirect:
-	case AddressingMode.AbsoluteShort: return { total: 8, read: 2, write: 0 };
+	case AddressingMode.AbsoluteShort: 
+		return [ { total: 8, read: 2, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
-	case AddressingMode.ProgramCounterIndirectWithIndex: return { total: 10, read: 2, write: 0 };
+	case AddressingMode.ProgramCounterIndirectWithIndex: 
+		return [ { total: 10, read: 2, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
-	case AddressingMode.ProgramCounterIndirectWithIndex: return { total: 14, read: 3, write: 0 };
-	case AddressingMode.AbsoluteLong: return { total: 12, read: 3, write: 0 };
+	case AddressingMode.ProgramCounterIndirectWithIndex:
+		return [ { total: 14, read: 3, write: 0 } ];
+	case AddressingMode.AbsoluteLong: 
+		return [ { total: 12, read: 3, write: 0 } ];
 	}
 }
 
-function GetCyclesJsr(insn: Uint16Array): Cycles {
+function GetCyclesJsr(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	switch(effectiveAddress) {
-	case AddressingMode.AddressRegisterIndirect: return { total: 16, read: 2, write: 2 };
+	case AddressingMode.AddressRegisterIndirect: 
+		return [ { total: 16, read: 2, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
 	case AddressingMode.ProgramCounterIndirectWithIndex:
-	case AddressingMode.AbsoluteShort: return { total: 18, read: 2, write: 2 }; 
+	case AddressingMode.AbsoluteShort: 
+		return [ { total: 18, read: 2, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
-	case AddressingMode.ProgramCounterIndirectWithIndex: return { total: 22, read: 2, write: 2 };
-	case AddressingMode.AbsoluteLong: return { total: 20, read: 3, write: 2 };
+	case AddressingMode.ProgramCounterIndirectWithIndex: 
+		return [ { total: 22, read: 2, write: 2 } ];
+	case AddressingMode.AbsoluteLong: 
+		return [ { total: 20, read: 3, write: 2 } ];
 	}
 }
 
-function GetCyclesLea(insn: Uint16Array): Cycles {
+function GetCyclesLea(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	switch(effectiveAddress) {
-	case AddressingMode.AddressRegisterIndirect: return { total: 4, read: 1, write: 0 };
+	case AddressingMode.AddressRegisterIndirect: 
+		return [ { total: 4, read: 1, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
 	case AddressingMode.ProgramCounterIndirectWithIndex: 
-	case AddressingMode.AbsoluteShort: 	return { total: 8, read: 2, write: 0 };
+	case AddressingMode.AbsoluteShort:	
+		return [ { total: 8, read: 2, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
-	case AddressingMode.ProgramCounterIndirectWithIndex: return { total: 12, read: 2, write: 0 };
-	case AddressingMode.AbsoluteLong: return { total: 12, read: 3, write: 0 };
+	case AddressingMode.ProgramCounterIndirectWithIndex: 
+		return [ { total: 12, read: 2, write: 0 } ];
+	case AddressingMode.AbsoluteLong: 
+		return [ { total: 12, read: 3, write: 0 } ];
 	}
 }
 
-function GetCyclesPea(insn: Uint16Array): Cycles {
+function GetCyclesPea(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	switch(effectiveAddress) {
-	case AddressingMode.AddressRegisterIndirect: return { total: 12, read: 1, write: 2 };
+	case AddressingMode.AddressRegisterIndirect: 
+		return [ { total: 12, read: 1, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
 	case AddressingMode.ProgramCounterIndirectWithIndex: 
-	case AddressingMode.AbsoluteShort: 	return { total: 16, read: 2, write: 2 };
+	case AddressingMode.AbsoluteShort: 
+		return [ { total: 16, read: 2, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
-	case AddressingMode.ProgramCounterIndirectWithIndex: return { total: 20, read: 2, write: 2 };
-	case AddressingMode.AbsoluteLong: return { total: 20, read: 3, write: 2 };
+	case AddressingMode.ProgramCounterIndirectWithIndex: 
+		return [ { total: 20, read: 2, write: 2 } ];
+	case AddressingMode.AbsoluteLong: 
+		return [ { total: 20, read: 3, write: 2 } ];
 	}
 }
 
-function GetCyclesBitManipulation(insn: Uint16Array): Cycles {
+function GetCyclesScc(insn: Uint16Array): Cycles[] {
+	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
+	if(effectiveAddress === AddressingMode.DataRegisterDirect)
+		return [ { total: 8, read: 2, write: 0 }, { total: 10, read: 2, write: 0 } ];
+	const cy = { total: 12, read: 2, write: 1 };
+	return [ AddCycles(EffectiveAddressCalculationTimes[effectiveAddress].short, cy) ];
+}
+
+function GetCyclesBitManipulation(insn: Uint16Array): Cycles[] {
 	const isBTST = ((insn[0] >>> 6) & 0b11) === 0b00 ? true : false;
 	const isBCLR = ((insn[0] >>> 6) & 0b11) === 0b10 ? true : false;
 	const isDynamic = (insn[0] & (1 << 8)) ? true : false;
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	if(effectiveAddress === AddressingMode.DataRegisterDirect) {
 		if(isBCLR)
-			return isDynamic ? { total: 10, read: 1, write: 0 } : { total: 14, read: 2, write: 0 };
+			return [ isDynamic ? { total: 10, read: 1, write: 0 } : { total: 14, read: 2, write: 0 } ];
 		if(isBTST)
-			return isDynamic ? { total: 6, read: 1, write: 0 } : { total: 10, read: 2, write: 0 };
-		return isDynamic ? { total: 8, read: 1, write: 0 } : { total: 12, read: 2, write: 0 };
+			return [ isDynamic ? { total: 6, read: 1, write: 0 } : { total: 10, read: 2, write: 0 } ];
+		return [ isDynamic ? { total: 8, read: 1, write: 0 } : { total: 12, read: 2, write: 0 } ];
 	} else {
 		const cy = (() => {
 			if(isBCLR)
@@ -496,11 +527,11 @@ function GetCyclesBitManipulation(insn: Uint16Array): Cycles {
 			return isDynamic ? { total: 8, read: 1, write: 1 } : { total: 12, read: 2, write: 1 };
 		})();
 		const ea = EffectiveAddressCalculationTimes[effectiveAddress].short;
-		return AddCycles(ea, cy);
+		return [ AddCycles(ea, cy) ];
 	}
 }
 
-export function GetCycles(insn: Uint16Array): Cycles {
+export function GetCycles(insn: Uint16Array): Cycles[] {
 	try {
 		// Immediate (Table 8-5)
 		if((insn[0] & 0b1111_1111_0000_0000) === 0b0000_0110_0000_0000 // ADDI
@@ -510,34 +541,57 @@ export function GetCycles(insn: Uint16Array): Cycles {
 		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0000_0000_0000_0000 // ORI
 		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0000_0100_0000_0000) // SUBI
 			return GetCyclesImmediate(insn);
-		if((insn[0] & 0b1111_0000_0000_0000) === 0b0101_0000_0000_0000) // ADDQ/SUBQ
+		if((insn[0] & 0b1111_0000_0000_0000) === 0b0101_0000_0000_0000 && ((insn[0] >>> 6) & 0b11) !== 0b11) // ADDQ/SUBQ
 			return GetCyclesAddqSubq(insn);
 		if((insn[0] & 0b1111_0001_0000_0000) === 0b0111_0000_0000_0000) // MOVEQ
-			return { total: 4, read: 1, write: 0 };
+			return [ { total: 4, read: 1, write: 0 } ];
 
 		// Multiprecision (Table 8-11)
 		if((insn[0] & 0b1111_0001_1111_0000) === 0b1100_0001_0000_0000 // ABCD
 		|| (insn[0] & 0b1111_0001_1111_0000) === 0b1000_0001_0000_0000) // SBCD
-			return (insn[0] & (1 << 3)) ? { total: 18, read: 3, write: 1} : { total: 6, read: 1, write: 0 };
+			return [ (insn[0] & (1 << 3)) ? { total: 18, read: 3, write: 1} : { total: 6, read: 1, write: 0 } ];
 		if(((insn[0] & 0b1111_0001_0011_0000) === 0b1101_0001_0000_0000 // ADDX, needs to come before ADD
 		 || (insn[0] & 0b1111_0001_0011_0000) === 0b1001_0001_0000_0000) // SUBX
 		&& ((insn[0] >>> 6) & 0b11) !== 0b11)
 			return GetCyclesAddxSubx(insn);
 		if((insn[0] & 0b1111_0001_0011_1000) === 0b1011_0001_0000_1000) // CMPM
-			return GetSize2(insn[0], 6) !== Size.Long ? { total: 12, read: 3, write: 0 } : { total: 20, read: 5, write: 0 };
+			return [ GetSize2(insn[0], 6) !== Size.Long ? { total: 12, read: 3, write: 0 } : { total: 20, read: 5, write: 0 } ];
 
 		// Miscellaneous (Table 8-12)
 		if(((insn[0] & 0b1111_0001_0011_0000) === 0b1100_0001_0000_0000) && ((insn[0] >>> 6) & 0b11) !== 0b11) // EXG, needs to come before AND
-			return { total: 6, read: 1, write: 0 };
-		if(insn[0] === 0x4e73) // RTE
-			return { total: 20, read: 5, write: 0 };
+			return [ { total: 6, read: 1, write: 0 } ];
+		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1110_0101_0000 // LINK.w
+		|| (insn[0] & 0b1111_1111_1111_1000) === 0b0100_1000_0000_1000) // LINK.l
+			return [ { total: 32, read: 4, write: 4 } ];
+		//else if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_0100_1100_0000) // MOVE to CCR
+			// TODO
+		// TODO: MOVE to SR
+		//else if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_0000_1100_0000) // MOVE from SR
+			// TODO
+		// TODO: MOVE to USP
+		// TODO: MOVE from USP
+		if(insn[0] === 0b0100_1110_0111_0001) // NOP
+			return [ { total: 8, read: 2, write: 0 } ];
+		// TODO: ORI to CCR
+		// TODO: ORI to SR
+		if(insn[0] === 0b0100_1110_0111_0000) // RESET
+			return [ { total: 136, read: 2, write: 0 } ];
+		if(insn[0] === 0x4e73 // RTE
+		|| insn[0] === 0b0100_1110_0111_0111) // RTR
+			return [ { total: 40, read: 10, write: 0 } ];
 		if(insn[0] === 0x4e75) // RTS
-			return { total: 16, read: 4, write: 0 };
+			return [ { total: 16, read: 4, write: 0 } ];
+		if(insn[0] === 0b0100_1110_0111_0010) // STOP
+			return [ { total: 4, read: 0, write: 0 } ];
+		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1000_0100_0000) // SWAP
+			return [ { total: 8, read: 2, write: 0 } ];
+		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1110_0101_1000) // UNLK
+			return [ { total: 24, read: 6, write: 0 } ];
 			
 		// Standard (Table 8-4)
-		if((insn[0] & 0b1111_0000_1110_0000) === 0b1000_0001_1100_0000) // DIVS/DIVU, before OR
+		if((insn[0] & 0b1111_0000_1100_0000) === 0b1000_0000_1100_0000) // DIVS/DIVU, before OR
 			return GetCyclesDiv(insn);
-		if((insn[0] & 0b1111_0000_1110_0000) === 0b1100_0000_1100_0000) // MULS/MULU, before AND
+		if((insn[0] & 0b1111_0000_1100_0000) === 0b1100_0000_1100_0000) // MULS/MULU, before AND
 			return GetCyclesMul(insn);
 		if((insn[0] & 0b1111_0000_0000_0000) === 0b1101_0000_0000_0000 // ADD
 		|| (insn[0] & 0b1111_0000_0000_0000) === 0b1100_0000_0000_0000 // AND
@@ -549,13 +603,14 @@ export function GetCycles(insn: Uint16Array): Cycles {
 		// Single Operand (Table 8-6)
 		if((insn[0] & 0b1111_1111_0000_0000) === 0b0100_0010_0000_0000 // CLR
 		|| (insn[0] & 0b1111_1111_1100_0000) === 0b0100_1000_0000_0000 // NBCD
-		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0100_0010_0000_0000 // NEG
+		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0100_0100_0000_0000 // NEG
 		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0100_0000_0000_0000 // NEGX
 		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0100_0110_0000_0000 // NOT
-		// TODO: Scc
 		|| (insn[0] & 0b1111_1111_1100_0000) === 0b0100_1011_1100_0000 // TAS
 		|| (insn[0] & 0b1111_1111_0000_0000) === 0b0100_1010_0000_0000) // TST
 			return GetCyclesSingleOperand(insn);
+		if((insn[0] & 0b1111_0000_1100_0000) === 0b0101_0000_1100_0000 && ((insn[0] >>> 3) & 0b111) !== 0b001) // Scc
+			return GetCyclesScc(insn);
 
 		// Shift/Rotate (Table 8-7)
 		if((insn[0] & 0b1111_0000_0000_0000) === 0b1110_0000_0000_0000) // ASR,ASL,LSR,LSL,ROR,ROL,ROXR,ROXL
@@ -568,14 +623,23 @@ export function GetCycles(insn: Uint16Array): Cycles {
 		|| (insn[0] & 0b1111_0000_1100_0000) === 0b0000_0000_0000_0000) // BTST
 			return GetCyclesBitManipulation(insn);
 
-		// Conditional (Table 8-9)
-		// TODO: Bcc
-		if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0000_0000_0000) // BRA
-			return { total: 10, read: 2, write: 0 };
-		// TODO: BSR
-		if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0001_0000_0000) // BSR
-			return { total: 18, read: 2, write: 2 };
-		// TODO: DBcc
+		// Conditional (Table 8-9); Conditional Codes (Table 3-19)
+		if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0000_0000_0000) // BRA (encoding BT)
+			return [ { total: 10, read: 2, write: 0 } ];
+		if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0001_0000_0000) // BSR (encoding BF)
+			return [ { total: 18, read: 2, write: 2 } ];
+		if((insn[0] & 0b1111_0000_0000_0000) === 0b0110_0000_0000_0000) // Bcc, after BRA/BSR
+			return (insn[0] & 0xff) !== 0 
+			? [ { total: 12, read: 2, write: 0 }, { total: 18, read: 4, write: 0 } ] // .b
+			: [ { total: 18, read: 4, write: 0 }, { total: 20, read: 4, write: 0 } ]; // .s
+		if((insn[0] & 0b1111_0000_1111_1000) === 0b0101_0000_1100_1000) // DBcc
+			return ((insn[0] >>> 8) & 0b1111) !== 0b0001 
+			? [ { total: 20, read: 4, write: 0 } ] // CC True
+			: [ { total: 18, read: 4, write: 0 }, { total: 26, read: 6, write: 0 } ]; // CC False
+		if((insn[0] & 0b1111_1111_1111_0000) === 0b0100_1110_0100_0000) // TRAP
+			return [ { total: 62, read: 8, write: 6 } ];
+		if(insn[0] === 0b0100_1110_0111_0110) // TRAPV
+			return [ { total: 8, read: 2, write: 0 }, { total: 66, read: 10, write: 6 } ];
 
 		// JMP, JSR, LEA, PEA, and MOVEM (Table 8-10)
 		if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_1110_1100_0000) // JMP
@@ -592,12 +656,6 @@ export function GetCycles(insn: Uint16Array): Cycles {
 		// Move
 		if((insn[0] & 0b1100_0000_0000_0000) === 0b0000_0000_0000_0000) // MOVE
 			return GetCyclesMove(insn);
-		//else if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_0100_1100_0000) // MOVE to CCR
-			// TODO
-		//else if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_0000_1100_0000) // MOVE from SR
-			// TODO
-		//else if((insn[0] & 0b1111_0001_0000_0000) === 0b0111_0000_0000_0000) // MOVEQ
-			// TODO
 	} catch(e) {
 		console.log(`Error decoding opcode ${insn[0].toString(16).padStart(4, '0')}`);
 		return;
