@@ -98,3 +98,14 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.md gcc-10.1.0-barto/gcc/config/m68k/m6
     (A6_REG		14)
     (SP_REG		15)
     (FP0_REG		16)
+diff -ruN gcc-10.1.0/tree-scalar-evolution.c gcc-10.1.0-barto/gcc/tree-scalar-evolution.c
+--- gcc-10.1.0/tree-scalar-evolution.c  2020-05-07 12:50:02.000000000 +0200
++++ gcc-10.1.0-barto/gcc/tree-scalar-evolution.c     2020-07-31 12:48:17.490142200 +0200
+@@ -3373,6 +3373,7 @@
+       || code == CEIL_DIV_EXPR
+       || code == FLOOR_DIV_EXPR
+       || code == ROUND_DIV_EXPR
++      || code == MULT_EXPR // BARTO
+       || code == TRUNC_MOD_EXPR
+       || code == CEIL_MOD_EXPR
+       || code == FLOOR_MOD_EXPR

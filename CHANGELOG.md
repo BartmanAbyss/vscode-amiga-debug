@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- GCC: prevent `sccp` pass from generating `__mulsi3` calls
 - Fixed WinUAE not booting correctly after overwriting the default configuration
 - Debugger now breaks at 'TRAP #7' opcode and NULL access (considered undefined behavior in GCC)
 - Debugger now breaks at AddressError (68000 unaligned memory access)
