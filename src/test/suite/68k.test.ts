@@ -1,7 +1,7 @@
 import * as assert from 'assert';
-import { GetCycles } from "../../client/68k";
+import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
-suite("68k", () => {
+suite("68k-cycles", () => {
 	test("move1", () => {
 		const insn = new Uint16Array([0x205a]); // movea.l (a2)+,a0
 		const cycles = GetCycles(insn);
@@ -96,5 +96,13 @@ suite("68k", () => {
 		const insn = new Uint16Array([0x51c9, 0xfffa]); // dbf d1,$11c2
 		const cycles = GetCycles(insn);
 		assert.deepEqual(cycles, [ { total: 18, read: 4, write: 0 }, { total: 26, read: 6, write: 0 } ]);
+	});
+});
+
+suite("68k-jump", () => {
+	test("jsr absolute long", () => {
+		const insn = new Uint16Array([0x4eb9, 0x00f0, 0xff60]); // jsr $f0ff60
+		const jump = GetJump(0xdb4, insn);
+		assert.deepEqual(jump, { type: JumpType.Jsr, target: 0xf0ff60 });
 	});
 });

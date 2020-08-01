@@ -1,7 +1,7 @@
 import { VsCodeApi } from "./vscodeApi";
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
-import { GetCycles } from "./68k";
+import { GetCycles, GetJump } from "./68k";
 
 // messages from webview to vs code
 export interface IOpenDocumentMessage {
@@ -62,11 +62,12 @@ class ObjdumpView {
 				const hex = insnMatch[2].split(' ');
 				const insn = new Uint16Array(hex.length);
 				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
+				const jump = GetJump(pc, insn);
 				const cycles = GetCycles(insn);
 				let cyclesText = '';
 				if(cycles)
 					cyclesText = cycles.map((c) => `${c.total}`).join('-');
-				curRow.push(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2]} ${insnMatch[3]}`);			
+				curRow.push(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2]} ${insnMatch[3]}${jump ? ` =>${jump.target.toString(16)}` : ''}`);
 			} else {
 				curRow.push(line.length > 0 ? line : '\u200b');
 			}

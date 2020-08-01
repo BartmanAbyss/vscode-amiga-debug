@@ -13,6 +13,7 @@ import { DropdownOptionProps, DropdownComponent } from '../dropdown';
 
 import { Icon } from '../icons';
 import * as SymbolMethod from '../icons/symbol-method.svg';
+import { GetJump } from '../68k';
 
 declare const MODELS: IProfileModel[];
 
@@ -87,14 +88,18 @@ export const AssemblyView: FunctionComponent<{
 				continue;
 			}
 
-			const insnMatch = line.match(/^ *([0-9a-f]+):\t([0-9a-f]{4} )*\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
+			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
 			if(insnMatch) {
 				const pc = parseInt(insnMatch[1], 16);
+				const hex = insnMatch[2].split(' ');
+				const insn = new Uint16Array(hex.length);
+				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
+				const jump = GetJump(pc, insn);
 				content.push({
 					pc,
 					hits: hits[pc >> 1],
 					cycles: cycles[pc >> 1],
-					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}${jump ? ` =>${jump.target.toString(16)}` : ''}`,
 					loc
 				});
 				loc = undefined;

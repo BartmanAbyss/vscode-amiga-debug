@@ -531,6 +531,53 @@ function GetCyclesBitManipulation(insn: Uint16Array): Cycles[] {
 	}
 }
 
+export enum JumpType {
+	Branch,
+	ConditionalBranch,
+	Jsr,
+	ConditionalJsr
+}
+
+export interface Jump {
+	type: JumpType;
+	target: number;
+}
+
+// https://stackoverflow.com/a/60227348
+function uncomplement(val: number, bitwidth: number) {
+	const isnegative = val & (1 << (bitwidth - 1));
+	const boundary = (1 << bitwidth);
+	const minval = -boundary;
+	const mask = boundary - 1;
+	return isnegative ? minval + (val & mask) : val;
+}
+
+export function GetJump(pc: number, insn: Uint16Array) {
+	function GetDisplacement(): number {
+		if(insn[0] & 0xff)
+			return uncomplement(insn[0] & 0xff, 8);
+		else
+			return uncomplement(insn[1], 16);
+	}
+
+	if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0000_0000_0000) // BRA (encoding BT)
+		return { type: JumpType.Branch, target: pc + 2 + GetDisplacement() };
+	if((insn[0] & 0b1111_1111_0000_0000) === 0b0110_0001_0000_0000) // BSR (encoding BF)
+		return { type: JumpType.Jsr, target: pc + 2 + GetDisplacement() };
+	if((insn[0] & 0b1111_0000_0000_0000) === 0b0110_0000_0000_0000) // Bcc, after BRA/BSR
+		return { type: JumpType.ConditionalBranch, target: pc + 2 + GetDisplacement() };
+	if((insn[0] & 0b1111_0000_1111_1000) === 0b0101_0000_1100_1000) // DBcc
+		return { type: JumpType.ConditionalBranch, target: pc + 2 + uncomplement(insn[1], 16) };
+
+	if((insn[0] & 0b1111_1111_1000_0000) === 0b0100_1110_1000_0000) { // JMP,JSR
+		const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
+		if(effectiveAddress === AddressingMode.AbsoluteShort)
+			return { type: insn[0] & (1 << 6) ? JumpType.Branch : JumpType.Jsr, target: insn[1] };
+		else if(effectiveAddress === AddressingMode.AbsoluteLong)
+			return { type: insn[0] & (1 << 6) ? JumpType.Branch : JumpType.Jsr, target: (insn[1] << 16) | insn[2] };
+	}
+}
+
 export function GetCycles(insn: Uint16Array): Cycles[] {
 	try {
 		// Immediate (Table 8-5)
