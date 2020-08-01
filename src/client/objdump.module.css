@@ -7,6 +7,16 @@
 	white-space: pre;
 }
 
+.row {
+	height: 20px; /* TEST */
+	margin-left: 150px;
+}
+
+.jump {
+	position: absolute;
+	width: 150px;
+}
+
 .cur {
     background: crimson;
 }
