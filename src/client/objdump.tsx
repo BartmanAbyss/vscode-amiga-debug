@@ -42,71 +42,71 @@ export class ObjdumpModel {
 	public functions: Function[] = [];
 	public jumps: JumpInfo[] = [];
 
+	private addJumps(func: Function, funcJumps: JumpInfo[]) {
+		// based on binutils-gdb/binutils/objdump.c
+		const sortedJumps = funcJumps.filter((j) => j.end >= func.pc && j.end < func.end).sort((a: JumpInfo, b: JumpInfo) => {
+			const aMin  = Math.min(...a.start, a.end);
+			const bMin  = Math.min(...b.start, b.end);
+			const aSize = Math.max(...a.start, a.end) - aMin;
+			const bSize = Math.max(...b.start, b.end) - bMin;
+			if(aSize === bSize)
+				return aMin - bMin;
+			else
+				return aSize - bSize;
+		});
+
+		function jumpIntersects(a: JumpInfo, b: JumpInfo): boolean {
+			const aMin = Math.min(...a.start, a.end);
+			const bMin = Math.min(...b.start, b.end);
+			const aMax = Math.max(...a.start, a.end);
+			const bMax = Math.max(...b.start, b.end);
+			return aMax >= bMin && aMin <= bMax;
+		}
+
+		let lastJump = 0;
+		let maxLevel = -1;
+		while(lastJump < sortedJumps.length) {
+			// The last jump is part of the next group
+			const base = lastJump;
+			// Increment level
+			sortedJumps[base].level = ++maxLevel;
+			// Find jumps that can be combined on the same level, with the largest jumps tested first.
+			// This has the advantage that large jumps are on lower levels and do not intersect with small
+			// jumps that get grouped on higher levels.
+			let exchangeItem = lastJump + 1;
+			for(let it = exchangeItem; it < sortedJumps.length; it++) {
+				// test if the jump intersects with any jump from current group
+				let ok = true;
+				for(let itCollision = base; itCollision !== exchangeItem; itCollision++) {
+					// this jump intersects so we leave it out
+					if(jumpIntersects(sortedJumps[itCollision], sortedJumps[it])) {
+						ok = false;
+						break;
+					}
+				}
+				// add jump to group
+				if(ok) {
+					// move current element to the front
+					if(it !== exchangeItem) {
+						// hmm.. this code is not good
+						[sortedJumps[exchangeItem], sortedJumps[it]] = [sortedJumps[it], sortedJumps[exchangeItem]];
+						lastJump = it;
+					} else {
+						lastJump = exchangeItem;
+						exchangeItem++;
+					}
+					sortedJumps[lastJump].level = maxLevel;
+				}
+			}
+			lastJump = exchangeItem; // move to next group
+		}
+		this.jumps.push(...sortedJumps);
+	}
+
 	constructor(objdump: string, traceHits?: number[], traceCycles?: number[]) {
 		const lines = objdump.replace(/\r/g, '').split('\n');
 		let loc: Location;
 		let funcJumps: JumpInfo[] = [];
-		const addCurFunc = (func: Function) => {
-			const sortedJumps = funcJumps.filter((j) => j.end >= func.pc && j.end < func.end).sort((a: JumpInfo, b: JumpInfo) => {
-				const aMin  = Math.min(...a.start, a.end);
-				const bMin  = Math.min(...b.start, b.end);
-				const aSize = Math.max(...a.start, a.end) - aMin;
-				const bSize = Math.max(...b.start, b.end) - bMin;
-				if(aSize === bSize)
-					return aMin - bMin;
-				else
-					return aSize - bSize;
-			});
-	
-			function jumpIntersects(a: JumpInfo, b: JumpInfo): boolean {
-				const aMin = Math.min(...a.start, a.end);
-				const bMin = Math.min(...b.start, b.end);
-				const aMax = Math.max(...a.start, a.end);
-				const bMax = Math.max(...b.start, b.end);
-				return aMax >= bMin && aMin <= bMax;
-			}
-	
-			let lastJump = 0;
-			let maxLevel = -1;
-			while(lastJump < sortedJumps.length) {
-				// The last jump is part of the next group
-				const base = lastJump;
-				// Increment level
-				sortedJumps[base].level = ++maxLevel;
-				// Find jumps that can be combined on the same level, with the largest jumps tested first.
-				// This has the advantage that large jumps are on lower levels and do not intersect with small
-				// jumps that get grouped on higher levels.
-				let exchangeItem = lastJump + 1;
-				for(let it = exchangeItem; it < sortedJumps.length; it++) {
-					// test if the jump intersects with any jump from current group
-					let ok = true;
-					for(let itCollision = base; itCollision !== exchangeItem; itCollision++) {
-						// this jump intersects so we leave it out
-						if(jumpIntersects(sortedJumps[itCollision], sortedJumps[it])) {
-							ok = false;
-							break;
-						}
-					}
-					// add jump to group
-					if(ok) {
-						// move current element to the front
-						if(it !== exchangeItem) {
-							// hmm.. this code is not good
-							[sortedJumps[exchangeItem], sortedJumps[it]] = [sortedJumps[it], sortedJumps[exchangeItem]];
-							lastJump = it;
-						} else {
-							lastJump = exchangeItem;
-							exchangeItem++;
-						}
-						sortedJumps[lastJump].level = maxLevel;
-					}
-				}
-				lastJump = exchangeItem; // move to next group
-			}
-
-			this.jumps.push(...sortedJumps);
-			funcJumps = [];
-		};
 
 		for(const line of lines) {
 			const funcMatch = line.match(/([0-9a-f]+) <(.*)>:$/); // 00000000 <_start>:
@@ -114,7 +114,8 @@ export class ObjdumpModel {
 				const pc = parseInt(funcMatch[1], 16);
 				if(this.functions.length) {
 					this.functions[this.functions.length - 1].end = pc;
-					addCurFunc(this.functions[this.functions.length - 1]);
+					this.addJumps(this.functions[this.functions.length - 1], funcJumps);
+					funcJumps = [];
 				}
 				this.functions.push({
 					name: funcMatch[2],
@@ -155,7 +156,7 @@ export class ObjdumpModel {
 			}
 		}
 		if(this.functions.length)
-			addCurFunc(this.functions[this.functions.length - 1]);
+			this.addJumps(this.functions[this.functions.length - 1], funcJumps);
 		if(traceHits && traceCycles) {
 			this.content.forEach((l) => {
 				if(l.pc !== undefined) {
