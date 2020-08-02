@@ -28,9 +28,10 @@ class ObjdumpView {
 	private container: HTMLDivElement;
 	private scroller: Scrollable;
 	private rows: HTMLDivElement[] = [];
+	private rowJumps: SVGSVGElement[][];
 	private locations: Location[] = [];
 	private jumps: JumpInfo[] = [];
-	private pcMap = new Map<number, number>();
+	private pcMap = new Map<number, number>(); // pc -> row index
 	private curRow = 0;
 
 	private create() {
@@ -39,19 +40,16 @@ class ObjdumpView {
 	
 		const lines = OBJDUMP.replace(/\r/g, '').split('\n');
 		let location: Location = { file: '', line: -1 };
-		let curRow: string[] = [];
 		let funcJumps: JumpInfo[] = [];
-		const addCurRow = () => {
-			if(curRow.length === 0)
-				return;
+		const addRow = (content: string): HTMLDivElement => {
 			const row = document.createElement('div');
 			row.className = styles.row;
 			row.attributes['data-row'] = this.rows.length;
-			row.innerText = curRow.join('\n');
+			row.innerText = content;
 			this.container.appendChild(row);
 			this.rows.push(row);
 			this.locations.push({ ...location });
-			curRow = [];
+			return row;
 		};
 		const addCurFunc = (startPc: number, endPc: number) => {
 			const sortedJumps = funcJumps.filter((j) => j.end >= startPc && j.end < endPc).sort((a: JumpInfo, b: JumpInfo) => {
@@ -115,7 +113,6 @@ class ObjdumpView {
 			funcJumps = [];
 		};
 
-		let lineCount = 0;
 		let funcStartPc = 0;
 
 		// merge lines by same location
@@ -128,8 +125,6 @@ class ObjdumpView {
 			}
 
 			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
-			//if(locMatch || line.length === 0) // TEST
-				addCurRow();
 			if(locMatch) {
 				location = {
 					file: locMatch[1],
@@ -140,7 +135,7 @@ class ObjdumpView {
 			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
 			if(insnMatch) {
 				const pc = parseInt(insnMatch[1], 16);
-				this.pcMap.set(pc, lineCount);
+				this.pcMap.set(pc, this.rows.length);
 				const hex = insnMatch[2].split(' ');
 				const insn = new Uint16Array(hex.length);
 				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
@@ -156,15 +151,15 @@ class ObjdumpView {
 				let cyclesText = '';
 				if(cycles)
 					cyclesText = cycles.map((c) => `${c.total}`).join('-');
-				curRow.push(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`);
-				lineCount++;
+				addRow(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`);
 			} else {
-				curRow.push(line.length > 0 ? line : '\u200b');
-				lineCount++;
+				addRow(line.length > 0 ? line : '\u200b');
 			}
 		}
-		addCurRow();
 		addCurFunc(funcStartPc, 0x7fffffff);
+		this.rowJumps = new Array(this.rows.length);
+		for(let i = 0; i < this.rowJumps.length; i++)
+			this.rowJumps[i] = [];
 
 		const svgNs = 'http://www.w3.org/2000/svg';
 		function createSvg() {
@@ -177,8 +172,8 @@ class ObjdumpView {
 			return n;
 		}
 
-		const stroke = { 'stroke': 'white', 'stroke-width': '1', 'fill': 'none' };
-		const strokeConditional = { ...stroke, 'stroke-dasharray': '2' };
+		const stroke = { fill: 'none' };
+		const strokeConditional = { ...stroke, 'stroke-dasharray': '1' };
 		const rowHeight = 20;
 		const rowMiddle = 6;
 		const right = 150; // needs to match CSS
@@ -206,9 +201,14 @@ class ObjdumpView {
 				const y = start * rowHeight + rowMiddle;
 				svg.appendChild(svgNode('polyline', { points: `${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`, ...stroke, ...(jump.type === JumpType.ConditionalBranch ? strokeConditional : {}) }));
 			}
-			svg.appendChild(svgNode('path', { d: `M${right},${endY} l-4,-4 l0,8 z`, fill: 'white' })); // arrowhead
+			svg.appendChild(svgNode('path', { d: `M${right},${endY} l-4,-4 l0,8 z`, stroke: 'none' })); // arrowhead
+			[...jump.start, jump.end].forEach((a) => {
+				const row = this.pcMap.get(a);
+				this.rowJumps[row].push(svg);
+			});
 			this.container.appendChild(svg);
 		}
+		console.log(this.rowJumps);
 
 		document.body.appendChild(this.container);
 	}
@@ -216,8 +216,14 @@ class ObjdumpView {
 	private selectRow(nextRow: number, scroll: boolean) {
 		if(nextRow === this.curRow)
 			return;
+
+		console.log(styles);
+		this.rowJumps[this.curRow].forEach((svg) => svg.classList.remove(styles.jumpcur));
 		this.rows[this.curRow].classList.remove(styles.cur);
+
 		this.rows[nextRow].classList.add(styles.cur);
+		this.rowJumps[nextRow].forEach((svg) => svg.classList.add(styles.jumpcur));
+
 		if(scroll) {
 			const scrollTo = this.rows[nextRow].offsetTop - document.documentElement.clientHeight / 2;
 			if(Math.abs(nextRow - this.curRow) > 1)

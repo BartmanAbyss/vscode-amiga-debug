@@ -15,6 +15,16 @@
 .jump {
 	position: absolute;
 	width: 150px;
+	stroke: lightgrey;
+	fill: lightgrey;
+	stroke-width: 1;
+}
+
+.jumpcur {
+	stroke-width: 2;
+	stroke: white;
+	fill: white;
+	z-index: 900;
 }
 
 .cur {
