@@ -13,32 +13,13 @@ import { DropdownOptionProps, DropdownComponent } from '../dropdown';
 
 import { Icon } from '../icons';
 import * as SymbolMethod from '../icons/symbol-method.svg';
-import { GetJump } from '../68k';
+import { ObjdumpModel, Line, Function } from '../objdump';
 
 declare const MODELS: IProfileModel[];
-
-interface Location {
-	file: string;
-	line: number;
-}
 
 const integerFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 0
 });
-
-interface Line {
-	pc?: number;
-	hits?: number;
-	cycles?: number;
-	text: string;
-	loc?: Location;
-}
-
-interface Function {
-	name: string;
-	pc: number;
-	end: number;
-}
 
 const FunctionItem: FunctionComponent<DropdownOptionProps<Function>> = ({ option, placeholder }) => {
 	return <div class={styles.function} style={ placeholder ? {paddingRight: '20px'} : {}}><Icon i={SymbolMethod} />{option.name}</div>;
@@ -54,8 +35,6 @@ export const AssemblyView: FunctionComponent<{
 	time: number
 }> = ({ frame, time }) => {
 	const [content, functions] = useMemo(() => {
-		const content: Line[] = [];
-		const functions: Function[] = [];
 		const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
 		const hits = new Array<number>(textSection.size >> 1).fill(0);
 		const cycles = new Array<number>(textSection.size >> 1).fill(0);
@@ -67,47 +46,8 @@ export const AssemblyView: FunctionComponent<{
 			}
 		}
 
-		const lines = MODELS[0].amiga.objdump.replace(/\r/g, '').split('\n');
-		let loc;
-		for(const line of lines) {
-			const funcMatch = line.match(/([0-9a-f]+) <(.*)>:$/); // 00000000 <_start>:
-			if(funcMatch) {
-				const pc = parseInt(funcMatch[1], 16);
-				if(functions.length)
-					functions[functions.length - 1].end = pc;
-				functions.push({
-					name: funcMatch[2],
-					pc,
-					end: 0x7fffffff
-				});
-			}
-
-			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/); // C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/support/gcc8_c_support.c:62 (discriminator 1)
-			if(locMatch) {
-				loc = { file: locMatch[1], line: parseInt(locMatch[2]) };
-				continue;
-			}
-
-			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
-			if(insnMatch) {
-				const pc = parseInt(insnMatch[1], 16);
-				const hex = insnMatch[2].split(' ');
-				const insn = new Uint16Array(hex.length);
-				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
-				const jump = GetJump(pc, insn);
-				content.push({
-					pc,
-					hits: hits[pc >> 1],
-					cycles: cycles[pc >> 1],
-					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}${jump ? ` =>${jump.target.toString(16)}` : ''}`,
-					loc
-				});
-				loc = undefined;
-			} else {
-				content.push({ text: line });
-			}
-		}
-		return [content, functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))];
+		const model = new ObjdumpModel(MODELS[0].amiga.objdump, hits, cycles);
+		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))];
 	}, [frame]);
 
 	const [pc, func] = useMemo(() => {
@@ -147,9 +87,9 @@ export const AssemblyView: FunctionComponent<{
 	const renderRow = useCallback((c: Line) => (
 		c.pc === undefined
 		? <div class={styles.row}>{c.text + '\n'}</div>
-		: <div class={[styles.row, c.cycles === 0 ? styles.zero : '', c.pc === pc ? styles.cur : ''].join(' ')}>
-			<div class={styles.duration}>{c.cycles > 0 ? (integerFormat.format(c.cycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
-				<span class={styles.dim}>{c.cycles > 0 ? (integerFormat.format(c.hits).padStart(6) + 'x ' + integerFormat.format(c.cycles / c.hits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', c.pc === pc ? styles.cur : ''].join(' ')}>
+			<div class={styles.duration}>{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+				<span class={styles.dim}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 			</div>
 			{c.text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClick}>{c.loc.file}:{c.loc.line}</a></div> : ''}

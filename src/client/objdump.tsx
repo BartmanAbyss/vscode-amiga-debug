@@ -1,7 +1,7 @@
 import { VsCodeApi } from "./vscodeApi";
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
-import { GetCycles, GetJump, JumpType } from "./68k";
+import { GetCycles, GetJump, JumpType, Cycles } from "./68k";
 
 // messages from webview to vs code
 export interface IOpenDocumentMessage {
@@ -10,49 +10,44 @@ export interface IOpenDocumentMessage {
 	line: number;
 }
 
-interface Location {
+export interface Location {
 	file: string;
 	line: number;
 }
 
-interface JumpInfo {
+export interface JumpInfo {
 	start: number[];
 	end: number;
 	level: number;
 	type: JumpType;
 }
 
-declare const OBJDUMP: string;
+export interface Line {
+	pc?: number;
+	traceHits?: number;
+	traceCycles?: number;
+	theoreticalCycles?: Cycles[];
+	text: string;
+	loc?: Location;
+}
 
-class ObjdumpView {
-	private container: HTMLDivElement;
-	private scroller: Scrollable;
-	private rows: HTMLDivElement[] = [];
-	private rowJumps: SVGSVGElement[][];
-	private locations: Location[] = [];
-	private jumps: JumpInfo[] = [];
-	private pcMap = new Map<number, number>(); // pc -> row index
-	private curRow = 0;
+export interface Function {
+	name: string;
+	pc: number;
+	end: number;
+}
 
-	private create() {
-		this.container = document.createElement('div');
-		this.container.className = styles.container;
-	
-		const lines = OBJDUMP.replace(/\r/g, '').split('\n');
-		let location: Location = { file: '', line: -1 };
+export class ObjdumpModel {
+	public content: Line[] = [];
+	public functions: Function[] = [];
+	public jumps: JumpInfo[] = [];
+
+	constructor(objdump: string, traceHits?: number[], traceCycles?: number[]) {
+		const lines = objdump.replace(/\r/g, '').split('\n');
+		let loc: Location;
 		let funcJumps: JumpInfo[] = [];
-		const addRow = (content: string): HTMLDivElement => {
-			const row = document.createElement('div');
-			row.className = styles.row;
-			row.attributes['data-row'] = this.rows.length;
-			row.innerText = content;
-			this.container.appendChild(row);
-			this.rows.push(row);
-			this.locations.push({ ...location });
-			return row;
-		};
-		const addCurFunc = (startPc: number, endPc: number) => {
-			const sortedJumps = funcJumps.filter((j) => j.end >= startPc && j.end < endPc).sort((a: JumpInfo, b: JumpInfo) => {
+		const addCurFunc = (func: Function) => {
+			const sortedJumps = funcJumps.filter((j) => j.end >= func.pc && j.end < func.end).sort((a: JumpInfo, b: JumpInfo) => {
 				const aMin  = Math.min(...a.start, a.end);
 				const bMin  = Math.min(...b.start, b.end);
 				const aSize = Math.max(...a.start, a.end) - aMin;
@@ -113,29 +108,30 @@ class ObjdumpView {
 			funcJumps = [];
 		};
 
-		let funcStartPc = 0;
-
-		// merge lines by same location
 		for(const line of lines) {
 			const funcMatch = line.match(/([0-9a-f]+) <(.*)>:$/); // 00000000 <_start>:
 			if(funcMatch) {
-				const funcEndPc = parseInt(funcMatch[1], 16);
-				addCurFunc(funcStartPc, funcEndPc);
-				funcStartPc = funcEndPc;
+				const pc = parseInt(funcMatch[1], 16);
+				if(this.functions.length) {
+					this.functions[this.functions.length - 1].end = pc;
+					addCurFunc(this.functions[this.functions.length - 1]);
+				}
+				this.functions.push({
+					name: funcMatch[2],
+					pc,
+					end: 0x7fffffff
+				});
 			}
 
-			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/);
+			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/); // C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/support/gcc8_c_support.c:62 (discriminator 1)
 			if(locMatch) {
-				location = {
-					file: locMatch[1],
-					line: parseInt(locMatch[2])
-				};
+				loc = { file: locMatch[1], line: parseInt(locMatch[2]) };
 				continue;
 			}
+
 			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
 			if(insnMatch) {
 				const pc = parseInt(insnMatch[1], 16);
-				this.pcMap.set(pc, this.rows.length);
 				const hex = insnMatch[2].split(' ');
 				const insn = new Uint16Array(hex.length);
 				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
@@ -147,16 +143,66 @@ class ObjdumpView {
 					else
 						funcJumps.push({ start: [pc], end: jump.target, level: -1, type: jump.type });
 				}
-				const cycles = GetCycles(insn);
-				let cyclesText = '';
-				if(cycles)
-					cyclesText = cycles.map((c) => `${c.total}`).join('-');
-				addRow(`${cyclesText.padStart(7, ' ')} ${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`);
+				this.content.push({
+					pc,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`,
+					theoreticalCycles: GetCycles(insn),
+					loc
+				});
+				loc = undefined;
 			} else {
-				addRow(line.length > 0 ? line : '\u200b');
+				this.content.push({ text: line });
 			}
 		}
-		addCurFunc(funcStartPc, 0x7fffffff);
+		if(this.functions.length)
+			addCurFunc(this.functions[this.functions.length - 1]);
+		if(traceHits && traceCycles) {
+			this.content.forEach((l) => {
+				if(l.pc !== undefined) {
+					l.traceHits = traceHits[l.pc >> 1];
+					l.traceCycles = traceCycles[l.pc >> 1];
+				}
+			});
+		}
+	}
+}
+
+declare const OBJDUMP: string;
+
+class ObjdumpView {
+	private model: ObjdumpModel;
+
+	private container: HTMLDivElement;
+	private scroller: Scrollable;
+	private rows: HTMLDivElement[] = [];
+	private rowJumps: SVGSVGElement[][];
+	private locations: Location[] = [];
+	private pcMap = new Map<number, number>(); // pc -> row index
+	private curRow = 0;
+
+	private create() {
+		this.container = document.createElement('div');
+		this.container.className = styles.container;
+		this.model = new ObjdumpModel(OBJDUMP);
+
+		const addRow = (line: Line): HTMLDivElement => {
+			const row = document.createElement('div');
+			row.className = styles.row;
+			row.attributes['data-row'] = this.rows.length;
+			let cyclesText = '';
+			if(line.theoreticalCycles)
+				cyclesText = line.theoreticalCycles.map((c) => `${c.total}`).join('-');
+			row.innerText = `${cyclesText.padStart(7, ' ')} ${line.text}`;
+			this.container.appendChild(row);
+			this.rows.push(row);
+			this.locations.push(line.loc);
+			if(line.pc !== undefined)
+				this.pcMap.set(line.pc, this.rows.length - 1);
+			return row;
+		};
+
+		this.model.content.forEach((line) => addRow(line));
+
 		this.rowJumps = new Array(this.rows.length);
 		for(let i = 0; i < this.rowJumps.length; i++)
 			this.rowJumps[i] = [];
@@ -179,9 +225,9 @@ class ObjdumpView {
 		const right = 150; // needs to match CSS
 		const levelIndent = 5;
 
-		console.log(this.jumps);
+		console.log(this.model.jumps);
 
-		for(const jump of this.jumps) {
+		for(const jump of this.model.jumps) {
 			// ignore jump if any address is unknown
 			if([...jump.start, jump.end].some((pc) => !this.pcMap.has(pc)))
 				continue;
@@ -217,7 +263,6 @@ class ObjdumpView {
 		if(nextRow === this.curRow)
 			return;
 
-		console.log(styles);
 		this.rowJumps[this.curRow].forEach((svg) => svg.classList.remove(styles.jumpcur));
 		this.rows[this.curRow].classList.remove(styles.cur);
 
@@ -226,6 +271,7 @@ class ObjdumpView {
 
 		if(scroll) {
 			const scrollTo = this.rows[nextRow].offsetTop - document.documentElement.clientHeight / 2;
+			console.log(scrollTo);
 			if(Math.abs(nextRow - this.curRow) > 1)
 				this.scroller.setScrollPositionSmooth(scrollTo);
 			else
@@ -233,7 +279,7 @@ class ObjdumpView {
 		}
 		this.curRow = nextRow;
 
-		if(this.locations[this.curRow].file !== '') {
+		if(this.locations[this.curRow]) {
 			VsCodeApi.postMessage<IOpenDocumentMessage>({
 				type: 'openDocument',
 				file: this.locations[this.curRow].file,
