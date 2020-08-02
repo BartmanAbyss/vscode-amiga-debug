@@ -186,7 +186,7 @@ class ObjdumpView {
 		this.container.className = styles.container;
 		this.model = new ObjdumpModel(OBJDUMP);
 
-		const addRow = (line: Line): HTMLDivElement => {
+		for(const line of this.model.content) {
 			const row = document.createElement('div');
 			row.className = styles.row;
 			row.attributes['data-row'] = this.rows.length;
@@ -199,10 +199,7 @@ class ObjdumpView {
 			this.locations.push(line.loc);
 			if(line.pc !== undefined)
 				this.pcMap.set(line.pc, this.rows.length - 1);
-			return row;
-		};
-
-		this.model.content.forEach((line) => addRow(line));
+		}
 
 		this.rowJumps = new Array(this.rows.length);
 		for(let i = 0; i < this.rowJumps.length; i++)
