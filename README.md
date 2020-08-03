@@ -173,6 +173,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* Assembly profiler: optimize jump visualization, add theoretical cycles, format
 * DF0Engine: https://github.com/BartmanAbyss/vscode-amiga-debug/issues/25
 * DF0Engine: OpenScreen triggers NULL memwatch
 * Assembly profiler: RTS seems to have its time added to previous instruction
