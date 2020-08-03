@@ -17,6 +17,7 @@ import { ObjdumpModel, Line, Function, JumpInfo } from '../objdump';
 import { JumpType } from '../68k';
 
 // based on https://github.com/developit/preact-virtual-list/blob/master/src/index.js
+// Copyright (c) 2016 Jason Miller. MIT License.
 
 const STYLE_INNER = 'position:relative; overflow:hidden; width:100%; min-height:100%;';
 const STYLE_CONTENT = 'position:absolute; top:0; left:0; height:100%; width:100%; overflow:visible;';
