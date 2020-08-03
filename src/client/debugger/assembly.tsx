@@ -1,6 +1,6 @@
 import { FunctionComponent, h, JSX, createContext, Component, Fragment } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import VirtualList from 'preact-virtual-list';
+//import VirtualList from 'preact-virtual-list';
 import '../styles.css';
 import styles from './assembly.module.css';
 import { Scrollable } from "../scrollable";
@@ -14,6 +14,79 @@ import { DropdownOptionProps, DropdownComponent } from '../dropdown';
 import { Icon } from '../icons';
 import * as SymbolMethod from '../icons/symbol-method.svg';
 import { ObjdumpModel, Line, Function } from '../objdump';
+
+// based on https://github.com/developit/preact-virtual-list/blob/master/src/index.js
+
+const STYLE_INNER = 'position:relative; overflow:hidden; width:100%; min-height:100%;';
+const STYLE_CONTENT = 'position:absolute; top:0; left:0; height:100%; width:100%; overflow:visible;';
+
+interface VirtualListProps<R> {
+	data: R[];
+	renderRow: (a: R) => JSX.Element;
+	rowHeight: number;
+	overscanCount?: number;
+	sync?: boolean;
+	[x: string]: any; // passthrough properties
+}
+
+export default class VirtualList<R> extends Component<VirtualListProps<R>, { offset: number; height: number }> {
+	private resize = () => {
+		if (this.state.height !== (this.base as HTMLElement).offsetHeight) {
+			this.setState({ height: (this.base as HTMLElement).offsetHeight });
+		}
+	}
+
+	private handleScroll = () => {
+		this.setState({ offset: (this.base as HTMLElement).scrollTop });
+		if (this.props.sync) this.forceUpdate();
+	}
+
+	public componentDidUpdate() {
+		this.resize();
+	}
+
+	public componentDidMount() {
+		this.resize();
+		addEventListener('resize', this.resize);
+	}
+
+	public componentWillUnmount() {
+		removeEventListener('resize', this.resize);
+	}
+
+	public render({ data, rowHeight, renderRow, overscanCount=10, sync, ...props }: VirtualListProps<R>, { offset=0, height=0 }) {
+		// first visible row index
+		let start = (offset / rowHeight)|0;
+
+		// actual number of visible rows (without overscan)
+		let visibleRowCount = (height / rowHeight)|0;
+
+		// Overscan: render blocks of rows modulo an overscan row count
+		// This dramatically reduces DOM writes during scrolling
+		if (overscanCount) {
+			start = Math.max(0, start - (start % overscanCount));
+			visibleRowCount += overscanCount;
+		}
+
+		// last visible + overscan row index
+		const end = start + 1 + visibleRowCount;
+
+		// data slice currently in viewport plus overscan items
+		const selection = data.slice(start, end);
+
+		return (
+			<div onScroll={this.handleScroll} {...props}>
+				<div style={`${STYLE_INNER} height:${data.length*rowHeight}px;`}>
+					<div style={`${STYLE_CONTENT} top:${start*rowHeight}px;`}>
+						{selection.map(renderRow)}
+					</div>
+				</div>
+			</div>
+		);
+	}
+}
+
+class VirtualListLine extends VirtualList<Line> {}
 
 declare const MODELS: IProfileModel[];
 
@@ -126,6 +199,6 @@ export const AssemblyView: FunctionComponent<{
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>
-		<VirtualList ref={listRef} className={styles.container} data={content} renderRow={renderRow} rowHeight={height} overscanCount={10} />
+		<VirtualListLine ref={listRef} class={styles.container} data={content} renderRow={renderRow} rowHeight={height} overscanCount={10} />
 	</Fragment>;
 };

@@ -52,10 +52,7 @@ function classNames(...args: any[]) {
 	return classes.join(' ');
 } 
 
-export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueType>, {
-	selected: ValueType;
-	isOpen: boolean;
-}> {
+export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueType>, { selected: ValueType; isOpen: boolean; }> {
 	public static defaultProps = { baseClassName: 'Dropdown' };
 
 	private mounted: boolean;
