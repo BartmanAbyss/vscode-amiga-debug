@@ -7,7 +7,7 @@
   white-space: nowrap;
 }
 
-svg {
+.function svg {
   display: inline-block;
   height: 1em;
   margin-right: 0.25em;
@@ -27,6 +27,21 @@ svg {
 .row {
   display: flex;
   height: calc(var(--vscode-editor-font-size) + 3px);
+}
+
+.jump {
+	position: absolute;
+	width: 150px;
+	stroke: lightgrey;
+	fill: lightgrey;
+	stroke-width: 1;
+}
+
+.jumpcur {
+	stroke-width: 2;
+	stroke: white;
+	fill: white;
+	z-index: 900;
 }
 
 .duration {
