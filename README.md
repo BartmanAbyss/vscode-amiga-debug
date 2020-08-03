@@ -173,6 +173,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* DF0Engine: https://github.com/BartmanAbyss/vscode-amiga-debug/issues/25
+* DF0Engine: OpenScreen triggers NULL memwatch
 * Assembly profiler: RTS seems to have its time added to previous instruction
 * Debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 * profiling: lines of functions seem to be off (see template/main.c: function main)
@@ -180,6 +182,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * multi-frame profiling: allow user to select number of frames
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * show blitter priority in profiler
+* show source blitter-rects
+* show 2 resources
 * tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * restartRequest not implemented
