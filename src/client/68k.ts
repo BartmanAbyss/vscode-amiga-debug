@@ -259,14 +259,14 @@ function GetCyclesStandard(insn: Uint16Array): Cycles[] {
 	if(op === 0b1011) { // CMP/EOR
 		if(opmode.opmode === Opxxx.DestinationEffectiveAddress) { // EOR
 			if(effectiveAddress === AddressingMode.DataRegisterDirect)
-				return [ opmode.size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 12, read: 2, write: 0 } ];
-			const cy = opmode.size === Size.Byte ? { total: 12, read: 2, write: 1 } : opmode.size === Size.Word ? { total: 16, read: 2, write: 2 } : { total: 24, read: 2, write: 4 };
+				return [ opmode.size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0 } ];
+			const cy = opmode.size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
 			return [ AddCycles(ea, cy) ];
 		} else if(opmode.opmode === Opxxx.DestinationDataRegister) { // CMP
-			const cy = opmode.size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 10, read: 2, write: 0 };
+			const cy = opmode.size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 6, read: 1, write: 0 };
 			return [ AddCycles(ea, cy) ];
 		} else if(opmode.opmode === Opxxx.DestinationAddressRegister) { // CMPA
-			const cy = { total: 10, read: 2, write: 0 };
+			const cy = { total: 6, read: 1, write: 0 };
 			return [ AddCycles(ea, cy) ];
 		}
 	} else {
@@ -625,7 +625,7 @@ export function GetCycles(insn: Uint16Array): Cycles[] {
 			return [ { total: 6, read: 1, write: 0 } ];
 		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1110_0101_0000 // LINK.w
 		|| (insn[0] & 0b1111_1111_1111_1000) === 0b0100_1000_0000_1000) // LINK.l
-			return [ { total: 32, read: 4, write: 4 } ];
+			return [ { total: 16, read: 2, write: 2 } ];
 		//else if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_0100_1100_0000) // MOVE to CCR
 			// TODO
 		// TODO: MOVE to SR
@@ -634,22 +634,22 @@ export function GetCycles(insn: Uint16Array): Cycles[] {
 		// TODO: MOVE to USP
 		// TODO: MOVE from USP
 		if(insn[0] === 0b0100_1110_0111_0001) // NOP
-			return [ { total: 8, read: 2, write: 0 } ];
+			return [ { total: 4, read: 1, write: 0 } ];
 		// TODO: ORI to CCR
 		// TODO: ORI to SR
 		if(insn[0] === 0b0100_1110_0111_0000) // RESET
-			return [ { total: 136, read: 2, write: 0 } ];
+			return [ { total: 136, read: 1, write: 0 } ];
 		if(insn[0] === 0x4e73 // RTE
 		|| insn[0] === 0b0100_1110_0111_0111) // RTR
-			return [ { total: 40, read: 10, write: 0 } ];
+			return [ { total: 20, read: 5, write: 0 } ];
 		if(insn[0] === 0x4e75) // RTS
 			return [ { total: 16, read: 4, write: 0 } ];
 		if(insn[0] === 0b0100_1110_0111_0010) // STOP
 			return [ { total: 4, read: 0, write: 0 } ];
 		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1000_0100_0000) // SWAP
-			return [ { total: 8, read: 2, write: 0 } ];
+			return [ { total: 4, read: 1, write: 0 } ];
 		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1110_0101_1000) // UNLK
-			return [ { total: 24, read: 6, write: 0 } ];
+			return [ { total: 12, read: 3, write: 0 } ];
 			
 		// Standard (Table 8-4)
 		if((insn[0] & 0b1111_0000_1100_0000) === 0b1000_0000_1100_0000) // DIVS/DIVU, before OR
@@ -693,16 +693,16 @@ export function GetCycles(insn: Uint16Array): Cycles[] {
 			return [ { total: 18, read: 2, write: 2 } ];
 		if((insn[0] & 0b1111_0000_0000_0000) === 0b0110_0000_0000_0000) // Bcc, after BRA/BSR
 			return (insn[0] & 0xff) !== 0 
-			? [ { total: 12, read: 2, write: 0 }, { total: 18, read: 4, write: 0 } ] // .b
-			: [ { total: 18, read: 4, write: 0 }, { total: 20, read: 4, write: 0 } ]; // .s
+			? [ { total: 8, read: 1, write: 0 }, { total: 10, read: 2, write: 0 } ] // .b
+			: [ { total: 10, read: 2, write: 0 }, { total: 12, read: 2, write: 0 } ]; // .w
 		if((insn[0] & 0b1111_0000_1111_1000) === 0b0101_0000_1100_1000) // DBcc
 			return ((insn[0] >>> 8) & 0b1111) !== 0b0001 
-			? [ { total: 20, read: 4, write: 0 } ] // CC True
-			: [ { total: 18, read: 4, write: 0 }, { total: 26, read: 6, write: 0 } ]; // CC False
+			? [ { total: 12, read: 2, write: 0 } ] // CC True
+			: [ { total: 10, read: 2, write: 0 }, { total: 14, read: 3, write: 0 } ]; // CC False
 		if((insn[0] & 0b1111_1111_1111_0000) === 0b0100_1110_0100_0000) // TRAP
-			return [ { total: 62, read: 8, write: 6 } ];
+			return [ { total: 34, read: 4, write: 3 } ];
 		if(insn[0] === 0b0100_1110_0111_0110) // TRAPV
-			return [ { total: 8, read: 2, write: 0 }, { total: 66, read: 10, write: 6 } ];
+			return [ { total: 4, read: 1, write: 0 }, { total: 34, read: 5, write: 3 } ];
 
 		// JMP, JSR, LEA, PEA, and MOVEM (Table 8-10)
 		if((insn[0] & 0b1111_1111_1100_0000) === 0b0100_1110_1100_0000) // JMP
