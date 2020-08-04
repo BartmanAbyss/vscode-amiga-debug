@@ -100,7 +100,7 @@ This extension contains binaries of:
   - Copyright (C) 1988-2016 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
   - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-- `cd` command replacement from [AmigaPorts/amiga-cd](https://github.com/AmigaPorts/amiga-cd)
+- `cd`, `EndCLI`, `run` from Workbench 1.3
 
 ## Caveats
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
@@ -173,9 +173,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
-* Assembly profiler: optimize jump visualization, add theoretical cycles, format
+* Objdump: Virtual List, Refactor with Assembly profiler
 * DF0Engine: https://github.com/BartmanAbyss/vscode-amiga-debug/issues/25
-* DF0Engine: OpenScreen triggers NULL memwatch
 * Assembly profiler: RTS seems to have its time added to previous instruction
 * Debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 * profiling: lines of functions seem to be off (see template/main.c: function main)

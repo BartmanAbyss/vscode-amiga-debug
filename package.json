@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.1.0-preview23",
+	"version": "1.1.0-preview24",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -199,6 +199,11 @@
 								"type": "string",
 								"description": "Absolute path to a executable file.",
 								"default": ""
+							},
+							"endcli": {
+								"type": "boolean",
+								"description": "Run with EndCLI so you can call CloseWorkBench()",
+								"default": false
 							},
 							"kickstart": {
 								"type": "string",

@@ -22,6 +22,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	config?: string; // A500 (default), A1200, etc.
 	program: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
+	endcli?: boolean;
 }
 
 class ExtendedVariable {
@@ -229,7 +230,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['filesystem2'] = 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128';
 		// debugging options
 		config['debugging_features'] = 'gdbserver';
-		config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
+		if(args.endcli)
+			config['debugging_trigger'] = path.basename(args.program) + ".exe";
+		else
+			config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
 
 		try {
 			fs.writeFileSync(defaultPath, stringifyCfg(config));
@@ -259,7 +263,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
-			fs.writeFileSync(ssPath, 'cd dh1:\n' + config['debugging_trigger']);
+			if(args.endcli)
+				fs.writeFileSync(ssPath, `cd dh1:\nrun >nil: <nil: ${config['debugging_trigger']} >nil: <nil:\nendcli >nil:\n`);
+			else
+				fs.writeFileSync(ssPath, 'cd dh1:\n' + config['debugging_trigger']);
 		} catch (err) {
 			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${err.toString()}`);
 			return;

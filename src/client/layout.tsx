@@ -68,7 +68,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		customRegs,
 	}
 
-	const [leftTab, setLeftTab] = useState(LeftTab./*profiler*/assembly);
+	const [leftTab, setLeftTab] = useState(LeftTab.profiler/*assembly*/);
 	const [rightTab, setRightTab] = useState(RightTab.copper);
 
 	/*useEffect(() => {
