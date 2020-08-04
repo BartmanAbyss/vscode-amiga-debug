@@ -130,10 +130,13 @@ export class ObjdumpModel {
 				continue;
 			}
 
-			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )*)\s*(.*)$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
+			//                                PC             HEX WORDS           OPCODE REST
+			const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )+)\s*(\S+)(?:\s(.*))?$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
 			if(insnMatch) {
 				const pc = parseInt(insnMatch[1], 16);
 				const hex = insnMatch[2].split(' ');
+				const opcode = insnMatch[3];
+				const rest = insnMatch[4] || '';
 				const insn = new Uint16Array(hex.length);
 				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
 				const jump = GetJump(pc, insn);
@@ -146,7 +149,7 @@ export class ObjdumpModel {
 				}
 				this.content.push({
 					pc,
-					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[3]}`,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
 					theoreticalCycles: GetCycles(insn),
 					loc
 				});
@@ -216,8 +219,6 @@ class ObjdumpView {
 			return n;
 		}
 
-		const stroke = { fill: 'none' };
-		const strokeConditional = { ...stroke, 'stroke-dasharray': '1' };
 		const rowHeight = 20;
 		const rowMiddle = 6;
 		const right = 150; // needs to match CSS
@@ -240,12 +241,14 @@ class ObjdumpView {
 			svg.style.top = (min * rowHeight) + 'px';
 			svg.style.height = (size * rowHeight) + 'px';
 			const endY = end * rowHeight + rowMiddle;
+			// don't use stroke-dasharray, it's slow!
+			const conditional = jump.type === JumpType.ConditionalBranch ? { opacity: '0.5' } : {};
 			for(const startPc of jump.start) {
 				const start = this.pcMap.get(startPc) - min;
 				const y = start * rowHeight + rowMiddle;
-				svg.appendChild(svgNode('polyline', { points: `${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`, ...stroke, ...(jump.type === JumpType.ConditionalBranch ? strokeConditional : {}) }));
+				svg.appendChild(svgNode('polyline', { points: `${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`, fill: 'none', ...conditional }));
 			}
-			svg.appendChild(svgNode('path', { d: `M${right},${endY} l-4,-4 l0,8 z`, stroke: 'none' })); // arrowhead
+			svg.appendChild(svgNode('path', { d: `M${right},${endY} l-4,-4 l0,8 z`, stroke: 'none', ...conditional })); // arrowhead
 			[...jump.start, jump.end].forEach((a) => {
 				const row = this.pcMap.get(a);
 				this.rowJumps[row].push(svg);

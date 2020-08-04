@@ -32,7 +32,7 @@ interface VirtualListProps<R, A extends Absolute> {
 	renderRow: (row: R) => JSX.Element;
 	rowHeight: number;
 	absolutes?: A[];
-	renderAbsolute?: (absolute: A, top: number, bottom: number) => JSX.Element;
+	renderAbsolute?: (absolute: A) => JSX.Element;
 	overscanCount?: number;
 	sync?: boolean;
 	[x: string]: any; // passthrough properties
@@ -86,7 +86,7 @@ export default class VirtualList<R, A extends Absolute> extends Component<Virtua
 		return (
 			<div onScroll={this.handleScroll} {...props}>
 				<div style={`${STYLE_INNER} height:${rows.length*rowHeight}px;`}>
-					{absolutes && absolutes.filter((a) => a.top < end*rowHeight && a.top + a.height >= start*rowHeight).map((a) => renderAbsolute(a, start*rowHeight, end*rowHeight))}
+					{absolutes && absolutes.filter((a) => a.top < end*rowHeight && a.top + a.height >= start*rowHeight).map((a) => renderAbsolute(a))}
 					<div style={`${STYLE_CONTENT} top:${start*rowHeight}px;`}>
 						{selection.map(renderRow)}
 					</div>
@@ -196,7 +196,8 @@ export const AssemblyView: FunctionComponent<{
 		? <div class={styles.row}>{c.text + '\n'}</div>
 		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', c.pc === pc ? styles.cur : ''].join(' ')}>
 			<div class={styles.duration}>{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
-				<span class={styles.dim}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+				<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(7, ' ') + 'T' : ''.padStart(8)}</span>
 			</div>
 			{c.text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClick}>{c.loc.file}:{c.loc.line}</a></div> : ''}
@@ -204,12 +205,10 @@ export const AssemblyView: FunctionComponent<{
 		</div>		
 	), [onClick, pc]);
 
-	const renderJump = useCallback((jump: JumpAbsolute, top: number, bottom: number) => {
-		const stroke = { fill: 'none' };
-		const strokeConditional = { ...stroke, 'stroke-dasharray': '1' };
-		const right = 150; // needs to match CSS
-		const rowMiddle = 6;
-		const levelIndent = 5;
+	const renderJump = useCallback((jump: JumpAbsolute) => {
+		const right = 65; // needs to match CSS
+		const rowMiddle = height >> 1;
+		const levelIndent = 10;
 
 		const min  = Math.min(...jump.start, jump.end);
 		const max  = Math.max(...jump.start, jump.end);
@@ -218,16 +217,31 @@ export const AssemblyView: FunctionComponent<{
 		const indent = right - 10 - jump.level * levelIndent;
 		const endY = end * height + rowMiddle;
 
-		return (<svg class={styles.jump} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
+		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
 			{jump.start.map((startRow) => {
 				const start = startRow - min;
 				const y = start * height + rowMiddle;
-				
-				return <polyline points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} {...stroke} {...(jump.type === JumpType.ConditionalBranch ? strokeConditional : {})} />;
+
+				if(indent > 5)
+					return <polyline points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} fill="none" />;
+				else {
+					const y1 = endY > y ? y + height - 5 : y - height + 5;
+					const y2 = endY < y ? endY + height - 5 : endY - height + 5;
+					const d = endY > y ? 1 : -1;
+					const left = 5;
+					return <Fragment>
+						<polyline points={`${right},${y} ${left},${y} ${left},${y1-5*d}`} fill="none" />
+						<path d={`M${left-2},${y1-3*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						<path d={`M${left-2},${y1-5*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						<polyline points={`${left},${y2+5*d} ${left},${endY} ${right - 4},${endY}`} fill="none" />
+						<path d={`M${left-2},${y2+2*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						<path d={`M${left-2},${y2+0*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+					</Fragment>;
+				}
 			})}
 			<path d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
 		</svg>);
-	}, [content, height]);
+	}, [content, height, pc]);
 
 	const listRef = useRef<Component>();
 	const [scroller, setScroller] = useState<Scrollable>(null);
