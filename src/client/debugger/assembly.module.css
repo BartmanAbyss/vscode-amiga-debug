@@ -51,7 +51,7 @@
 .jumpcur {
 	stroke: white;
 	fill: white;
-	stroke-width: 2;
+	stroke-width: 3;
 	z-index: 900;
 }
 
