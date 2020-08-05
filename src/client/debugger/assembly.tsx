@@ -222,24 +222,29 @@ export const AssemblyView: FunctionComponent<{
 				const start = startRow - min;
 				const y = start * height + rowMiddle;
 
+				// 0.5px offsets so we get crisp lines
 				if(indent > 5)
-					return <polyline points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} fill="none" />;
+					return <polyline transform="translate(0.5,0.5)" points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} fill="none" />;
 				else {
 					const y1 = endY > y ? y + height - 5 : y - height + 5;
 					const y2 = endY < y ? endY + height - 5 : endY - height + 5;
 					const d = endY > y ? 1 : -1;
 					const left = 5;
 					return <Fragment>
-						<polyline points={`${right},${y} ${left},${y} ${left},${y1-5*d}`} fill="none" />
-						<path d={`M${left-2},${y1-3*d} l2,${2*d} l2,${-2*d}`} fill="none" />
-						<path d={`M${left-2},${y1-5*d} l2,${2*d} l2,${-2*d}`} fill="none" />
-						<polyline points={`${left},${y2+5*d} ${left},${endY} ${right - 4},${endY}`} fill="none" />
-						<path d={`M${left-2},${y2+2*d} l2,${2*d} l2,${-2*d}`} fill="none" />
-						<path d={`M${left-2},${y2+0*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						<g transform="translate(0.5,0.5)">
+							<polyline points={`${right},${y} ${left},${y} ${left},${y1-5*d}`} fill="none" />
+							<polyline points={`${left},${y2+5*d} ${left},${endY} ${right - 4},${endY}`} fill="none" />
+						</g>
+						<g transform="translate(0.5,0)">
+							<path d={`M${left-2},${y1-3*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y1-5*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y2+2*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y2+0*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						</g>
 					</Fragment>;
 				}
 			})}
-			<path d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
+			<path transform="translate(0,0.5)"  d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
 		</svg>);
 	}, [content, height, pc]);
 
