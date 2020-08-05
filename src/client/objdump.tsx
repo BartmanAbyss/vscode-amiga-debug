@@ -1,3 +1,5 @@
+import { FunctionComponent, h, JSX, createContext, Component, Fragment } from 'preact';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { VsCodeApi } from "./vscodeApi";
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
@@ -173,7 +175,7 @@ export class ObjdumpModel {
 
 declare const OBJDUMP: string;
 
-class ObjdumpView {
+class ObjdumpViewOld {
 	private model: ObjdumpModel;
 
 	private container: HTMLDivElement;
@@ -324,6 +326,10 @@ class ObjdumpView {
 	}
 }
 
-export async function Objdump() {
-	const view = new ObjdumpView();
-}
+/*export async function Objdump() {
+	const view = new ObjdumpViewOld();
+}*/
+
+export const ObjdumpView: FunctionComponent = () => {
+	return <div>Hallo</div>;
+};

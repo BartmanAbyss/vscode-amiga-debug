@@ -11,7 +11,7 @@ import { profileShrinkler } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
-import { Objdump } from './objdump';
+import { ObjdumpView } from './objdump';
 
 // from HTML page
 declare const OBJDUMP: string;
@@ -56,8 +56,6 @@ async function Profiler() {
 		const container = document.createElement('div');
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
-		
-		// FLAME+TABLE
 		render(h(CpuProfileLayout, null), container);
 	} catch(e) {
 		const error = document.createElement('div');
@@ -67,6 +65,13 @@ async function Profiler() {
 	} finally {
 		document.body.removeChild(loader);
 	}
+}
+
+async function Objdump() {
+	const container = document.createElement('div');
+	container.classList.add(styles.wrapper);
+	document.body.appendChild(container);
+	render(h(ObjdumpView, null), container);
 }
 
 function TryProfiler() {
