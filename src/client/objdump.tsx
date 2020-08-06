@@ -296,9 +296,11 @@ export const ObjdumpView: FunctionComponent<{
 		return (c.pc === undefined
 		? <div class={[styles.row, index === row ? styles.cur : ''].join(' ')} data-row={index}>{c.text + '\n'}</div>
 		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', index === row ? styles.cur : ''].join(' ')} data-row={index}>
-			<div class={styles.duration}>{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
-				<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
-				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(7, ' ') + 'T' : ''.padStart(8)}</span>
+			<div class={styles.duration}>{frame !== -1 ? <Fragment>
+					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+				</Fragment> : ''}
+				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(8)}</span>
 			</div>
 			{c.text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
@@ -307,7 +309,7 @@ export const ObjdumpView: FunctionComponent<{
 	}, [onClickLoc, row]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
-		const right = 65; // needs to match CSS
+		const right = 70; // needs to match CSS
 		const rowMiddle = height >> 1;
 		const levelIndent = 10;
 
@@ -315,8 +317,21 @@ export const ObjdumpView: FunctionComponent<{
 		const max  = Math.max(...jump.start, jump.end);
 		const end  = jump.end - min;
 		const size = max - min + 1;
-		const indent = right - 10 - jump.level * levelIndent;
+		const indent = right - 15 - jump.level * levelIndent;
 		const endY = end * height + rowMiddle;
+
+		const loopCycles = (() => {
+			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
+				const loop = content.slice(jump.end, jump.start[0] + 1).map((l) => l.theoreticalCycles);
+				if(loop.every((l) => l.length > 0)) {
+					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
+					const maxCycles = loop.map((l) => Math.max(...l.map((c) => c.total))).reduce((p, c) => p + c);
+					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
+					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * height + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
+				}
+			}
+			return '';
+		})();
 
 		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
 			{jump.start.map((startRow) => {
@@ -346,6 +361,7 @@ export const ObjdumpView: FunctionComponent<{
 				}
 			})}
 			<path transform="translate(0,0.5)"  d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
+			{loopCycles}
 		</svg>);
 	}, [content, height, pc]);
 

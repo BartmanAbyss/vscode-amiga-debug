@@ -24,15 +24,20 @@
   overflow: auto;
 }
 
+svg .jumpduration {
+  fill: var(--vscode-terminal-ansiYellow);
+  opacity: 0.6;
+}
+
 .row {
   display: flex;
   height: calc(var(--vscode-editor-font-size) + 3px);
-	margin-left: 65px; /* for jump */
+	margin-left: 70px; /* for jump */
 }
 
 .jump {
 	position: absolute;
-	width: 65px;
+	width: 70px;
 	stroke-width: 1;
 }
 
