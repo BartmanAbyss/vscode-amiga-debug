@@ -164,7 +164,7 @@ export class Scrollable {
 	private smoothScrolling: SmoothScrollingOperation = null;
 
 	constructor(private container: HTMLElement, private smoothScrollDuration: number) {
-		console.log("Scrollable", container.clientHeight, container.scrollHeight);
+		//console.log("Scrollable", container.clientHeight, container.scrollHeight);
 		this.state = new ScrollState(container.clientHeight, container.scrollHeight, 0);
 	}
 

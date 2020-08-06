@@ -1,12 +1,22 @@
 import { FunctionComponent, h, JSX, createContext, Component, Fragment } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { VsCodeApi } from "./vscodeApi";
+import './styles.css';
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
 import { GetCycles, GetJump, JumpType, Cycles } from "./68k";
 
+import { IProfileModel } from './model';
+import { IOpenDocumentMessage } from './types';
+import { useCssVariables } from './useCssVariables';
+import { DropdownOptionProps, DropdownComponent } from './dropdown';
+
+import { Icon } from './icons';
+import * as SymbolMethod from './icons/symbol-method.svg';
+import { VirtualList, Absolute } from './virtual_list';
+
 // messages from webview to vs code
-export interface IOpenDocumentMessage {
+export interface IOpenDocumentMessageObjview {
 	type: 'openDocument';
 	file: string;
 	line: number;
@@ -173,163 +183,254 @@ export class ObjdumpModel {
 	}
 }
 
-declare const OBJDUMP: string;
+interface JumpAbsolute extends JumpInfo, Absolute {}
 
-class ObjdumpViewOld {
-	private model: ObjdumpModel;
+class VirtualListLine extends VirtualList<Line, JumpAbsolute> {}
 
-	private container: HTMLDivElement;
-	private scroller: Scrollable;
-	private rows: HTMLDivElement[] = [];
-	private rowJumps: SVGSVGElement[][];
-	private locations: Location[] = [];
-	private pcMap = new Map<number, number>(); // pc -> row index
-	private curRow = 0;
+declare const MODELS: IProfileModel[]; // for profiling
+declare const OBJDUMP: string; // for 'Disassemble ELF File'
 
-	private create() {
-		this.container = document.createElement('div');
-		this.container.className = styles.container;
-		this.model = new ObjdumpModel(OBJDUMP);
+const integerFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 0
+});
 
-		for(const line of this.model.content) {
-			const row = document.createElement('div');
-			row.className = styles.row;
-			row.attributes['data-row'] = this.rows.length;
-			let cyclesText = '';
-			if(line.theoreticalCycles)
-				cyclesText = line.theoreticalCycles.map((c) => `${c.total}`).join('-');
-			row.innerText = `${cyclesText.padStart(7, ' ')} ${line.text}`;
-			this.container.appendChild(row);
-			this.rows.push(row);
-			this.locations.push(line.loc);
-			if(line.pc !== undefined)
-				this.pcMap.set(line.pc, this.rows.length - 1);
-		}
+const FunctionItem: FunctionComponent<DropdownOptionProps<Function>> = ({ option, placeholder }) => {
+	return <div class={styles.function} style={ placeholder ? {paddingRight: '20px'} : {}}><Icon i={SymbolMethod} />{option.name}</div>;
+};
 
-		this.rowJumps = new Array(this.rows.length);
-		for(let i = 0; i < this.rowJumps.length; i++)
-			this.rowJumps[i] = [];
-
-		const svgNs = 'http://www.w3.org/2000/svg';
-		function createSvg() {
-			return document.createElementNS(svgNs, 'svg');
-		}
-		function svgNode(name: string, values: { [x: string]: string; }) {
-			const n = document.createElementNS(svgNs, name);
-			for(const p in values)
-				n.setAttributeNS(null, p, values[p]);
-			return n;
-		}
-
-		const rowHeight = 20;
-		const rowMiddle = 6;
-		const right = 150; // needs to match CSS
-		const levelIndent = 5;
-
-		console.log(this.model.jumps);
-
-		for(const jump of this.model.jumps) {
-			// ignore jump if any address is unknown
-			if([...jump.start, jump.end].some((pc) => !this.pcMap.has(pc)))
-				continue;
-
-			const min  = this.pcMap.get(Math.min(...jump.start, jump.end));
-			const max  = this.pcMap.get(Math.max(...jump.start, jump.end));
-			const end  = this.pcMap.get(jump.end) - min;
-			const size = max - min + 1;
-			const indent = right - 10 - jump.level * levelIndent;
-			const svg = createSvg();
-			svg.classList.add(styles.jump);
-			svg.style.top = (min * rowHeight) + 'px';
-			svg.style.height = (size * rowHeight) + 'px';
-			const endY = end * rowHeight + rowMiddle;
-			// don't use stroke-dasharray, it's slow!
-			const conditional = jump.type === JumpType.ConditionalBranch ? { opacity: '0.5' } : {};
-			for(const startPc of jump.start) {
-				const start = this.pcMap.get(startPc) - min;
-				const y = start * rowHeight + rowMiddle;
-				svg.appendChild(svgNode('polyline', { points: `${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`, fill: 'none', ...conditional }));
-			}
-			svg.appendChild(svgNode('path', { d: `M${right},${endY} l-4,-4 l0,8 z`, stroke: 'none', ...conditional })); // arrowhead
-			[...jump.start, jump.end].forEach((a) => {
-				const row = this.pcMap.get(a);
-				this.rowJumps[row].push(svg);
-			});
-			this.container.appendChild(svg);
-		}
-		console.log(this.rowJumps);
-
-		document.body.appendChild(this.container);
-	}
-
-	private selectRow(nextRow: number, scroll: boolean) {
-		if(nextRow === this.curRow)
-			return;
-
-		this.rowJumps[this.curRow].forEach((svg) => svg.classList.remove(styles.jumpcur));
-		this.rows[this.curRow].classList.remove(styles.cur);
-
-		this.rows[nextRow].classList.add(styles.cur);
-		this.rowJumps[nextRow].forEach((svg) => svg.classList.add(styles.jumpcur));
-
-		if(scroll) {
-			const scrollTo = this.rows[nextRow].offsetTop - document.documentElement.clientHeight / 2;
-			console.log(scrollTo);
-			if(Math.abs(nextRow - this.curRow) > 1)
-				this.scroller.setScrollPositionSmooth(scrollTo);
-			else
-				this.scroller.setScrollPositionNow(scrollTo);
-		}
-		this.curRow = nextRow;
-
-		if(this.locations[this.curRow]) {
-			VsCodeApi.postMessage<IOpenDocumentMessage>({
-				type: 'openDocument',
-				file: this.locations[this.curRow].file,
-				line: this.locations[this.curRow].line
-			});
-		}
-	}
-
-	private init() {
-		this.rows[this.curRow].className = styles.cur;
-		this.scroller = new Scrollable(document.documentElement, 135);
-
-		document.addEventListener('keydown', (evt: KeyboardEvent) => {
-			let nextRow = this.curRow;
-			if(evt.key === 'ArrowDown')
-				nextRow = Math.min(this.rows.length - 1, this.curRow + 1);
-			else if(evt.key === 'ArrowUp')
-				nextRow = Math.max(0, this.curRow - 1);
-			else if(evt.key === 'PageDown')
-				nextRow = Math.min(this.rows.length - 1, Math.floor(this.curRow + (window.innerHeight / this.rows[this.curRow].clientHeight * 0.9)));
-			else if(evt.key === 'PageUp')
-				nextRow = Math.max(0, Math.floor(this.curRow - (window.innerHeight / this.rows[this.curRow].clientHeight * 0.9)));
-			else if(evt.key === 'Home')
-				nextRow = 0;
-			else if(evt.key === 'End')
-				nextRow = this.rows.length - 1;
-			this.selectRow(nextRow, true);
-			evt.preventDefault();
-		});
-		this.container.onclick = (evt: MouseEvent) => {
-			const elem = evt.srcElement as HTMLElement;
-			const row = elem.attributes['data-row'];
-			if(row !== undefined)
-				this.selectRow(row, false);
-		};
-	}
-
-	constructor() {
-		this.create();
-		window.requestAnimationFrame(() => this.init()); // wait until layout has been calculated so we know the height of the content
-	}
+// do not move into 'AssemblyView' otherwise the Dropdown will be recreated on every render
+class FunctionDropdown extends DropdownComponent<Function> {
+	public static defaultProps = { optionComponent: FunctionItem, menuClassName: styles.gfxresource_menu, ...DropdownComponent.defaultProps };
 }
 
-/*export async function Objdump() {
-	const view = new ObjdumpViewOld();
-}*/
+// used with { frame, time } for profiling, frame === -1 for 'Disassemble ELF File'
+export const ObjdumpView: FunctionComponent<{
+	frame?: number,
+	time?: number
+}> = ({ frame = -1, time = -1 }) => {
+	const cssVariables = useCssVariables();
+	const height = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
 
-export const ObjdumpView: FunctionComponent = () => {
-	return <div>Hallo</div>;
+	const [content, functions, jumps] = useMemo(() => {
+		const model = (() => {
+			if(frame === -1)
+				return new ObjdumpModel(OBJDUMP);
+
+			const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
+			const hits = new Array<number>(textSection.size >> 1).fill(0);
+			const cycles = new Array<number>(textSection.size >> 1).fill(0);
+			const pcTrace = MODELS[frame].amiga.pcTrace;
+			for(let i = 0; i < pcTrace.length; i += 2) {
+				if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
+					hits[pcTrace[i] >> 1]++;
+					cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
+				}
+			}
+			return new ObjdumpModel(MODELS[0].amiga.objdump, hits, cycles);
+		})();
+		const pcMap = new Map<number, number>(); // pc -> row index
+		model.content.forEach((line, index) => {
+			if(line.pc !== undefined)
+				pcMap.set(line.pc, index);
+		});
+
+		const jumps: JumpAbsolute[] = model.jumps.filter((jump) =>
+			[...jump.start, jump.end].every((pc) => pcMap.has(pc))
+		).map((jump) => {
+			const min  = pcMap.get(Math.min(...jump.start, jump.end));
+			const max  = pcMap.get(Math.max(...jump.start, jump.end));
+			return {
+				start: jump.start.map((j) => pcMap.get(j)),
+				end: pcMap.get(jump.end),
+				level: jump.level,
+				type: jump.type,
+				top: min * height,
+				height: (max - min + 1) * height
+			};
+		});
+		//console.log(jumps);
+
+		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())), jumps];
+	}, [frame, height]);
+
+	const [curRow, setCurRow] = useState(0);
+
+	const [row, pc, func] = useMemo(() => {
+		const row = (() => {
+			if(frame === -1)
+				return curRow;
+			const pcTrace = MODELS[frame].amiga.pcTrace;
+			let t = 0;
+			let pc = 0;
+			for(let i = 0; i < pcTrace.length; i += 2) {
+				pc = pcTrace[i];
+				t += pcTrace[i + 1];
+				if(t > time)
+					break;
+			}
+			return content.findIndex((l) => l.pc === pc);
+		})();
+		const pc = (row !== -1 ? content[row].pc : undefined) || 0xffffffff;
+		//console.log(pc.toString(16));
+		let func = functions.find((f: Function) => pc >= f.pc && pc < f.end);
+		if(pc === 0x7fffffff)
+			func = { name: '[IRQ]', pc: 0x7fffffff, end: 0x7fffffff };
+		if(pc === 0xffffffff)
+			func = { name: '[External]', pc: 0xffffffff, end: 0xffffffff };
+		return [row, pc, func];
+	}, [frame, time, curRow]);
+
+	const onClickLoc = useCallback((evt: MouseEvent) => {
+		VsCodeApi.postMessage<IOpenDocumentMessage>({
+			type: 'openDocument',
+			location: {
+				lineNumber: (evt.srcElement as HTMLElement).attributes['data-line'].value,
+				columnNumber: 0,
+				source: { path: (evt.srcElement as HTMLElement).attributes['data-file'].value }
+			},
+			toSide: true,
+		});
+	}, []);
+
+	const renderRow = useCallback((c: Line, index: number) => {
+		return (c.pc === undefined
+		? <div class={[styles.row, index === row ? styles.cur : ''].join(' ')} data-row={index}>{c.text + '\n'}</div>
+		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', index === row ? styles.cur : ''].join(' ')} data-row={index}>
+			<div class={styles.duration}>{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+				<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(7, ' ') + 'T' : ''.padStart(8)}</span>
+			</div>
+			{c.text}
+			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
+			{'\n'}
+		</div>);
+	}, [onClickLoc, row]);
+
+	const renderJump = useCallback((jump: JumpAbsolute) => {
+		const right = 65; // needs to match CSS
+		const rowMiddle = height >> 1;
+		const levelIndent = 10;
+
+		const min  = Math.min(...jump.start, jump.end);
+		const max  = Math.max(...jump.start, jump.end);
+		const end  = jump.end - min;
+		const size = max - min + 1;
+		const indent = right - 10 - jump.level * levelIndent;
+		const endY = end * height + rowMiddle;
+
+		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
+			{jump.start.map((startRow) => {
+				const start = startRow - min;
+				const y = start * height + rowMiddle;
+
+				// 0.5px offsets so we get crisp lines
+				if(indent > 5)
+					return <polyline transform="translate(0.5,0.5)" points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} fill="none" />;
+				else {
+					const y1 = endY > y ? y + height - 5 : y - height + 5;
+					const y2 = endY < y ? endY + height - 5 : endY - height + 5;
+					const d = endY > y ? 1 : -1;
+					const left = 5;
+					return <Fragment>
+						<g transform="translate(0.5,0.5)">
+							<polyline points={`${right},${y} ${left},${y} ${left},${y1-5*d}`} fill="none" />
+							<polyline points={`${left},${y2+5*d} ${left},${endY} ${right - 4},${endY}`} fill="none" />
+						</g>
+						<g transform="translate(0.5,0)">
+							<path d={`M${left-2},${y1-3*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y1-5*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y2+2*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+							<path d={`M${left-2},${y2+0*d} l2,${2*d} l2,${-2*d}`} fill="none" />
+						</g>
+					</Fragment>;
+				}
+			})}
+			<path transform="translate(0,0.5)"  d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
+		</svg>);
+	}, [content, height, pc]);
+
+	const listRef = useRef<Component>();
+	const [scroller, setScroller] = useState<Scrollable>(null);
+	useEffect(() => {
+		if(scroller) {
+			if(row >= 0) {
+				const containerHeight = (listRef.current.base as HTMLElement).clientHeight;
+				const slack = containerHeight / 10;
+				if(frame === -1) {
+					// scroll to keep selection in center
+					const scrollTo = row * height - document.documentElement.clientHeight / 2;
+					if(Math.abs(scrollTo - scroller.getFutureScrollPosition()) > height * 2)
+						scroller.setScrollPositionSmooth(scrollTo);
+					else
+						scroller.setScrollPositionNow(scrollTo);
+
+					if(content[row].loc) {
+						VsCodeApi.postMessage<IOpenDocumentMessageObjview>({
+							type: 'openDocument',
+							file: content[row].loc.file,
+							line: content[row].loc.line
+						});
+					}
+				} else {
+					// only scroll when needed
+					const scrollTo = row * height;
+					const newTop = scrollTo - containerHeight / 2;
+					if(scrollTo < scroller.getFutureScrollPosition() + slack || scrollTo > scroller.getFutureScrollPosition() + containerHeight - slack)
+						scroller.setScrollPositionSmooth(newTop);
+				}
+			}
+		} else {
+			setScroller(new Scrollable(listRef.current.base as HTMLElement, 135));
+		}
+	}, [row, scroller, height, listRef.current]);
+
+	if(frame === -1) {
+		// cursor navigation
+		useEffect(() => {
+			const listener = (evt: KeyboardEvent) => {
+				if(evt.key === 'ArrowDown')
+					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
+				else if(evt.key === 'ArrowUp')
+					setCurRow((curRow) => Math.max(0, curRow - 1));
+				else if(evt.key === 'PageDown')
+					setCurRow((curRow) => Math.min(content.length - 1, Math.floor(curRow + (window.innerHeight / height * 0.9))));
+				else if(evt.key === 'PageUp')
+					setCurRow((curRow) => Math.max(0, Math.floor(curRow - (window.innerHeight / height * 0.9))));
+				else if(evt.key === 'Home')
+					setCurRow(0);
+				else if(evt.key === 'End')
+					setCurRow(content.length - 1);
+				evt.preventDefault();
+			};
+			document.addEventListener('keydown', listener);
+			return () => document.removeEventListener('keydown', listener);
+		}, []);
+	}
+
+	const onChangeFunction = useCallback((selected: Function) => { 
+		const sel = content.findIndex((c: Line) => c.pc === selected.pc);
+		if(frame === -1) {
+			setCurRow(sel);
+		} else {
+			const scrollTo = (sel - 2) * height; // -2: function line
+			scroller.setScrollPositionSmooth(scrollTo);
+		}
+	}, [scroller]);
+
+	const onClickContainer = useCallback((evt: MouseEvent) => {
+		if(frame === -1) {
+			const elem = evt.srcElement as HTMLElement;
+			const row = parseInt(elem.attributes['data-row'].value);
+			if(row !== undefined)
+				setCurRow(row);
+		}
+	}, []);
+
+	return <Fragment>
+		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
+			Function:&nbsp;
+			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
+		</div>
+		<VirtualListLine ref={listRef} class={styles.container} rows={content} renderRow={renderRow} rowHeight={height} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
+	</Fragment>;
 };

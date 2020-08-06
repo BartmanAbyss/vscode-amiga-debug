@@ -31,7 +31,7 @@ import { CustomRegsView } from './debugger/customregs';
 
 import 'pubsub-js';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
-import { AssemblyView } from './debugger/assembly';
+import { ObjdumpView } from './objdump';
 
 export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 	const [frame, setFrame] = useState(0);
@@ -158,7 +158,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.assembly ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
-						<AssemblyView frame={frame} time={time} />
+						<ObjdumpView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.resources ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<GfxResourcesView frame={frame} time={time} />

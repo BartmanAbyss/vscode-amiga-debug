@@ -13,7 +13,7 @@ export interface Absolute {
 
 interface VirtualListProps<R, A extends Absolute> {
 	rows: R[];
-	renderRow: (row: R) => JSX.Element;
+	renderRow: (row: R, index?: number) => JSX.Element;
 	rowHeight: number;
 	absolutes?: A[];
 	renderAbsolute?: (absolute: A) => JSX.Element;
@@ -72,7 +72,7 @@ export class VirtualList<R, A extends Absolute> extends Component<VirtualListPro
 				<div style={`${STYLE_INNER} height:${rows.length*rowHeight}px;`}>
 					{absolutes && absolutes.filter((a) => a.top < end*rowHeight && a.top + a.height >= start*rowHeight).map((a) => renderAbsolute(a))}
 					<div style={`${STYLE_CONTENT} top:${start*rowHeight}px;`}>
-						{selection.map(renderRow)}
+						{selection.map((value: R, index: number) => renderRow(value, start + index))}
 					</div>
 				</div>
 			</div>

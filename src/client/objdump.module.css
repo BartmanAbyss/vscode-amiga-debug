@@ -1,32 +1,119 @@
+.gfxresource_menu {
+	width: initial !important;
+  box-shadow: 0 .25em .5em 0 black;
+}
+
+.function {
+  white-space: nowrap;
+}
+
+.function svg {
+  display: inline-block;
+  height: 1em;
+  margin-right: 0.25em;
+}
+
 .container {
 	background: var(--vscode-editor-background);
 	color: var(--vscode-editor-foreground);
-	font-family: var(--vscode-editor-font-family);
+  font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size);
 	font-weight: var(--vscode-editor-font-weight);   
-	white-space: pre;
+  white-space: pre;
+  flex-grow: 1;
+  overflow: auto;
 }
 
 .row {
-	height: 20px; /* TEST */
-	margin-left: 150px;
+  display: flex;
+  height: calc(var(--vscode-editor-font-size) + 3px);
+	margin-left: 65px; /* for jump */
 }
 
 .jump {
 	position: absolute;
-	width: 150px;
-	stroke: lightgrey;
-	fill: lightgrey;
+	width: 65px;
 	stroke-width: 1;
 }
 
+.jumpalways {
+	stroke: lightgrey;
+	fill: lightgrey;
+	z-index: 2;
+}
+
+.jumpcond {
+	stroke: grey;
+	fill: grey;
+	z-index: 1;
+}
+
 .jumpcur {
-	stroke-width: 2;
 	stroke: white;
 	fill: white;
+	stroke-width: 3;
 	z-index: 900;
 }
 
+.duration {
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--vscode-terminal-ansiYellow);
+  margin-right: 8px;
+}
+
+.dim1 {
+  opacity: 0.8;
+}
+
+.dim2 {
+  opacity: 0.6;
+}
+
+.file {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--vscode-font-family);
+  margin-left: 2em;
+  font-size: 0.8em;
+  direction: rtl;
+  flex-grow: 1;
+  margin-left: 2em;
+  opacity: 0.8;
+}
+
+a {
+  color: var(--vscode-terminal-foreground);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--vscode-terminal-foreground);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+a:focus {
+  text-decoration: underline;
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+/* don't use opacity or filter, it's slow */
+.zero {
+  color: #666; /* TODO: other themes */
+}
+
+.zero a, .zero a:hover, .zero a:focus {
+  color: #666; /* TODO: other themes */
+}
+
+.zero .duration {
+  color: #660; /* TODO: other themes */
+}
+
 .cur {
-    background: crimson;
+	background-color: var(--vscode-editor-selectionBackground);
+	color: var(--vscode-editor-selectionForeground);
 }

@@ -77,6 +77,7 @@ async function Objdump() {
 function TryProfiler() {
 	try {
 		if(PROFILE_URL) {
+			console.log("Profile: " + PROFILE_URL);
 			Profiler();
 			return true;
 		}
@@ -87,6 +88,7 @@ function TryProfiler() {
 function TryObjdump() {
 	try {
 		if(OBJDUMP) {
+			console.log("Objdump");
 			Objdump();
 			return true;
 		}
