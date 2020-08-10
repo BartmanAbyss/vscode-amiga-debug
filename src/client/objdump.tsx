@@ -13,6 +13,9 @@ import { DropdownOptionProps, DropdownComponent } from './dropdown';
 
 import { Icon } from './icons';
 import * as SymbolMethod from './icons/symbol-method.svg';
+import * as ChevronUp from './icons/chevron-up.svg';
+import * as ChevronDown from './icons/chevron-down.svg';
+import * as Close from './icons/close.svg';
 import { VirtualList, Absolute } from './virtual_list';
 
 // messages from webview to vs code
@@ -255,6 +258,21 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [curRow, setCurRow] = useState(0);
 
+	const [find, setFind] = useState('');
+	const [curFind, setCurFind] = useState(0);
+	const findResult = useMemo(() => {
+		const result: number[] = [];
+		if(find.length > 0) {
+			content.forEach((line, index) => {
+				if(line.text.includes(find))
+					result.push(index);
+			});
+		}
+		if(result.length > 0)
+			setCurRow(result[0]);
+		return result;
+	}, [frame, find]);
+
 	const [row, pc, func] = useMemo(() => {
 		const row = (() => {
 			if(frame === -1)
@@ -293,9 +311,20 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 
 	const renderRow = useCallback((c: Line, index: number) => {
+		const extra = [];
+		if(index === row)
+			extra.push(styles.cur);
+		const findResultIndex = findResult.findIndex((l) => l === index);
+		if(findResultIndex !== -1) {
+			if(findResultIndex === curFind)
+				extra.push(styles.find_hit_cur);
+			else
+				extra.push(styles.find_hit);
+		}
+
 		return (c.pc === undefined
-		? <div class={[styles.row, index === row ? styles.cur : ''].join(' ')} data-row={index}>{c.text + '\n'}</div>
-		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', index === row ? styles.cur : ''].join(' ')} data-row={index}>
+		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{c.text + '\n'}</div>
+		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
 			<div class={styles.duration}>{frame !== -1 ? <Fragment>
 					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
@@ -306,7 +335,7 @@ export const ObjdumpView: FunctionComponent<{
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row]);
+	}, [onClickLoc, row, findResult, curFind]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -404,6 +433,7 @@ export const ObjdumpView: FunctionComponent<{
 		// cursor navigation
 		useEffect(() => {
 			const listener = (evt: KeyboardEvent) => {
+				// TODO: don't do anything if focus on find
 				if(evt.key === 'ArrowDown')
 					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
 				else if(evt.key === 'ArrowUp')
@@ -416,6 +446,8 @@ export const ObjdumpView: FunctionComponent<{
 					setCurRow(0);
 				else if(evt.key === 'End')
 					setCurRow(content.length - 1);
+				else
+					return;
 				evt.preventDefault();
 			};
 			document.addEventListener('keydown', listener);
@@ -442,8 +474,31 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, []);
 
+	const onFind = useCallback((evt: Event) => {
+		const find = (evt.target as HTMLInputElement).value;
+		setFind(find);
+		setCurFind(0);
+	}, [setFind]);
+
+	const onFindPrev = useCallback(() => {
+		const n = Math.max(0, curFind - 1);
+		setCurFind(n);
+		setCurRow(findResult[n]);
+	}, [curFind, findResult]);
+	const onFindNext = useCallback(() => {
+		const n = Math.min(findResult.length - 1, curFind + 1);
+		setCurFind(n);
+		setCurRow(findResult[n]);
+	}, [curFind, findResult]);
+	
 	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
+			<div class={styles.find} style={{ position: 'absolute', width: '400px', right: 0, top: 0, backgroundColor: 'brown', boxShadow: '0 .25em .5em 0 black' }}>
+				<input placeholder="Find" style={{width: '200px'}} onPaste={onFind} onKeyUp={onFind}></input><span>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
+				<button class={styles.button} onMouseDown={onFindPrev} type="button" dangerouslySetInnerHTML={{__html: ChevronUp}} />
+				<button class={styles.button} onMouseDown={onFindNext} type="button" dangerouslySetInnerHTML={{__html: ChevronDown}} />
+				<Icon i={Close} />
+			</div>
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>

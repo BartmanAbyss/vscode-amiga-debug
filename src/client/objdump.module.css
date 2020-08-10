@@ -1,3 +1,11 @@
+/* find */
+.find svg {
+  display: inline-block;
+  height: 1em;
+  margin-right: 0.25em;
+}
+
+/* function */
 .gfxresource_menu {
 	width: initial !important;
   box-shadow: 0 .25em .5em 0 black;
@@ -121,4 +129,39 @@ a:focus {
 .cur {
 	background-color: var(--vscode-editor-selectionBackground);
 	color: var(--vscode-editor-selectionForeground);
+}
+
+.find_hit {
+  color: darkgreen;
+}
+
+.find_hit_cur {
+  color: green;
+}
+
+/* from customregs.css */
+.button {
+	background: none;
+	border: none;
+	align-items: center;
+	border: none;
+	opacity: 0.7;
+	outline: 0 !important;
+	margin-left: 3px;
+	margin-right: 3px;
+	padding: 0;
+	cursor: pointer;
+	height: var(--vscode-editor-font-size);
+}
+
+.button + .button {
+	margin-left: 0;
+}
+
+.button:hover {
+	opacity: 1;
+}
+
+.button > svg {
+	width: var(--vscode-editor-font-size);
 }
