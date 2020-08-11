@@ -1,4 +1,32 @@
 /* find */
+.find {
+  position: absolute;
+  /*width: 400px;*/
+  right: 0;
+  top: 0;
+  background-color: brown;
+  box-shadow: 0 .25em .5em 0 black;
+  transition: transform ease-out 0.3s;
+  white-space: nowrap;
+}
+
+.find_hidden {
+  transform: translateY(-30px);
+}
+
+.find_visible {
+  transform: translateY(0);
+}
+
+.find input {
+  width: 200px;
+}
+
+.find_result {
+  display: inline-block;
+  width: 100px;
+}
+
 .find svg {
   display: inline-block;
   height: 1em;

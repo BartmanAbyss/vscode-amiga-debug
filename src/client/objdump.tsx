@@ -260,6 +260,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [find, setFind] = useState('');
 	const [curFind, setCurFind] = useState(0);
+	const findRef = useRef<HTMLDivElement>();
 	const findResult = useMemo(() => {
 		const result: number[] = [];
 		if(find.length > 0) {
@@ -446,13 +447,20 @@ export const ObjdumpView: FunctionComponent<{
 					setCurRow(0);
 				else if(evt.key === 'End')
 					setCurRow(content.length - 1);
-				else
+				else if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+					findRef.current.classList.remove(styles.find_hidden);
+					findRef.current.classList.add(styles.find_visible);
+					findRef.current.getElementsByTagName('input')[0].select();
+				} else if(evt.key === 'Escape') {
+					findRef.current.classList.remove(styles.find_visible);
+					findRef.current.classList.add(styles.find_hidden);
+				} else
 					return;
 				evt.preventDefault();
 			};
 			document.addEventListener('keydown', listener);
 			return () => document.removeEventListener('keydown', listener);
-		}, []);
+		}, [findRef]);
 	}
 
 	const onChangeFunction = useCallback((selected: Function) => { 
@@ -474,12 +482,6 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, []);
 
-	const onFind = useCallback((evt: Event) => {
-		const find = (evt.target as HTMLInputElement).value;
-		setFind(find);
-		setCurFind(0);
-	}, [setFind]);
-
 	const onFindPrev = useCallback(() => {
 		const n = Math.max(0, curFind - 1);
 		setCurFind(n);
@@ -490,14 +492,30 @@ export const ObjdumpView: FunctionComponent<{
 		setCurFind(n);
 		setCurRow(findResult[n]);
 	}, [curFind, findResult]);
+
+	const onFind = useCallback((evt: Event) => {
+		const find = (evt.target as HTMLInputElement).value;
+		setFind(find);
+	}, [setFind]);
+
+	const onFindKey = useCallback((evt: KeyboardEvent) => {
+		if(evt.key === 'Enter')
+			onFindNext();
+	}, [onFindNext]);
+
+	const onFindClose = useCallback(() => {
+		findRef.current.classList.remove(styles.find_visible);
+		findRef.current.classList.add(styles.find_hidden);
+	}, [findRef]);
 	
 	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
-			<div class={styles.find} style={{ position: 'absolute', width: '400px', right: 0, top: 0, backgroundColor: 'brown', boxShadow: '0 .25em .5em 0 black' }}>
-				<input placeholder="Find" style={{width: '200px'}} onPaste={onFind} onKeyUp={onFind}></input><span>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
+			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
+				<input placeholder="Find" onPaste={onFind} onKeyUp={onFind} onKeyDown={onFindKey}></input>
+				<span class={styles.find_result}>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
 				<button class={styles.button} onMouseDown={onFindPrev} type="button" dangerouslySetInnerHTML={{__html: ChevronUp}} />
 				<button class={styles.button} onMouseDown={onFindNext} type="button" dangerouslySetInnerHTML={{__html: ChevronDown}} />
-				<Icon i={Close} />
+				<button class={styles.button} onMouseDown={onFindClose} type="button" dangerouslySetInnerHTML={{__html: Close}} />
 			</div>
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
