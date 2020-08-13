@@ -1,36 +1,59 @@
 /* find */
 .find {
   position: absolute;
-  /*width: 400px;*/
-  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 400px;
+  right: 16px;
   top: 0;
-  background-color: brown;
+  padding: 4px;
+  background: var(--vscode-sideBar-background);
   box-shadow: 0 .25em .5em 0 black;
-  transition: transform ease-out 0.3s;
+  transition: transform ease-out 0.2s;
   white-space: nowrap;
 }
 
 .find_hidden {
-  transform: translateY(-30px);
+  transform: translateY(-40px);
 }
 
 .find_visible {
   transform: translateY(0);
 }
 
-.find input {
-  width: 200px;
-}
-
 .find_result {
+  flex-grow: 0;
+  flex-shrink: 0;
   display: inline-block;
-  width: 100px;
+  padding: 0px 8px;
+  font-size: calc(var(--vscode-editor-font-size) - 2px);
+  flex-basis: 80px;
 }
 
-.find svg {
-  display: inline-block;
-  height: 1em;
-  margin-right: 0.25em;
+/* copy from filter.module.css */
+.find > input {
+  font-family: var(--vscode-font-family);
+  font-weight: var(--vscode-editor-font-weight);
+  font-size: var(--vscode-editor-font-size);
+  background: var(--vscode-input-background);
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  color: var(--vscode-input-foreground);
+  flex-grow: 1;
+}
+
+.find > input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.find > input:focus {
+  border-color: var(--vscode-focusBorder);
+  outline: 0;
+}
+
+.find > button {
+  flex-shrink: 0;
 }
 
 /* function */
@@ -160,12 +183,14 @@ a:focus {
 }
 
 .find_hit {
-  color: darkgreen;
+  background-color: var(--vscode-editor-findMatchHighlightBackground);
+  color: inherit;
 }
 
-.find_hit_cur {
-  color: green;
-}
+/*.find_hit_cur {
+  background-color: var(--vscode-editor-findMatchBackground);
+  color: inherit;
+}*/
 
 /* from customregs.css */
 .button {
@@ -173,23 +198,20 @@ a:focus {
 	border: none;
 	align-items: center;
 	border: none;
-	opacity: 0.7;
 	outline: 0 !important;
 	margin-left: 3px;
 	margin-right: 3px;
 	padding: 0;
-	cursor: pointer;
-	height: var(--vscode-editor-font-size);
+  cursor: pointer;
+  height: 16px;
 }
 
-.button + .button {
-	margin-left: 0;
-}
-
-.button:hover {
-	opacity: 1;
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .button > svg {
-	width: var(--vscode-editor-font-size);
+  width: 16px;
+  height: 16px;
 }

@@ -1,22 +1,21 @@
-import { FunctionComponent, h, JSX, createContext, Component, Fragment } from 'preact';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { VsCodeApi } from "./vscodeApi";
-import './styles.css';
+import { Component, Fragment, FunctionComponent, h } from 'preact';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
+import { DropdownComponent, DropdownOptionProps } from './dropdown';
+import { Icon } from './icons';
+import * as ChevronDown from './icons/arrow-down.svg';
+import * as ChevronUp from './icons/arrow-up.svg';
+import * as Close from './icons/close.svg';
+import * as SymbolMethod from './icons/symbol-method.svg';
+import { IProfileModel } from './model';
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
-import { GetCycles, GetJump, JumpType, Cycles } from "./68k";
-
-import { IProfileModel } from './model';
+import './styles.css';
 import { IOpenDocumentMessage } from './types';
 import { useCssVariables } from './useCssVariables';
-import { DropdownOptionProps, DropdownComponent } from './dropdown';
-
-import { Icon } from './icons';
-import * as SymbolMethod from './icons/symbol-method.svg';
-import * as ChevronUp from './icons/chevron-up.svg';
-import * as ChevronDown from './icons/chevron-down.svg';
-import * as Close from './icons/close.svg';
-import { VirtualList, Absolute } from './virtual_list';
+import { Absolute, VirtualList } from './virtual_list';
+import { VsCodeApi } from "./vscodeApi";
+import Highlighter from 'react-highlight-words';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -269,8 +268,10 @@ export const ObjdumpView: FunctionComponent<{
 					result.push(index);
 			});
 		}
-		if(result.length > 0)
+		if(result.length > 0) {
+			setCurFind(0);
 			setCurRow(result[0]);
+		}
 		return result;
 	}, [frame, find]);
 
@@ -315,16 +316,11 @@ export const ObjdumpView: FunctionComponent<{
 		const extra = [];
 		if(index === row)
 			extra.push(styles.cur);
-		const findResultIndex = findResult.findIndex((l) => l === index);
-		if(findResultIndex !== -1) {
-			if(findResultIndex === curFind)
-				extra.push(styles.find_hit_cur);
-			else
-				extra.push(styles.find_hit);
-		}
+
+		const text = <Highlighter searchWords={[find]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />;
 
 		return (c.pc === undefined
-		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{c.text + '\n'}</div>
+		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
 		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
 			<div class={styles.duration}>{frame !== -1 ? <Fragment>
 					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
@@ -332,11 +328,11 @@ export const ObjdumpView: FunctionComponent<{
 				</Fragment> : ''}
 				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(8)}</span>
 			</div>
-			{c.text}
+			{text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row, findResult, curFind]);
+	}, [onClickLoc, row, findResult, find, curFind]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -448,19 +444,22 @@ export const ObjdumpView: FunctionComponent<{
 				else if(evt.key === 'End')
 					setCurRow(content.length - 1);
 				else if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+					// open search bar
 					findRef.current.classList.remove(styles.find_hidden);
 					findRef.current.classList.add(styles.find_visible);
 					findRef.current.getElementsByTagName('input')[0].select();
 				} else if(evt.key === 'Escape') {
+					// close search bar
 					findRef.current.classList.remove(styles.find_visible);
 					findRef.current.classList.add(styles.find_hidden);
+					setFind('');
 				} else
 					return;
 				evt.preventDefault();
 			};
 			document.addEventListener('keydown', listener);
 			return () => document.removeEventListener('keydown', listener);
-		}, [findRef]);
+		}, [findRef, setFind]);
 	}
 
 	const onChangeFunction = useCallback((selected: Function) => { 
@@ -476,32 +475,45 @@ export const ObjdumpView: FunctionComponent<{
 	const onClickContainer = useCallback((evt: MouseEvent) => {
 		if(frame === -1) {
 			const elem = evt.srcElement as HTMLElement;
-			const row = parseInt(elem.attributes['data-row'].value);
-			if(row !== undefined)
-				setCurRow(row);
+			const row = elem.attributes['data-row']?.value;
+			if(row !== undefined) {
+				console.log(row);
+				setCurRow(parseInt(row));
+			}
 		}
 	}, []);
 
 	const onFindPrev = useCallback(() => {
-		const n = Math.max(0, curFind - 1);
-		setCurFind(n);
-		setCurRow(findResult[n]);
+		if(findResult.length) {
+			const n = (curFind + findResult.length - 1) % findResult.length;
+			setCurFind(n);
+			setCurRow(findResult[n]);
+		}
 	}, [curFind, findResult]);
 	const onFindNext = useCallback(() => {
-		const n = Math.min(findResult.length - 1, curFind + 1);
-		setCurFind(n);
-		setCurRow(findResult[n]);
+		if(findResult.length) {
+			const n = (curFind + 1) % findResult.length;
+			setCurFind(n);
+			setCurRow(findResult[n]);
+		}
 	}, [curFind, findResult]);
 
-	const onFind = useCallback((evt: Event) => {
+	const onFindPaste = useCallback((evt: Event) => {
 		const find = (evt.target as HTMLInputElement).value;
 		setFind(find);
 	}, [setFind]);
 
-	const onFindKey = useCallback((evt: KeyboardEvent) => {
+	const onFindKeyUp = useCallback((evt: KeyboardEvent) => {
+		if(evt.key === 'Enter' || evt.key === 'Escape')
+			return;
+		const find = (evt.target as HTMLInputElement).value;
+		setFind(find);
+	}, [setFind]);
+
+	const onFindKeyDown = useCallback((evt: KeyboardEvent) => {
 		if(evt.key === 'Enter')
-			onFindNext();
-	}, [onFindNext]);
+			evt.shiftKey ? onFindPrev() : onFindNext();
+	}, [onFindPrev, onFindNext]);
 
 	const onFindClose = useCallback(() => {
 		findRef.current.classList.remove(styles.find_visible);
@@ -511,11 +523,11 @@ export const ObjdumpView: FunctionComponent<{
 	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
-				<input placeholder="Find" onPaste={onFind} onKeyUp={onFind} onKeyDown={onFindKey}></input>
+				<input placeholder="Find" onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
 				<span class={styles.find_result}>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
-				<button class={styles.button} onMouseDown={onFindPrev} type="button" dangerouslySetInnerHTML={{__html: ChevronUp}} />
-				<button class={styles.button} onMouseDown={onFindNext} type="button" dangerouslySetInnerHTML={{__html: ChevronDown}} />
-				<button class={styles.button} onMouseDown={onFindClose} type="button" dangerouslySetInnerHTML={{__html: Close}} />
+				<button class={styles.button} onMouseDown={onFindPrev} disabled={findResult.length === 0} type="button" title="Previous match (Shift+Enter)" dangerouslySetInnerHTML={{__html: ChevronUp}} />
+				<button class={styles.button} onMouseDown={onFindNext} disabled={findResult.length === 0} type="button" title="Next match (Enter)" dangerouslySetInnerHTML={{__html: ChevronDown}} />
+				<button class={styles.button} onMouseDown={onFindClose} type="button" title="Close (Escape)" dangerouslySetInnerHTML={{__html: Close}} />
 			</div>
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />

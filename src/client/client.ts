@@ -68,6 +68,7 @@ async function Profiler() {
 }
 
 async function Objdump() {
+	document.body.style.paddingRight = '0px';
 	const container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
