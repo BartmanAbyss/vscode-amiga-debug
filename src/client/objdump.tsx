@@ -211,7 +211,7 @@ export const ObjdumpView: FunctionComponent<{
 	time?: number
 }> = ({ frame = -1, time = -1 }) => {
 	const cssVariables = useCssVariables();
-	const height = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
+	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
 
 	const [content, functions, jumps] = useMemo(() => {
 		const model = (() => {
@@ -246,14 +246,14 @@ export const ObjdumpView: FunctionComponent<{
 				end: pcMap.get(jump.end),
 				level: jump.level,
 				type: jump.type,
-				top: min * height,
-				height: (max - min + 1) * height
+				top: min * rowHeight,
+				height: (max - min + 1) * rowHeight
 			};
 		});
 		//console.log(jumps);
 
 		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())), jumps];
-	}, [frame, height]);
+	}, [frame, rowHeight]);
 
 	const [curRow, setCurRow] = useState(0);
 
@@ -336,7 +336,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
-		const rowMiddle = height >> 1;
+		const rowMiddle = rowHeight >> 1;
 		const levelIndent = 10;
 
 		const min  = Math.min(...jump.start, jump.end);
@@ -344,7 +344,7 @@ export const ObjdumpView: FunctionComponent<{
 		const end  = jump.end - min;
 		const size = max - min + 1;
 		const indent = right - 15 - jump.level * levelIndent;
-		const endY = end * height + rowMiddle;
+		const endY = end * rowHeight + rowMiddle;
 
 		const loopCycles = (() => {
 			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
@@ -353,7 +353,7 @@ export const ObjdumpView: FunctionComponent<{
 					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
 					const maxCycles = loop.map((l) => Math.max(...l.map((c) => c.total))).reduce((p, c) => p + c);
 					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
-					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * height + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
+					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
 				}
 			}
 			return '';
@@ -362,14 +362,14 @@ export const ObjdumpView: FunctionComponent<{
 		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
 			{jump.start.map((startRow) => {
 				const start = startRow - min;
-				const y = start * height + rowMiddle;
+				const y = start * rowHeight + rowMiddle;
 
 				// 0.5px offsets so we get crisp lines
 				if(indent > 5)
 					return <polyline transform="translate(0.5,0.5)" points={`${right},${y} ${indent},${y} ${indent},${endY} ${right - 4},${endY}`} fill="none" />;
 				else {
-					const y1 = endY > y ? y + height - 5 : y - height + 5;
-					const y2 = endY < y ? endY + height - 5 : endY - height + 5;
+					const y1 = endY > y ? y + rowHeight - 5 : y - rowHeight + 5;
+					const y2 = endY < y ? endY + rowHeight - 5 : endY - rowHeight + 5;
 					const d = endY > y ? 1 : -1;
 					const left = 5;
 					return <Fragment>
@@ -389,7 +389,7 @@ export const ObjdumpView: FunctionComponent<{
 			<path transform="translate(0,0.5)"  d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
 			{loopCycles}
 		</svg>);
-	}, [content, height, pc]);
+	}, [content, rowHeight, pc]);
 
 	const listRef = useRef<Component>();
 	const [scroller, setScroller] = useState<Scrollable>(null);
@@ -400,22 +400,27 @@ export const ObjdumpView: FunctionComponent<{
 				const slack = containerHeight / 10;
 				if(frame === -1) {
 					// scroll to keep selection in center
-					const scrollTo = row * height - document.documentElement.clientHeight / 2;
-					if(Math.abs(scrollTo - scroller.getFutureScrollPosition()) > height * 2)
+					const scrollTo = row * rowHeight - document.documentElement.clientHeight / 2;
+					if(Math.abs(scrollTo - scroller.getFutureScrollPosition()) > rowHeight * 2)
 						scroller.setScrollPositionSmooth(scrollTo);
 					else
 						scroller.setScrollPositionNow(scrollTo);
 
-					if(content[row].loc) {
-						VsCodeApi.postMessage<IOpenDocumentMessageObjview>({
-							type: 'openDocument',
-							file: content[row].loc.file,
-							line: content[row].loc.line
-						});
+					if(content[row].pc !== undefined) {
+						let r = row;
+						while(content[r].loc === undefined && r > 0)
+							r--;
+						if(content[r].loc) {
+							VsCodeApi.postMessage<IOpenDocumentMessageObjview>({
+								type: 'openDocument',
+								file: content[r].loc.file,
+								line: content[r].loc.line
+							});
+						}
 					}
 				} else {
 					// only scroll when needed
-					const scrollTo = row * height;
+					const scrollTo = row * rowHeight;
 					const newTop = scrollTo - containerHeight / 2;
 					if(scrollTo < scroller.getFutureScrollPosition() + slack || scrollTo > scroller.getFutureScrollPosition() + containerHeight - slack)
 						scroller.setScrollPositionSmooth(newTop);
@@ -424,7 +429,7 @@ export const ObjdumpView: FunctionComponent<{
 		} else {
 			setScroller(new Scrollable(listRef.current.base as HTMLElement, 135));
 		}
-	}, [row, scroller, height, listRef.current]);
+	}, [row, scroller, rowHeight, listRef.current]);
 
 	if(frame === -1) {
 		// cursor navigation
@@ -436,9 +441,9 @@ export const ObjdumpView: FunctionComponent<{
 				else if(evt.key === 'ArrowUp')
 					setCurRow((curRow) => Math.max(0, curRow - 1));
 				else if(evt.key === 'PageDown')
-					setCurRow((curRow) => Math.min(content.length - 1, Math.floor(curRow + (window.innerHeight / height * 0.9))));
+					setCurRow((curRow) => Math.min(content.length - 1, Math.floor(curRow + (window.innerHeight / rowHeight * 0.9))));
 				else if(evt.key === 'PageUp')
-					setCurRow((curRow) => Math.max(0, Math.floor(curRow - (window.innerHeight / height * 0.9))));
+					setCurRow((curRow) => Math.max(0, Math.floor(curRow - (window.innerHeight / rowHeight * 0.9))));
 				else if(evt.key === 'Home')
 					setCurRow(0);
 				else if(evt.key === 'End')
@@ -467,7 +472,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(frame === -1) {
 			setCurRow(sel);
 		} else {
-			const scrollTo = (sel - 2) * height; // -2: function line
+			const scrollTo = (sel - 2) * rowHeight; // -2: function line
 			scroller.setScrollPositionSmooth(scrollTo);
 		}
 	}, [scroller]);
@@ -475,10 +480,13 @@ export const ObjdumpView: FunctionComponent<{
 	const onClickContainer = useCallback((evt: MouseEvent) => {
 		if(frame === -1) {
 			const elem = evt.srcElement as HTMLElement;
-			const row = elem.attributes['data-row']?.value;
-			if(row !== undefined) {
-				console.log(row);
-				setCurRow(parseInt(row));
+			for(let elem = evt.srcElement as HTMLElement; elem; elem = elem.parentElement) {
+				if(elem.attributes['data-row']) {
+					const row = parseInt(elem.attributes['data-row'].value);
+					console.log(row);
+					setCurRow(row);
+					return;
+				}
 			}
 		}
 	}, []);
@@ -532,6 +540,6 @@ export const ObjdumpView: FunctionComponent<{
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>
-		<VirtualListLine ref={listRef} class={styles.container} rows={content} renderRow={renderRow} rowHeight={height} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
+		<VirtualListLine ref={listRef} class={styles.container} rows={content} renderRow={renderRow} rowHeight={rowHeight} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
 	</Fragment>;
 };
