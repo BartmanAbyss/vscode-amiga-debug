@@ -18,7 +18,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - better scolling/zooming in profiler
 - fixed CPU profiling (callstacks got merged)
 - GCC: fixed unwind information generated in epilogues
-- disassemble ELF file: Right-click on ELF file in the explorer, and select `Amiga: Disassemble ELF File`. Navigate with cursor keys. Automatically opens C sources and relates C source code to assembly.
+- disassemble ELF file: Right-click on ELF file in the explorer, and select `Amiga: Disassemble ELF File`. Navigate with cursor keys. Automatically opens C sources and relates C source code to assembly. cursor right to follow jump, cursor left to backtrack. Navigate in C sources to automatically show corresponding assembly instructions.
 - profiler: new `Assembly` tab shows assembly execution trace with timings and jumps
 - profiler now has symbol table and can resolve addresses
 - profiler now synchronized to DMA
