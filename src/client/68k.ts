@@ -623,6 +623,8 @@ export function GetCycles(insn: Uint16Array): Cycles[] {
 		// Miscellaneous (Table 8-12)
 		if(((insn[0] & 0b1111_0001_0011_0000) === 0b1100_0001_0000_0000) && ((insn[0] >>> 6) & 0b11) !== 0b11) // EXG, needs to come before AND
 			return [ { total: 6, read: 1, write: 0 } ];
+		if(((insn[0] & 0b1111_1110_0011_1000) === 0b0100_1000_0000_0000)) // EXT
+			return [ { total: 4, read: 1, write: 0 } ];
 		if((insn[0] & 0b1111_1111_1111_1000) === 0b0100_1110_0101_0000 // LINK.w
 		|| (insn[0] & 0b1111_1111_1111_1000) === 0b0100_1000_0000_1000) // LINK.l
 			return [ { total: 16, read: 2, write: 2 } ];

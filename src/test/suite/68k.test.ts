@@ -60,7 +60,7 @@ suite("68k-cycles", () => {
 	test("eor", () => {
 		const insn = new Uint16Array([0xb740]); // eor.w d3,d0
 		const cycles = GetCycles(insn);
-		assert.deepEqual(cycles, [ { total: 8, read: 2, write: 0 } ]);
+		assert.deepEqual(cycles, [ { total: 4, read: 1, write: 0 } ]);
 	});
 	test("muls", () => {
 		const insn = new Uint16Array([0xcfc2]); // muls.w d2,d7
@@ -75,12 +75,12 @@ suite("68k-cycles", () => {
 	test("link", () => {
 		const insn = new Uint16Array([0x4e55, 0xffc0]); // link.w a5,#-64
 		const cycles = GetCycles(insn);
-		assert.deepEqual(cycles, [ { total: 32, read: 4, write: 4 } ]);
+		assert.deepEqual(cycles, [ { total: 16, read: 2, write: 2 } ]);
 	});
 	test("unlk", () => {
 		const insn = new Uint16Array([0x4e5d]); // unlk a5
 		const cycles = GetCycles(insn);
-		assert.deepEqual(cycles, [ { total: 24, read: 6, write: 0 } ]);
+		assert.deepEqual(cycles, [ { total: 12, read: 3, write: 0 } ]);
 	});
 	test("sc", () => {
 		const insn = new Uint16Array([0x55c3]); // sc.s d3 ???
@@ -95,7 +95,12 @@ suite("68k-cycles", () => {
 	test("dbf", () => {
 		const insn = new Uint16Array([0x51c9, 0xfffa]); // dbf d1,$11c2
 		const cycles = GetCycles(insn);
-		assert.deepEqual(cycles, [ { total: 18, read: 4, write: 0 }, { total: 26, read: 6, write: 0 } ]);
+		assert.deepEqual(cycles, [ { total: 10, read: 2, write: 0 }, { total: 14, read: 3, write: 0 } ]);
+	});
+	test("ext", () => {
+		const insn = new Uint16Array([0x48c4]); // ext.l d4
+		const cycles = GetCycles(insn);
+		assert.deepEqual(cycles, [ { total: 4, read: 1, write: 0 } ]);
 	});
 });
 
