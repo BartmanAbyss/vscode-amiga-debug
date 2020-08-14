@@ -173,7 +173,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
-* DF0Engine: https://github.com/BartmanAbyss/vscode-amiga-debug/issues/25
+* WinUAE: fill memory with $DEAD on startup to better find uninitialized memory bugs
 * Assembly profiler: RTS seems to have its time added to previous instruction
 * Debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 * profiling: lines of functions seem to be off (see template/main.c: function main)
