@@ -454,6 +454,7 @@ export const ObjdumpView: FunctionComponent<{
 	if(frame === -1) {
 		// cursor navigation
 		useEffect(() => {
+			const navStack: number[] = [];
 			const listener = (evt: KeyboardEvent) => {
 				if(evt.key === 'ArrowDown')
 					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
@@ -467,7 +468,22 @@ export const ObjdumpView: FunctionComponent<{
 					setCurRow(0);
 				else if(evt.key === 'End')
 					setCurRow(content.length - 1);
-				else if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+				else if(evt.key === 'ArrowRight') {
+					setCurRow((curRow) => {
+						const jump = jumps.find((j) => j.start.includes(curRow));
+						if(jump) { 
+							navStack.push(curRow);
+							return jump.end;
+						}
+						return curRow;
+					});
+				} else if(evt.key === 'ArrowLeft') {
+					setCurRow((curRow) => {
+						if(navStack.length)
+							return navStack.pop();
+						return curRow;
+					});
+				} else if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
 					// open search bar
 					findRef.current.classList.remove(styles.find_hidden);
 					findRef.current.classList.add(styles.find_visible);
