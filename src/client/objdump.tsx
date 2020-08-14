@@ -17,7 +17,6 @@ import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
 import resolve from 'path-resolve';
-import { stringify } from 'querystring';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
