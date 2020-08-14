@@ -3,6 +3,39 @@ import * as path from 'path';
 import { bundlePage } from './profile_editor_provider';
 import { Disassemble } from './backend/profile';
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+export class WebviewCollection {
+	private readonly webviews = new Set<{
+		readonly resource: string;
+		readonly webviewPanel: vscode.WebviewPanel;
+	}>();
+
+	public *get(uri: vscode.Uri): Iterable<vscode.WebviewPanel> {
+		const key = uri.toString();
+		for (const entry of this.webviews) {
+			if (entry.resource === key) {
+				yield entry.webviewPanel;
+			}
+		}
+	}
+
+	public *all(): Iterable<vscode.WebviewPanel> {
+		for (const entry of this.webviews) {
+			yield entry.webviewPanel;
+		}
+	}
+
+	public add(uri: vscode.Uri, webviewPanel: vscode.WebviewPanel): void {
+		const entry = { resource: uri.toString(), webviewPanel };
+		this.webviews.add(entry);
+
+		webviewPanel.onDidDispose(() => {
+			this.webviews.delete(entry);
+		});
+	}
+}
+
 class ObjdumpDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
 	}
@@ -20,6 +53,9 @@ class ObjdumpDocument implements vscode.CustomDocument {
 }
 
 export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvider<ObjdumpDocument> {
+	private readonly webviews = new WebviewCollection(); 
+	private sourceEditor: vscode.TextEditor;
+		
 	constructor(private readonly context: vscode.ExtensionContext) {
 	}
 
@@ -32,14 +68,13 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 	private async updateWebview(document: ObjdumpDocument, webview: vscode.Webview) {
 		const html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { 
 			OBJDUMP: document.content
-//			PROFILES: [],
-//			MODELS: [], 
-//			PROFILE_URL: webview.asWebviewUri(document.uri).toString() 
 		});
 		webview.html = html;
 	}
 
 	public async resolveCustomEditor(document: ObjdumpDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
+		this.webviews.add(document.uri, webviewPanel); // Add the webview to our internal set of active webviews 
+
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
@@ -64,21 +99,20 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		});
 	}
 
-/*	public async provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): Promise<string> {
-	}
-*/
-	private sourceEditor: vscode.TextEditor;
-
-	public async handleSelection(e: vscode.TextEditorSelectionChangeEvent) {
-		const line = e.textEditor.document.lineAt(e.selections[0].start.line);
-		const match = line.text.match(/^(\S.+):([0-9]+)$/);
-		if(match) {
-			console.log(match[1], match[2]);
+	public async handleSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
+		for (const webviewPanel of this.webviews.all()) { 
+			webviewPanel.webview.postMessage({ 
+				type: 'findLocation', 
+				body: { 
+					file: e.textEditor.document.uri.fsPath, 
+					line: e.selections[0].start.line + 1 
+				}
+			}); 			
 		}
 	}
 
 	public handleEditorChanged(editor: vscode.TextEditor) {
-		if(this.sourceEditor) {
+		if(this.sourceEditor && editor !== this.sourceEditor) {
 			this.sourceEditor.hide();
 			this.sourceEditor = undefined;
 		}

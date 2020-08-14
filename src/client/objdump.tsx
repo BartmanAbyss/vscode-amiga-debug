@@ -16,6 +16,8 @@ import { useCssVariables } from './useCssVariables';
 import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
+import resolve from 'path-resolve';
+import { stringify } from 'querystring';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -26,6 +28,7 @@ export interface IOpenDocumentMessageObjview {
 
 export interface Location {
 	file: string;
+	normalizedFile: string;
 	line: number;
 }
 
@@ -140,7 +143,7 @@ export class ObjdumpModel {
 
 			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/); // C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/support/gcc8_c_support.c:62 (discriminator 1)
 			if(locMatch) {
-				loc = { file: locMatch[1], line: parseInt(locMatch[2]) };
+				loc = { file: locMatch[1], normalizedFile: resolve(locMatch[1]), line: parseInt(locMatch[2]) };
 				continue;
 			}
 
@@ -257,21 +260,34 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [curRow, setCurRow] = useState(0);
 
-	const [find, setFind] = useState('');
+	const [find, setFind] = useState<{ text: string, internal: boolean }>({ text: '', internal: true });
 	const [curFind, setCurFind] = useState(0);
 	const findRef = useRef<HTMLDivElement>();
 	const findResult = useMemo(() => {
+		console.time("findResult");
 		const result: number[] = [];
-		if(find.length > 0) {
-			content.forEach((line, index) => {
-				if(line.text.includes(find))
-					result.push(index);
-			});
+		if(find.text.length > 0) {
+			if(find.internal) {
+				content.forEach((line, index) => {
+					if(line.text.includes(find.text))
+						result.push(index);
+				});
+			} else {
+				const findLoc = resolve(find.text.replace(/\\/g, '/')).toLowerCase();
+				content.forEach((line, index) => {
+					if(line.loc) {
+						const loc = `${line.loc.normalizedFile.toLowerCase()}:${line.loc.line}`;
+						if(loc === findLoc)
+							result.push(index);
+					}
+				});
+			}
 		}
 		if(result.length > 0) {
 			setCurFind(0);
 			setCurRow(result[0]);
 		}
+		console.timeEnd("findResult");
 		return result;
 	}, [frame, find]);
 
@@ -317,7 +333,9 @@ export const ObjdumpView: FunctionComponent<{
 		if(index === row)
 			extra.push(styles.cur);
 
-		const text = <Highlighter searchWords={[find]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />;
+		const text = (find.internal && findResult.length > 0) 
+		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
+		: c.text;
 
 		return (c.pc === undefined
 		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
@@ -326,7 +344,7 @@ export const ObjdumpView: FunctionComponent<{
 					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 				</Fragment> : ''}
-				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(8)}</span>
+				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>
 			{text}
 			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
@@ -349,7 +367,7 @@ export const ObjdumpView: FunctionComponent<{
 		const loopCycles = (() => {
 			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
 				const loop = content.slice(jump.end, jump.start[0] + 1).map((l) => l.theoreticalCycles);
-				if(loop.every((l) => l.length > 0)) {
+				if(loop.every((l) => l?.length > 0)) {
 					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
 					const maxCycles = loop.map((l) => Math.max(...l.map((c) => c.total))).reduce((p, c) => p + c);
 					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
@@ -406,16 +424,19 @@ export const ObjdumpView: FunctionComponent<{
 					else
 						scroller.setScrollPositionNow(scrollTo);
 
-					if(content[row].pc !== undefined) {
-						let r = row;
-						while(content[r].loc === undefined && r > 0)
-							r--;
-						if(content[r].loc) {
-							VsCodeApi.postMessage<IOpenDocumentMessageObjview>({
-								type: 'openDocument',
-								file: content[r].loc.file,
-								line: content[r].loc.line
-							});
+					// show source location (not when searched from extern)
+					if(find.text.length === 0 || find.internal) {
+						if(content[row].pc !== undefined) {
+							let r = row;
+							while(content[r].loc === undefined && r > 0)
+								r--;
+							if(content[r].loc) {
+								VsCodeApi.postMessage<IOpenDocumentMessageObjview>({
+									type: 'openDocument',
+									file: content[r].loc.file,
+									line: content[r].loc.line
+								});
+							}
 						}
 					}
 				} else {
@@ -429,7 +450,7 @@ export const ObjdumpView: FunctionComponent<{
 		} else {
 			setScroller(new Scrollable(listRef.current.base as HTMLElement, 135));
 		}
-	}, [row, scroller, rowHeight, listRef.current]);
+	}, [row, scroller, rowHeight, listRef.current, find, findResult]);
 
 	if(frame === -1) {
 		// cursor navigation
@@ -457,7 +478,7 @@ export const ObjdumpView: FunctionComponent<{
 					// close search bar
 					findRef.current.classList.remove(styles.find_visible);
 					findRef.current.classList.add(styles.find_hidden);
-					setFind('');
+					setFind({ text: '', internal: true });
 				} else
 					return;
 				evt.preventDefault();
@@ -466,6 +487,26 @@ export const ObjdumpView: FunctionComponent<{
 			return () => document.removeEventListener('keydown', listener);
 		}, [findRef, setFind]);
 	}
+
+	useEffect(() => {
+		const listener = (e) => {
+			const { type, body } = e.data;
+			switch(type) {
+			case 'findLocation': 
+				console.log(type, body);
+				const loc = `${body.file}:${body.line}`;
+				// open search bar
+				findRef.current.classList.remove(styles.find_hidden);
+				findRef.current.classList.add(styles.find_visible);
+				findRef.current.getElementsByTagName('input')[0].select();
+				findRef.current.getElementsByTagName('input')[0].value = loc;
+				setFind({ text: loc, internal: false });
+				break;
+			}
+		};
+		window.addEventListener('message', listener);
+		return () => document.removeEventListener('message', listener);
+	}, [findRef, setFind]);
 
 	const onChangeFunction = useCallback((selected: Function) => { 
 		const sel = content.findIndex((c: Line) => c.pc === selected.pc);
@@ -505,33 +546,33 @@ export const ObjdumpView: FunctionComponent<{
 			setCurRow(findResult[n]);
 		}
 	}, [curFind, findResult]);
-
+	const onFindClick = useCallback((evt: Event) => {
+		(evt.target as HTMLInputElement).select();
+	}, []);
 	const onFindPaste = useCallback((evt: Event) => {
 		const find = (evt.target as HTMLInputElement).value;
-		setFind(find);
+		setFind({ text: find, internal: true });
 	}, [setFind]);
-
 	const onFindKeyUp = useCallback((evt: KeyboardEvent) => {
 		if(evt.key === 'Enter' || evt.key === 'Escape')
 			return;
 		const find = (evt.target as HTMLInputElement).value;
-		setFind(find);
+		setFind({ text: find, internal: true });
 	}, [setFind]);
-
 	const onFindKeyDown = useCallback((evt: KeyboardEvent) => {
 		if(evt.key === 'Enter')
 			evt.shiftKey ? onFindPrev() : onFindNext();
 	}, [onFindPrev, onFindNext]);
-
 	const onFindClose = useCallback(() => {
 		findRef.current.classList.remove(styles.find_visible);
 		findRef.current.classList.add(styles.find_hidden);
+		setFind({ text: '', internal: true });
 	}, [findRef]);
 	
 	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
-				<input placeholder="Find" onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
+				<input placeholder="Find" onClick={onFindClick} onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
 				<span class={styles.find_result}>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
 				<button class={styles.button} onMouseDown={onFindPrev} disabled={findResult.length === 0} type="button" title="Previous match (Shift+Enter)" dangerouslySetInnerHTML={{__html: ChevronUp}} />
 				<button class={styles.button} onMouseDown={onFindNext} disabled={findResult.length === 0} type="button" title="Next match (Enter)" dangerouslySetInnerHTML={{__html: ChevronDown}} />

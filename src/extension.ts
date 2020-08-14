@@ -198,10 +198,13 @@ class AmigaDebugExtension {
 	}
 
 	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
+		if(vscode.window.activeTextEditor === e.textEditor)
+			this.objdumpEditorProvider.handleSelectionChanged(e);
+
 		if (e.textEditor.document.uri.scheme === 'examinememory') 
 			this.memoryProvider.handleSelection(e);
-		else if(e.textEditor.document.uri.scheme === 'objdump')
-			this.objdumpEditorProvider.handleSelection(e);
+		//else if(e.textEditor.document.uri.scheme === 'objdump')
+		//	this.objdumpEditorProvider.handleSelection(e);
 	}
 
 	private async showDisassembly() {
