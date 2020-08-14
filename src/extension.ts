@@ -202,9 +202,7 @@ class AmigaDebugExtension {
 			this.objdumpEditorProvider.handleSelectionChanged(e);
 
 		if (e.textEditor.document.uri.scheme === 'examinememory') 
-			this.memoryProvider.handleSelection(e);
-		//else if(e.textEditor.document.uri.scheme === 'objdump')
-		//	this.objdumpEditorProvider.handleSelection(e);
+			this.memoryProvider.handleSelectionChanged(e);
 	}
 
 	private async showDisassembly() {

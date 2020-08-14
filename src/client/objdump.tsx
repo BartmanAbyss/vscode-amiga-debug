@@ -455,7 +455,6 @@ export const ObjdumpView: FunctionComponent<{
 		// cursor navigation
 		useEffect(() => {
 			const listener = (evt: KeyboardEvent) => {
-				// TODO: don't do anything if focus on find
 				if(evt.key === 'ArrowDown')
 					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
 				else if(evt.key === 'ArrowUp')
@@ -475,6 +474,7 @@ export const ObjdumpView: FunctionComponent<{
 					findRef.current.getElementsByTagName('input')[0].select();
 				} else if(evt.key === 'Escape') {
 					// close search bar
+					findRef.current.getElementsByTagName('input')[0].blur();
 					findRef.current.classList.remove(styles.find_visible);
 					findRef.current.classList.add(styles.find_hidden);
 					setFind({ text: '', internal: true });
@@ -561,6 +561,8 @@ export const ObjdumpView: FunctionComponent<{
 	const onFindKeyDown = useCallback((evt: KeyboardEvent) => {
 		if(evt.key === 'Enter')
 			evt.shiftKey ? onFindPrev() : onFindNext();
+		if(evt.key !== 'Escape')
+			evt.stopPropagation();
 	}, [onFindPrev, onFindNext]);
 	const onFindClose = useCallback(() => {
 		findRef.current.classList.remove(styles.find_visible);
