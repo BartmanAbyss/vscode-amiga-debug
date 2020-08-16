@@ -357,7 +357,8 @@ class AmigaDebugExtension {
 			return;
 		}
 		const uri2 = vscode.Uri.file(uri.fsPath + ".objdump");
-		await vscode.commands.executeCommand("vscode.open", uri2, { preview: false } as vscode.TextDocumentShowOptions);
+		await vscode.commands.executeCommand("vscode.open", uri2, { viewColumn: vscode.ViewColumn.One, preview: false } as vscode.TextDocumentShowOptions);
+		await vscode.commands.executeCommand("workbench.action.moveEditorToLeftGroup");
 	}
 
 	private shrinklerTerminal: vscode.Terminal;

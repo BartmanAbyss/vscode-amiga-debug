@@ -59,12 +59,13 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
 - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
 - [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
+- [Tiny Bobble](http://eab.abime.net/showthread.php?t=103546) by Abyss
 - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
-Copper Disassembly and hardwar register documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
+Copper Disassembly and hardware register documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 
@@ -82,14 +83,10 @@ This extension contains binaries of:
 - modified [GCC 10.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
   - Copyright (C) 2020 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU Binutils 2.34.50.20200508](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2020 Free Software Foundation, Inc.
-  - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
 - modified [GNU gdb (GDB) 10.0.50.20200508-git](https://github.com/BartmanAbyss/binutils-gdb)
   - Copyright (C) 2020 Free Software Foundation, Inc.
   - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
-- modified [WinUAE 4.2.0](https://github.com/BartmanAbyss/WinUAE)
+- modified [WinUAE 4.4.0](https://github.com/BartmanAbyss/WinUAE)
 - modified [Shrinkler 4.6](https://github.com/BartmanAbyss/Shrinkler)
   - Copyright 1999-2015 Aske Simon Christensen
   - Modified 2020, Bartman/Abyss

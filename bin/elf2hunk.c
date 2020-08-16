@@ -1,6 +1,6 @@
 /*
 	Copyright � 1995-2017, The AROS Development Team. All rights reserved.
-	Modified 2018-19, Bartman/Abyss
+	Modified 2018-20, Bartman/Abyss
 	$Id$
 */
 
