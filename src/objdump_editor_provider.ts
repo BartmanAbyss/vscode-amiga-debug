@@ -115,7 +115,7 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 			document.timers = [];
 			document.timers.push(setTimeout(async () => {
 				document.timers = [];
-				console.log(`"ObjdumpEditorProvider: Reload ${e.fsPath}`);
+				console.log(`ObjdumpEditorProvider: Reload ${e.fsPath}`);
 				await document.load();
 				webviewPanel.webview.postMessage({
 					type: 'reload',
