@@ -170,6 +170,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
+* Objdump: mark consecutive assembly lines with same source location
 * WinUAE: fill memory with $DEAD on startup to better find uninitialized memory bugs
 * Assembly profiler: RTS seems to have its time added to previous instruction
 * Debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)

@@ -214,24 +214,25 @@ export const ObjdumpView: FunctionComponent<{
 }> = ({ frame = -1, time = -1 }) => {
 	const cssVariables = useCssVariables();
 	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
+	const [model, setModel] = useState<ObjdumpModel>(() => {
+		if(frame === -1)
+			return new ObjdumpModel(OBJDUMP);
+
+		const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
+		const hits = new Array<number>(textSection.size >> 1).fill(0);
+		const cycles = new Array<number>(textSection.size >> 1).fill(0);
+		const pcTrace = MODELS[frame].amiga.pcTrace;
+		for(let i = 0; i < pcTrace.length; i += 2) {
+			if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
+				hits[pcTrace[i] >> 1]++;
+				cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
+			}
+		}
+		return new ObjdumpModel(MODELS[0].amiga.objdump, hits, cycles);
+	});
+	const [opacity, setOpacity] = useState(1.0);
 
 	const [content, functions, jumps] = useMemo(() => {
-		const model = (() => {
-			if(frame === -1)
-				return new ObjdumpModel(OBJDUMP);
-
-			const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
-			const hits = new Array<number>(textSection.size >> 1).fill(0);
-			const cycles = new Array<number>(textSection.size >> 1).fill(0);
-			const pcTrace = MODELS[frame].amiga.pcTrace;
-			for(let i = 0; i < pcTrace.length; i += 2) {
-				if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
-					hits[pcTrace[i] >> 1]++;
-					cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
-				}
-			}
-			return new ObjdumpModel(MODELS[0].amiga.objdump, hits, cycles);
-		})();
 		const pcMap = new Map<number, number>(); // pc -> row index
 		model.content.forEach((line, index) => {
 			if(line.pc !== undefined)
@@ -255,7 +256,7 @@ export const ObjdumpView: FunctionComponent<{
 		//console.log(jumps);
 
 		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())), jumps];
-	}, [frame, rowHeight]);
+	}, [model, rowHeight]);
 
 	const [curRow, setCurRow] = useState(0);
 
@@ -288,7 +289,7 @@ export const ObjdumpView: FunctionComponent<{
 		}
 		console.timeEnd("findResult");
 		return result;
-	}, [frame, find]);
+	}, [content, find]);
 
 	const [row, pc, func] = useMemo(() => {
 		const row = (() => {
@@ -313,7 +314,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(pc === 0xffffffff)
 			func = { name: '[External]', pc: 0xffffffff, end: 0xffffffff };
 		return [row, pc, func];
-	}, [frame, time, curRow]);
+	}, [frame, time, content, curRow]);
 
 	const onClickLoc = useCallback((evt: MouseEvent) => {
 		VsCodeApi.postMessage<IOpenDocumentMessage>({
@@ -346,10 +347,10 @@ export const ObjdumpView: FunctionComponent<{
 				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>
 			{text}
-			{c.loc !== undefined ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
+			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row, findResult, find, curFind]);
+	}, [onClickLoc, row, frame, findResult, find, curFind]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -449,7 +450,7 @@ export const ObjdumpView: FunctionComponent<{
 		} else {
 			setScroller(new Scrollable(listRef.current.base as HTMLElement, 135));
 		}
-	}, [row, scroller, rowHeight, listRef.current, find, findResult]);
+	}, [content, row, scroller, rowHeight, listRef.current, find, findResult]);
 
 	if(frame === -1) {
 		// cursor navigation
@@ -500,28 +501,39 @@ export const ObjdumpView: FunctionComponent<{
 			};
 			document.addEventListener('keydown', listener);
 			return () => document.removeEventListener('keydown', listener);
-		}, [findRef, setFind]);
+		}, [content, findRef, setFind]);
 	}
 
 	useEffect(() => {
-		const listener = (e) => {
-			const { type, body } = e.data;
-			switch(type) {
-			case 'findLocation': 
-				console.log(type, body);
-				const loc = `${body.file}:${body.line}`;
-				// open search bar
-				findRef.current.classList.remove(styles.find_hidden);
-				findRef.current.classList.add(styles.find_visible);
-				findRef.current.getElementsByTagName('input')[0].select();
-				findRef.current.getElementsByTagName('input')[0].value = loc;
-				setFind({ text: loc, internal: false });
-				break;
-			}
-		};
-		window.addEventListener('message', listener);
-		return () => document.removeEventListener('message', listener);
-	}, [findRef, setFind]);
+		if(frame === -1) {
+			const listener = (e: MessageEvent) => {
+				const { type, body } = e.data;
+				switch(type) {
+				case 'findLocation': 
+					console.log("Message", type, body);
+					const loc = `${body.file}:${body.line}`;
+					// open search bar
+					findRef.current.classList.remove(styles.find_hidden);
+					findRef.current.classList.add(styles.find_visible);
+					findRef.current.getElementsByTagName('input')[0].select();
+					findRef.current.getElementsByTagName('input')[0].value = loc;
+					setFind({ text: loc, internal: false });
+					break;
+				case 'fileChanged':
+					console.log("Message", type);
+					setOpacity(0.5);
+					break;
+				case 'reload':
+					console.log("Message", type);
+					setOpacity(1.0);
+					setModel(new ObjdumpModel(body));
+					break;
+				}
+			};
+			window.addEventListener('message', listener);
+			return () => document.removeEventListener('message', listener);
+		}
+	}, [findRef, setFind, setModel, frame]);
 
 	const onChangeFunction = useCallback((selected: Function) => { 
 		const sel = content.findIndex((c: Line) => c.pc === selected.pc);
@@ -531,7 +543,7 @@ export const ObjdumpView: FunctionComponent<{
 			const scrollTo = (sel - 2) * rowHeight; // -2: function line
 			scroller.setScrollPositionSmooth(scrollTo);
 		}
-	}, [scroller]);
+	}, [content, scroller]);
 
 	const onClickContainer = useCallback((evt: MouseEvent) => {
 		if(frame === -1) {
@@ -539,7 +551,6 @@ export const ObjdumpView: FunctionComponent<{
 			for(let elem = evt.srcElement as HTMLElement; elem; elem = elem.parentElement) {
 				if(elem.attributes['data-row']) {
 					const row = parseInt(elem.attributes['data-row'].value);
-					console.log(row);
 					setCurRow(row);
 					return;
 				}
@@ -598,6 +609,6 @@ export const ObjdumpView: FunctionComponent<{
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>
-		<VirtualListLine ref={listRef} class={styles.container} rows={content} renderRow={renderRow} rowHeight={rowHeight} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
+		<VirtualListLine ref={listRef} class={styles.container} style={{opacity}} rows={content} renderRow={renderRow} rowHeight={rowHeight} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
 	</Fragment>;
 };

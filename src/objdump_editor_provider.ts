@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { bundlePage } from './profile_editor_provider';
 import { Disassemble } from './backend/profile';
+import * as fs from 'fs';
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -38,18 +39,26 @@ export class WebviewCollection {
 
 class ObjdumpDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
+		this.elfPath = this.uri.fsPath.substr(0, this.uri.fsPath.length - ".objdump".length);
+		this.watcher = vscode.workspace.createFileSystemWatcher(this.elfPath, true, false, true);
 	}
 
 	public async load() {
-		const elfPath = this.uri.fsPath.substr(0, this.uri.fsPath.length - ".objdump".length);
 		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
-		this.content = Disassemble(objdumpPath, elfPath);
+		this.content = Disassemble(objdumpPath, this.elfPath);
 	}
+
+	private elfPath: string;
 
 	public content: string;
 
-	public dispose() {}
+	public timers: NodeJS.Timeout[] = [];
+	public watcher: vscode.FileSystemWatcher;
+
+	public dispose() {
+		this.watcher.dispose();
+	}
 }
 
 export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvider<ObjdumpDocument> {
@@ -92,10 +101,27 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 					selection: new vscode.Range(message.line - 1, 0, message.line, 0)
 				});
 				return;
-			//case 'setCodeLenses':
-			//	this.lenses.registerLenses(this.createLensCollection(message.lenses));
-			//	return;
 			}
+		});
+
+		document.watcher.onDidChange(async (e) => {
+			// wait 2000ms before reloading, linker may not be finished writing .elf file, and if we don't wait, we get crap
+			console.log(`ObjdumpEditorProvider: onDidChange(${e.fsPath}) -- wait 2000 msec`);
+			webviewPanel.webview.postMessage({
+				type: 'fileChanged',
+				body: document.content
+			});
+			document.timers.forEach((t) => clearTimeout(t));
+			document.timers = [];
+			document.timers.push(setTimeout(async () => {
+				document.timers = [];
+				console.log(`"ObjdumpEditorProvider: Reload ${e.fsPath}`);
+				await document.load();
+				webviewPanel.webview.postMessage({
+					type: 'reload',
+					body: document.content
+				});
+			}, 2000));
 		});
 	}
 

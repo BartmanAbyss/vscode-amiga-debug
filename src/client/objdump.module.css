@@ -82,6 +82,7 @@
   white-space: pre;
   flex-grow: 1;
   overflow: auto;
+  transition: opacity linear 0.2s;
 }
 
 svg .jumpduration {
