@@ -293,7 +293,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [row, pc, func] = useMemo(() => {
 		const row = (() => {
-			if(frame === -1)
+			if(frame === -1 || findResult.length)
 				return curRow;
 			const pcTrace = MODELS[frame].amiga.pcTrace;
 			let t = 0;
@@ -314,7 +314,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(pc === 0xffffffff)
 			func = { name: '[External]', pc: 0xffffffff, end: 0xffffffff };
 		return [row, pc, func];
-	}, [frame, time, content, curRow]);
+	}, [frame, time, content, curRow, findResult.length]);
 
 	const onClickLoc = useCallback((evt: MouseEvent) => {
 		VsCodeApi.postMessage<IOpenDocumentMessage>({
@@ -330,8 +330,25 @@ export const ObjdumpView: FunctionComponent<{
 
 	const renderRow = useCallback((c: Line, index: number) => {
 		const extra = [];
-		if(index === row)
+
+		function getLoc(row: number) {
+			for(let i = row; i > 0; i--) {
+				if(content[i].loc !== undefined)
+					return content[i].loc;
+			}
+		}
+	
+		if(index === row) {
 			extra.push(styles.cur);
+		} else if(row !== -1 && content[row].pc !== undefined && content[index].pc !== undefined) {
+			// highlight rows with the same source location as the current row
+			const curLoc = getLoc(row);
+			if(curLoc) {
+				const loc = getLoc(index);
+				if(loc === curLoc)
+					extra.push(styles.cur_same_loc);
+			}
+		}
 
 		const text = (find.internal && findResult.length > 0) 
 		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
@@ -350,7 +367,7 @@ export const ObjdumpView: FunctionComponent<{
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row, frame, findResult, find, curFind]);
+	}, [onClickLoc, row, content, frame, findResult, find, curFind]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -452,11 +469,25 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, [content, row, scroller, rowHeight, listRef.current, find, findResult]);
 
-	if(frame === -1) {
-		// cursor navigation
-		useEffect(() => {
-			const navStack: number[] = [];
-			const listener = (evt: KeyboardEvent) => {
+	// cursor navigation
+	useEffect(() => {
+		const navStack: number[] = [];
+		const listener = (evt: KeyboardEvent) => {
+			if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+				// open search bar
+				findRef.current.classList.remove(styles.find_hidden);
+				findRef.current.classList.add(styles.find_visible);
+				findRef.current.getElementsByTagName('input')[0].select();
+				evt.preventDefault();
+			} else if(evt.key === 'Escape') {
+				// close search bar
+				findRef.current.getElementsByTagName('input')[0].blur();
+				findRef.current.classList.remove(styles.find_visible);
+				findRef.current.classList.add(styles.find_hidden);
+				setFind({ text: '', internal: true });
+				evt.preventDefault();
+			}
+			if(frame === -1) {
 				if(evt.key === 'ArrowDown')
 					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
 				else if(evt.key === 'ArrowUp')
@@ -484,25 +515,14 @@ export const ObjdumpView: FunctionComponent<{
 							return navStack.pop();
 						return curRow;
 					});
-				} else if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
-					// open search bar
-					findRef.current.classList.remove(styles.find_hidden);
-					findRef.current.classList.add(styles.find_visible);
-					findRef.current.getElementsByTagName('input')[0].select();
-				} else if(evt.key === 'Escape') {
-					// close search bar
-					findRef.current.getElementsByTagName('input')[0].blur();
-					findRef.current.classList.remove(styles.find_visible);
-					findRef.current.classList.add(styles.find_hidden);
-					setFind({ text: '', internal: true });
 				} else
 					return;
 				evt.preventDefault();
-			};
-			document.addEventListener('keydown', listener);
-			return () => document.removeEventListener('keydown', listener);
-		}, [content, findRef, setFind]);
-	}
+			}
+		};
+		document.addEventListener('keydown', listener);
+		return () => document.removeEventListener('keydown', listener);
+	}, [content, findRef, setFind]);
 
 	useEffect(() => {
 		if(frame === -1) {
@@ -598,7 +618,7 @@ export const ObjdumpView: FunctionComponent<{
 	}, [findRef]);
 	
 	return <Fragment>
-		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
+		<div class={styles.wrapper}>
 			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
 				<input placeholder="Find" onClick={onFindClick} onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
 				<span class={styles.find_result}>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>

@@ -79,6 +79,8 @@ Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
 
 P61.testmod - Module by Skylord/Sector 7 
 
+[depack_doynax.s](https://csdb.dk/release/?id=118678) - Lempel-Ziv decompressor by Johan "Doynax" Forslöf.
+
 This extension contains binaries of:
 - modified [GCC 10.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
   - Copyright (C) 2020 Free Software Foundation, Inc.
@@ -170,18 +172,25 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
 ## Known Issues/TODOs
-* Objdump: mark consecutive assembly lines with same source location
-* WinUAE: fill memory with $DEAD on startup to better find uninitialized memory bugs
-* Assembly profiler: RTS seems to have its time added to previous instruction
-* Debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
-* profiling: lines of functions seem to be off (see template/main.c: function main)
-* code lenses: update when display unit changes, when frame changes
-* multi-frame profiling: allow user to select number of frames
+
+### Documentation
+* TODO: better documentation, videos for new features
+
+### Profiler
+* TODO: support A1200
+* lines of functions seem to be off (see template/main.c: function main)
+* TODO: multi-frame profiling: allow user to select number of frames
+* TODO: code lenses: update when display unit changes, when frame changes
+
+### Objdump
+* TODO: click/follow any addresses
+
+### WinUAE
+* TODO: fill memory with $DEAD on startup to better find uninitialized memory bugs
+* TODO: debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
+
+### Debugger
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
-* show blitter priority in profiler
-* show source blitter-rects
-* show 2 resources
-* tooltips for blitter-rects?
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * restartRequest not implemented
 * vscode.debug.activeDebugSession is undefined when program is stopped on entry
@@ -190,3 +199,10 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
 * memory, disassembly: use VSCode built-in requests <= not implemented in VSCode, only in DebugAdapter specification
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
+
+### Gfx Debugger
+* TODO: show blitter priority in profiler
+* TODO: show source blitter-rects
+* TODO: show 2 resources
+* TODO: tooltips for blitter-rects?
+

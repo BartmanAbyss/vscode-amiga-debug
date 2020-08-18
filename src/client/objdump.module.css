@@ -73,6 +73,12 @@
   margin-right: 0.25em;
 }
 
+.wrapper {
+  font-size: var(--vscode-editor-font-size);
+  margin-bottom: 5px;
+  position: relative;
+}
+
 .container {
 	background: var(--vscode-editor-background);
 	color: var(--vscode-editor-foreground);
@@ -182,6 +188,10 @@ a:focus {
 .cur {
 	background-color: var(--vscode-editor-selectionBackground);
 	color: var(--vscode-editor-selectionForeground);
+}
+
+.cur_same_loc {
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
 }
 
 .find_hit {
