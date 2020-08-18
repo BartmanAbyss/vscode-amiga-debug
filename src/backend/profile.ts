@@ -264,6 +264,7 @@ export class ProfileFrame {
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
+	public profileCycles: number;
 	public idleCycles: number;
 	public profileArray: Uint32Array;
 	public screenshot: Uint8Array;
@@ -280,10 +281,15 @@ export class ProfileFile {
 	public systemStackUpper: number;
 	public stackLower: number;
 	public stackUpper: number;
+
 	public chipMemSize: number;
 	public chipMem: Uint8Array;
 	public bogoMemSize: number;
 	public bogoMem: Uint8Array;
+
+	public baseclock: number;
+	public cpucycleunit: number;
+
 	public frames: ProfileFrame[] = [];
 
 	private static sizeofDmaRec = 20;
@@ -307,6 +313,11 @@ export class ProfileFile {
 		this.chipMem = new Uint8Array(buffer.buffer, bufferOffset, this.chipMemSize); bufferOffset += this.chipMemSize;
 		this.bogoMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, this.bogoMemSize); bufferOffset += this.bogoMemSize;
+
+		// CPU info
+		this.baseclock = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.cpucycleunit = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		console.log("baseclock", this.baseclock, "cpucycleunit", this.cpucycleunit);
 
 		for(let i = 0; i < numFrames; i++) {
 			const frame = new ProfileFrame();
@@ -367,12 +378,12 @@ export class ProfileFile {
 				frame.gfxResources.push(resource);
 			}
 
+			frame.profileCycles = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			frame.idleCycles = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			console.log("profileCycles", frame.profileCycles, "idleCycles", frame.idleCycles);
 
 			// profiles
 			const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-			//if(profileCount !== (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT)
-			//	throw new Error("profileCount mismatch");
 			// profileArray may be unaligned, so manually read entries
 			//frame.profileArray = new Uint32Array(buffer.buffer, bufferOffset, (buffer.length - bufferOffset) / Uint32Array.BYTES_PER_ELEMENT);
 			frame.profileArray = new Uint32Array(profileCount);
@@ -472,7 +483,7 @@ export class Profiler {
 				callstack.frames.length = 0;
 			}
 		}
-		//console.log("totalCycles", totalCycles);
+		console.log("totalCycles", totalCycles);
 
 		// filter symbols
 		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));

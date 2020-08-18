@@ -28,7 +28,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - WinUAE warp-launch (turbo-boot)
 - WinUAE warp-mode control from your Amiga project (speed up precalc during development)
 - WinUAE debug overlay, full control from your Amiga project
-- Frame Profiler: function-level + DMA cycles profiling (68000 only)
+- Frame Profiler: function-level + DMA cycles profiling (A500, A1200 (PAL) only)
 - Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes, copper list, custom registers
 - Size Profiler: profile the size of your executable by functions, data and references
 - Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (right-click Amiga EXE files in the explorer)

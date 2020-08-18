@@ -160,13 +160,13 @@ function makeDirs() {
 
 function test_profile_time(base: string, elf: string) {
 	makeDirs();
-	const profileArchive = new ProfileFile(path.join(testDataDir, base));
+	const profileFile = new ProfileFile(path.join(testDataDir, base));
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
-	symbolTable.relocate(symbolTable.getRelocatedSections(profileArchive.sectionBases));
+	symbolTable.relocate(symbolTable.getRelocatedSections(profileFile.sectionBases));
 
 	const profiler = new Profiler(sourceMap, symbolTable);
-	const json = profiler.profileTime(profileArchive, Disassemble(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf)));
+	const json = profiler.profileTime(profileFile, Disassemble(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf)));
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
 	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".time.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
@@ -206,8 +206,11 @@ suite("Profiler", () => {
 	test("unwind bitshmup.elf", () => {
 		test_unwind('private/bitshmup.elf');
 	});
-	test("Time: test.elf", () => {
-		test_profile_time('amiga-profile-2020.07.15-17.49.00', 'test.elf');
+	test("Time: test.elf A500", () => {
+		test_profile_time('amiga-profile-2020.08.18-21.34.52_A500', 'test.elf');
+	});
+	test("Time: test.elf A1200", () => {
+		test_profile_time('amiga-profile-2020.08.18-21.31.05_A1200', 'test.elf');
 	});*/
 	test("Size: test.elf", () => {
 		test_profile_size('test', 'test.elf');
