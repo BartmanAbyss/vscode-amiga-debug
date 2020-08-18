@@ -19,7 +19,7 @@ struct GfxBase *GfxBase;
 static UWORD SystemInts;
 static UWORD SystemDMA;
 static UWORD SystemADKCON;
-volatile static APTR VBR=0;
+static volatile APTR VBR=0;
 static APTR SystemIrq;
  
 struct View *ActiView;
@@ -170,8 +170,8 @@ INCBIN(player, "player610.6.no_cia.bin")
 INCBIN_CHIP(module, "testmod.p61")
 
 void* doynaxdepack(const void* input, void* output) { // returns end of output data, input needs to be 16-bit aligned!
-	volatile register const void* _a0 __asm("a0") = input;
-	volatile register       void* _a1 __asm("a1") = output;
+	register volatile const void* _a0 __asm("a0") = input;
+	register volatile       void* _a1 __asm("a1") = output;
 	__asm volatile (
 		"movem.l %%d0-%%d7/%%a2-%%a6,-(%%sp)\n"
 		"jsr _doynaxdepack_asm\n"
@@ -183,10 +183,10 @@ void* doynaxdepack(const void* input, void* output) { // returns end of output d
 }
 
 int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
-	volatile register const void* _a0 __asm("a0") = module;
-	volatile register const void* _a1 __asm("a1") = NULL;
-	volatile register const void* _a2 __asm("a2") = NULL;
-	volatile register const void* _a3 __asm("a3") = player;
+	register volatile const void* _a0 __asm("a0") = module;
+	register volatile const void* _a1 __asm("a1") = NULL;
+	register volatile const void* _a2 __asm("a2") = NULL;
+	register volatile const void* _a3 __asm("a3") = player;
 	         register int         _d0 __asm("d0"); // return value
 	__asm volatile (
 		"movem.l %%d1-%%d7/%%a4-%%a6,-(%%sp)\n"
@@ -199,8 +199,8 @@ int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
 }
 
 void p61Music() {
-	volatile register const void* _a3 __asm("a3") = player;
-	volatile register const void* _a6 __asm("a6") = (void*)0xdff000;
+	register volatile const void* _a3 __asm("a3") = player;
+	register volatile const void* _a6 __asm("a6") = (void*)0xdff000;
 	__asm volatile (
 		"movem.l %%d0-%%d7/%%a0-%%a2/%%a4-%%a5,-(%%sp)\n"
 		"jsr 4(%%a3)\n"
@@ -211,8 +211,8 @@ void p61Music() {
 }
 
 void p61End() {
-	volatile register const void* _a3 __asm("a3") = player;
-	volatile register const void* _a6 __asm("a6") = (void*)0xdff000;
+	register volatile const void* _a3 __asm("a3") = player;
+	register volatile const void* _a6 __asm("a6") = (void*)0xdff000;
 	__asm volatile (
 		"movem.l %%d0-%%d1/%%a0-%%a1,-(%%sp)\n"
 		"jsr 8(%%a3)\n"

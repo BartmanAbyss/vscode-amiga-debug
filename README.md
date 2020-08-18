@@ -191,11 +191,15 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ### Objdump
 * TODO: click/follow any addresses
 
+### Terminal
+* Terminal doesn't open again once closed
+
 ### WinUAE
 * TODO: fill memory with $DEAD on startup to better find uninitialized memory bugs
 * TODO: debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 
 ### Debugger
+* disassembly chokes a bit on newlines
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
 * restartRequest not implemented
