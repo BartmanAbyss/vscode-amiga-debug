@@ -695,6 +695,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected threadExitedEvent(info: { threadId: number, threadGroupId: number }) {
 		this.sendEvent(new ThreadEvent('exited', info.threadId));
+		this.quitEvent();
 	}
 
 	protected threadSelectedEvent(info: { threadId: number }) {
