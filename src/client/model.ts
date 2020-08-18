@@ -327,7 +327,12 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		shrinkler: profile.$shrinkler,
 	};
 	if (model.amiga) {
-		model.duration = 7_093_790 / 50; // DMA TEST
+		// set duration to exactly 1 frame
+		const hz = (model.amiga.baseClock === 28375160) ? 50 /* PAL */ : 60 /* NTSC */;
+		const cpuFreq = model.amiga.baseClock * model.amiga.cpuCycleUnit / 256;
+		model.duration = cpuFreq / hz;
+		console.log("hz", hz, "cpuFreq", cpuFreq, "duration", model.duration);
+
 		// decode memory to binary
 		if(model.amiga.chipMem) {
 			const chipMem = Uint8Array.from(atob(model.amiga.chipMem), (c) => c.charCodeAt(0));

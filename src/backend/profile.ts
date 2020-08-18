@@ -287,8 +287,8 @@ export class ProfileFile {
 	public bogoMemSize: number;
 	public bogoMem: Uint8Array;
 
-	public baseclock: number;
-	public cpucycleunit: number;
+	public baseClock: number;
+	public cpuCycleUnit: number;
 
 	public frames: ProfileFrame[] = [];
 
@@ -315,9 +315,9 @@ export class ProfileFile {
 		this.bogoMem = new Uint8Array(buffer.buffer, bufferOffset, this.bogoMemSize); bufferOffset += this.bogoMemSize;
 
 		// CPU info
-		this.baseclock = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		this.cpucycleunit = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-		console.log("baseclock", this.baseclock, "cpucycleunit", this.cpucycleunit);
+		this.baseClock = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.cpuCycleUnit = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		console.log("baseclock", this.baseClock, "cpucycleunit", this.cpuCycleUnit);
 
 		for(let i = 0; i < numFrames; i++) {
 			const frame = new ProfileFrame();
@@ -413,6 +413,10 @@ export class Profiler {
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
 		out[0].$amiga.objdump = disassembly;
 
+		// CPU info
+		out[0].$amiga.baseClock = profileFile.baseClock;
+		out[0].$amiga.cpuCycleUnit = profileFile.cpuCycleUnit;
+
 		return JSON.stringify(out/*, null, 2*/);
 	}
 
@@ -483,7 +487,7 @@ export class Profiler {
 				callstack.frames.length = 0;
 			}
 		}
-		console.log("totalCycles", totalCycles);
+		//console.log("totalCycles", totalCycles);
 
 		// filter symbols
 		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));

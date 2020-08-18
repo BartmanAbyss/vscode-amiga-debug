@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { ILocation } from './model';
+import { ICpuProfileRaw } from './types';
 
 /**
  * Gets the human-readable label for the given location.
@@ -68,13 +69,22 @@ export const dataName = (unit: DisplayUnit) => {
 	}
 };
 
+declare let PROFILES: ICpuProfileRaw[]; // hmm...
+
 export const scaleValue = (value: number, total: number, unit: DisplayUnit) => {
-	const cyclesPerMicroSecond = 7.093790;
+	const cyclesPerMicroSecond = (() => {
+		if(PROFILES.length) {
+			const cpuFreq = PROFILES[0].$amiga.baseClock * PROFILES[0].$amiga.cpuCycleUnit / 256;
+			return cpuFreq / 1_000_000;
+		}
+		return 7.093790;
+	})();
+
 	switch(unit) {
 	case DisplayUnit.Microseconds: return value / cyclesPerMicroSecond;
 	case DisplayUnit.Cycles: return value;
 	case DisplayUnit.Lines: return value / cyclesPerMicroSecond / 200 * 312.5 / 100; // PAL defaults to 313 lines, if VPOSW LOF-bit is not set, it's 312 lines; 7.09MHz/50=312.5 lines
-	case DisplayUnit.PercentFrame: return value / cyclesPerMicroSecond / 200;
+	case DisplayUnit.PercentFrame: return value / cyclesPerMicroSecond / 200; // PAL 20ms per frame
 	case DisplayUnit.Bytes: return Math.round(value);
 	case DisplayUnit.BytesHex: return Math.round(value);
 	case DisplayUnit.Percent: return value / total * 100;

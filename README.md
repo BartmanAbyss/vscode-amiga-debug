@@ -178,7 +178,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: better documentation, videos for new features
 
 ### Profiler
-* TODO: support A1200
+* TODO: refactor cycles/color clocks for different CPU frequencies
 * lines of functions seem to be off (see template/main.c: function main)
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
