@@ -159,7 +159,6 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		const symbols: vscode.DocumentSymbol[] = [];
 		context.labels.forEach((value, key) => {
 			symbols.push(new vscode.DocumentSymbol(key, '*DETAIL*', vscode.SymbolKind.Function, new vscode.Range(value, 0, value, 1000), new vscode.Range(value, 0, value, 1000)));
-
 		});
 		return symbols;
 	}

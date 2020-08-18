@@ -28,10 +28,11 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - WinUAE warp-launch (turbo-boot)
 - WinUAE warp-mode control from your Amiga project (speed up precalc during development)
 - WinUAE debug overlay, full control from your Amiga project
-- Frame Profiler: function-level + DMA cycles profiling
+- Frame Profiler: function-level + DMA cycles profiling (68000 only)
 - Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes, copper list, custom registers
 - Size Profiler: profile the size of your executable by functions, data and references
 - Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (right-click Amiga EXE files in the explorer)
+- Disassembly: Show disassembly of ELF file incl. 68000 cycle count and correlation with source code (right-click Amiga ELF files in the explorer)
 - Terminal window with access to the build tools
 - Extension automatically mounts executable's directory as `dh1:`, allowing for reading and writing files.
 
@@ -181,6 +182,11 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * lines of functions seem to be off (see template/main.c: function main)
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
+
+### Assembly
+* TODO: parser needs to check for comments
+* TODO: show 68000 cycles
+* TODO: more...
 
 ### Objdump
 * TODO: click/follow any addresses
