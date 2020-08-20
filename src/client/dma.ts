@@ -1,7 +1,17 @@
 import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters, CustomReadWrite } from './customRegisters';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
-import { IAmigaProfileExtra } from "./types";
+import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
+
+declare let PROFILES: ICpuProfileRaw[];
+
+export function CpuCyclesToDmaCycles(cpuCycles: number) {
+	return (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
+}
+
+export function DmaCyclesToCpuCycles(dmaCycles: number) {
+	return (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
+}
 
 export class Memory {
 	private chipMemAddr = 0x00000000;
@@ -166,10 +176,10 @@ export enum BlitterChannel {
 }
 
 export interface Blit {
-	cycleStart: number;
+	cycleStart: number; // DMA cycles
 	vposStart: number;
 	hposStart: number;
-	cycleEnd?: number;
+	cycleEnd?: number; // DMA cycles
 	vposEnd?: number;
 	hposEnd?: number;
 	BLTSIZH: number;

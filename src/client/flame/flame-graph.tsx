@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress, DmaCyclesToCpuCycles } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 import Markdown from 'markdown-to-jsx';
@@ -130,7 +130,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
 	let dmacon = MODEL.amiga.dmacon;
 
-	const duration = 7_093_790 / 50 * (7_093_790 / 50 / MODEL.duration);
+	const duration = 7_093_790 / 50;
 	const boxes: IBox[] = [];
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
@@ -200,7 +200,7 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 	if(!MODEL.blits)
 		return [];
 
-	const duration = 7_093_790 / 50 * (7_093_790 / 50 / MODEL.duration);
+	const duration = 7_093_790 / 50;
 	const boxes: IBox[] = [];
 
 	for(const blit of MODEL.blits) {
@@ -1235,7 +1235,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={amiga.blit.cycleEnd * 2} />
+			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={DmaCyclesToCpuCycles(amiga.blit.cycleEnd)} />
 		</div>}
 	</Fragment>);
 };

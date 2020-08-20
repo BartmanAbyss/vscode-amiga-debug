@@ -9,7 +9,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CustomRegisters, CustomReadWrite, CustomSpecial } from '../customRegisters';
-import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime } from '../dma';
+import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles } from '../dma';
 
 const CustomReg: FunctionComponent<{
 	frame: number,
@@ -19,20 +19,21 @@ const CustomReg: FunctionComponent<{
 	prevRegs: number[],
 	customRegs: number[],
 }> = ({ frame, time, setTime, index, prevRegs, customRegs }) => {
+	const dmaTime = CpuCyclesToDmaCycles(time);
 	const navPrev = useCallback(() => {
-		let newCycle = GetPrevCustomRegWriteTime(index, time >> 1, MODELS[frame].amiga.dmaRecords);
+		let newCycle = GetPrevCustomRegWriteTime(index, dmaTime, MODELS[frame].amiga.dmaRecords);
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
-			newCycle = Math.max(newCycle || (time >> 1), GetPrevCustomRegWriteTime(index + 1, time >> 1, MODELS[frame].amiga.dmaRecords));
+			newCycle = Math.max(newCycle || dmaTime, GetPrevCustomRegWriteTime(index + 1, dmaTime, MODELS[frame].amiga.dmaRecords));
 		if(newCycle !== undefined)
-			setTime(newCycle << 1);
-	}, [time, frame]);
+			setTime(DmaCyclesToCpuCycles(newCycle));
+	}, [dmaTime, frame]);
 	const navNext = useCallback(() => {
-		let newCycle = GetNextCustomRegWriteTime(index, time >> 1, MODELS[frame].amiga.dmaRecords);
+		let newCycle = GetNextCustomRegWriteTime(index, dmaTime, MODELS[frame].amiga.dmaRecords);
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
-			newCycle = Math.min(newCycle || (time >> 1), GetNextCustomRegWriteTime(index + 1, time >> 1, MODELS[frame].amiga.dmaRecords));
+			newCycle = Math.min(newCycle || dmaTime, GetNextCustomRegWriteTime(index + 1, dmaTime, MODELS[frame].amiga.dmaRecords));
 		if(newCycle !== undefined)
-			setTime(newCycle << 1);
-	}, [time, frame]);
+			setTime(DmaCyclesToCpuCycles(newCycle));
+	}, [dmaTime, frame]);
 
 	const Nav = <div class={styles.nav}>
 		<button class={styles.button} onMouseDown={navPrev} type="button" dangerouslySetInnerHTML={{__html: ChevronLeft}} />
@@ -63,8 +64,9 @@ export const CustomRegsView: FunctionComponent<{
 	time: number,
 	setTime
 }> = ({ frame, time, setTime }) => {
-	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, Math.max(0, (time >> 1) - 1)), [time, frame]);
-	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
+	const dmaTime = CpuCyclesToDmaCycles(time);
+	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, Math.max(0, dmaTime - 1)), [dmaTime, frame]);
+	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, dmaTime), [dmaTime, frame]);
 
 	const wantCustom = (index: number) => {
 		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.ptl)

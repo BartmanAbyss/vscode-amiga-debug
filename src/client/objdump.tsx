@@ -119,7 +119,7 @@ export class ObjdumpModel {
 		this.jumps.push(...sortedJumps);
 	}
 
-	constructor(objdump: string, traceHits?: number[], traceCycles?: number[]) {
+	constructor(objdump: string, theoreticalCycles = true, traceHits?: number[], traceCycles?: number[]) {
 		const lines = objdump.replace(/\r/g, '').split('\n');
 		let loc: Location;
 		let funcJumps: JumpInfo[] = [];
@@ -166,7 +166,7 @@ export class ObjdumpModel {
 				this.content.push({
 					pc,
 					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
-					theoreticalCycles: GetCycles(insn),
+					theoreticalCycles: theoreticalCycles ? GetCycles(insn) : undefined,
 					loc
 				});
 				loc = undefined;
@@ -228,7 +228,7 @@ export const ObjdumpView: FunctionComponent<{
 				cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
 			}
 		}
-		return new ObjdumpModel(MODELS[0].amiga.objdump, hits, cycles);
+		return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, hits, cycles); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
 

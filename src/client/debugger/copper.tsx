@@ -9,7 +9,7 @@ declare const MODELS: IProfileModel[];
 
 import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, Copper } from '../dma';
+import { GetCopper, Copper, CpuCyclesToDmaCycles } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 
@@ -23,16 +23,17 @@ export const CopperView: FunctionComponent<{
 	const tooltipRef = useRef<HTMLDivElement>();
 
 	// get copper instruction that is executing at 'time'
+	const dmaTime = CpuCyclesToDmaCycles(time);
 	let curInsn = -1;
 	for(let i = 0; i < copper.length - 1; i++) {
-		if(copper[i].cycle <= time >> 1 && copper[i + 1].cycle > time >> 1) {
+		if(copper[i].cycle <= dmaTime && copper[i + 1].cycle > dmaTime) {
 			curInsn = i;
 			break;
 		}
 	}
 	if(curInsn === -1) {
 		// end of copperlist?
-		if(copper.length > 0 && copper[copper.length - 1].cycle <= time >> 1)
+		if(copper.length > 0 && copper[copper.length - 1].cycle <= dmaTime)
 			curInsn = copper.length - 1;
 	}
 
@@ -70,7 +71,7 @@ export const CopperView: FunctionComponent<{
 	}, [tooltipRef.current]);
 
 	return (<div ref={containerRef} class={styles.container}>
-		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > (time >> 1) ? styles.future : styles.past))}>
+		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <Fragment>

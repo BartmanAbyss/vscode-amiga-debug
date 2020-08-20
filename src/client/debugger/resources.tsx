@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma } from '../dma';
+import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -61,7 +61,7 @@ export const Screen: FunctionComponent<{
 	}
 	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
-	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1), [time, frame]);
+	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time)), [time, frame]);
 
 	const getPixel = useMemo(() => (scr: IScreen, x: number, y: number): number => {
 		let pixel = 0;
@@ -137,8 +137,9 @@ export const Screen: FunctionComponent<{
 		const overdrawHeight = screen.height;
 		const overdraw = new Uint16Array(overdrawWidth * overdrawHeight);
 		let i = 0;
-		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < time >> 1; cycleY++) {
-			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS && i < time >> 1; cycleX++, i++) {
+		const dmaTime = CpuCyclesToDmaCycles(time);
+		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS && i < dmaTime; cycleY++) {
+			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS && i < dmaTime; cycleX++, i++) {
 				const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 				if (dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
 					continue;
@@ -205,8 +206,9 @@ export const Screen: FunctionComponent<{
 		if (overlay !== 'blitrects')
 			return blitRects;
 
+		const dmaTime = CpuCyclesToDmaCycles(time);
 		for (const blit of MODELS[frame].blits) {
-			if (blit.cycleStart > time >> 1)
+			if (blit.cycleStart > dmaTime)
 				break;
 
 			// is this blit affecting our screen?
@@ -227,7 +229,7 @@ export const Screen: FunctionComponent<{
 			if (x === -1 || y === -1)
 				continue;
 
-			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > time >> 1 });
+			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > dmaTime });
 		}
 		return blitRects;
 	}, [screen, time, frame, overlay]);
@@ -422,7 +424,7 @@ export const GfxResourcesView: FunctionComponent<{
 		};
 		palettes.push({ resource: copperResource, frame, palette: copperPalette });
 
-		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, time >> 1);
+		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),

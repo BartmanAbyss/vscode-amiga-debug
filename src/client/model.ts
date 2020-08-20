@@ -328,10 +328,10 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	};
 	if (model.amiga) {
 		// set duration to exactly 1 frame
-		const hz = (model.amiga.baseClock === 28375160) ? 50 /* PAL */ : 60 /* NTSC */;
-		const cpuFreq = model.amiga.baseClock * model.amiga.cpuCycleUnit / 256;
+		const hz = (model.amiga.baseClock === 28_375_160) ? 50 /* PAL */ : 60 /* NTSC */;
+		const cpuFreq = model.amiga.baseClock / 4 * 256 / model.amiga.cpuCycleUnit;
 		model.duration = cpuFreq / hz;
-		console.log("hz", hz, "cpuFreq", cpuFreq, "duration", model.duration);
+		console.log("MODEL:", "hz", hz, "cpuCycleUnit", model.amiga.cpuCycleUnit, "cpuFreq", cpuFreq, "duration", model.duration);
 
 		// decode memory to binary
 		if(model.amiga.chipMem) {

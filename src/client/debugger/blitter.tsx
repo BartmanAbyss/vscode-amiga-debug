@@ -5,7 +5,7 @@ import styles from './blitter.module.css';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory } from '../dma';
+import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory, CpuCyclesToDmaCycles } from '../dma';
 
 import 'pubsub-js';
 
@@ -29,7 +29,7 @@ export const BlitterVis: FunctionComponent<{
 				GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, blit.cycleEnd || 0xffffffff)
 			];
 		} else {
-			const memory = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, time >> 1);
+			const memory = GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
 			return [memory, memory];
 		}
 	}, [blit, time, frame]);
@@ -128,9 +128,10 @@ export const BlitterList: FunctionComponent<{
 	}, []);*/
 
 	// get blit that is executing at 'time'
+	const dmaTime = CpuCyclesToDmaCycles(time);
 	let curBlit = -1;
 	for(let i = 0; i < blits.length; i++) {
-		if(blits[i].cycleStart <= (time >> 1) && blits[i].cycleEnd > (time >> 1)) {
+		if(blits[i].cycleStart <= dmaTime && blits[i].cycleEnd > dmaTime) {
 			curBlit = i;
 			break;
 		}
@@ -145,7 +146,7 @@ export const BlitterList: FunctionComponent<{
 	}, [curBlit, containerRef.current]);
 
 	return (<div ref={containerRef} class={styles.container}>
-		{blits.map((blit, i) => <div class={i === curBlit ? styles.cur : (blit.cycleEnd < (time >> 1) ? styles.past : styles.future)}>
+		{blits.map((blit, i) => <div class={i === curBlit ? styles.cur : (blit.cycleEnd < dmaTime ? styles.past : styles.future)}>
 			<BlitterVis blit={blit} frame={frame} time={/*i === curBlit ? */time/* : -1*/} />
 		</div>)}
 	</div>);
