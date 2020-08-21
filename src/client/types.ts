@@ -51,8 +51,8 @@ export interface IAmigaProfileExtra {
 	objdump?: string; // disassembly from objdump, only in frame[0]
 	chipMem?: string; // base64 encoded binary data, only in frame[0]
 	bogoMem?: string; // base64 encoded binary data, only in frame[0]
-	baseClock?: number; // only in frame[0]
-	cpuCycleUnit?: number; // only in frame[0]
+	baseClock?: number;
+	cpuCycleUnit?: number;
 	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
 	dmacon: number;
 	customRegs: number[];
