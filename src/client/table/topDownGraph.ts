@@ -129,7 +129,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
 				continue;
 
-			dmaTimes[(dmaSubtype << 4) | dmaType] += 2;
+			dmaTimes[(dmaSubtype << 4) | dmaType] += (512 / model.amiga.cpuCycleUnit) | 0;
 		}
 	}
 
@@ -233,6 +233,7 @@ export const createTopDownGraph = (model: IProfileModel) => {
 		root.childrenSize++;
 		root.children[0] = cpuRoot;
 	}
+	// CPU
 	for(const ch of model.nodes[0].children) {
 		const node = model.nodes[ch];
 		processNode(cpuRoot, node, model);
@@ -241,6 +242,7 @@ export const createTopDownGraph = (model: IProfileModel) => {
 		cpuRoot.origSelfTime += node.origAggregateTime;
 		cpuRoot.origAggregateTime += node.origAggregateTime;
 	}
+	// DMA
 	if(model.amiga) {
 		//root.selfTime = cpuRoot.selfTime;
 		root.aggregateTime = cpuRoot.aggregateTime;
