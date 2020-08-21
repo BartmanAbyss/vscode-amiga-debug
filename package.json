@@ -193,7 +193,15 @@
 							"config": {
 								"type": "string",
 								"description": "Amiga model (A500, A1200, A4000)",
-								"default": "A500"
+								"default": "A500",
+								"enum": [
+									"A500",
+									"A1200",
+									"A1200-FAST",
+									"A1200-030",
+									"A3000",
+									"A4000"
+								]
 							},
 							"program": {
 								"type": "string",
@@ -208,6 +216,11 @@
 							"kickstart": {
 								"type": "string",
 								"description": "Absolute path to a Kickstart ROM",
+								"default": ""
+							},
+							"cpuboard": {
+								"type": "string",
+								"description": "Absolute path to a CPU Board Extension ROM",
 								"default": ""
 							}
 						}

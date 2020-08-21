@@ -22,6 +22,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	config?: string; // A500 (default), A1200, etc.
 	program: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
+	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
 }
 
@@ -181,6 +182,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		config['win32.nonotificationicon'] = 'yes'; // tray icons remain after killing WinUAE, so just disable altogether
 		config['boot_rom_uae'] = 'min'; // so we can control warp mode, KPrintF, debug overlay from within amiga executables
 
+		// WinUAE: built_in_prefs
 		switch(args.config?.toLowerCase()) {
 		case 'a500':
 		default:
@@ -188,10 +190,17 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			break;
 		case 'a1200':
 			config['quickstart'] = 'a1200,0'; // 68020, 2MB Chip
-			//config['quickstart'] = 'a1200,3'; // 68040, 2MB Chip 32MB FAST
-			//config['quickstart'] = 'a1200,2'; // 68030, 2MB Chip 32MB FAST
-			//config['quickstart'] = 'a1200,1'; // 68020, 2MB Chip 4MB FAST
-			//config['quickstart'] = 'a3000,2'; // 68030, 2MB Chip
+			break;
+		case 'a1200-fast':
+			config['quickstart'] = 'a1200,1'; // 68020, 2MB Chip 4MB FAST
+			break;
+		case 'a1200-030':
+			config['quickstart'] = 'a1200,2'; // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
+			//config['quickstart'] = 'a1200,4'; // 68060, 2MB Chip 32MB FAST, Blizzard 1260
+			//config['quickstart'] = 'a1200,3'; // 68040, 2MB Chip 32MB FAST, Blizzard 1260
+			break;
+		case 'a3000':
+			config['quickstart'] = 'a3000,2'; // 68030, 2MB Chip
 			break;
 		case 'a4000':
 			config['quickstart'] = 'a4000,0'; // 68030, 68882, 2MB Chip 8MB FAST
@@ -205,6 +214,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return;
 			}
 			config['kickstart_rom_file'] = args.kickstart;
+		}
+
+		if(args.cpuboard !== undefined) {
+			if (!fs.existsSync(args.cpuboard)) {
+				this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
+				return;
+			}
+			config['cpuboard_rom_file'] = args.cpuboard;
 		}
 
 		// nice
