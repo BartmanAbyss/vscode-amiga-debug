@@ -68,16 +68,12 @@ inline int mulsw(short a, short b) {
     return r;
 }
 inline unsigned short divuw(unsigned int a, unsigned short b) {
-    int r; 
     asm("divuw %1,%0":"+d"(a): "mid"(b): "cc");
-	asm("" : "=d"(r) : "d"(a));
-    return r;
+    return a;
 }
 inline short divsw(int a, short b) {
-    int r; 
     asm("divsw %1,%0":"+d"(a): "mid"(b): "cc");
-	asm("" : "=d"(r) : "d"(a));
-    return r;
+    return a;
 }
 
 #ifdef __cplusplus
