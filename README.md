@@ -82,6 +82,8 @@ P61.testmod - Module by Skylord/Sector 7
 
 [depack_doynax.s](https://csdb.dk/release/?id=118678) - Lempel-Ziv decompressor by Johan "Doynax" Forslöf.
 
+[KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
+
 This extension contains binaries of:
 - modified [GCC 10.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
   - Copyright (C) 2020 Free Software Foundation, Inc.

@@ -6,6 +6,13 @@
 
 #define offsetof(st, m) __builtin_offsetof(st, m)
 
+// VSCode's IntelliSense doesn't know about 68000 registers, so suppress warnings
+#ifndef __INTELLISENSE__
+    #define ASM __asm
+#else
+    #define ASM(...)
+#endif
+
 void *memcpy (void *, const void *, unsigned long);
 void *memset (void *, int, unsigned long);
 void *memmove (void *, const void *, unsigned long);

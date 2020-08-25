@@ -10,6 +10,9 @@
 #include <hardware/dmabits.h>
 #include <hardware/intbits.h>
 
+//config
+//#define MUSIC
+
 struct ExecBase *SysBase;
 volatile struct Custom *custom;
 struct DosLibrary *DOSBase;
@@ -142,36 +145,32 @@ inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
 volatile short frameCounter = 0;
 INCBIN(colors, "image.pal")
 INCBIN_CHIP(image, "image.bpl") // load image into chipmem so we can use it without copying
+INCBIN_CHIP(bob, "bob.bpl")
 
 // put copperlist into chip mem so we can use it without copying
 const UWORD copper2[] __attribute__((section (".MEMF_CHIP"))) = {
-	0xe001, 0xff00, offsetof(struct Custom, color[29]), 0x0eee, // line 0xe0
-	0xe101, 0xff00, offsetof(struct Custom, color[29]), 0x0ddd, // line 0xe1
-	0xe201, 0xff00, offsetof(struct Custom, color[29]), 0x0ccc, // line 0xe2
-	0xe301, 0xff00, offsetof(struct Custom, color[29]), 0x0bbb, // line 0xe3
-	0xe401, 0xff00, offsetof(struct Custom, color[29]), 0x0aaa, // line 0xe4
-	0xe501, 0xff00, offsetof(struct Custom, color[29]), 0x0999, // line 0xe5
-	0xe601, 0xff00, offsetof(struct Custom, color[29]), 0x0888, // line 0xe6
-	0xe701, 0xff00, offsetof(struct Custom, color[29]), 0x0777, // line 0xe7
-	0xe801, 0xff00, offsetof(struct Custom, color[29]), 0x0666, // line 0xe8
-	0xe901, 0xff00, offsetof(struct Custom, color[29]), 0x0555, // line 0xe9
-	0xea01, 0xff00, offsetof(struct Custom, color[29]), 0x0444, // line 0xea
-	0xeb01, 0xff00, offsetof(struct Custom, color[29]), 0x0333, // line 0xeb
-	0xec01, 0xff00, offsetof(struct Custom, color[29]), 0x0222, // line 0xec
-	0xed01, 0xff00, offsetof(struct Custom, color[29]), 0x0111, // line 0xed
-	0xee01, 0xff00, offsetof(struct Custom, color[29]), 0x0000, // line 0xee
+	                offsetof(struct Custom, color[0]), 0x0000,
+	0x4101, 0xff00, offsetof(struct Custom, color[0]), 0x0111, // line 0x41
+	0x4201, 0xff00, offsetof(struct Custom, color[0]), 0x0222, // line 0x42
+	0x4301, 0xff00, offsetof(struct Custom, color[0]), 0x0333, // line 0x43
+	0x4401, 0xff00, offsetof(struct Custom, color[0]), 0x0444, // line 0x44
+	0x4501, 0xff00, offsetof(struct Custom, color[0]), 0x0555, // line 0x45
+	0x4601, 0xff00, offsetof(struct Custom, color[0]), 0x0666, // line 0x46
+	0x4701, 0xff00, offsetof(struct Custom, color[0]), 0x0777, // line 0x47
+	0x4801, 0xff00, offsetof(struct Custom, color[0]), 0x0888, // line 0x48
+	0x4901, 0xff00, offsetof(struct Custom, color[0]), 0x0999, // line 0x49
+	0x4a01, 0xff00, offsetof(struct Custom, color[0]), 0x0aaa, // line 0x4a
+	0x4b01, 0xff00, offsetof(struct Custom, color[0]), 0x0bbb, // line 0x4b
+	0x4c01, 0xff00, offsetof(struct Custom, color[0]), 0x0ccc, // line 0x4c
+	0x4d01, 0xff00, offsetof(struct Custom, color[0]), 0x0ddd, // line 0x4d
+	0x4e01, 0xff00, offsetof(struct Custom, color[0]), 0x0eee, // line 0x4e
+	0x4f01, 0xff00, offsetof(struct Custom, color[0]), 0x0fff, // line 0x4e
 	0xffff, 0xfffe // end copper list
 };
 
-// Demo - Module Player - ThePlayer 6.1a: https://www.pouet.net/prod.php?which=19922
-// The Player® 6.1A: Copyright © 1992-95 Jarno Paananen
-// P61.testmod - Module by Skylord/Sector 7 
-INCBIN(player, "player610.6.no_cia.bin")
-INCBIN_CHIP(module, "testmod.p61")
-
 void* doynaxdepack(const void* input, void* output) { // returns end of output data, input needs to be 16-bit aligned!
-	register volatile const void* _a0 __asm("a0") = input;
-	register volatile       void* _a1 __asm("a1") = output;
+	register volatile const void* _a0 ASM("a0") = input;
+	register volatile       void* _a1 ASM("a1") = output;
 	__asm volatile (
 		"movem.l %%d0-%%d7/%%a2-%%a6,-(%%sp)\n"
 		"jsr _doynaxdepack_asm\n"
@@ -182,45 +181,53 @@ void* doynaxdepack(const void* input, void* output) { // returns end of output d
 	return (void*)_a1;
 }
 
-int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
-	register volatile const void* _a0 __asm("a0") = module;
-	register volatile const void* _a1 __asm("a1") = NULL;
-	register volatile const void* _a2 __asm("a2") = NULL;
-	register volatile const void* _a3 __asm("a3") = player;
-	         register int         _d0 __asm("d0"); // return value
-	__asm volatile (
-		"movem.l %%d1-%%d7/%%a4-%%a6,-(%%sp)\n"
-		"jsr 0(%%a3)\n"
-		"movem.l (%%sp)+,%%d1-%%d7/%%a4-%%a6"
-	: "=r" (_d0), "+rf"(_a0), "+rf"(_a1), "+rf"(_a2), "+rf"(_a3)
-	:
-	: "cc", "memory");
-	return _d0;
-}
+#ifdef MUSIC
+	// Demo - Module Player - ThePlayer 6.1a: https://www.pouet.net/prod.php?which=19922
+	// The Player® 6.1A: Copyright © 1992-95 Jarno Paananen
+	// P61.testmod - Module by Skylord/Sector 7 
+	INCBIN(player, "player610.6.no_cia.bin")
+	INCBIN_CHIP(module, "testmod.p61")
 
-void p61Music() {
-	register volatile const void* _a3 __asm("a3") = player;
-	register volatile const void* _a6 __asm("a6") = (void*)0xdff000;
-	__asm volatile (
-		"movem.l %%d0-%%d7/%%a0-%%a2/%%a4-%%a5,-(%%sp)\n"
-		"jsr 4(%%a3)\n"
-		"movem.l (%%sp)+,%%d0-%%d7/%%a0-%%a2/%%a4-%%a5"
-	: "+rf"(_a3), "+rf"(_a6)
-	:
-	: "cc", "memory");
-}
+	int p61Init(const void* module) { // returns 0 if success, non-zero otherwise
+		register volatile const void* _a0 ASM("a0") = module;
+		register volatile const void* _a1 ASM("a1") = NULL;
+		register volatile const void* _a2 ASM("a2") = NULL;
+		register volatile const void* _a3 ASM("a3") = player;
+		register                int   _d0 ASM("d0"); // return value
+		__asm volatile (
+			"movem.l %%d1-%%d7/%%a4-%%a6,-(%%sp)\n"
+			"jsr 0(%%a3)\n"
+			"movem.l (%%sp)+,%%d1-%%d7/%%a4-%%a6"
+		: "=r" (_d0), "+rf"(_a0), "+rf"(_a1), "+rf"(_a2), "+rf"(_a3)
+		:
+		: "cc", "memory");
+		return _d0;
+	}
 
-void p61End() {
-	register volatile const void* _a3 __asm("a3") = player;
-	register volatile const void* _a6 __asm("a6") = (void*)0xdff000;
-	__asm volatile (
-		"movem.l %%d0-%%d1/%%a0-%%a1,-(%%sp)\n"
-		"jsr 8(%%a3)\n"
-		"movem.l (%%sp)+,%%d0-%%d1/%%a0-%%a1"
-	: "+rf"(_a3), "+rf"(_a6)
-	:
-	: "cc", "memory");
-}
+	void p61Music() {
+		register volatile const void* _a3 ASM("a3") = player;
+		register volatile const void* _a6 ASM("a6") = (void*)0xdff000;
+		__asm volatile (
+			"movem.l %%d0-%%d7/%%a0-%%a2/%%a4-%%a5,-(%%sp)\n"
+			"jsr 4(%%a3)\n"
+			"movem.l (%%sp)+,%%d0-%%d7/%%a0-%%a2/%%a4-%%a5"
+		: "+rf"(_a3), "+rf"(_a6)
+		:
+		: "cc", "memory");
+	}
+
+	void p61End() {
+		register volatile const void* _a3 ASM("a3") = player;
+		register volatile const void* _a6 ASM("a6") = (void*)0xdff000;
+		__asm volatile (
+			"movem.l %%d0-%%d1/%%a0-%%a1,-(%%sp)\n"
+			"jsr 8(%%a3)\n"
+			"movem.l (%%sp)+,%%d0-%%d1/%%a0-%%a1"
+		: "+rf"(_a3), "+rf"(_a6)
+		:
+		: "cc", "memory");
+	}
+#endif //MUSIC
 
 inline USHORT* copSetPlanes(UBYTE bplPtrStart,USHORT* copListEnd,const UBYTE **planes,int numPlanes) {
 	for (USHORT i=0;i<numPlanes;i++) {
@@ -253,7 +260,7 @@ inline USHORT* copSetColor(USHORT* copListCurrent,USHORT index,USHORT color) {
 
 UWORD* scroll = NULL;
 
-static const UBYTE sinus[] = { 
+static const UBYTE sinus15[] = { 
 	8,8,9,10,10,11,12,12,
 	13,13,14,14,14,15,15,15,
 	15,15,15,15,14,14,14,13,
@@ -264,17 +271,40 @@ static const UBYTE sinus[] = {
 	2,3,3,4,5,5,6,7, 
 };
 
+static const UBYTE sinus40[] = {
+	20,22,24,26,28,30,31,33,
+	34,36,37,38,39,39,40,40,
+	40,40,39,39,38,37,36,35,
+	34,32,30,29,27,25,23,21,
+	19,17,15,13,11,10,8,6,
+	5,4,3,2,1,1,0,0,
+	0,0,1,1,2,3,4,6,
+	7,9,10,12,14,16,18,20,
+};
+
+static const UBYTE sinus32[] = {
+	16,18,20,22,24,25,27,28,
+	30,30,31,32,32,32,32,31,
+	30,30,28,27,25,24,22,20,
+	18,16,14,12,10,8,7,5,
+	4,2,2,1,0,0,0,0,
+	1,2,2,4,5,7,8,10,
+	12,14,16,
+};
+
 static __attribute__((interrupt)) void interruptHandler() {
 	custom->intreq=(1<<INTB_VERTB); custom->intreq=(1<<INTB_VERTB); //reset vbl req. twice for a4000 bug.
 
 	// modify scrolling in copper list
 	if(scroll) {
-		int sin = sinus[frameCounter & 63];
+		int sin = sinus15[frameCounter & 63];
 		*scroll = sin | (sin << 4);
 	}
 
+#ifdef MUSIC
 	// DEMO - ThePlayer
 	p61Music();
+#endif
 	// DEMO - increment frameCounter
 	frameCounter++;
 }
@@ -344,8 +374,10 @@ int main() {
 
 	warpmode(1);
 	// TODO: precalc stuff here
+#ifdef MUSIC
 	if(p61Init(module) != 0)
 		KPrintF("p61Init failed!\n");
+#endif
 	warpmode(0);
 
 	TakeSystem();
@@ -355,7 +387,8 @@ int main() {
 	USHORT* copPtr = copper1;
 
 	// register graphics resources with WinUAE for nicer gfx debugger experience
-	debug_register_bitmap(image, "image.bpl", 320, 256, 5, 0);
+	debug_register_bitmap(image, "image.bpl", 320, 256, 5, debug_resource_bitmap_interleaved);
+	debug_register_bitmap(bob, "bob.bpl", 32, 96, 5, debug_resource_bitmap_interleaved | debug_resource_bitmap_masked);
 	debug_register_palette(colors, "image.pal", 32, 0);
 	debug_register_copperlist(copper1, "copper1", 1024, 0);
 	debug_register_copperlist(copper2, "copper2", sizeof(copper2), 0);
@@ -370,17 +403,18 @@ int main() {
 	*copPtr++ = offsetof(struct Custom, bplcon2);	//playfied priority
 	*copPtr++ = 1<<6;//0x24;			//Sprites have priority over playfields
 
+	const USHORT lineSize=320/8;
+
 	//set bitplane modulo
 	*copPtr++=offsetof(struct Custom, bpl1mod); //odd planes   1,3,5
-	*copPtr++=0;
+	*copPtr++=4*lineSize;
 	*copPtr++=offsetof(struct Custom, bpl2mod); //even  planes 2,4
-	*copPtr++=0;
+	*copPtr++=4*lineSize;
 
 	// set bitplane pointers
-	const USHORT planeSize=320/8*256;
 	const UBYTE* planes[5];
 	for(int a=0;a<5;a++)
-		planes[a]=image + planeSize * a;
+		planes[a]=image + lineSize * a;
 	copPtr = copSetPlanes(0, copPtr, planes, 5);
 
 	// set colors
@@ -399,17 +433,46 @@ int main() {
 
 	// DEMO
 	SetInterruptHandler((APTR)interruptHandler);
-	custom->intena=(1<<INTB_SETCLR)|(1<<INTB_INTEN)|(1<<INTB_VERTB)|(1<<INTB_EXTER); // ThePlayer needs INTB_EXTER
+	custom->intena = INTF_SETCLR | INTF_INTEN | INTF_VERTB;
+#ifdef MUSIC
+	custom->intena = INTF_SETCLR | INTF_EXTER; // ThePlayer needs INTF_EXTER
+#endif
+
 	custom->intreq=(1<<INTB_VERTB);//reset vbl req
 
 	while(!MouseLeft()) {
-		WaitVbl();
+		Wait10();
 		int f = frameCounter & 255;
 
-		Wait10();
-		Wait11();
-		Wait12();
-		Wait13();
+		// clear
+		WaitBlt();
+		custom->bltcon0 = A_TO_D | DEST;
+		custom->bltcon1 = 0;
+		custom->bltadat = 0;
+		custom->bltdpt = (APTR)image + 320 / 8 * 200 * 5;
+		custom->bltdmod = 0;
+		custom->bltafwm = custom->bltalwm = 0xffff;
+		custom->bltsize = ((56 * 5) << HSIZEBITS) | (320/16);
+
+		// blit
+		for(short i = 0; i < 16; i++) {
+			const short x = i * 16 + sinus32[(frameCounter + i) % sizeof(sinus32)] * 2;
+			const short y = sinus40[(frameCounter + i) & 63] / 2;
+			const APTR src = (APTR)bob + 32 / 8 * 10 * 16 * (i % 6);
+
+			WaitBlt();
+			WaitBlt();
+			custom->bltcon0 = 0xca | SRCA | SRCB | SRCC | DEST | ((x & 15) << ASHIFTSHIFT); // A = source, B = mask, C = background, D = destination
+			custom->bltcon1 = ((x & 15) << BSHIFTSHIFT);
+			custom->bltapt = src;
+			custom->bltamod = 32 / 8;
+			custom->bltbpt = src + 32 / 8 * 1;
+			custom->bltbmod = 32 / 8;
+			custom->bltcpt = custom->bltdpt = (APTR)image + 320 / 8 * 5 * (200 + y) + x / 8;
+			custom->bltcmod = custom->bltdmod = (320 - 32) / 8;
+			custom->bltafwm = custom->bltalwm = 0xffff;
+			custom->bltsize = ((16 * 5) << HSIZEBITS) | (32/16);
+		}
 
 		// WinUAE debug overlay test
 		debug_clear();
@@ -418,7 +481,9 @@ int main() {
 		debug_text(f+ 130, 209*2, "This is a WinUAE debug overlay", 0x00ff00ff);
 	}
 
+#ifdef MUSIC
 	p61End();
+#endif
 
 	// END
 	FreeSystem();
