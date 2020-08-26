@@ -11,7 +11,7 @@
 #include <hardware/intbits.h>
 
 //config
-//#define MUSIC
+#define MUSIC
 
 struct ExecBase *SysBase;
 volatile struct Custom *custom;
@@ -457,10 +457,9 @@ int main() {
 		// blit
 		for(short i = 0; i < 16; i++) {
 			const short x = i * 16 + sinus32[(frameCounter + i) % sizeof(sinus32)] * 2;
-			const short y = sinus40[(frameCounter + i) & 63] / 2;
+			const short y = sinus40[((frameCounter + i) * 2) & 63] / 2;
 			const APTR src = (APTR)bob + 32 / 8 * 10 * 16 * (i % 6);
 
-			WaitBlt();
 			WaitBlt();
 			custom->bltcon0 = 0xca | SRCA | SRCB | SRCC | DEST | ((x & 15) << ASHIFTSHIFT); // A = source, B = mask, C = background, D = destination
 			custom->bltcon1 = ((x & 15) << BSHIFTSHIFT);
