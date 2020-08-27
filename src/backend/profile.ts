@@ -413,10 +413,6 @@ export class Profiler {
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
 		out[0].$amiga.objdump = disassembly;
 
-		// CPU info
-		out[0].$amiga.baseClock = profileFile.baseClock;
-		out[0].$amiga.cpuCycleUnit = profileFile.cpuCycleUnit;
-
 		return JSON.stringify(out/*, null, 2*/);
 	}
 
@@ -497,6 +493,8 @@ export class Profiler {
 			...profileCommon(cycles, locations),
 			$amiga: {
 				dmacon: frame.dmacon,
+				baseClock: profileFile.baseClock,
+				cpuCycleUnit: profileFile.cpuCycleUnit,
 				customRegs: Array.from(frame.customRegs), 
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,

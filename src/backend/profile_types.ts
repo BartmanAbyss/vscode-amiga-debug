@@ -9,7 +9,7 @@ export interface CallFrame {
 }
 
 export interface DmaRecord {
-	reg?: number;
+	reg?: number; // & 0x1000 => CPU
 	dat?: number;
 	addr?: number;
 	evt?: number;

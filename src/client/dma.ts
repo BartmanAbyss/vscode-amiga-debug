@@ -231,13 +231,14 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) {
-				customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
-				const isBlitStart = (dmaRecord.reg === regBLTSIZE - 0xdff000) || (dmaRecord.reg === regBLTSIZH - 0xdff000);
+			if((dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) || (dmaRecord.addr !== undefined && dmaRecord.addr >= 0xdff000 && dmaRecord.addr < 0xdff200)) {
+				const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
+				customRegs[reg >>> 1] = dmaRecord.dat;
+				const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
 				if(isBlitStart) {
 					let BLTSIZH = 0;
 					let BLTSIZV = 0;
-					if(dmaRecord.reg === regBLTSIZE - 0xdff000) { // OCS
+					if(reg === regBLTSIZE - 0xdff000) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
 						BLTSIZV = dmaRecord.dat >>> 6;
 						if(BLTSIZH === 0)
@@ -245,7 +246,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 						if(BLTSIZV === 0)
 							BLTSIZV = 1024;
 					}
-					if(dmaRecord.reg === regBLTSIZH - 0xdff000) { // ECS
+					if(reg === regBLTSIZH - 0xdff000) { // ECS
 						BLTSIZH = dmaRecord.dat & 0x7ff;
 						BLTSIZV = customReg(regBLTSIZV) & 0x7fff;
 						if(BLTSIZH === 0)
@@ -312,7 +313,8 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			const isBlitStart = (dmaRecord.reg === regBLTSIZE - 0xdff000) || (dmaRecord.reg === regBLTSIZH - 0xdff000);
+			const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
+			const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
 			if(isBlitStart) {
 				lastStart = i;
 			}

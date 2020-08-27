@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- support for more Amiga models in `.vscode/launch.json` (these are all WinUAE quickstart configs):
+  - `A1200-FAST`: A1200 with 4MB fast memory
+  - `A1200-030`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `cpuboard`.
+  - `A3000`: A3000 (no profiler support)
 - new option `endcli` in `.vscode/launch.json`: If enabled, uses `run` and `EndCLI` in `startup-sequence` so you cann call `CloseWorkBench()` from your program.
 - GCC: prevent `sccp` pass from generating `__mulsi3` calls
 - Fixed WinUAE not booting correctly after overwriting the default configuration
