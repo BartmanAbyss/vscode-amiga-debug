@@ -728,6 +728,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.stoppedReason = 'NULL access (undefined behavior)';
 		else if(signalName === 'SIGBUS')
 			this.stoppedReason = 'address error';
+		else if(signalName === 'SIGILL')
+			this.stoppedReason = 'illegal instruction';
 		else
 			this.stoppedReason = 'user request';
 		this.stopped = true;
