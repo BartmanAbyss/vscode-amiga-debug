@@ -646,10 +646,12 @@ export class MI2 extends EventEmitter implements IBackend {
 	private _sendCommandSequence(commands: string[]): Thenable<boolean> {
 		return new Promise((resolve, reject) => {
 			const nextCommand = ((commands: string[]) => {
-				if (commands.length === 0) { resolve(true); }
-				const command = commands[0];
-
-				this.sendCommand(command).then((r) => { nextCommand(commands.slice(1)); }, reject);
+				if(commands.length === 0) { 
+					resolve(true); 
+				} else {
+					const command = commands[0];
+					this.sendCommand(command).then((r) => { nextCommand(commands.slice(1)); }, reject);
+				}
 			}).bind(this);
 
 			nextCommand(commands);

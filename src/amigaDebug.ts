@@ -344,6 +344,38 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 	}
 
+	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
+		const restartProcessing = () => {
+			const commands = [
+				'interpreter-exec console "monitor reset"'
+			];
+
+			//commands.push(...this.args.preRestartCommands.map(COMMAND_MAP));
+			//commands.push(...this.serverController.restartCommands());
+			//commands.push(...this.args.postRestartCommands.map(COMMAND_MAP));
+
+			this.miDebugger.restart(commands).then((done) => {
+				this.sendResponse(response);
+				this.miDebugger.continue(this.currentThreadId);
+				/*setTimeout(() => {
+					this.stopped = true;
+					this.stoppedReason = 'restart';
+					this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
+					this.sendEvent(new StoppedEvent('restart', this.currentThreadId));
+				}, 50);*/
+			}, (msg) => {
+				this.sendErrorResponse(response, 6, `Could not restart: ${msg}`);
+			});
+		};
+
+		if (this.stopped) {
+			restartProcessing();
+		} else {
+			this.miDebugger.once('generic-stopped', restartProcessing);
+			this.miDebugger.sendCommand('exec-interrupt');
+		}
+	}
+
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
 		switch (command) {
 			case 'set-force-disassembly':

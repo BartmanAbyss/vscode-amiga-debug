@@ -204,7 +204,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * disassembly chokes a bit on newlines
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
-* restartRequest not implemented
 * vscode.debug.activeDebugSession is undefined when program is stopped on entry
 * not getting handleThreadSelected(), thread ID now set in class
 * sometimes Pause/Resume button doesn't correctly switch to "Pause" icon while amiga program is running
