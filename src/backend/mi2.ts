@@ -1,4 +1,4 @@
-import * as ChildProcess from "child_process";
+import * as cp from "child_process";
 import { EventEmitter } from "events";
 import * as fs from "fs";
 import * as net from "net";
@@ -16,6 +16,7 @@ export function escape(str: string) {
 const nonOutput = /^(?:\d*|undefined)[\*\+\=]|[\~\@\&\^]/;
 const gdbMatch = /(?:\d*|undefined)\(gdb\)/;
 const numRegex = /\d+/;
+const gdbTimeout = 500; // in milliseconds
 
 function couldBeOutput(line: string) {
 	if (nonOutput.exec(line)) {
@@ -32,7 +33,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
 	protected buffer: string = "";
 	protected errbuf: string = "";
-	public process: ChildProcess.ChildProcess;
+	public process: cp.ChildProcess;
 	protected stream;
 
 	// accumulate stream records and pass them to the next handler
@@ -49,7 +50,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
 		return new Promise((resolve, reject) => {
 			const args = [...this.args, executable];
-			this.process = ChildProcess.spawn(this.application, args, { cwd, env: this.procEnv });
+			this.process = cp.spawn(this.application, args, { cwd, env: this.procEnv });
 			this.process.stdout.on("data", this.stdout.bind(this));
 			this.process.stderr.on("data", this.stderr.bind(this));
 			this.process.on("exit", (() => { this.emit("quit"); }).bind(this));
@@ -72,16 +73,15 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public stop() {
-		const proc = this.process;
-		const to = setTimeout(() => { process.kill(-proc.pid); }, 1000);
+		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-gdb-exit");
 	}
 
 	public abort(needToStop: boolean): Thenable<boolean> {
+		if(this.trace) this.log("log", "abort");
 		return new Promise(async (resolve, reject) => {
-			const proc = this.process;
-			const to = setTimeout(() => { process.kill(-proc.pid); resolve(true); }, 1000);
+			const to = setTimeout(() => { this.process.kill('SIGTERM'); resolve(true); }, gdbTimeout);
 			this.process.on("exit", (code) => { clearTimeout(to); });
 			const killAndExit = async () => {
 				await this.sendUserInput('kill');
@@ -100,8 +100,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public detach() {
-		const proc = this.process;
-		const to = setTimeout(() => { process.kill(-proc.pid); }, 1000);
+		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-target-detach");
 	}

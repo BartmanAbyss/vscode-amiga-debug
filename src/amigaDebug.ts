@@ -314,9 +314,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.initDebugger();
 
 		if(DEBUG) {
-			//this.miDebugger.printCalls = true;
 			//this.miDebugger.debugOutput = true;
-			//this.miDebugger.trace = true;
+			this.miDebugger.trace = true;
 		}
 
 		this.miDebugger.once('sections-loaded', (sections) => {
@@ -613,8 +612,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		const done = () => {
-			if(winuae)
+			if(winuae) {
 				winuae.kill();
+				winuae = undefined;
+			}
 			this.sendResponse(response);
 			vscode.commands.executeCommand("workbench.view.explorer");
 		};
