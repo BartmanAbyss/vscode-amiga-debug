@@ -200,7 +200,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 
 ### Debugger
-* TODO: configs for A1200+FastMem, A1200/030+FastMem
 * disassembly chokes a bit on newlines
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
