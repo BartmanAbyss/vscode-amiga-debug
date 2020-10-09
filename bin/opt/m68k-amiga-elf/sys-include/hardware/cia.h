@@ -27,37 +27,37 @@
 
 
 struct CIA {
-    UBYTE   ciapra;
+    volatile UBYTE   ciapra;
     UBYTE   pad0[0xff];
-    UBYTE   ciaprb;
+    volatile UBYTE   ciaprb;
     UBYTE   pad1[0xff];
-    UBYTE   ciaddra;
+    volatile UBYTE   ciaddra;
     UBYTE   pad2[0xff];
-    UBYTE   ciaddrb;
+    volatile UBYTE   ciaddrb;
     UBYTE   pad3[0xff];
-    UBYTE   ciatalo;
+    volatile UBYTE   ciatalo;
     UBYTE   pad4[0xff];
-    UBYTE   ciatahi;
+    volatile UBYTE   ciatahi;
     UBYTE   pad5[0xff];
-    UBYTE   ciatblo;
+    volatile UBYTE   ciatblo;
     UBYTE   pad6[0xff];
-    UBYTE   ciatbhi;
+    volatile UBYTE   ciatbhi;
     UBYTE   pad7[0xff];
-    UBYTE   ciatodlow;
+    volatile UBYTE   ciatodlow;
     UBYTE   pad8[0xff];
-    UBYTE   ciatodmid;
+    volatile UBYTE   ciatodmid;
     UBYTE   pad9[0xff];
-    UBYTE   ciatodhi;
+    volatile UBYTE   ciatodhi;
     UBYTE   pad10[0xff];
-    UBYTE   unusedreg;
+    volatile UBYTE   unusedreg;
     UBYTE   pad11[0xff];
-    UBYTE   ciasdr;
+    volatile UBYTE   ciasdr;
     UBYTE   pad12[0xff];
-    UBYTE   ciaicr;
+    volatile UBYTE   ciaicr;
     UBYTE   pad13[0xff];
-    UBYTE   ciacra;
+    volatile UBYTE   ciacra;
     UBYTE   pad14[0xff];
-    UBYTE   ciacrb;
+    volatile UBYTE   ciacrb;
 };
 
 

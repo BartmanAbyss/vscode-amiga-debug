@@ -27,16 +27,18 @@
 
 #define TIMERNAME	"timer.device"
 
-#ifndef _SYS_TIME_H_
-/* Use whatever was included first, standard (sys/time.h) or Amiga
- * includes (jch). */
+#ifndef _TIMEVAL_DEFINED
+#define _TIMEVAL_DEFINED
 struct timeval {
-    ULONG tv_secs;
-    ULONG tv_micro;
+    union {
+        ULONG          tv_sec;         /* seconds */
+        ULONG          tv_secs;
+    };
+    union {
+        ULONG     tv_usec;        /* and microseconds */
+        ULONG     tv_micro;
+    };
 };
-#else
-#define tv_secs  tv_sec
-#define tv_micro tv_usec
 #endif
 
 struct EClockVal {

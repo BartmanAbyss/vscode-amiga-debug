@@ -45,54 +45,54 @@ extern "C" {
 
 /*  Exec support functions */
 
-VOID BeginIO( struct IORequest *ioReq );
-struct IORequest *CreateExtIO( CONST struct MsgPort *port, LONG ioSize );
-struct MsgPort *CreatePort( CONST_STRPTR name, LONG pri );
-struct IOStdReq *CreateStdIO( CONST struct MsgPort *port );
-struct Task *CreateTask( CONST_STRPTR name, LONG pri, CONST APTR initPC, ULONG stackSize );
-VOID DeleteExtIO( struct IORequest *ioReq );
-VOID DeletePort( struct MsgPort *ioReq );
-VOID DeleteStdIO( struct IOStdReq *ioReq );
-VOID DeleteTask( struct Task *task );
-VOID NewList( struct List *list );
-APTR LibAllocPooled( APTR poolHeader, ULONG memSize );
-APTR LibCreatePool( ULONG memFlags, ULONG puddleSize, ULONG threshSize );
-VOID LibDeletePool( APTR poolHeader );
-VOID LibFreePooled( APTR poolHeader, APTR memory, ULONG memSize );
+__stdargs VOID BeginIO( struct IORequest *ioReq );
+__stdargs struct IORequest *CreateExtIO( CONST struct MsgPort *port, LONG ioSize );
+__stdargs struct MsgPort *CreatePort( CONST_STRPTR name, LONG pri );
+__stdargs struct IOStdReq *CreateStdIO( CONST struct MsgPort *port );
+__stdargs struct Task *CreateTask( CONST_STRPTR name, LONG pri, CONST APTR initPC, ULONG stackSize );
+__stdargs VOID DeleteExtIO( struct IORequest *ioReq );
+__stdargs VOID DeletePort( struct MsgPort *ioReq );
+__stdargs VOID DeleteStdIO( struct IOStdReq *ioReq );
+__stdargs VOID DeleteTask( struct Task *task );
+__stdargs VOID NewList( struct List *list );
+__stdargs APTR LibAllocPooled( APTR poolHeader, ULONG memSize );
+__stdargs APTR LibCreatePool( ULONG memFlags, ULONG puddleSize, ULONG threshSize );
+__stdargs VOID LibDeletePool( APTR poolHeader );
+__stdargs VOID LibFreePooled( APTR poolHeader, APTR memory, ULONG memSize );
 
 /* Assorted functions in amiga.lib */
 
-ULONG FastRand( ULONG seed );
-UWORD RangeRand( ULONG maxValue );
+__stdargs ULONG FastRand( ULONG seed );
+__stdargs UWORD RangeRand( ULONG maxValue );
 
 /* Graphics support functions in amiga.lib */
 
-VOID AddTOF( struct Isrvstr *i, LONG (*p)(APTR args), APTR a );
-VOID RemTOF( struct Isrvstr *i );
-VOID waitbeam( LONG b );
+__stdargs VOID AddTOF( struct Isrvstr *i, LONG (*p)(APTR args), APTR a );
+__stdargs VOID RemTOF( struct Isrvstr *i );
+__stdargs VOID waitbeam( LONG b );
 
 /* math support functions in amiga.lib */
 
-FLOAT afp( CONST_STRPTR string );
-VOID arnd( LONG place, LONG exp, STRPTR string );
-FLOAT dbf( ULONG exp, ULONG mant );
-LONG fpa( FLOAT fnum, BYTE *string );
-VOID fpbcd( FLOAT fnum, BYTE *string );
+__stdargs FLOAT afp( CONST_STRPTR string );
+__stdargs VOID arnd( LONG place, LONG exp, STRPTR string );
+__stdargs FLOAT dbf( ULONG exp, ULONG mant );
+__stdargs LONG fpa( FLOAT fnum, BYTE *string );
+__stdargs VOID fpbcd( FLOAT fnum, BYTE *string );
 
 /* Timer support functions in amiga.lib (V36 and higher only) */
 
-LONG TimeDelay( LONG unit, ULONG secs, ULONG microsecs );
-LONG DoTimer( struct timeval *, LONG unit, LONG command );
+__stdargs LONG TimeDelay( LONG unit, ULONG secs, ULONG microsecs );
+__stdargs LONG DoTimer( struct timeval *, LONG unit, LONG command );
 
 /*  Commodities functions in amiga.lib (V36 and higher only) */
 
-VOID ArgArrayDone( VOID );
-STRPTR *ArgArrayInit( LONG argc, CONST_STRPTR *argv );
-LONG ArgInt( CONST_STRPTR *tt, CONST_STRPTR entry, LONG defaultval );
-STRPTR ArgString( CONST_STRPTR *tt, CONST_STRPTR entry, CONST_STRPTR defaultstring );
-CxObj *HotKey( CONST_STRPTR description, struct MsgPort *port, LONG id );
-struct InputEvent *InvertString( CONST_STRPTR str, CONST struct KeyMap *km );
-VOID FreeIEvents( struct InputEvent *events );
+__stdargs VOID ArgArrayDone( VOID );
+__stdargs STRPTR *ArgArrayInit( LONG argc, CONST_STRPTR *argv );
+__stdargs LONG ArgInt( CONST_STRPTR *tt, CONST_STRPTR entry, LONG defaultval );
+__stdargs STRPTR ArgString( CONST_STRPTR *tt, CONST_STRPTR entry, CONST_STRPTR defaultstring );
+__stdargs CxObj *HotKey( CONST_STRPTR description, struct MsgPort *port, LONG id );
+__stdargs struct InputEvent *InvertString( CONST_STRPTR str, CONST struct KeyMap *km );
+__stdargs VOID FreeIEvents( struct InputEvent *events );
 
 /* Commodities Macros */
 
@@ -105,9 +105,9 @@ VOID FreeIEvents( struct InputEvent *events );
 
 /*  ARexx support functions in amiga.lib */
 
-BOOL CheckRexxMsg( CONST struct RexxMsg *rexxmsg );
-LONG GetRexxVar( CONST struct RexxMsg *rexxmsg, CONST_STRPTR name, STRPTR *result );
-LONG SetRexxVar( struct RexxMsg *rexxmsg, CONST_STRPTR name, CONST_STRPTR value, LONG length );
+__stdargs BOOL CheckRexxMsg( CONST struct RexxMsg *rexxmsg );
+__stdargs LONG GetRexxVar( CONST struct RexxMsg *rexxmsg, CONST_STRPTR name, STRPTR *result );
+__stdargs LONG SetRexxVar( struct RexxMsg *rexxmsg, CONST_STRPTR name, CONST_STRPTR value, LONG length );
 
 /*  Intuition hook and boopsi support functions in amiga.lib. */
 /*  These functions do not require any particular ROM revision */
@@ -115,22 +115,22 @@ LONG SetRexxVar( struct RexxMsg *rexxmsg, CONST_STRPTR name, CONST_STRPTR value,
 /*  in V36.  These functions would work with compatibly-implemented */
 /*  hooks or objects under V34. */
 
-ULONG CallHookA( struct Hook *hookPtr, Object *obj, APTR message );
-ULONG CallHook( struct Hook *hookPtr, Object *obj, ... );
-ULONG DoMethodA( Object *obj, Msg message );
-ULONG DoMethod( Object *obj, ULONG methodID, ... );
-ULONG DoSuperMethodA( struct IClass *cl, Object *obj, Msg message );
-ULONG DoSuperMethod( struct IClass *cl, Object *obj, ULONG methodID, ... );
-ULONG CoerceMethodA( struct IClass *cl, Object *obj, Msg message );
-ULONG CoerceMethod( struct IClass *cl, Object *obj, ULONG methodID, ... );
-ULONG HookEntry( struct Hook *hookPtr, Object *obj, APTR message );
-ULONG SetSuperAttrs( struct IClass *cl, Object *obj, ULONG tag1, ... );
+__stdargs ULONG CallHookA( struct Hook *hookPtr, Object *obj, APTR message );
+__stdargs ULONG CallHook( struct Hook *hookPtr, Object *obj, ... );
+__stdargs ULONG DoMethodA( Object *obj, Msg message );
+__stdargs ULONG DoMethod( Object *obj, ULONG methodID, ... );
+__stdargs ULONG DoSuperMethodA( struct IClass *cl, Object *obj, Msg message );
+__stdargs ULONG DoSuperMethod( struct IClass *cl, Object *obj, ULONG methodID, ... );
+__stdargs ULONG CoerceMethodA( struct IClass *cl, Object *obj, Msg message );
+__stdargs ULONG CoerceMethod( struct IClass *cl, Object *obj, ULONG methodID, ... );
+__stdargs ULONG HookEntry( struct Hook *hookPtr, Object *obj, APTR message );
+__stdargs ULONG SetSuperAttrs( struct IClass *cl, Object *obj, ULONG tag1, ... );
 
 /*  Network-support functions in amiga.lib. */
 /*  ACrypt() first appeared in later V39 versions of amiga.lib, but */
 /*  operates correctly under V37 and up. */
 
-STRPTR ACrypt( STRPTR buffer, CONST_STRPTR password, CONST_STRPTR username );
+__stdargs STRPTR ACrypt( STRPTR buffer, CONST_STRPTR password, CONST_STRPTR username );
 
 #ifdef __cplusplus
 }

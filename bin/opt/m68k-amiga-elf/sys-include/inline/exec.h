@@ -1,4 +1,4 @@
-/* Automatically generated header (sfdc 1.10)! Do not edit! */
+/* Automatically generated header (sfdc 1.11)! Do not edit! */
 
 #ifndef _INLINE_EXEC_H
 #define _INLINE_EXEC_H
@@ -312,10 +312,6 @@ typedef ULONG _sfdc_vararg;
       LP1(0x1f2, APTR, OpenResource , CONST_STRPTR, ___resName, a1,\
       , EXEC_BASE_NAME)
 
-#define KPutChar(___ch) \
-      LP1NR(0x204, KPutChar , ULONG, ___ch, d0,\
-      , EXEC_BASE_NAME)
-	  
 #define RawDoFmt(___formatString, ___dataStream, ___putChProc, ___putChData) \
       LP4FP(0x20a, APTR, RawDoFmt , CONST_STRPTR, ___formatString, a0, const APTR, ___dataStream, a1, __fpt, ___putChProc, a2, APTR, ___putChData, a3,\
       , EXEC_BASE_NAME, VOID (*__fpt)())

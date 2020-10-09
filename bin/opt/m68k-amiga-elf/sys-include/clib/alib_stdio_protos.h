@@ -21,16 +21,16 @@ extern "C" {
 
 /* stdio functions that duplicate those in a typical C library */
 
-LONG printf( CONST_STRPTR fmt, ... );
-LONG sprintf( CONST_STRPTR buffer, CONST_STRPTR fmt, ... );
-LONG fclose( LONG stream );
-LONG fgetc( LONG stream );
-LONG fprintf( LONG stream, CONST_STRPTR fmt, ... );
-LONG fputc( LONG c, LONG stream );
-LONG fputs( CONST_STRPTR s, LONG stream );
-LONG getchar( VOID );
-LONG putchar( ULONG c );
-LONG puts( CONST_STRPTR s );
+__stdargs LONG printf( CONST_STRPTR fmt, ... );
+__stdargs LONG sprintf( CONST_STRPTR buffer, CONST_STRPTR fmt, ... );
+__stdargs LONG fclose( LONG stream );
+__stdargs LONG fgetc( LONG stream );
+__stdargs LONG fprintf( LONG stream, CONST_STRPTR fmt, ... );
+__stdargs LONG fputc( LONG c, LONG stream );
+__stdargs LONG fputs( CONST_STRPTR s, LONG stream );
+__stdargs LONG getchar( VOID );
+__stdargs LONG putchar( ULONG c );
+__stdargs LONG puts( CONST_STRPTR s );
 
 #ifdef __cplusplus
 }

@@ -65,6 +65,9 @@ struct GfxBase
 	UWORD	*LCMptr;
 	UWORD	MicrosPerLine;		/* 256 time usec/line */
 	UWORD	MinDisplayColumn;
+#ifdef __KICK13__
+	ULONG	reserved[23];	 /* for future use */
+#else
 	UBYTE	ChipRevBits0;
 	UBYTE	MemType;
 	UBYTE	crb_reserved[4];
@@ -125,6 +128,7 @@ struct GfxBase
 	ULONG	VBCounter;
 	struct	SignalSemaphore *HashTableSemaphore;
 	ULONG	*HWEmul[9];
+#endif
 };
 
 #define ChunkyToPlanarPtr HWEmul[0]

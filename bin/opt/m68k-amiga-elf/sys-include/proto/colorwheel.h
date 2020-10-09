@@ -1,4 +1,4 @@
-/* Automatically generated header (sfdc 1.10)! Do not edit! */
+/* Automatically generated header (sfdc 1.11)! Do not edit! */
 
 #ifndef PROTO_COLORWHEEL_H
 #define PROTO_COLORWHEEL_H

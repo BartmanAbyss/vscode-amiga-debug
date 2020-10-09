@@ -23,122 +23,139 @@
 
 
 struct Custom {
-    UWORD   bltddat;
-    UWORD   dmaconr;
-    UWORD   vposr;
-    UWORD   vhposr;
-    UWORD   dskdatr;
-    UWORD   joy0dat;
-    UWORD   joy1dat;
-    UWORD   clxdat;
-    UWORD   adkconr;
-    UWORD   pot0dat;
-    UWORD   pot1dat;
-    UWORD   potinp;
-    UWORD   serdatr;
-    UWORD   dskbytr;
-    UWORD   intenar;
-    UWORD   intreqr;
-    APTR    dskpt;
-    UWORD   dsklen;
-    UWORD   dskdat;
-    UWORD   refptr;
-    UWORD   vposw;
-    UWORD   vhposw;
-    UWORD   copcon;
-    UWORD   serdat;
-    UWORD   serper;
-    UWORD   potgo;
-    UWORD   joytest;
-    UWORD   strequ;
-    UWORD   strvbl;
-    UWORD   strhor;
-    UWORD   strlong;
-    UWORD   bltcon0;
-    UWORD   bltcon1;
-    UWORD   bltafwm;
-    UWORD   bltalwm;
-    APTR    bltcpt;
-    APTR    bltbpt;
-    APTR    bltapt;
-    APTR    bltdpt;
-    UWORD   bltsize;
-    UBYTE   pad2d;
-    UBYTE   bltcon0l;	/* low 8 bits of bltcon0, write only */
-    UWORD   bltsizv;
-    UWORD   bltsizh;	/* 5e */
-    UWORD   bltcmod;
-    UWORD   bltbmod;
-    UWORD   bltamod;
-    UWORD   bltdmod;
-    UWORD   pad34[4];
-    UWORD   bltcdat;
-    UWORD   bltbdat;
-    UWORD   bltadat;
-    UWORD   pad3b[3];
-    UWORD   deniseid;	/* 7c */
-    UWORD   dsksync;
-    ULONG   cop1lc;
-    ULONG   cop2lc;
-    UWORD   copjmp1;
-    UWORD   copjmp2;
-    UWORD   copins;
-    UWORD   diwstrt;
-    UWORD   diwstop;
-    UWORD   ddfstrt;
-    UWORD   ddfstop;
-    UWORD   dmacon;
-    UWORD   clxcon;
-    UWORD   intena;
-    UWORD   intreq;
-    UWORD   adkcon;
+    volatile UWORD   bltddat;
+    volatile UWORD   dmaconr;
+    union {
+    	volatile ULONG vpos32;
+    	struct {
+    		union {
+    			volatile UWORD   vposr;
+    			struct {
+        			volatile UBYTE  vposr_h;
+        			volatile UBYTE  vposr_l;
+    			};
+    		};
+    		union {
+    			volatile UWORD   vhposr;
+    			struct {
+        			volatile UBYTE  vhposr_h;
+        			volatile UBYTE  vhposr_l;
+    			};
+    		};
+    	};
+    };
+    volatile UWORD   dskdatr;
+    volatile UWORD   joy0dat;
+    volatile UWORD   joy1dat;
+    volatile UWORD   clxdat;
+    volatile UWORD   adkconr;
+    volatile UWORD   pot0dat;
+    volatile UWORD   pot1dat;
+    volatile UWORD   potinp;
+    volatile UWORD   serdatr;
+    volatile UWORD   dskbytr;
+    volatile UWORD   intenar;
+    volatile UWORD   intreqr;
+    volatile APTR    dskpt;
+    volatile UWORD   dsklen;
+    volatile UWORD   dskdat;
+    volatile UWORD   refptr;
+    volatile UWORD   vposw;
+    volatile UWORD   vhposw;
+    volatile UWORD   copcon;
+    volatile UWORD   serdat;
+    volatile UWORD   serper;
+    volatile UWORD   potgo;
+    volatile UWORD   joytest;
+    volatile UWORD   strequ;
+    volatile UWORD   strvbl;
+    volatile UWORD   strhor;
+    volatile UWORD   strlong;
+    volatile UWORD   bltcon0;
+    volatile UWORD   bltcon1;
+    volatile UWORD   bltafwm;
+    volatile UWORD   bltalwm;
+    volatile APTR    bltcpt;
+    volatile APTR    bltbpt;
+    volatile APTR    bltapt;
+    volatile APTR    bltdpt;
+    volatile UWORD   bltsize;
+    volatile UBYTE   pad2d;
+    volatile UBYTE   bltcon0l;	/* low 8 bits of bltcon0, write only */
+    volatile UWORD   bltsizv;
+    volatile UWORD   bltsizh;	/* 5e */
+    volatile UWORD   bltcmod;
+    volatile UWORD   bltbmod;
+    volatile UWORD   bltamod;
+    volatile UWORD   bltdmod;
+    volatile UWORD   pad34[4];
+    volatile UWORD   bltcdat;
+    volatile UWORD   bltbdat;
+    volatile UWORD   bltadat;
+    volatile UWORD   pad3b[3];
+    volatile UWORD   deniseid;	/* 7c */
+    volatile UWORD   dsksync;
+    volatile ULONG   cop1lc;
+    volatile ULONG   cop2lc;
+    volatile UWORD   copjmp1;
+    volatile UWORD   copjmp2;
+    volatile UWORD   copins;
+    volatile UWORD   diwstrt;
+    volatile UWORD   diwstop;
+    volatile UWORD   ddfstrt;
+    volatile UWORD   ddfstop;
+    volatile UWORD   dmacon;
+    volatile UWORD   clxcon;
+    volatile UWORD   intena;
+    volatile UWORD   intreq;
+    volatile UWORD   adkcon;
     struct  AudChannel {
-      UWORD *ac_ptr; /* ptr to start of waveform data */
-      UWORD ac_len;	/* length of waveform in words */
-      UWORD ac_per;	/* sample period */
-      UWORD ac_vol;	/* volume */
-      UWORD ac_dat;	/* sample pair */
-      UWORD ac_pad[2];	/* unused */
+      volatile UWORD *ac_ptr; /* ptr to start of waveform data */
+      volatile UWORD ac_len;	/* length of waveform in words */
+      volatile UWORD ac_per;	/* sample period */
+      volatile UWORD ac_vol;	/* volume */
+      volatile UWORD ac_dat;	/* sample pair */
+      volatile UWORD ac_pad[2];	/* unused */
     } aud[4];
-    APTR    bplpt[8];
-    UWORD   bplcon0;
-    UWORD   bplcon1;
-    UWORD   bplcon2;
-    UWORD   bplcon3;
-    UWORD   bpl1mod;
-    UWORD   bpl2mod;
-    UWORD   bplcon4;
-    UWORD   clxcon2;
-    UWORD   bpldat[8];
-    APTR    sprpt[8];
+    volatile APTR    bplpt[8];
+    volatile UWORD   bplcon0;
+    volatile UWORD   bplcon1;
+    volatile UWORD   bplcon2;
+    volatile UWORD   bplcon3;
+    volatile UWORD   bpl1mod;
+    volatile UWORD   bpl2mod;
+    volatile UWORD   bplcon4;
+    volatile UWORD   clxcon2;
+    volatile UWORD   bpldat[8];
+    volatile APTR    sprpt[8];
     struct  SpriteDef {
-      UWORD pos;
-      UWORD ctl;
-      UWORD dataa;
-      UWORD datab;
+      volatile UWORD pos;
+      volatile UWORD ctl;
+      volatile UWORD dataa;
+      volatile UWORD datab;
     } spr[8];
-    UWORD   color[32];
-    UWORD htotal;
-    UWORD hsstop;
-    UWORD hbstrt;
-    UWORD hbstop;
-    UWORD vtotal;
-    UWORD vsstop;
-    UWORD vbstrt;
-    UWORD vbstop;
-    UWORD sprhstrt;
-    UWORD sprhstop;
-    UWORD bplhstrt;
-    UWORD bplhstop;
-    UWORD hhposw;
-    UWORD hhposr;
-    UWORD beamcon0;
-    UWORD hsstrt;
-    UWORD vsstrt;
-    UWORD hcenter;
-    UWORD diwhigh;	/* 1e4 */
-    UWORD padf3[11];
-    UWORD fmode;
+    volatile UWORD   color[32];
+    volatile UWORD htotal;
+    volatile UWORD hsstop;
+    volatile UWORD hbstrt;
+    volatile UWORD hbstop;
+    volatile UWORD vtotal;
+    volatile UWORD vsstop;
+    volatile UWORD vbstrt;
+    volatile UWORD vbstop;
+    volatile UWORD sprhstrt;
+    volatile UWORD sprhstop;
+    volatile UWORD bplhstrt;
+    volatile UWORD bplhstop;
+    volatile UWORD hhposw;
+    volatile UWORD hhposr;
+    volatile UWORD beamcon0;
+    volatile UWORD hsstrt;
+    volatile UWORD vsstrt;
+    volatile UWORD hcenter;
+    volatile UWORD diwhigh;	/* 1e4 */
+    volatile UWORD padf3[11];
+    volatile UWORD fmode;
 };
 
 #ifdef ECS_SPECIFIC

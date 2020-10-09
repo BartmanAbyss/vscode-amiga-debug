@@ -48,7 +48,12 @@ typedef struct IClass
     ULONG		 cl_ObjectCount;	/* Number of objects */
     ULONG		 cl_Flags;
 
-} Class;
+}
+#ifdef __OBJC__
+  IntuitionClass;
+#else
+  Class;
+#endif 
 
 #define	CLF_INLIST	0x00000001L
     /* class is in public class list */
@@ -106,7 +111,12 @@ struct ClassLibrary
 {
     struct Library	 cl_Lib;	/* Embedded library */
     UWORD		 cl_Pad;	/* Align the structure */
-    Class		*cl_Class;	/* Class pointer */
+#ifdef __OBJC__	
+	IntuitionClass
+#else
+	Class
+#endif 
+			*cl_Class;	/* Class pointer */
 
 };
 
