@@ -2,8 +2,7 @@
 #include <proto/exec.h>
 extern struct ExecBase* SysBase;
 
-unsigned long strlen(const char* s)
-{
+unsigned long strlen(const char* s) {
 	unsigned long t=0;
 	while(*s++)
 		t++;
@@ -11,8 +10,7 @@ unsigned long strlen(const char* s)
 }
 
 __attribute__((optimize("no-tree-loop-distribute-patterns"))) 
-	void* memset(void *dest, int val, unsigned long len)
-{
+	void* memset(void *dest, int val, unsigned long len) {
 	unsigned char *ptr = (unsigned char *)dest;
 	while(len-- > 0)
 		*ptr++ = val;
@@ -20,8 +18,7 @@ __attribute__((optimize("no-tree-loop-distribute-patterns")))
 }
 
 __attribute__((optimize("no-tree-loop-distribute-patterns"))) 
-void* memcpy(void *dest, const void *src, unsigned long len)
-{
+void* memcpy(void *dest, const void *src, unsigned long len) {
 	char *d = (char *)dest;
 	const char *s = (const char *)src;
 	while(len--)
@@ -30,8 +27,7 @@ void* memcpy(void *dest, const void *src, unsigned long len)
 }
 
 __attribute__((optimize("no-tree-loop-distribute-patterns"))) 
-void* memmove(void *dest, const void *src, unsigned long len)
-{
+void* memmove(void *dest, const void *src, unsigned long len) {
 	char *d = dest;
 	const char *s = src;
 	if (d < s) {
@@ -54,8 +50,7 @@ void KPutCharX();
 void PutChar();
 
 __attribute__((noinline)) __attribute__((optimize("O1")))
-void KPrintF(const char* fmt, ...)
-{
+void KPrintF(const char* fmt, ...) {
 	va_list vl;
 	va_start(vl, fmt);
 	long(*UaeDbgLog)(long mode, const char* string) = (long(*)(long, const char*))0xf0ff60;
@@ -98,8 +93,7 @@ __attribute__((used)) __attribute__((section(".text.unlikely"))) void _start() {
 		__fini_array_start[i - 1]();
 }
 
-void warpmode(int on) // bool
-{
+void warpmode(int on) { // bool
 	long(*UaeConf)(long mode, int index, const char* param, int param_len, char* outbuf, int outbuf_len);
 	UaeConf = (long(*)(long, int, const char*, int, char*, int))0xf0ff60;
 	if(*((UWORD *)UaeConf) == 0x4eb9 || *((UWORD *)UaeConf) == 0xa00e) {
@@ -109,8 +103,7 @@ void warpmode(int on) // bool
 	}
 }
 
-static void debug_cmd(unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4)
-{
+static void debug_cmd(unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4) {
 	long(*UaeLib)(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
 	UaeLib = (long(*)(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int))0xf0ff60;
 	if(*((UWORD *)UaeLib) == 0x4eb9 || *((UWORD *)UaeLib) == 0xa00e) {
@@ -125,6 +118,7 @@ enum barto_cmd {
 	barto_cmd_text,
 	barto_cmd_register_resource,
 	barto_cmd_set_idle,
+	barto_cmd_unregister_resource,
 };
 
 enum debug_resource_type {
@@ -222,4 +216,8 @@ void debug_register_copperlist(const void* addr, const char* name, unsigned int 
 	};
 	my_strncpy(resource.name, name, sizeof(resource.name));
 	debug_cmd(barto_cmd_register_resource, (unsigned int)&resource, 0, 0);
+}
+
+void debug_unregister(const void* addr) {
+	debug_cmd(barto_cmd_unregister_resource, (unsigned int)addr, 0, 0);
 }

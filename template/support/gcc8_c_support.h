@@ -39,6 +39,7 @@ enum debug_resource_flags {
 void debug_register_bitmap(const void* addr, const char* name, short width, short height, short numPlanes, unsigned short flags);
 void debug_register_palette(const void* addr, const char* name, short numEntries, unsigned short flags);
 void debug_register_copperlist(const void* addr, const char* name, unsigned int size, unsigned short flags);
+void debug_unregister(const void* addr);
 
 #define INCBIN(name, file) INCBIN_SECTION(name, file, ".rodata", "")
 #define INCBIN_CHIP(name, file) INCBIN_SECTION(name, file, ".INCBIN.MEMF_CHIP", "aw")

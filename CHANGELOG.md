@@ -33,7 +33,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - profiler now supports multiple frames with screenshots
 - profiler: optimized loading of big profile files
 - fixed blitter crash after setting a breakpoint in interrupt or profiling
-- graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_* functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.
+- graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_*/debug_unregister functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.
 - several DMA request were not displayed in the timeline (bitplanes > 1, sprites > 1, refresh > 1)
 - template project: added ThePlayer61 module replayer. To convert your own modules, use [p61con](https://www.pouet.net/prod.php?which=19922)
 - increased buffer size for addr2line.exe (profiling could fail on "big" executables)
