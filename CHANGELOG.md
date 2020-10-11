@@ -7,7 +7,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
   - `A1200-FAST`: A1200 with 4MB fast memory
   - `A1200-030`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `cpuboard`.
   - `A3000`: A3000 (no profiler support)
-- new option `endcli` in `.vscode/launch.json`: If enabled, uses `run` and `EndCLI` in `startup-sequence` so you cann call `CloseWorkBench()` from your program.
+- new option `endcli` in `.vscode/launch.json` (default: false) If enabled, uses `run` and `EndCLI` in `startup-sequence` so you cann call `CloseWorkBench()` from your program.
+- new option `uaelog` in `.vscode/launch.json` (default: true): If disabled, don't show WinUAE log output in debug console
 - NDK: updated to latest version from bebbo's package
 - GCC: prevent `sccp` pass from generating `__mulsi3` calls
 - Fixed WinUAE not booting correctly after overwriting the default configuration
@@ -34,9 +35,11 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - profiler: optimized loading of big profile files
 - fixed blitter crash after setting a breakpoint in interrupt or profiling
 - graphics debugger in profiler (copper, blitter, bitmaps, custom registers). Use debug_register_*/debug_unregister functions from `gcc8_c_support.h` to tell the graphics debugger about your bitmaps, palettes and copperlists for a better experience. Move the time slider in the flame-graph to replay the captured frame and see your graphics change in real-time. Use 'Overlay' to visualize blitter rects or overdraw.
+- WinUAE debug overlay: debug_text now supports newlines
 - several DMA request were not displayed in the timeline (bitplanes > 1, sprites > 1, refresh > 1)
 - template project: added ThePlayer61 module replayer. To convert your own modules, use [p61con](https://www.pouet.net/prod.php?which=19922)
 - increased buffer size for addr2line.exe (profiling could fail on "big" executables)
+- `gcc8_c_support.c`: improved `warpmode`
 - IntelliSense: previous versions would write `"compilerPath"` to every `.vscode/c_cpp_properties.json`, even if it wasn't an Amiga project. Now, the whole process has been simplified. Please use the following `.vscode/c_cpp_properties.json` file:
 ```json
 {

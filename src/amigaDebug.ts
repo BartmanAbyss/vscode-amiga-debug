@@ -24,6 +24,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
+	uaelog?: boolean;
 }
 
 class ExtendedVariable {
@@ -262,6 +263,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		// all WinUAE options now in config file
 		const winuaePath = path.join(binPath, "winuae-gdb.exe");
 		const winuaeArgs = [ '-portable' ];
+
+		// defaults - from package.json
+		if(args.endcli === undefined)
+			args.endcli = false;
+		if(args.uaelog === undefined)
+			args.uaelog = true;
 
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
@@ -673,6 +680,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					return;
 				} else { // WinUAE output
 					type = 'stderr';
+					if(!(this.args.uaelog === true))
+						return;
 				}
 			}
 			this.sendEvent(new OutputEvent(msg, type));
