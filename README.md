@@ -188,6 +188,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ### Profiler
 * lines of functions seem to be off (see template/main.c: function main)
+* TODO: show blitter priority in profiler
+* TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
 
@@ -218,7 +220,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Gfx Debugger
-* TODO: show blitter priority in profiler
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
