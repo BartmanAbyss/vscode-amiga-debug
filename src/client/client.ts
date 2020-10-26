@@ -32,6 +32,7 @@ async function Profiler() {
 		console.timeEnd('fetch+json');
 
 		if((PROFILES as any).hunks) { // shrinklerstats
+			console.log("Shrinkler");
 			PROFILES = [ profileShrinkler(PROFILES as any) ];
 		}
 
