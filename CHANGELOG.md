@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- better C++ support (added -fno-rtti -fcoroutines to CCFLAGS). Added <type_traits>, <coroutines> header files.
 - support for more Amiga models in `.vscode/launch.json` (these are all WinUAE quickstart configs):
   - `A1200-FAST`: A1200 with 4MB fast memory
   - `A1200-030`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `cpuboard`.
