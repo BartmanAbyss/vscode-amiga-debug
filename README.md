@@ -48,9 +48,12 @@ This fully self-contained extension will help you to quickly develop demos, intr
 
 ## Supported Amiga Models
 - Possible values of `"config"` in `.vscode/launch.json`:
-  - `"a500"`: KS 1.3, ECS Agnus, 0.5MB Chip + 0.5MB Slow; needs Kickstart 1.3 ROM in `"kickstart"`
-  - `"a1200"`: 68020, 2MB Chip; needs Kickstart 3.1 ROM in `"kickstart"`
-  - `"a4000"`: 68030, 68882, 2MB Chip, 8MB FAST; needs Kickstart 3.1 ROM in `"kickstart"`
+  - `"A500"`: KS 1.3, ECS Agnus, 0.5MB Chip + 0.5MB Slow; needs Kickstart 1.3 ROM in `"kickstart"`
+  - `"A1200"`: 68020, 2MB Chip; needs Kickstart 3.1 ROM in `"kickstart"`
+  - `"A1200-FAST"`: A1200 with 4MB fast memory
+  - `"A1200-030"`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `"cpuboard"`.
+  - `"A3000"`: A3000 (no profiler support); needs Kickstart 2.0 ROM in `"kickstart"`
+  - `"A4000"`: 68030, 68882, 2MB Chip, 8MB FAST; needs Kickstart 3.1 ROM in `"kickstart"`
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
@@ -185,6 +188,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ### Profiler
 * lines of functions seem to be off (see template/main.c: function main)
+* TODO: show blitter priority in profiler
+* TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
 
@@ -215,7 +220,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Gfx Debugger
-* TODO: show blitter priority in profiler
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
