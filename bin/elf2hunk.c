@@ -28,6 +28,7 @@
 #define F_NOCONVERT     (1 << 1)
 #define F_PCREL         (1 << 2)
 #define F_BINARY        (1 << 3)
+#define F_STRIP         (1 << 4)
 
 #if defined(_MSC_VER) || defined(WIN32)
 	#include <winsock2.h>
@@ -645,6 +646,9 @@ static int wlong(int fd, ULONG val)
 
 int sym_dump(int hunk_fd, struct elfheader* eh, struct sheader *sh, struct hunkheader **hh, int shid, int symtabndx, int flags)
 {
+	if(flags & F_STRIP)
+		return 1;
+
 	int i, err, syms;
 	struct symbol *sym = hh[symtabndx]->data;
 	struct sheader *symtab = &sh[symtabndx];
@@ -1186,17 +1190,20 @@ int main(int argc, char **argv)
 			flags |= F_PCREL;
 		if(strcmp(argv[i], "-bin") == 0)
 			flags |= F_BINARY;
+		if(strcmp(argv[i], "-s") == 0)
+			flags |= F_STRIP;
 	}
 
 	if(argc < 3) {
 		fprintf(stderr, "Copyright (c) 1995-2017, The AROS Development Team. All rights reserved.\nModified 2018-2020, Bartman/Abyss\n\n");
-		fprintf(stderr, "Usage:\n%s file.elf file.hunk [-v] [-pcrel] [-bin]\n", argv[0]);
+		fprintf(stderr, "Usage:\n%s file.elf file.hunk [-v] [-pcrel] [-bin] [-s]\n", argv[0]);
 		#ifndef _MSC_VER
 			fprintf(stderr, "%s src-dir dest-dir\n", argv[0]);
 		#endif
 		fprintf(stderr, "\t-v: verbose\n");
 		fprintf(stderr, "\t-pcrel: PC-Relative: merge all sections\n");
 		fprintf(stderr, "\t-bin: PC-Relative: output binary instead of hunk (use with -pcrel)\n");
+		fprintf(stderr, "\t-s: strip symbols\n");
 		return EXIT_FAILURE;
 	}
 

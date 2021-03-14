@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- elf2hunk now suports `-s` to strip symbols (long symbol names can cause AmigaDOS to not load the exe file)
 - better C++ support (added -fno-rtti -fcoroutines to CCFLAGS). Added <type_traits>, <coroutines> header files. support for global destructors (now using -fno-use-cxa-atexit)
 - support for more Amiga models in `.vscode/launch.json` (these are all WinUAE quickstart configs):
   - `A1200-FAST`: A1200 with 4MB fast memory

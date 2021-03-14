@@ -29,7 +29,7 @@ all: $(OUT).exe
 
 $(OUT).exe: $(OUT).elf
 	$(info Elf2Hunk $(OUT).exe)
-	@elf2hunk $(OUT).elf $(OUT).exe
+	@elf2hunk $(OUT).elf $(OUT).exe -s
 
 $(OUT).elf: $(objects)
 	$(info Linking a.mingw.elf)
