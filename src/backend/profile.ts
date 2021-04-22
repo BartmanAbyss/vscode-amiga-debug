@@ -37,7 +37,7 @@ export class SourceMap {
 		const tmp = path.join(os.tmpdir(), `amiga-sourcemap-${new Date().getTime()}`);
 		fs.writeFileSync(tmp, str);
 
-		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 100*1024*1024 });
+		const objdump = childProcess.spawnSync(this.addr2linePath, ['--addresses', '--inlines', '--functions', '--demangle', `--exe=${this.executable}`, `@${tmp}`], { maxBuffer: 100*1024*1024 });
 		fs.unlinkSync(tmp);
 		if(objdump.status !== 0)
 			throw objdump.error;

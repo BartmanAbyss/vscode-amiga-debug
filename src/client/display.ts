@@ -73,8 +73,8 @@ declare let PROFILES: ICpuProfileRaw[]; // hmm...
 
 export const scaleValue = (value: number, total: number, unit: DisplayUnit) => {
 	const cyclesPerMicroSecond = (() => {
-		if(PROFILES.length) {
-			const cpuFreq = PROFILES[0].$amiga.baseClock / 4 * 256 /PROFILES[0].$amiga.cpuCycleUnit;
+		if(PROFILES.length && PROFILES[0].$amiga) {
+			const cpuFreq = PROFILES[0].$amiga.baseClock / 4 * 256 / PROFILES[0].$amiga.cpuCycleUnit;
 			return cpuFreq / 1_000_000;
 		}
 		return 7.093790;
