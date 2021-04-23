@@ -5,7 +5,9 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.1.0
 - `Profile File Size` working again, now demangles C++ names
 - bump IntelliSense to gnu11, g++20
+- moved elf2hunk to a seperate repository, limit symbol length, C++ name demangling
 - elf2hunk now suports `-s` to strip symbols (long symbol names can cause AmigaDOS to not load the exe file)
+- fix crash in Shrinkler for empty symbol hunks
 - better C++ support (added -fno-rtti -fcoroutines to CCFLAGS). Added <type_traits>, <coroutines> header files. support for global destructors (now using -fno-use-cxa-atexit)
 - support for more Amiga models in `.vscode/launch.json` (these are all WinUAE quickstart configs):
   - `A1200-FAST`: A1200 with 4MB fast memory

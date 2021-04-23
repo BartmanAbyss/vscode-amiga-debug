@@ -69,7 +69,7 @@ export class SymbolTable {
 			throw new Error("call getSections() before getSymbols()!");
 
 		this.symbols = [];
-		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', '--demangle', this.executable]);
+		const objdump = childProcess.spawnSync(this.objdumpPath, ['--syms', '--demangle', this.executable], { maxBuffer: 10*1024*1024 });
 		if(objdump.status !== 0)
 			throw objdump.error;
 		const lines = objdump.stdout.toString().replace(/\r/g, '').split('\n');
