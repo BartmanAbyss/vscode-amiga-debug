@@ -1,0 +1,36 @@
+/* $VER: CD0 40.6 (31.8.93)
+ *
+ * CD-ROM file system entry
+ *
+ * This file enables the CD-ROM file system which allows you to read standard
+ * ISO-9660 CD-ROM disks from an Amiga with a SCSI or IDE controller.
+ *
+ * The "Unit" line defines the SCSI address of the CD-ROM drive. Drives
+ * often come configured as unit 2, which is the default. Check the
+ * documentation for your CD-ROM drive to find the exact SCSI address.
+ * Note that most drives let you change this number using jumpers.
+ */
+
+FileSystem	= L:CDFileSystem
+Flags		= 0
+Surfaces	= 1
+SectorsPerTrack	= 1
+SectorSize	= 2048
+Mask		= 0x7ffffffe
+MaxTransfer	= 0x100000
+Reserved	= 0
+Interleave	= 0
+LowCyl		= 0
+HighCyl		= 0
+Buffers		= 5
+BufMemType	= 0
+StackSize	= 1000
+Priority	= 10
+GlobVec		= -1
+DosType		= 0x43443031
+
+/* The Device and Unit fields are controlled by tooltypes in the CD0 icon.
+ *
+ * Device	= scsi.device
+ * Unit		= 2
+ */

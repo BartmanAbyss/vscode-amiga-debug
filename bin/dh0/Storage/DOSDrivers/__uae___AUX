@@ -1,0 +1,8 @@
+/* $VER: AUX 40.1 (31.8.93)
+ *
+ * Aux-Handler mount entry
+ */
+
+Handler		= L:Aux-Handler
+StackSize	= 1000
+Priority	= 5

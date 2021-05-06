@@ -1,0 +1,145 @@
+@database amigaguide.guide
+@rem $VER: amigaguide.guide_English 39.1 (26.8.92)
+@wordwrap
+
+@node MAIN
+@title "AmigaGuide® Help"
+   I.    @{" Buttons " link HELP_BUTTONS}
+   II.   @{" Menus " link HELP_MENUS}
+   III.  @{" Keystrokes " link HELP_KEYSTROKES}
+   IV.   @{" Mouse " link HELP_MOUSE}
+   V.    @{" Arrow Keys " link HELP_ARROWS}
+
+@endnode
+
+@node HELP_BUTTONS "AmigaGuide® Help: Buttons"
+@{b}Contents@{ub}
+Display the Table of Contents document for the current database.
+
+@{b}Index@{ub}
+Display the index document for the current database.
+
+@{b}Help@{ub}
+Display the help document for the current database.  If the database doesn't have a Help document of its own, then the global Help database will be used instead.
+
+@{b}Retrace@{ub}
+Go back to the previous node.
+
+@{b}Browse@{ub}
+Step through the documents in sequential order, in the order they appear in the database.
+@endnode
+
+@node HELP_MENUS "AmigaGuide® Help: Menus"
+@{b}Project@{ub}
+
+ Open
+ Bring up the file requester so that a different file can be loaded for viewing.
+
+ Save As
+ Save the current object to a file.
+
+ Print
+ Print the current document to the current print device.
+
+ About
+ Bring up a requester that shows information on the current document.
+
+ Quit
+ Close the  window for the current database, and exit.
+
+@{b}Edit@{ub}
+
+ Mark
+ Start marking a block of text for copying to the clipboard.
+
+ Copy
+ Copy the current document to the clipboard.
+
+ Select All
+ Select all the lines of the current document.
+
+ Clear Selected
+ Unselect all the lines of the current document.
+
+@{b}Window@{ub}
+
+ Minimize
+ Make the window as small as possible.
+
+ Normal
+ Make the window the same size as the current contents.
+
+ Maximize
+ Make the window as large as possible.
+
+@{b}Settings@{ub}
+
+ Save As Defaults
+ Save the current window position as the default settings for future invocations.
+
+@endnode
+
+@node HELP_KEYSTROKES
+@title "AmigaGuide® Help: Keystrokes"
+@{b}HELP@{ub}
+Display this document.
+
+@{b}ESC@{ub}
+Close the active AmigaGuide® window.
+
+@{b}Backspace@{ub}
+Scroll backwards a page.
+
+@{b}SPACE@{ub}
+Scroll forwards a page.
+
+@{b}>@{ub}
+Go to the end of the current document.
+
+@{b}<@{ub}
+Go to the beginning of the current document.
+@endnode
+
+@node HELP_ARROWS
+@title "AmigaGuide® Help: Arrow Keys"
+@{b}Up@{ub}
+Scroll up through the document.
+
+@{b}Down@{ub}
+Scroll down through the document.
+
+@{b}Shift-Up@{ub}
+Go up a page in the document.
+
+@{b}Shift-Down@{ub}
+Go down a page in the document.
+
+@{b}Alt-Up@{ub}
+Go to the beginning of the document.
+
+@{b}Alt-Down@{ub}
+Go to the end of the document.
+
+@{b}Left@{ub}
+Scroll left through the document.
+
+@{b}Right@{ub}
+Scroll right through the document.
+
+@{b}Shift-Left@{ub}
+Scroll left one window-full through the document.
+
+@{b}Shift-Right@{ub}
+Scroll right one window-full through the document.
+
+@{b}Alt-Left@{ub}
+Go to the extreme left of the document.
+
+@{b}Alt-Right@{ub}
+Go to the extreme right of the document.
+@endnode
+
+@node HELP_MOUSE "AmigaGuide® Help: Mouse"
+@{b}Select@{ub}
+Over a node, will activate the node.
+@endnode

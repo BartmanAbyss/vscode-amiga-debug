@@ -1,0 +1,43 @@
+# Amiga brutab.  The pseudo devices "tape:" and "ntape:" (the
+# names are arbitrary) are the rewinding and nonrewinding
+# names of the tape drive.  The pseudo device entry must include
+# the driver name and the scsi unit number for mapping from the
+# arbitrary user name to the actual device.  If two controllers
+# are used (I.E. 2 2091's) then the second controller's driver
+# is called "2nd.scsi.device".
+#
+df0: \
+   size=880K seek=512 bufsize=22K noreopen qfwrite \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   rawfloppy device=trackdisk.device unit=0
+df1: \
+   size=880K seek=512 bufsize=22K noreopen qfwrite \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   rawfloppy device=trackdisk.device unit=1
+df2: \
+   size=880K seek=512 bufsize=22K noreopen qfwrite \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   rawfloppy device=trackdisk.device unit=2
+df3: \
+   size=880K seek=512 bufsize=22K noreopen qfwrite \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   rawfloppy device=trackdisk.device unit=3
+tape: \
+   size=0 seek=0 bufsize=200K noreopen rewind \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   advance tape rawtape device=scsi.device unit=4
+ntape: \
+   size=0 seek=0 bufsize=200K noreopen norewind \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   advance tape rawtape device=scsi.device unit=4
+tape2: \
+   size=0 seek=0 bufsize=200K noreopen rewind \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   advance tape rawtape device=2nd.scsi.device unit=4
+ntape2: \
+   size=0 seek=0 bufsize=200K noreopen norewind \
+   prerr=5 pwerr=5 zrerr=5 zwerr=5 frerr=5 fwerr=5 wperr=30 \
+   advance tape rawtape device=2nd.scsi.device unit=4
+- \
+   size=0 seek=0 \
+   prerr=0 pwerr=0 zrerr=0 zwerr=0 frerr=0 fwerr=0 wperr=0

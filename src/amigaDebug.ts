@@ -286,7 +286,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
-		try {
+		/*try {
 			if(args.endcli)
 				fs.writeFileSync(ssPath, `cd dh1:\nrun >nil: <nil: ${config['debugging_trigger']} >nil: <nil:\nendcli >nil:\n`);
 			else
@@ -294,7 +294,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		} catch (err) {
 			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${err.toString()}`);
 			return;
-		}
+		}*/
 
 		this.quit = false;
 		this.started = false;

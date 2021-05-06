@@ -1,0 +1,32 @@
+/* $VER: PC0 40.1 (31.8.93)
+ *
+ * CrossDOS file system entry
+ *
+ * This file enables CrossDOS on the built-in floppy drive normally
+ * referred to as DF0:. PC1 does the same for DF1. By creating new versions
+ * of this file and changing the Unit line to use other numbers, you can
+ * make CrossDOS available on other devices. For example, changing the value
+ * of Unit to 2 would create a mount file that would enable CrossDOS on DF2.
+ */
+
+FileSystem	= L:CrossDOSFileSystem
+Device		= mfm.device
+Flags		= 1
+Surfaces	= 2
+SectorsPerTrack	= 9
+SectorSize	= 512
+Reserved	= 1
+Interleave	= 0
+LowCyl		= 0
+HighCyl		= 79
+Buffers		= 5
+BufMemType	= 0
+StackSize	= 600
+Priority	= 10
+GlobVec		= -1
+DosType		= 0x4D534400
+
+/* The Unit field is controlled by tooltypes in the PC0 icon.
+ *
+ * Unit		= 0
+ */

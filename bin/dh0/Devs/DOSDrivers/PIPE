@@ -1,0 +1,9 @@
+/* $VER: PIPE 40.1 (31.8.93)
+ *
+ * Queue-Handler mount entry
+ */
+
+Handler		= L:Queue-Handler
+StackSize	= 3000
+Priority	= 5
+GlobVec		= -1

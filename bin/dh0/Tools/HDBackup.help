@@ -1,0 +1,497 @@
+@root
+[200,0] HDBackup Main Help Page
+[20,40] Menus [menus]
+[20,60] Configuration file options [config_root]
+[20,80] File list help [fl_help]
+
+[80,120] Click Here to learn about "help"! [about_help]
+
+
+@about_help
+[200,0] About Help
+
+[20,20] Text in a (normally) bright color like this may be clicked [click]
+to move to a page containing more details about the topic. [click]
+
+Text in this color provides information only.  Clicking will have no
+effect.
+
+The buttons near the top of the window may be clicked to return to
+the previous page or the main page.
+
+You may also return to the main page by pressing the return key, or to
+the previous page by pressing almost any other key.
+
+The help window may be exited by clicking the closewindow gadget or by
+pressing the escape key (ESC).
+
+
+@click
+[220,80] See!  Wasn't that easy?
+
+
+
+@menus
+[200,0] ******* Menu items *******
+[20,20] Project
+-------
+Backup [menu_backup]
+Restore [menu_restore]
+No-log Restore [menu_nlrestore]
+Help [menu_help]
+About [menu_about]
+Info [menu_info]
+Quit [menu_quit]
+
+[180,20] Display Sorting [menu_dsort]
+---------------
+List Directories First [menu_dfirst]
+Sort by Name
+Sort by Date
+Sort by Size
+Sort by Archive Bit
+
+[410,20] Options
+-------
+Set Archive Bits [menu_seta]
+Smaller Log Files [autotrim]
+Compression [menu_comp]
+Backup Dir Structure [menu_backdir]
+
+[20,120] Devices [menu_devices]
+-------
+
+;------------------------------------------------------------------
+
+@menu_backup
+[10,30] The menu item "Backup" will start the backup process.
+This will bring up a requester for selecting which partition or
+sub-directory is to be backed up.
+
+
+@menu_restore
+[10,30] The menu item "Restore" will start a restoration.
+A requester will appear asking for a logfile to be selected.  This
+logfile should correspond to the floppy disk (or tape etc.) set that
+is to be restored from.
+If no logfile exists, see the menu selection
+[382,70] "No-log Restore". [menu_nlrestore]
+
+
+@menu_nlrestore
+[10,30] The menu selection "No-log Restore" will allow a set of archive
+floppys (or tape etc.) to be restored even though no logfile exists.
+This mode allows a full restore only.  Consequently, all files on the backup
+media will be restored.  No selection of specific files can occur.
+
+
+@menu_help
+[10,30] The menu item "Help" will bring up this help window.
+
+
+@menu_about
+[10,30] The menu item "About" will display version and copyright
+information, as well as information about the program's authors etc.
+
+
+@menu_info
+[10,30] The menu item "Info" displays a window showing which colors
+in the file list display indicate certain attributes.
+
+
+@menu_quit
+[10,30] The menu item "Quit" will cause the HDBackup program to exit.
+
+
+@menu_dsort
+[10,30] The "Display Sorting" menu controls the order in which
+entries appear in the file list area.
+
+[20,60] Sort by Name --- Alphabetical order by file name
+
+[20,74] Sort by Date --- Files will appear in the order that they were last
+                 modified.  Oldest files before newer files.
+
+[20,98] Sort by Size --- Smaller files will appear before larger files.
+
+[20,112] Sort by Archive Bit --- Files with the archive bit set will appear
+                        after those without.
+
+
+@menu_dfirst
+[10,30] The menu item "List Directories First" when checked will
+cause directories to appear at the start of the file display.
+If this is not selected, directories will appear amongst the
+normal files.
+
+
+@menu_seta
+[10,30] The menu item "Set Archive Bits" will, when checked, cause
+the archive bit to be set for all files that are successfully
+backed-up.  This bit can later be tested as a convenient means
+of determining which files must be saved when doing an incremental
+backup.
+
+
+@menu_comp
+[10,30] The menu item "Compression" allows control of file compression
+on the backup media.  Note that if compression is selected no
+information will be displayed about the number of diskettes (tapes etc.)
+required for the backup.
+
+[60,80] Sub-menu items:
+
+[20,94] None --- This will cause no compression to be performed.
+
+All  --- All files will be compressed.
+
+Larger than ??? --- Selecting this option will bring up a requester
+                    allowing a file size to be entered.  All files
+                    whose size is greater than the size entered will
+                    be compressed.
+
+
+@menu_backdir
+[10,30] The menu item "Backup Dir Structure" controls how empty
+directories are dealt with when a backup is performed.  If this
+item is "on", empty directories will be saved to the backup media.
+If off, they will not be saved.
+
+
+@menu_devices
+[10,30] The "Devices" menu contains a list of possible devices
+on which a backup or restore may be performed.  If more than
+one of these is checked, they will be used in sequence.
+Devices may be added to this list with the
+[360,60] DEVS [opt_devs]
+[400,60] option.
+
+@autotrim
+[10,20] The menu item "Smaller Log Files" will, when selected, cause files which
+were shadowed, de-selected, or which had a 'write error' to be deleted
+from the directory tree prior to saving the logfile.  This deletion will
+happen immediately after the backup is performed.
+
+
+
+;------------------------------------------------------------------
+
+
+@config_root
+
+[10,10] CONFIGURATION OPTIONS
+
+
+[20,30] *** Case is significant for both pieces of the option spec.
+[20,40] *** There should also be no spaces in the option spec.
+
+; first column
+[100,70] LACE [opt_lace]
+SCREEN [opt_screen]
+FONT [opt_fontname]
+FONTSIZE [opt_fontsize]
+START [opt_start]
+DEVS [opt_devs]
+USE [opt_use]
+
+; second column
+[300,70] BRU [opt_bru]
+BRUPATH [opt_brupath]
+BRUARGS [opt_bruargs]
+BRUSTACK [opt_brustack]
+ICONS [opt_icons]
+LOGDIR [opt_logdir]
+FILEICON [opt_fileicon]
+DIRICON [opt_diricon]
+;EMBEDLOG [opt_embedlog]
+
+; third column
+[500,70] BACKUP [opt_backup]
+RESTORE [opt_restore]
+
+
+[50,180] Option Default Settings [config_defaults]
+
+
+;------------------------------------------------------------------
+
+
+@config_defaults
+
+[10,10] Configuration Option Defaults
+
+; first column
+[50,30] DEBUG=off
+LACE=off
+SCREEN=custom
+FONT=topaz
+FONTSIZE=8
+START=off
+DEVS=df0:|df1:df2:|df3:
+USE=df0:
+
+; second column
+[300,30] BRU=bru
+BRUPATH=
+BRUARGS=
+BRUSTACK=
+ICONS=on
+LOGDIR=SYS:HDBackupLogs
+FILEICON=
+DIRICON=
+;EMBEDLOG=on
+BACKUP=
+RESTORE=
+
+
+
+;-----------------------------------------------------------------
+;-----			Option Pages								------
+;-----------------------------------------------------------------
+
+
+@opt_brupath
+
+BRUPATH=<name>
+example:BRUPATH=dh3:utilities/est
+BRU=c:
+BRU=HDutils:
+
+This allows specifying an explicit path to find BRU.  Note that this path
+is limited to 64 characters.  It also may NOT contain spaces.  If this
+option is not used, HDBackup will search for BRU first in the directory
+containing HDBackup, and then in "c:".
+
+
+
+@opt_bru
+
+BRU=<name>
+example:BRU=bru
+BRU=bru.dbug
+
+This allows an alternate name for the bru executable to be given.  The
+default is "bru".
+
+
+
+@opt_bruargs
+
+BRUARGS=<argument-list>
+example:BRUARGS=-#d:t:F:L:o,bru.log
+
+This allows some user specified arguments to be passed to bru by HDBackup.
+Not very useful for the most part, except for debugging purposes.
+
+
+
+@opt_brustack
+
+BRUSTACK=<value>
+example:BRUSTACK=40000
+
+This allows a specific stack size to be set for the bru process by HDBackup.
+The default is to use the same stack size as HDBackup if BRUSTACK is not
+given.
+
+
+
+@opt_devs
+
+DEVS=<name>|...
+example:DEVS=worm:|tape:
+
+This allows adding device names to the "devices" menu in addition to
+to the pre-existing ones DF0: thru DF3:.  A total of 4 additional
+devices can be added to this menu.
+Note: This must come *before* a USE= option statement.
+
+
+@opt_use
+
+USE=<name>|...
+example:USE=df0:|df1:|df2:
+
+Specify the names of backup devices to use.  These devices should
+already exist on the device menu, either by virtue of being the
+default devices which are always there (i.e. DF0: DF1: DF2: DF3:),
+or by having been defined in a previous DEVS= option.
+
+
+
+@opt_fontname
+
+FONTNAME=<name>
+example:   FONTNAME=topaz
+
+This should be the name of a constant-width font.  This font will
+be used wherever possible in the HDBackup screen.
+
+
+@opt_fontsize
+
+FONTSIZE=<num>
+example:   FONTSIZE=8
+
+The font can be any height from 6 to 15, but the width MUST be 8.
+Obviously this precludes use of proportional fonts.
+
+
+
+@opt_screen
+
+SCREEN=custom
+SCREEN=workbench
+
+This will cause the workbench screen or a custom screen
+to be used.
+
+
+
+@opt_numcolors
+
+NUMCOLORS=4
+NUMCOLORS=8
+
+Causes either 4 or 8 colors to be used for the custom
+screen. 
+Has no effect if  SCREEN=workbench
+
+
+
+@opt_lace
+
+LACE=on
+LACE=off
+
+Controls whether or not the custom screen is (USA) 200 lines
+high or (USA) 400 lines high.  This will also affect the
+colors used. (Probably want different colors than for a
+non-interlaced screen!)
+
+
+
+@opt_colors
+
+COLORS=<num>,<num>,<num>,<num>,<num>,<num>,<num>,<num>
+example:   COLORS=000,458,FFF,800,7FF,AA3,8B2,111
+
+Set the colors for the custom screen.  The number is of
+the format Red-Green-Blue, in hex.
+For example, black would be 000, white would be FFF.
+All colors MUST be specified if this parameter is used.
+
+
+
+@opt_lacecolors
+
+LACECOLORS=<num>,<num>,<num>,<num>,<num>,<num>,<num>,<num>
+example:   COLORS=000,458,FFF,800,7FF,AA3,8B2,111
+
+Set the colors for the custom screen which will be used if
+LACE=on is set.  The number is of the format Red-Green-Blue,
+in hex.
+For example, black would be 000, white would be FFF.
+All colors MUST be specified if this parameter is used.
+
+
+
+@opt_backup
+
+BACKUP=<volume>
+
+Causes HDBackup to automatically and immediately go into the desired
+mode and begin building the tree.
+
+
+
+@opt_restore
+
+RESTORE=<volume>
+
+Causes HDBackup to automatically and immediately go into the desired
+mode and begin building the tree.
+
+
+
+@opt_start
+
+START=on
+START=off
+
+If set to on, the operation set by specifing the BACKUP= or the
+RESTORE= option will commence automatically.  Otherwise the tree
+is merely built, then the user must start the backup.
+
+
+
+@opt_icons
+
+ICONS=on
+ICONS=off
+If on, logfiles will have icons created for them, as will any
+directories which need to be created to save the logfile in.
+
+
+
+@opt_fileicon
+
+FILEICON=<name>
+Example:FILEICON=dh3:icons/blank
+FILEICON=df0:my_logfile_icon
+
+This is the name of an icon to use as the template for
+creating logfile icons.  The ".info" extension will be added.
+If this is not specified, the internal default icon will
+be used.  This has no effect if the "ICONS=off" option has been
+given.
+
+
+
+@opt_diricon
+
+DIRICON=<name>
+Example:DIRICON=dh3:icons/empty
+DIRICON=df0:my_directory_icon
+
+This is the name of an icon to use as the template for
+creating logfile directory icons.
+The ".info" extension will be added.
+If this is not specified, the internal default icon will
+be used.  This has no effect if the "ICONS=off" option has been
+given.
+
+
+
+@opt_embedlog
+
+EMBEDLOG=on
+EMBEDLOG=off
+
+If on, the logfile will be embedded in the BRU archive.
+
+
+
+@opt_logdir
+
+LOGDIR=<name>
+Example:LOGDIR=SYS:HDBackupLogs
+LOGDIR=DF0:
+LOGDIR=DF1:archive/hd/current
+
+The directory in which to start the Logfile storage tree.  If this is
+set to "nothing", no logfile will be saved!
+
+
+;-------------------------------------------------------------------
+
+@fl_help
+
+[60,20] General information about the file list:
+[20,40] The file list is the area on the right half of the screen
+which displays the list of files to be either backed-up or restored
+(depending on the mode).
+
+Double-clicking on a file entry will bring up a window showing
+detailed information about the file, as well as a hexadecimal display
+of the first 64 bytes in the file.

@@ -1,0 +1,22 @@
+si 0  1 "Project"
+si 1  2 "Open...    ESCop" "op ? /File: /"
+si 2  4
+si 3  2 "Save       ESCsa" "sa"
+si 4  2 "Save As... ESCsa" "sa ? /Save As: /"
+si 5  4
+si 6  2 "About      ESCsh" "sh"
+si 7  2 "Quit       ESCq" "q"
+si 8  1 "Movement"
+si 9  2 "Top               ESCt" "t"
+si 10 2 "Bottom            ESCb" "b"
+si 11 4
+si 12 2 "Find...           ESCf" "f ? /Find string: /"
+si 13 2 "Backwards Find... ESCbf" "bf ? /Find string: /"
+
+si 14 1 "Edit"
+si 15 2 "Delete Line       ESCd" "d"
+si 16 2 "Query-Replace...  ESCeq" "eq ? /Replace this: / ? /With this: /"
+si 17 4
+si 18 2 "Redisplay         ESCvw" "vw"
+si 19 0
+em

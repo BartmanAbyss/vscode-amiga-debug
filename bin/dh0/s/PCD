@@ -1,0 +1,14 @@
+.key DIR
+
+; $VER: PCD 40.1 (9.2.93)
+; This is a CD script that remembers the previous directory
+
+IF "<DIR>" EQ ""
+  Assign ofrom<$$>: ""
+  CD from<$$>:
+  Assign from<$$>: ofrom<$$>:
+  Assign ofrom<$$>:
+Else
+  Assign from<$$>: ""
+  CD <DIR>
+EndIF

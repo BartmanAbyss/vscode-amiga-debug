@@ -1,0 +1,267 @@
+%!PS
+%% $VER: postscript_init.ps 39.1 (31.12.92)
+%%BeginProlog
+
+/AmigaDict 70 dict def AmigaDict begin
+
+%---------
+% Device Specific routines
+%---------
+
+% Paper Trays
+/letter {} def
+/legal  {} def
+/a4 {} def
+/custom {} def
+
+% Manual Paper Feed
+/manual {} def
+
+% Graphic Screen Types
+/line_scr  { {pop} setscreen } def
+/dot_scr   { 20 currentscreen 4 -2 roll pop 3 1 roll setscreen } bind def
+/vert_scr  { 40  0 line_scr } def
+/horiz_scr { 40 90 line_scr } def
+/diag_scr  { 40 45 line_scr } def
+
+%---------
+% General functions
+%---------
+
+% underline show string
+/U
+{
+    gsave 0 -3 rmoveto
+    dup stringwidth pop
+    dup 0 rlineto neg 0 rlineto stroke
+    grestore
+} bind def
+
+% Backspace a string
+/BS { stringwidth pop neg 0 rmoveto } bind def
+
+% Shadow show string
+/SS
+{
+    dup
+    gsave false charpath .5 setlinewidth stroke grestore
+    stringwidth pop 0 rmoveto
+} bind def
+
+% Show
+/S {show} bind def
+
+% Move
+/M {moveto} bind def
+
+/YM {currentpoint pop exch moveto} bind def
+
+%% Define the ReEncoding Procudure
+/reencodedict 5 dict def
+/ReEncode
+{
+    reencodedict begin
+    /newencoding exch def
+    /newfontname exch def
+    /basefontname exch def
+
+    /basefontdict basefontname findfont def
+
+    /newfont basefontdict maxlength dict def
+
+    basefontdict
+    { exch dup dup /FID ne exch /Encoding ne and
+        { exch newfont 3 1 roll put }
+        { pop pop }
+        ifelse
+    } forall
+    newfont /FontName newfontname put
+    newfont /Encoding newencoding put
+    newfontname newfont definefont pop
+    end
+} def
+
+%% Define the ISO encoding Vector
+/ISO
+[
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /space /exclam /quotedbl /numbersign /dollar /percent /ampersand
+ /quoteright /parenleft /parenright /asterisk /plus /comma /minus /period
+ /slash /zero /one /two /three /four /five /six /seven /eight /nine /colon
+ /semicolon /less /equal /greater /question /at /A /B /C /D /E /F /G /H
+ /I /J /K /L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft
+ /backslash /bracketright /asciicircum /underscore /quoteleft /a /b /c
+ /d /e /f /g /h /i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z
+ /braceleft /bar /braceright /asciitilde /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /dotlessi /grave
+ /acute /circumflex /tilde /macron /breve /dotaccent /dieresis /.notdef
+ /ring /cedilla /.notdef /hungarumlaut /ogonek /caron /space /exclamdown
+ /cent /sterling /currency /yen /brokenbar /section /dieresis /copyright
+ /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron
+ /degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph
+ /periodcentered /cedilla /onesuperior /ordmasculine /guillemotright
+ /onequarter /onehalf /threequarters /questiondown /Agrave /Aacute
+ /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla /Egrave /Eacute
+ /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis /Eth
+ /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply
+ /Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn
+ /germandbls /agrave /aacute /acircumflex /atilde /adieresis /aring /ae
+ /ccedilla /egrave /eacute /ecircumflex /edieresis /igrave /iacute
+ /icircumflex /idieresis /eth /ntilde /ograve /oacute /ocircumflex
+ /otilde /odieresis /divide /oslash /ugrave /uacute /ucircumflex
+ /udieresis /yacute /thorn /ydieresis
+] def
+
+/FC {ISO ReEncode findfont exch dup 0.8 mul exch matrix scale makefont} bind def
+
+/FE {ISO ReEncode findfont exch dup 1.2 mul exch matrix scale makefont} bind def
+
+/FN {ISO ReEncode findfont exch scalefont} bind def
+
+/L 0 def
+/T {dup dup currentpoint pop L sub dup dup cvi sub 3 1 roll cvi exch mod add
+sub 0 rmoveto} bind def
+
+
+%---------------
+% Routines used for doing bitmap graphics
+%---------------
+/ST 512 string def
+/s1 1 string def
+/gsh {currentfile s1 readhexstring pop 0 get} bind def
+
+/longrun
+{
+    % Get the character to repeat
+    gsh
+
+    dup ST exch 0 exch put
+    dup ST exch 1 exch put
+    dup ST exch 2 exch put
+    dup ST exch 3 exch put pop ST
+    dup dup   4 exch 0   4 getinterval putinterval
+    dup dup   8 exch 0   8 getinterval putinterval
+    dup dup  16 exch 0  16 getinterval putinterval
+    dup dup  32 exch 0  32 getinterval putinterval
+    dup dup  64 exch 0  64 getinterval putinterval
+    dup dup 128 exch 0 128 getinterval putinterval
+    dup dup 256 exch 0 256 getinterval putinterval pop
+
+    % Get the length of the string
+    picstr length dup
+
+    % Determine the partial piece
+    512 mod dup
+
+    % Get the partial piece
+    ST exch 0 exch getinterval
+
+    % Put the partial piece
+    picstr exch 0 exch putinterval
+
+    % Determine the max number for the main loop
+    exch 512 sub
+
+    % Setup the rest of the for parameters
+    512 exch
+
+    % Set the rest of the line
+    { picstr exch ST putinterval } for
+
+} bind def
+
+/rep
+{
+    % Get rid of the 0 op code
+    pop
+
+    % Get the repeat count
+    gsh
+
+    % Save the new position for after this operation
+    2 copy add 3 1 roll
+
+    % Get the repeat character
+    gsh
+
+    dup ST exch 0 exch put
+    dup ST exch 1 exch put
+    dup ST exch 2 exch put
+    dup ST exch 3 exch put pop ST
+    dup dup   4 exch 0   4 getinterval putinterval
+    dup dup   8 exch 0   8 getinterval putinterval
+    dup dup  16 exch 0  16 getinterval putinterval
+    dup dup  32 exch 0  32 getinterval putinterval
+    dup dup  64 exch 0  64 getinterval putinterval
+    dup dup 128 exch 0 128 getinterval putinterval
+
+    % Get an interval the proper length
+    exch 0 exch getinterval
+
+    % Save the output string on the stack for the final putinterval
+    picstr 3 1 roll
+
+    putinterval
+
+} bind def
+
+/run
+{
+    % Update the position and leave it on the stack
+    2 copy add 3 1 roll
+
+    % Create a string the length of the run
+    ST exch 0 exch getinterval
+
+    % Read in the run string
+    currentfile exch readhexstring pop
+
+    % Insert the string
+    picstr 3 1 roll putinterval
+
+} bind def
+
+/runlen
+{
+    % Initialize the position counter
+    0
+
+    % Loop reading op codes until the EXIT OP code
+    {
+        gsh
+
+        % Check for the EXIT OP 255
+        dup 255 eq {pop pop exit} if
+
+        % If 0 it is a repeat else it is the length of the run
+        dup 0 eq {rep} {run} ifelse
+    } loop
+
+} bind def
+
+/getcstr
+{
+    % Get the op code indicating the type of line this is
+    gsh
+
+    % Execute the proper read procedure based on the line type
+    [{currentfile picstr readhexstring pop pop} {runlen} {longrun} {}]
+    exch get exec
+
+    % Leave the string on the stack
+    picstr
+
+} bind def
+
+/getcstr_r {picstr_r 0 getcstr putinterval picstr_r} bind def
+/getcstr_g {picstr_g 0 getcstr putinterval picstr_g} bind def
+/getcstr_b {picstr_b 0 getcstr putinterval picstr_b} bind def
+
+% End AmigaDict
+end
+
+%%EndProlog

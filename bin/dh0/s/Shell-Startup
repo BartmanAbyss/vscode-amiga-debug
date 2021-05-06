@@ -1,0 +1,5 @@
+; $VER: Shell-Startup 40.1 (9.2.93)
+
+Prompt "%N.%S> "
+Alias Clear "Echo *"*E[0;0H*E[J*" "
+Alias XCopy "Copy CLONE "
