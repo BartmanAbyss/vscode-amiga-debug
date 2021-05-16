@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- WinUAE now handles debugging commands when emulation is paused
 - `Profile File Size` working again, now demangles C++ names
 - bump IntelliSense to gnu11, g++20
 - moved elf2hunk to a seperate repository, limit symbol length, C++ name demangling

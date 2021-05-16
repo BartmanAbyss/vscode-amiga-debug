@@ -43,7 +43,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		super();
 	}
 
-	public connect(cwd: string, executable: string, commands: string[]): Promise<any> {
+	public connect(cwd: string, executable: string, commands: string[]): Promise<void> {
 		if (!nativePath.isAbsolute(executable)) {
 			executable = nativePath.join(cwd, executable);
 		}
