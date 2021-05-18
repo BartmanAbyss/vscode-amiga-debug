@@ -660,11 +660,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		};
 
 		if (this.miDebugger) {
-			this.miDebugger.abort(this.stopped === false).then(done);
-		} else {
+			this.miDebugger.stop();
+		}
 			done();
 		}
-	}
 
 	protected msgEvent(type: string, msg: string) {
 		//console.log("msgEvent", type, msg);

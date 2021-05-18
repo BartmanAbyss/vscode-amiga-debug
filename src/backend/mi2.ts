@@ -73,33 +73,14 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public stop() {
+		if(this.trace) this.log("log", "stop");
 		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-gdb-exit");
 	}
 
-	public abort(needToStop: boolean): Thenable<boolean> {
-		if(this.trace) this.log("log", "abort");
-		return new Promise(async (resolve, reject) => {
-			const to = setTimeout(() => { this.process.kill('SIGTERM'); resolve(true); }, gdbTimeout);
-			this.process.on("exit", (code) => { clearTimeout(to); });
-			const killAndExit = async () => {
-				await this.sendUserInput('kill');
-				await this.sendCommand("gdb-exit");
-				resolve(true);
-			};
-			if(needToStop) {
-				this.removeAllListeners("stopped");
-				this.removeAllListeners("signal-stop");
-				this.once("generic-stopped", killAndExit);
-				this.sendCommand("exec-interrupt");
-			} else {
-				await killAndExit();
-			}
-		});
-	}
-
 	public detach() {
+		if(this.trace) this.log("log", "detach");
 		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-target-detach");
