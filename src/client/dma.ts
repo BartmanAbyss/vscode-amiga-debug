@@ -427,9 +427,15 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	return { width, height, planes, modulos };
 }
 
-export function GetScreenFromBlit(blit: Blit): IScreen {
-	const numPlanes = 5;
+export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
 	const channel = BlitterChannel.D; // visualize D channel
+
+	// try to get number of planes from registered bitmap resource
+	let numPlanes = 5; // default
+	const resource = amiga.gfxResources.find((r) => blit.BLTxPT[channel] >= r.address && blit.BLTxPT[channel] < r.address + r.size);
+	if(resource && resource.bitmap)
+		numPlanes = resource.bitmap.numPlanes;
+
 	const width = blit.BLTSIZH * 16;
 	const height = blit.BLTSIZV / numPlanes;
 	const planes = [];

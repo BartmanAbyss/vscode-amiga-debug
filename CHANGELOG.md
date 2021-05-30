@@ -3,6 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- Blitter visualizer now uses number of bitplanes from registered bitmap resources (channel D)
 - WinUAE now handles debugging commands when emulation is paused
 - Better handling of closing WinUAE during debugging
 - Fixed WinUAE to reset debug resources on restart

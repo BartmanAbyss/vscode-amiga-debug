@@ -255,9 +255,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	// 1. Created a sorted list of nodes. It seems that the profile always has
 	// incrementing IDs, although they are just not initially sorted.
 	const nodes = new Array<IComputedNode>(profile.nodes.length);
-	for (let i = 0; i < profile.nodes.length; i++) {
-		const node = profile.nodes[i];
-
+	for (const node of profile.nodes) {
 		// make them 0-based:
 		const id = mapId(node.id);
 		nodes[id] = {

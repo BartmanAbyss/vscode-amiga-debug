@@ -662,8 +662,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if (this.miDebugger) {
 			this.miDebugger.stop();
 		}
-			done();
-		}
+		done();
+	}
 
 	protected msgEvent(type: string, msg: string) {
 		//console.log("msgEvent", type, msg);

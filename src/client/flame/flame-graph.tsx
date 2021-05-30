@@ -1235,7 +1235,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={DmaCyclesToCpuCycles(amiga.blit.cycleEnd)} />
+			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit, MODELS[frame].amiga)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={DmaCyclesToCpuCycles(amiga.blit.cycleEnd)} />
 		</div>}
 	</Fragment>);
 };
