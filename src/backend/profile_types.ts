@@ -24,9 +24,11 @@ export enum GfxResourceType {
 	copperlist
 }
 
+// needs to match gcc8_c_support.h
 export enum GfxResourceFlags {
 	bitmap_interleaved = 1 << 0,
 	bitmap_masked = 1 << 1, 
+	bitmap_ham = 1 << 2, 
 }
 
 export interface GfxResource {

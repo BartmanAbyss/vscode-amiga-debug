@@ -3,6 +3,8 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- Disassembly now demangles C++ names
+- Bitmap visualizer now supports HAM5, HAM6 and EHB modes (see `debug_resource_bitmap_ham`)
 - Blitter visualizer now uses number of bitplanes from registered bitmap resources (channel D)
 - WinUAE now handles debugging commands when emulation is paused
 - Better handling of closing WinUAE during debugging
