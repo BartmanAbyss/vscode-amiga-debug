@@ -87,6 +87,7 @@ interface Unwind {
 export function Disassemble(objdumpPath: string, elfPath: string) {
 	const objdump = childProcess.spawnSync(objdumpPath, [
 		'--disassemble', 
+		'--demangle',
 		'-l', // include lines
 		'-w', // wide output
 		elfPath], 
