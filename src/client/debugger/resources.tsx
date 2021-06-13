@@ -112,7 +112,7 @@ export const Screen: FunctionComponent<{
 						putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
 					} else {
 						if(flags & GfxResourceFlags.bitmap_ham) {
-							let color = 0; // 0xAABBGGRR
+							let color = palette[0]; // 0xAABBGGRR
 							switch(pixel >> 4) {
 							case 0: // set
 								color = palette[pixel & 0xf];
