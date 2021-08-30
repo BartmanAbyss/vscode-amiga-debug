@@ -21,6 +21,7 @@ OUT = a.mingw
 CC = m68k-amiga-elf-gcc
 
 CCFLAGS = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno-volatile-register-var -fomit-frame-pointer -fno-tree-loop-distribution -flto -fwhole-program -fno-exceptions
+CPPFLAGS= $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
 ASFLAGS = -Wa,-g,--register-prefix-optional
 LDFLAGS = -Wl,--emit-relocs,-Ttext=0,-Map=$(OUT).map
 
@@ -28,7 +29,7 @@ all: $(OUT).exe
 
 $(OUT).exe: $(OUT).elf
 	$(info Elf2Hunk $(OUT).exe)
-	@elf2hunk $(OUT).elf $(OUT).exe
+	@elf2hunk $(OUT).elf $(OUT).exe -s
 
 $(OUT).elf: $(objects)
 	$(info Linking a.mingw.elf)
@@ -44,7 +45,7 @@ clean:
 $(cpp_objects) : obj/%.o : %.cpp
 	@if not exist "$(call forward-to-backward,$(dir $@))" mkdir $(call forward-to-backward,$(dir $@))
 	$(info Compiling $<)
-	@$(CC) $(CCFLAGS) -c -o $@ $(CURDIR)/$<
+	@$(CC) $(CPPFLAGS) -c -o $@ $(CURDIR)/$<
 
 $(c_objects) : obj/%.o : %.c
 	@if not exist "$(call forward-to-backward,$(dir $@))" mkdir $(call forward-to-backward,$(dir $@))

@@ -3,6 +3,18 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.1.0
+- Disassembly now demangles C++ names
+- Bitmap visualizer now supports HAM5, HAM6 and EHB modes (see `debug_resource_bitmap_ham`)
+- Blitter visualizer now uses number of bitplanes from registered bitmap resources (channel D)
+- WinUAE now handles debugging commands when emulation is paused
+- Better handling of closing WinUAE during debugging
+- Fixed WinUAE to reset debug resources on restart
+- `Profile File Size` working again, now demangles C++ names
+- bump IntelliSense to gnu11, g++20
+- moved elf2hunk to a seperate repository, limit symbol length, C++ name demangling
+- elf2hunk now suports `-s` to strip symbols (long symbol names can cause AmigaDOS to not load the exe file)
+- fix crash in Shrinkler for empty symbol hunks
+- better C++ support (added -fno-rtti -fcoroutines to CCFLAGS). Added <type_traits>, <coroutines> header files. support for global destructors (now using -fno-use-cxa-atexit)
 - support for more Amiga models in `.vscode/launch.json` (these are all WinUAE quickstart configs):
   - `A1200-FAST`: A1200 with 4MB fast memory
   - `A1200-030`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `cpuboard`.

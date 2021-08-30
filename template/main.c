@@ -232,9 +232,9 @@ void* doynaxdepack(const void* input, void* output) { // returns end of output d
 inline USHORT* copSetPlanes(UBYTE bplPtrStart,USHORT* copListEnd,const UBYTE **planes,int numPlanes) {
 	for (USHORT i=0;i<numPlanes;i++) {
 		ULONG addr=(ULONG)planes[i];
-		*copListEnd++=offsetof(struct Custom, bplpt[i + bplPtrStart]);
+		*copListEnd++=offsetof(struct Custom, bplpt[0]) + (i + bplPtrStart) * sizeof(APTR);
 		*copListEnd++=(UWORD)(addr>>16);
-		*copListEnd++=offsetof(struct Custom, bplpt[i + bplPtrStart])+2;
+		*copListEnd++=offsetof(struct Custom, bplpt[0]) + (i + bplPtrStart) * sizeof(APTR) + 2;
 		*copListEnd++=(UWORD)addr;
 	}
 	return copListEnd;
@@ -316,6 +316,9 @@ static __attribute__((interrupt)) void interruptHandler() {
 			static int x = 7;
 			i = y + x;
 		}
+		~TestClass() {
+			KPrintF("~TestClass()");
+		}
 
 		int i;
 	};
@@ -383,7 +386,7 @@ int main() {
 	TakeSystem();
 	WaitVbl();
 
-	USHORT* copper1 = AllocMem(1024, MEMF_CHIP);
+	USHORT* copper1 = (USHORT*)AllocMem(1024, MEMF_CHIP);
 	USHORT* copPtr = copper1;
 
 	// register graphics resources with WinUAE for nicer gfx debugger experience
@@ -414,7 +417,7 @@ int main() {
 	// set bitplane pointers
 	const UBYTE* planes[5];
 	for(int a=0;a<5;a++)
-		planes[a]=image + lineSize * a;
+		planes[a]=(UBYTE*)(image + lineSize * a);
 	copPtr = copSetPlanes(0, copPtr, planes, 5);
 
 	// set colors

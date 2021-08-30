@@ -70,8 +70,8 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 				includePath: this.config.includePath,
 				defines: [ "__GNUC__=10", "_NO_INLINE", ...this.config.defines ],
 				intelliSenseMode: 'gcc-x64',
-				standard: uri.toString().endsWith('.c') ? 'c11' : 'c++17',
-				compilerPath: this.compilerPath,
+				standard: uri.toString().endsWith('.c') ? 'gnu11' : 'gnu++20',
+				compilerPath: this.compilerPath
 			};
 			const config: SourceFileConfigurationItem = { uri, configuration };
 			items.push(config);

@@ -26,12 +26,13 @@ export const Screen: FunctionComponent<{
 	screen: IScreen;
 	mask?: IScreen;
 	palette: number[];
+	flags?: GfxResourceFlags;
 	scale?: number;
 	useZoom?: boolean;
 	time: number;
 	overlay?: string;
 	frame: number;
-}> = ({ screen, mask, palette, scale = 2, useZoom = true, time, overlay = '', frame }) => {
+}> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, time, overlay = '', frame }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScale = scale;
 	const canvasWidth = screen.width * canvasScale;
@@ -89,6 +90,7 @@ export const Screen: FunctionComponent<{
 		const planes = [...screen.planes];
 		const maskPlanes = [...mask?.planes ?? []];
 		for (let y = 0; y < screen.height; y++) {
+			let prevColor = 0xff000000; // 0xAABBGGRR
 			for (let x = 0; x < screen.width / 16; x++) {
 				for (let i = 0; i < 16; i++) {
 					let pixel = 0;
@@ -109,7 +111,27 @@ export const Screen: FunctionComponent<{
 						pixel &= pixelMask;
 						putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
 					} else {
-						putPixel(x * 16 + i, y, palette[pixel]);
+						if(flags & GfxResourceFlags.bitmap_ham) {
+							let color = palette[0]; // 0xAABBGGRR
+							switch(pixel >> 4) {
+							case 0: // set
+								color = palette[pixel & 0xf];
+								break;
+							case 1: // modify blue
+								color = (prevColor & ~0xff0000) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 16);
+								break;
+							case 3: // modify green
+								color = (prevColor & ~0x00ff00) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 8);
+								break;
+							case 2: // modify red
+								color = (prevColor & ~0x0000ff) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 0);
+								break;
+							}
+							putPixel(x * 16 + i, y, color);
+							prevColor = color;
+						} else {
+							putPixel(x * 16 + i, y, palette[pixel]);
+						}
 					}
 				}
 			}
@@ -323,10 +345,11 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 					&nbsp;
 					{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
 					{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
+					{resource.flags & GfxResourceFlags.bitmap_ham ? 'H' : ''}
 				</Fragment>)}
 				{resource.type === GfxResourceType.palette && (<Fragment>
 					<div class={styles.palette}>
-						{option.palette.map((p) => <div style={{ backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}` }} />)}
+						{option.palette.slice(0, option.palette.length >>> 1).map((p) => <div style={{ backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}` }} />)}
 					</div>
 				</Fragment>)}
 			</dd>
@@ -334,7 +357,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
 		</div>
 		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
-			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[option.frame].amiga.customRegs))} scale={1} useZoom={false} time={0} frame={option.frame} />
+			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[option.frame].amiga.customRegs))} flags={option.resource.flags} scale={1} useZoom={false} time={0} frame={option.frame} />
 		</div>, document.body)}
 	</Fragment>);
 };
@@ -419,7 +442,7 @@ export const GfxResourcesView: FunctionComponent<{
 			type: GfxResourceType.palette,
 			flags: 0,
 			palette: {
-				numEntries: copperPalette.length
+				numEntries: copperPalette.length >>> 1
 			}
 		};
 		palettes.push({ resource: copperResource, frame, palette: copperPalette });
@@ -481,7 +504,7 @@ export const GfxResourcesView: FunctionComponent<{
 			</select>
 		</div>
 		<div style={{overflow: 'auto'}}>
-			<Screen frame={frame} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} time={time} overlay={overlay} />
+			<Screen frame={frame} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} time={time} overlay={overlay} />
 		</div>
 	</Fragment>);
 };

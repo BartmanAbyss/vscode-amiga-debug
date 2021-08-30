@@ -19,3 +19,4 @@ template/a.mingw.*
 template/.vscode/settings.json
 src/test/suite/data/private
 src/test/suite/data/output
+package.json

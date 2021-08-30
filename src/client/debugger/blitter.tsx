@@ -5,7 +5,7 @@ import styles from './blitter.module.css';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory, CpuCyclesToDmaCycles } from '../dma';
+import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory, CpuCyclesToDmaCycles, BlitterChannel } from '../dma';
 
 import 'pubsub-js';
 
@@ -37,7 +37,12 @@ export const BlitterVis: FunctionComponent<{
 	const customRegs = new Uint16Array(MODELS[frame].amiga.customRegs);
 	const palette = GetPaletteFromCustomRegs(customRegs);
 
-	const numPlanes = 5;
+	// try to get number of planes from registered bitmap resource
+	let numPlanes = 5; // default
+	const resource = MODELS[frame].amiga.gfxResources.find((r) => blit.BLTxPT[BlitterChannel.D] >= r.address && blit.BLTxPT[BlitterChannel.D] < r.address + r.size);
+	if(resource && resource.bitmap)
+		numPlanes = resource.bitmap.numPlanes;
+
 	const canvasScale = 2;
 	const canvasWidth = blit.BLTSIZH * 16 * canvasScale;
 	const canvasHeight = blit.BLTSIZV / numPlanes * canvasScale;
