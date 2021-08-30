@@ -9,7 +9,7 @@ declare const MODELS: IProfileModel[];
 
 import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, Copper, CpuCyclesToDmaCycles } from '../dma';
+import { GetCopper, Copper, CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 
@@ -76,7 +76,7 @@ export const CopperView: FunctionComponent<{
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <Fragment>
 				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = ${(c.insn as CopperMove).RD.toString(16).padStart(4, '0')}
-				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: `#${(c.insn as CopperMove).RD.toString(16).padStart(3, '0')}`}}>&nbsp;&nbsp;</span> : ''}
+				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
 			</Fragment> : c.insn.toString()}
 		</div>)}
 		{hovered.index !== -1 && (createPortal(

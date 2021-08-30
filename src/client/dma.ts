@@ -538,6 +538,10 @@ function GetAmigaColor(color: number): number {
 		0xff000000; // AA
 }
 
+export function GetAmigaColorCss(color: number): string {
+	return '#' + (GetAmigaColor(color) & 0xffffff).toString(16).padStart(6, '0');
+}
+
 function GetAmigaColorEhb(color: number): number {
 	return GetAmigaColor((color & 0xeee) >>> 1);
 }
