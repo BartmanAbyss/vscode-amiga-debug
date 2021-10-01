@@ -273,6 +273,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '2m':
 				config['chipmem_size'] = 4;
 				break;
+			default:
+				delete config['chipmem_size'];
 		}
 		switch(args.fastmem?.toLowerCase()) {
 			case '0k':
@@ -306,6 +308,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '8m':
 				config['fastmem_size'] = 8;
 				break;
+			default:
+				delete config['fastmem_size'];
 		}
 		switch(args.slowmem?.toLowerCase()) {
 			case '0k':
@@ -322,6 +326,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '1.8m':
 				config['bogomem_size'] = 7;
 				break;
+			default:
+				delete config['bogomem_size'];
 		}
 
 		try {
@@ -624,7 +630,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 
 				const date = new Date();
-				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" + 
+				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 
 				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
@@ -772,7 +778,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -783,7 +789,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -794,7 +800,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -816,7 +822,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
