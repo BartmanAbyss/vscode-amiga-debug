@@ -42,11 +42,12 @@ This fully self-contained extension will help you to quickly develop demos, intr
 - Frame Profiler: function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled. Press the rightmost button to profile 50 frames. Mark your WaitVBLs etc with calls to `debug_start_idle()` and `debug_stop_idle()` to show correct CPU usage under thumbnails.
 - Size Profiler: profile the size of your executable: right-click an ELF file in the Explorer, and select `Amiga: Profile File Size`
 - WinUAE debug overlay: see debug_* calls in template project's main.c
-- WinUAE: 
+- WinUAE:
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
 
 ## Supported Amiga Models
+
 - Possible values of `"config"` in `.vscode/launch.json`:
   - `"A500"`: KS 1.3, ECS Agnus, 0.5MB Chip + 0.5MB Slow; needs Kickstart 1.3 ROM in `"kickstart"`
   - `"A1200"`: 68020, 2MB Chip; needs Kickstart 3.1 ROM in `"kickstart"`
@@ -54,6 +55,10 @@ This fully self-contained extension will help you to quickly develop demos, intr
   - `"A1200-030"`: A1200 with Blizzard 1230-IV and 32MB board memory. Requires the absolute path to the Blizzard ROM in `"cpuboard"`.
   - `"A3000"`: A3000 (no profiler support); needs Kickstart 2.0 ROM in `"kickstart"`
   - `"A4000"`: 68030, 68882, 2MB Chip, 8MB FAST; needs Kickstart 3.1 ROM in `"kickstart"`
+- Also, you can override the memory configuration using following fields (values are case-insensitive):
+  - `"chipmem"` - allowed values: "256k", "512k", "1m", "1.5m" or "2m"
+  - `"fastmem"` - allowed values: "0", "64k", "128k", "256k", "512k", "1m", "2m", "4m", "8m"
+  - `"slowmem"` - allowed values: "0", "512k", "1m", "1.8m"
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
@@ -81,7 +86,7 @@ Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
 
 [The Player® 6.1A](https://www.pouet.net/prod.php?which=19922): Copyright © 1992-95 Jarno Paananen.
 
-P61.testmod - Module by Skylord/Sector 7 
+P61.testmod - Module by Skylord/Sector 7
 
 [depack_doynax.s](https://csdb.dk/release/?id=118678) - Lempel-Ziv decompressor by Johan "Doynax" Forslöf.
 
