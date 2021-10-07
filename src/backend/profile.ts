@@ -381,7 +381,7 @@ export class ProfileFile {
 
 			frame.profileCycles = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			frame.idleCycles = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
-			console.log("profileCycles", frame.profileCycles, "idleCycles", frame.idleCycles);
+			//console.log("profileCycles", frame.profileCycles, "idleCycles", frame.idleCycles);
 
 			// profiles
 			const profileCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
