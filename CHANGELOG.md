@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.2.0
+- Updated to GCC 11.2.0 and GDB 12.0.50.20211014-git
+
 ## 1.1.0
 - Disassembly now demangles C++ names
 - Bitmap visualizer now supports HAM5, HAM6 and EHB modes (see `debug_resource_bitmap_ham`)

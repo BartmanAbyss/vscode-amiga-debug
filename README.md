@@ -88,12 +88,12 @@ P61.testmod - Module by Skylord/Sector 7
 [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
 
 This extension contains binaries of:
-- modified [GCC 10.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
-  - Copyright (C) 2020 Free Software Foundation, Inc.
+- modified [GCC 11.2.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
+  - Copyright (C) 2021 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU gdb (GDB) 10.0.50.20200508-git](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2020 Free Software Foundation, Inc.
-  - This program is free software; you may redistribute it under the terms of the GNU General Public License version 3 or (at your option) any later version.
+- modified [GNU gdb (GDB) 12.0.50.20211014-git](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2021 Free Software Foundation, Inc.
+  - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 - modified [WinUAE 4.4.0](https://github.com/BartmanAbyss/WinUAE)
 - modified [Shrinkler 4.6](https://github.com/BartmanAbyss/Shrinkler)
   - Copyright 1999-2015 Aske Simon Christensen
@@ -120,13 +120,22 @@ Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb 
 
 Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`)
 
-### MinGW on WSL (Ubuntu 18.04)
+### Ubuntu 20.4 LTS from Microsoft Store
+```powershell
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
 ```
-apt install build-essential flex bison expect dejagnu texinfo mingw-w64
+
+### MinGW on WSL2 (Ubuntu 20.04)
+```bash
+sudo apt install build-essential flex bison expect dejagnu texinfo mingw-w64
 ```
 
 ### Binutils+GDB
-```
+```bash
+cd binutils-gdb
+./contrib/download_prerequisites
+cd ..
 mkdir build-binutils-gdb
 cd build-binutils-gdb
 LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
@@ -135,14 +144,16 @@ make install
 ```
 
 ### GCC
-```
-cd gcc-10.1.0
+```bash
+wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-11.2.0/gcc-11.2.0.tar.xz
+tar -xf gcc-11.2.0.tar.xz
+cd gcc-11.2.0
 patch -p1 < ../gcc-barto.patch
 ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-10.1.0
-cd build-gcc-10.1.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-10.1.0/configure \
+mkdir -p build-gcc-11.2.0
+cd build-gcc-11.2.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-11.2.0/configure \
   --target=m68k-amiga-elf \
   --disable-nls \
   --enable-languages=c,c++ \
@@ -170,12 +181,10 @@ make install-gcc
 ```
 
 ### elf2hunk
-```
-LDFLAGS="-static -static-libgcc -static-libstdc++" x86_64-w64-mingw32-gcc -o elf2hunk -DDEBUG=0 elf2hunk.c -lws2_32
-```
+https://github.com/BartmanAbyss/elf2hunk
 
 ### Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
-```
+```bash
 rm -r /mnt/c/amiga-mingw/opt/include
 rm -r /mnt/c/amiga-mingw/opt/share
 find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
