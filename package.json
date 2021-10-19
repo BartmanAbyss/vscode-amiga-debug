@@ -2,7 +2,7 @@
 	"name": "amiga-debug",
 	"displayName": "Amiga C/C++ Compile, Debug & Profile",
 	"publisher": "BartmanAbyss",
-	"description": "One-stop VS Code Extension to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 10.1 with the bundled WinUAE (Windows only)",
+	"description": "One-stop VS Code Extension to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 11.2 with the bundled WinUAE (Windows only)",
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},

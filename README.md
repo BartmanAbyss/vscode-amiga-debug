@@ -1,6 +1,6 @@
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 10.1 with the bundled WinUAE.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 11.2 with the bundled WinUAE.**
 
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
@@ -88,13 +88,13 @@ P61.testmod - Module by Skylord/Sector 7
 [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
 
 This extension contains binaries of:
-- modified [GCC 11.2.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-10.1.0/) (patch included)
+- modified [GCC 11.2.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-11.2.0/) (patch included)
   - Copyright (C) 2021 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 - modified [GNU gdb (GDB) 12.0.50.20211014-git](https://github.com/BartmanAbyss/binutils-gdb)
   - Copyright (C) 2021 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-- modified [WinUAE 4.4.0](https://github.com/BartmanAbyss/WinUAE)
+- modified [WinUAE 4.9.0](https://github.com/BartmanAbyss/WinUAE)
 - modified [Shrinkler 4.6](https://github.com/BartmanAbyss/Shrinkler)
   - Copyright 1999-2015 Aske Simon Christensen
   - Modified 2020, Bartman/Abyss
