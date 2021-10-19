@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.2.1
+- Updated to WinUAE 4.9.0 (2021.10.14)
+
 ## 1.2.0
 - Updated to GCC 11.2.0 and GDB 12.0.50.20211014-git
 
