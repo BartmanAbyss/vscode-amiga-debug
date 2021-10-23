@@ -2,12 +2,17 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.2.3
+- fix incorrect blitter size (broken since 1.2.1) #85
+- fix palette/copper colors (broken since a while) #71
+- Updated to WinUAE 4.9.0 beta 38 (2021.10.23) #84
+
 ## 1.2.2
 - fix multi-frame profile screenshot thumbnails (broken since 1.2.1 for 32-bit machine models)
 - fix multi-frame profile error message "Unable to start profiling: RangeError: start offset of Uint16Array should be a multiple of 2" (broken since 1.2.1)
 
 ## 1.2.1
-- Updated to WinUAE 4.9.0 (2021.10.14)
+- Updated to WinUAE 4.9.0 beta 37 (2021.10.14)
 
 ## 1.2.0
 - Updated to GCC 11.2.0 and GDB 12.0.50.20211014-git

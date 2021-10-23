@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory as GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles } from '../dma';
+import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -349,7 +349,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 				</Fragment>)}
 				{resource.type === GfxResourceType.palette && (<Fragment>
 					<div class={styles.palette}>
-						{option.palette.slice(0, option.palette.length >>> 1).map((p) => <div style={{ backgroundColor: `#${(p & 0xffffff).toString(16).padStart(6, '0')}` }} />)}
+						{option.palette.slice(0, option.palette.length >>> 1).map((p) => <div style={{ backgroundColor: GetColorCss(p) }} />)}
 					</div>
 				</Fragment>)}
 			</dd>

@@ -240,7 +240,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					let BLTSIZV = 0;
 					if(reg === regBLTSIZE - 0xdff000) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
-						BLTSIZV = dmaRecord.dat >>> 6;
+						BLTSIZV = (dmaRecord.dat >>> 6) & 0x3ff;
 						if(BLTSIZH === 0)
 							BLTSIZH = 64;
 						if(BLTSIZV === 0)
@@ -300,6 +300,9 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 			}
 		}
 	}
+
+	console.log(BlitTrace);
+
 	return blits;
 }
 
@@ -531,22 +534,34 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 	return undefined;
 }
 
+// AABBGGRR
 function GetAmigaColor(color: number): number {
 	return (((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
-		(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
-		(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
+		   (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
+		   (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
 		0xff000000; // AA
 }
 
+// AABBGGRR <-> AARRGGBB
+function ColorSwap(color: number): number {
+	return ((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00);
+}
+
+// AABBGGRR
+export function GetColorCss(color: number): string {
+	return '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
+}
+
+// 0RGB
 export function GetAmigaColorCss(color: number): string {
-	return '#' + (GetAmigaColor(color) & 0xffffff).toString(16).padStart(6, '0');
+	return '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
 }
 
 function GetAmigaColorEhb(color: number): number {
 	return GetAmigaColor((color & 0xeee) >>> 1);
 }
 
-// returns 64-element array of 32-bit ARGB colors (0x00-0xff)
+// returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
