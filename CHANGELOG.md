@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.2.2
+- fix multi-frame profile screenshot thumbnails (broken since 1.2.1 for 32-bit machine models)
+- fix multi-frame profile error message "Unable to start profiling: RangeError: start offset of Uint16Array should be a multiple of 2" (broken since 1.2.1)
+
 ## 1.2.1
 - Updated to WinUAE 4.9.0 (2021.10.14)
 

@@ -3,11 +3,14 @@
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 11.2 with the bundled WinUAE.**
 
 ## Overview
-This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler and size profiler.
+This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
 
 ![Debugger](screen_debug.png)
 ![Frame Profiler](screen_profiler_frame.png)
 ![Size Profiler](screen_profiler_size.png)
+
+## Video
+Here's a video showing off all the new features of v1.1, including the frame profiler and graphics debugger: https://www.youtube.com/watch?v=gQ4tKisnr7Y
 
 ## Quick-start
 0. Install the extension from the Visual Studio Code Marketplace
@@ -193,7 +196,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ## Known Issues/TODOs
 
 ### Documentation
-* TODO: better documentation, videos for new features
+* TODO: better documentation
 
 ### Profiler
 * lines of functions seem to be off (see template/main.c: function main)
@@ -214,6 +217,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * Terminal doesn't open again once closed
 
 ### WinUAE
+* execution for A4000 model is very flaky (since 1.2.1)
 * TODO: fill memory with $DEAD on startup to better find uninitialized memory bugs
 * TODO: debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 

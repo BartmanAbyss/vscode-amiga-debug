@@ -323,7 +323,12 @@ export class ProfileFile {
 		for (let i = 0; i < numFrames; i++) {
 			const frame = new ProfileFrame();
 			frame.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
-			frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
+			//frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
+			// maybe unaligned, so read manually
+			frame.customRegs = new Uint16Array(256);
+			for (let i = 0; i < 256; i++) {
+				frame.customRegs[i] = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
+			}
 
 			// DMA
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
