@@ -44,7 +44,7 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public connect(cwd: string, executable: string, commands: string[]): Promise<void> {
-		if (!nativePath.isAbsolute(executable)) {
+		if (executable !== '' && !nativePath.isAbsolute(executable)) {
 			executable = nativePath.join(cwd, executable);
 		}
 
@@ -60,10 +60,12 @@ export class MI2 extends EventEmitter implements IBackend {
 			const promises: Array<Thenable<any>> = commands.map((c) => this.sendCommand(c));
 			promises.push(asyncPromise);
 
-			const sectionsPromise = this.getSections().then((sections) => {
-				this.emit("sections-loaded", sections);
-			});
-			promises.push(sectionsPromise);
+			if(executable !== '') {
+				const sectionsPromise = this.getSections().then((sections) => {
+					this.emit("sections-loaded", sections);
+				});
+				promises.push(sectionsPromise);
+			}
 
 			Promise.all(promises).then(() => {
 				this.emit("debug-ready");

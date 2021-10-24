@@ -25,6 +25,7 @@ async function Profiler() {
 	loader.setAttribute('class', styles.spinner);
 
 	document.body.appendChild(loader);
+	let container:HTMLDivElement = null;
 	try {
 		console.time('fetch+json');
 		const response = await fetch(PROFILE_URL);
@@ -54,14 +55,16 @@ async function Profiler() {
 			});
 		}
 
-		const container = document.createElement('div');
+		container = document.createElement('div');
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
 		render(h(CpuProfileLayout, null), container);
 	} catch(e) {
+		if(container)
+			container.remove();
 		const error = document.createElement('div');
 		error.setAttribute('class', styles.error);
-		error.innerText = `Failed to load ${PROFILE_URL}`;
+		error.innerText = `Failed to load ${unescape(PROFILE_URL)}:\n${(e as Error).stack}`;
 		document.body.appendChild(error);
 	} finally {
 		document.body.removeChild(loader);

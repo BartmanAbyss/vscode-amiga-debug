@@ -209,7 +209,11 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
  * Computes the model for the given profile.
  */
 export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
-	if (!profile.timeDeltas || !profile.samples) {
+	if(!profile.timeDeltas)
+		profile.timeDeltas = [];
+	if(!profile.samples)
+		profile.samples = [];
+/*	if (!profile.timeDeltas || !profile.samples) {
 		return {
 			nodes: [],
 			locations: [],
@@ -221,7 +225,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			amiga: profile.$amiga,
 		};
 	}
-
+*/
 	console.time('buildModel');
 
 	const sourceLocations = ensureSourceLocations(profile);

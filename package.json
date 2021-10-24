@@ -23,6 +23,7 @@
 		"onCommand:amiga.profileSize",
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
+		"onCommand:amiga.savestate",
 		"onCustomEditor:amiga.profile",
 		"workspaceContains:.vscode/amiga.json"
 	],
@@ -92,6 +93,11 @@
 				"category": "Amiga",
 				"command": "amiga.terminal",
 				"title": "Open Terminal"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.savestate",
+				"title": "Amiga: Debug Savestate"
 			}
 		],
 		"languages": [
@@ -340,6 +346,11 @@
 					"command": "amiga.shrinkler",
 					"group": "1_amiga",
 					"when": "resourceExtname == '.exe'"
+				},
+				{
+					"command": "amiga.savestate",
+					"group": "1_amiga",
+					"when": "resourceExtname == '.uss'"
 				}
 			]
 		},

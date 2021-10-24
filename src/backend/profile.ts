@@ -409,6 +409,68 @@ export class Profiler {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable) {
 	}
 
+	public profileSavestate(profileFile: ProfileFile): string {
+		const out: ICpuProfileRaw[] = [];
+
+		for (const frame of profileFile.frames)
+			out.push(this.profileSavestateFrame(profileFile, frame));
+
+		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
+		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
+		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
+
+		return JSON.stringify(out, null, 2);
+	}
+
+	private profileSavestateFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {
+		const pcTrace: number[] = [];
+
+		let lastPC: number;
+		let totalCycles = 0;
+		for (const p of frame.profileArray) {
+			if (p < 0xffff0000) {
+				if (lastPC === undefined)
+					lastPC = p;
+			} else {
+				const cyc = (0xffffffff - p) | 0;
+
+				if (lastPC === undefined)
+					lastPC = 0xffffffff;
+				pcTrace.push(lastPC, cyc);
+				lastPC = undefined;
+				totalCycles += cyc;
+			}
+		}
+		console.log("totalCycles", totalCycles);
+
+		const out: ICpuProfileRaw = {
+			nodes: [],
+			startTime: 0,
+			endTime: totalCycles,
+			$amiga: {
+				dmacon: frame.dmacon,
+				baseClock: profileFile.baseClock,
+				cpuCycleUnit: profileFile.cpuCycleUnit,
+				customRegs: Array.from(frame.customRegs),
+				dmaRecords: frame.dmaRecords,
+				gfxResources: frame.gfxResources,
+				idleCycles: frame.idleCycles,
+				symbols: [],
+				sections: [],
+				systemStackLower: profileFile.systemStackLower,
+				systemStackUpper: profileFile.systemStackUpper,
+				stackLower: profileFile.stackLower,
+				stackUpper: profileFile.stackUpper,
+				uniqueCallFrames: [],
+				callFrames: [],
+				pcTrace
+			}
+		};
+		if (frame.screenshot)
+			out.$amiga.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
+		return out;
+	}
+
 	public profileTime(profileFile: ProfileFile, disassembly: string): string {
 		const out: ICpuProfileRaw[] = [];
 
