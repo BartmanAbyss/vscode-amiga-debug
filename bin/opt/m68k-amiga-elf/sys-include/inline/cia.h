@@ -17,15 +17,15 @@ typedef ULONG _sfdc_vararg;
 #endif /* !__INLINE_MACROS_H */
 
 #define AddICRVector(___resource, ___iCRBit, ___interrupt) \
-      LP3NB(0x6, struct Interrupt *, AddICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
+      LP3UB(0x6, struct Interrupt *, AddICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
 
 #define RemICRVector(___resource, ___iCRBit, ___interrupt) \
-      LP3NRNB(0xc, RemICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
+      LP3NRUB(0xc, RemICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
 
 #define AbleICR(___resource, ___mask) \
-      LP2NB(0x12, WORD, AbleICR , struct Library *, ___resource, a6, WORD, ___mask, d0)
+      LP2UB(0x12, WORD, AbleICR , struct Library *, ___resource, a6, WORD, ___mask, d0)
 
 #define SetICR(___resource, ___mask) \
-      LP2NB(0x18, WORD, SetICR , struct Library *, ___resource, a6, WORD, ___mask, d0)
+      LP2UB(0x18, WORD, SetICR , struct Library *, ___resource, a6, WORD, ___mask, d0)
 
 #endif /* !_INLINE_CIA_H */
