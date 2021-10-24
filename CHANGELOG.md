@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.2.4
+- fixed AbleICR, SetICR, AddICRVector, RemICRVector in resources/cia.h [tehKaiN] #80
+- Configurable ram size [tehKaiN] #79
+
 ## 1.2.3
 - fix incorrect blitter size (broken since 1.2.1) #85
 - fix palette/copper colors (broken since a while) #71
