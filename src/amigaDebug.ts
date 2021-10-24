@@ -25,6 +25,9 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
 	uaelog?: boolean;
+	chipmem?: string; // '256k', '512k', '1m', '1.5m' or '2m'
+	fastmem?: string; // '0', '64k', '128k', '256k', '512k', '1M', '2M', '4M', '8M'
+	slowmem?: string; // '0', '512k', '1M', '1.8M'
 }
 
 class ExtendedVariable {
@@ -252,6 +255,80 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config['debugging_trigger'] = path.basename(args.program) + ".exe";
 		else
 			config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
+
+		// Optional override memory config
+		switch(args.chipmem?.toLowerCase()) {
+			case '256k':
+				config['chipmem_size'] = 0;
+				break;
+			case '512k':
+				config['chipmem_size'] = 1;
+				break;
+			case '1m':
+				config['chipmem_size'] = 2;
+				break;
+			case '1.5m':
+				config['chipmem_size'] = 3;
+				break;
+			case '2m':
+				config['chipmem_size'] = 4;
+				break;
+			default:
+				delete config['chipmem_size'];
+		}
+		switch(args.fastmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config['fastmem_size'] = 0;
+				break;
+			case '64k':
+				config['fastmem_size_k'] = 64;
+				break;
+			case '128k':
+				config['fastmem_size_k'] = 128;
+				break;
+			case '256k':
+				config['fastmem_size_k'] = 256;
+				break;
+			case '512k':
+			case '0.5m':
+			case '.5m':
+				config['fastmem_size_k'] = 512;
+				break;
+			case '1m':
+				config['fastmem_size'] = 1;
+				break;
+			case '2m':
+				config['fastmem_size'] = 2;
+				break;
+			case '4m':
+				config['fastmem_size'] = 4;
+				break;
+			case '8m':
+				config['fastmem_size'] = 8;
+				break;
+			default:
+				delete config['fastmem_size'];
+		}
+		switch(args.slowmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config['bogomem_size'] = 0;
+				break;
+			case '512k':
+				config['bogomem_size'] = 2;
+				break;
+			case '1m':
+				config['bogomem_size'] = 4;
+				break;
+			case '1.8m':
+				config['bogomem_size'] = 7;
+				break;
+			default:
+				delete config['bogomem_size'];
+		}
 
 		try {
 			fs.writeFileSync(defaultPath, stringifyCfg(config));
@@ -553,7 +630,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 
 				const date = new Date();
-				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" + 
+				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 
 				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
@@ -701,7 +778,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -712,7 +789,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -723,7 +800,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 
@@ -745,7 +822,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
 			this.sendEvent(new CustomStoppedEvent(this.stoppedReason, this.currentThreadId));
 		} else {
-			this.stoppedEventPending = true;			
+			this.stoppedEventPending = true;
 		}
 	}
 

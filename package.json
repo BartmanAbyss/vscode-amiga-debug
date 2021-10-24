@@ -227,6 +227,30 @@
 								"type": "string",
 								"description": "Absolute path to a CPU Board Extension ROM",
 								"default": ""
+							},
+							"chipmem": {
+								"type": "string",
+								"description": "Override CHIP memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"", "256k", "512k", "1m", "1.5m", "2m"
+								]
+							},
+							"fastmem": {
+								"type": "string",
+								"description": "Override FAST memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"", "0", "64k", "128k", "256k", "512k", "1M", "2M", "4M", "8M"
+								]
+							},
+							"slowmem": {
+								"type": "string",
+								"description": "Override SLOW memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"", "0", "512k", "1M", "1.8M"
+								]
 							}
 						}
 					}
