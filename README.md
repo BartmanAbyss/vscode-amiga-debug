@@ -209,6 +209,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
+* "npm run serve": all colors in flame-graph are black
 
 ### Assembly
 * TODO: parser needs to check for comments
