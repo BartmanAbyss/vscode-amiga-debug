@@ -7,6 +7,7 @@ import { ICpuProfileRaw } from '../client/types';
 import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxResourceFlags } from './profile_types';
 import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
 import { profileCommon } from './profile_common';
+import { print_insn_m68k } from '../client/68k-dis';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -442,6 +443,8 @@ export class Profiler {
 			}
 		}
 		console.log("totalCycles", totalCycles);
+		// 0c780010 cmpiw #16,%d0
+		const dis = print_insn_m68k(profileFile.chipMem.slice(pcTrace[2], pcTrace[2] + 8)); console.log('dis: ', dis.text); // TEST
 
 		const out: ICpuProfileRaw = {
 			nodes: [],
