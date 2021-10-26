@@ -1,6 +1,8 @@
 import * as assert from 'assert';
 import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
+import * as unravel from '../../../src/client/68k-unravel.js';
+
 suite("68k-cycles", () => {
 	test("move1", () => {
 		const insn = new Uint16Array([0x205a]); // movea.l (a2)+,a0
@@ -109,5 +111,17 @@ suite("68k-jump", () => {
 		const insn = new Uint16Array([0x4eb9, 0x00f0, 0xff60]); // jsr $f0ff60
 		const jump = GetJump(0xdb4, insn);
 		assert.deepEqual(jump, { type: JumpType.Jsr, target: 0xf0ff60 });
+	});
+});
+
+suite("68k-dis", () => {
+	test("unravel", () => {
+		const insn = new Uint8Array([0x48, 0xc4]); // ext.l d4
+		try {
+			const ret = unravel(insn, 0);
+			console.log(JSON.stringify(ret, null, 4));
+		} catch(e) {
+			console.log(e);
+		}
 	});
 });
