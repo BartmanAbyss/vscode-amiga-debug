@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
 import * as unravel from '../../../src/client/68k-unravel.js';
+import { print_insn_m68k } from '../../client/68k-dis';
 
 suite("68k-cycles", () => {
 	test("move1", () => {
@@ -115,13 +116,29 @@ suite("68k-jump", () => {
 });
 
 suite("68k-dis", () => {
-	test("unravel", () => {
+	/*test("ext", () => {
 		const insn = new Uint8Array([0x48, 0xc4]); // ext.l d4
-		try {
-			const ret = unravel(insn, 0);
-			console.log(JSON.stringify(ret, null, 4));
-		} catch(e) {
-			console.log(e);
-		}
+		const dis = print_insn_m68k(insn);
+		assert.strictEqual(dis.text, "ext.l d4");
+	});
+	test("cmp", () => {
+		const insn = new Uint8Array([0x0c, 0x42, 0x00, 0x10]); // cmpi.w #16,d2
+		const dis = print_insn_m68k(insn);
+		assert.strictEqual(dis.text, "cmpi.w #16,d2");
+	});
+	test("neg", () => {
+		const insn = new Uint8Array([0x44, 0x03]); // neg.b d3
+		const dis = print_insn_m68k(insn);
+		assert.strictEqual(dis.text, "neg.b d3");
+	});
+	test("link", () => {
+		const insn = new Uint8Array([0x4e, 0x55, 0xff, 0xc0]); // link.w a5,#-64
+		const dis = print_insn_m68k(insn);
+		assert.strictEqual(dis.text, "link.w a5,#-64");
+	});*/
+	test("eor", () => {
+		const insn = new Uint8Array([0xb7, 0x40]); // eor.w d3,d0
+		const dis = print_insn_m68k(insn);
+		assert.strictEqual(dis.text, "eor.w d3,d0");
 	});
 });
