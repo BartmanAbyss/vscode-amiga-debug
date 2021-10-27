@@ -165,7 +165,7 @@ export class ObjdumpModel {
 				}
 				this.content.push({
 					pc,
-					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${insnMatch[2].padEnd(20, ' ')} ${opcode.padEnd(7, ' ')} ${rest}`,
 					theoreticalCycles: theoreticalCycles ? GetCycles(insn) : undefined,
 					loc
 				});
@@ -219,16 +219,20 @@ export const ObjdumpView: FunctionComponent<{
 			return new ObjdumpModel(OBJDUMP);
 
 		const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
-		const hits = new Array<number>(textSection.size >> 1).fill(0);
-		const cycles = new Array<number>(textSection.size >> 1).fill(0);
-		const pcTrace = MODELS[frame].amiga.pcTrace;
-		for(let i = 0; i < pcTrace.length; i += 2) {
-			if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
-				hits[pcTrace[i] >> 1]++;
-				cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
+		if(textSection) {
+			const hits = new Array<number>(textSection.size >> 1).fill(0);
+			const cycles = new Array<number>(textSection.size >> 1).fill(0);
+			const pcTrace = MODELS[frame].amiga.pcTrace;
+			for(let i = 0; i < pcTrace.length; i += 2) {
+				if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
+					hits[pcTrace[i] >> 1]++;
+					cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
+				}
 			}
+			return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, hits, cycles); // theoretical cycles only for 7MHz (68000)
+		} else {
+			return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false);
 		}
-		return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, hits, cycles); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
 

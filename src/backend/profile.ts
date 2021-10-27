@@ -416,11 +416,42 @@ export class Profiler {
 		for (const frame of profileFile.frames)
 			out.push(this.profileSavestateFrame(profileFile, frame));
 
+		const pcTrace: number[] = [];
+		for(const frame of out)
+			for(let i = 0; i < frame.$amiga.pcTrace.length; i += 2)
+				pcTrace.push(frame.$amiga.pcTrace[i]);
+
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
 		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
-
+		out[0].$amiga.objdump = this.disassembleSavestate(profileFile, pcTrace);
 		return JSON.stringify(out, null, 2);
+	}
+
+	private disassembleSavestate(profileFile: ProfileFile, pcTrace: number[]): string {
+		pcTrace.sort();
+		let lastPC = 0xffffffff;
+		let disasm = '00000000 <_start>:\n';
+		const disasmInsn = (mem: Uint8Array, addr: number, offset: number) => {
+			const insn = print_insn_m68k(mem.slice(offset, Math.min(offset + 16, mem.length)), addr);
+			if(insn.len > 0) {
+				disasm += ` ${addr.toString(16)}:\t`;
+				for(let i = 0; i < insn.len; i += 2)
+					disasm += ((mem[offset + i] << 8) | mem[offset + i + 1]).toString(16).padStart(4, '0') + ' ';
+				disasm += insn.text + '\n';
+			}
+		};
+
+		for(const pc of pcTrace) {
+			if(pc !== lastPC) {
+				if(pc > 0 && pc < profileFile.chipMemSize)
+					disasmInsn(profileFile.chipMem, pc, pc - 0);
+				else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
+					disasmInsn(profileFile.bogoMem, pc, pc - 0xc00000);
+				lastPC = pc;
+			}
+		}
+		return disasm;
 	}
 
 	private profileSavestateFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {

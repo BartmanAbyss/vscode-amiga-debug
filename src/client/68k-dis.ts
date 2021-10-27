@@ -518,6 +518,245 @@ const m68k_opcodes: m68k_opcode[] = [
 
 	{ name: "pack", size: 4, opcode:one(0o0100500),	match: one(0o0170770), args: "DsDd#w", arch: m68020up , type: dis.nonbranch },
 	{ name: "pack", size: 4, opcode:one(0o0100510),	match: one(0o0170770), args: "-s-d#w", arch: m68020up , type: dis.nonbranch },
+
+	// MMU opcodes missing here
+
+	{ name: "pea", size: 2,	opcode:one(0o0044100),		match: one(0o0177700), args: "!s", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "pflusha", size: 2,	opcode:one(0xf518),		match: one(0xfff8), args: "", arch: m68040up , type: dis.nonbranch },
+	{ name: "pflusha", size: 4,	opcode:two(0xf000,0x2400), match: two(0xffff,0xffff), args: "", arch: m68030 |m68851 , type: dis.nonbranch },
+	
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3010), match: two(0xffc0,0xfe10), args: "T3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3810), match: two(0xffc0,0xfe10), args: "T3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3008), match: two(0xffc0,0xfe18), args: "D3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3808), match: two(0xffc0,0xfe18), args: "D3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3000), match: two(0xffc0,0xfe1e), args: "f3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3800), match: two(0xffc0,0xfe1e), args: "f3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 2,	opcode:one(0xf508),		match: one(0xfff8), args: "as", arch: m68040up , type: dis.nonbranch },
+	{ name: "pflush", size: 2,	opcode:one(0xf508),		match: one(0xfff8), args: "As", arch: m68040up , type: dis.nonbranch },
+	
+	{ name: "pflushan", size: 2,	opcode:one(0xf510),		match: one(0xfff8), args: "", arch: m68040up , type: dis.nonbranch },
+	{ name: "pflushn", size: 2,	opcode:one(0xf500),		match: one(0xfff8), args: "as", arch: m68040up , type: dis.nonbranch },
+	{ name: "pflushn", size: 2,	opcode:one(0xf500),		match: one(0xfff8), args: "As", arch: m68040up , type: dis.nonbranch },
+	
+	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2210), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2208), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2200), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2010), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2008), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2000), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	
+	{ name: "plpar", size: 2,	opcode:one(0xf5c8),		match: one(0xfff8), args: "as", arch: m68060 , type: dis.nonbranch },
+	{ name: "plpaw", size: 2,	opcode:one(0xf588),		match: one(0xfff8), args: "as", arch: m68060 , type: dis.nonbranch },
+	
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4000), match: two(0xffc0,0xffff), args: "*l08", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xffff), args: "08%s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x5e00), match: two(0xffc0,0xffff), args: "18%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "28%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4000), match: two(0xffc0,0xe3ff), args: "|sW8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "W8~s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6000), match: two(0xffc0,0xffff), args: "*wY8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6200), match: two(0xffc0,0xffff), args: "Y8%s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6600), match: two(0xffc0,0xffff), args: "Z8%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6000), match: two(0xffc0,0xe3e3), args: "*wX3", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6200), match: two(0xffc0,0xe3e3), args: "X3%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x0800), match: two(0xffc0,0xfbff), args: "*l38", arch: m68030 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,    opcode:two(0xf000,0x0a00), match: two(0xffc0,0xfbff), args: "38%s", arch: m68030 , type: dis.nonbranch },
+
+	{ name: "pmovefd", size: 4,	opcode:two(0xf000, 0x4100),	match: two(0xffc0, 0xe3ff), args: "*l08", arch: m68030 , type: dis.nonbranch },
+	{ name: "pmovefd", size: 4,	opcode:two(0xf000, 0x4100),	match: two(0xffc0, 0xe3ff), args: "|sW8", arch: m68030 , type: dis.nonbranch },
+	{ name: "pmovefd", size: 4,	opcode:two(0xf000, 0x0900),	match: two(0xffc0, 0xfbff), args: "*l38", arch: m68030 , type: dis.nonbranch },
+
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8210), match: two(0xffc0, 0xe3f0), args: "T3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8310), match: two(0xffc0,0xe310), args: "T3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8208), match: two(0xffc0,0xe3f8), args: "D3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8308), match: two(0xffc0,0xe318), args: "D3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8200), match: two(0xffc0,0xe3fe), args: "f3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 4, 	opcode:two(0xf000,0x8300), match: two(0xffc0,0xe31e), args: "f3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestr", size: 2,	opcode:one(0xf568),		match: one(0xfff8), args: "as", arch: m68040 , type: dis.nonbranch },
+
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8010), match: two(0xffc0,0xe3f0), args: "T3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8110), match: two(0xffc0,0xe310), args: "T3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8008), match: two(0xffc0,0xe3f8), args: "D3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8108), match: two(0xffc0,0xe318), args: "D3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8000), match: two(0xffc0,0xe3fe), args: "f3&st8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8100), match: two(0xffc0,0xe31e), args: "f3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ptestw", size: 2,	opcode:one(0xf548),		match: one(0xfff8), args: "as", arch: m68040 , type: dis.nonbranch },
+
+	{ name: "pulse", size: 2,	opcode:one(0o045314),		match: one(0o177777), args: "", arch: m68060 , type: dis.nonbranch },
+
+	{ name: "reset", size: 2,	opcode:one(0o047160),		match: one(0o177777), args: "", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "rol.b", size: 2,	opcode:one(0o160430),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.b", size: 2,	opcode:one(0o160470),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.w", size: 2,	opcode:one(0o160530),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.w", size: 2,	opcode:one(0o160570),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.w", size: 2,	opcode:one(0o163700),		match: one(0o177700), args: "~s",   arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.l", size: 2,	opcode:one(0o160630),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "rol.l", size: 2,	opcode:one(0o160670),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "ror.b", size: 2,	opcode:one(0o160030),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.b", size: 2,	opcode:one(0o160070),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.w", size: 2,	opcode:one(0o160130),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.w", size: 2,	opcode:one(0o160170),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.w", size: 2,	opcode:one(0o163300),		match: one(0o177700), args: "~s",   arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.l", size: 2,	opcode:one(0o160230),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "ror.l", size: 2,	opcode:one(0o160270),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "roxl.b", size: 2,	opcode:one(0o160420),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.b", size: 2,	opcode:one(0o160460),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.w", size: 2,	opcode:one(0o160520),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.w", size: 2,	opcode:one(0o160560),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.w", size: 2,	opcode:one(0o162700),		match: one(0o177700), args: "~s",   arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.l", size: 2,	opcode:one(0o160620),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxl.l", size: 2,	opcode:one(0o160660),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "roxr.b", size: 2,	opcode:one(0o160020),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.b", size: 2,	opcode:one(0o160060),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.w", size: 2,	opcode:one(0o160120),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.w", size: 2,	opcode:one(0o160160),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.w", size: 2,	opcode:one(0o162300),		match: one(0o177700), args: "~s",   arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.l", size: 2,	opcode:one(0o160220),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
+	{ name: "roxr.l", size: 2,	opcode:one(0o160260),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
+	
+	{ name: "rtd", size: 4,	opcode:one(0o047164),		match: one(0o177777), args: "#w", arch: m68010up , type: dis.nonbranch },
+
+	{ name: "rte", size: 2,	opcode:one(0o047163),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+
+	{ name: "rtm", size: 2,	opcode:one(0o003300),		match: one(0o177760), args: "Rs", arch: m68020 , type: dis.nonbranch },
+
+	{ name: "rtr", size: 2,	opcode:one(0o047167),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+
+	{ name: "rts", size: 2,	opcode:one(0o047165),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+	
+	{ name: "sbcd", size: 2,	opcode:one(0o100400),		match: one(0o170770), args: "DsDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sbcd", size: 2,	opcode:one(0o100410),		match: one(0o170770), args: "-s-d", arch: m68000up , type: dis.nonbranch },
+	
+	  /* Traps have to come before conditional sets, as they have a more
+		 specific opcode.  */
+	{ name: "trapcc", size: 2,	opcode:one(0o052374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcs", size: 2,	opcode:one(0o052774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapeq", size: 2,	opcode:one(0o053774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapf", size: 2,	opcode:one(0o050774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapge", size: 2,	opcode:one(0o056374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapgt", size: 2,	opcode:one(0o057374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "traphi", size: 2,	opcode:one(0o051374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "traple", size: 2,	opcode:one(0o057774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapls", size: 2,	opcode:one(0o051774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "traplt", size: 2,	opcode:one(0o056774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapmi", size: 2,	opcode:one(0o055774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapne", size: 2,	opcode:one(0o053374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trappl", size: 2,	opcode:one(0o055374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapt", size: 2,	opcode:one(0o050374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvc", size: 2,	opcode:one(0o054374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvs", size: 2,	opcode:one(0o054774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
+
+	{ name: "trapcc.w", size: 4,	opcode:one(0o052372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcs.w", size: 4,	opcode:one(0o052772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapeq.w", size: 4,	opcode:one(0o053772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapf.w", size: 4,	opcode:one(0o050772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapge.w", size: 4,	opcode:one(0o056372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapgt.w", size: 4,	opcode:one(0o057372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traphi.w", size: 4,	opcode:one(0o051372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traple.w", size: 4,	opcode:one(0o057772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapls.w", size: 4,	opcode:one(0o051772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traplt.w", size: 4,	opcode:one(0o056772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapmi.w", size: 4,	opcode:one(0o055772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapne.w", size: 4,	opcode:one(0o053372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trappl.w", size: 4,	opcode:one(0o055372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapt.w", size: 4,	opcode:one(0o050372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvc.w", size: 4,	opcode:one(0o054372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvs.w", size: 4,	opcode:one(0o054772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+
+	{ name: "trapcc.l", size: 6,	opcode:one(0o052373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcs.l", size: 6,	opcode:one(0o052773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapeq.l", size: 6,	opcode:one(0o053773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapf.l", size: 6,	opcode:one(0o050773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapge.l", size: 6,	opcode:one(0o056373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapgt.l", size: 6,	opcode:one(0o057373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traphi.l", size: 6,	opcode:one(0o051373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traple.l", size: 6,	opcode:one(0o057773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapls.l", size: 6,	opcode:one(0o051773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traplt.l", size: 6,	opcode:one(0o056773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapmi.l", size: 6,	opcode:one(0o055773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapne.l", size: 6,	opcode:one(0o053373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trappl.l", size: 6,	opcode:one(0o055373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapt.l", size: 6,	opcode:one(0o050373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvc.l", size: 6,	opcode:one(0o054373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvs.l", size: 6,	opcode:one(0o054773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+
+	{ name: "trapv", size: 2,	opcode:one(0o047166),	match: one(0o177777), args: "", arch: m68000up , type: dis.nonbranch },
+	
+	{ name: "scc", size: 2,	opcode:one(0o052300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "scs", size: 2,	opcode:one(0o052700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "seq", size: 2,	opcode:one(0o053700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sf", size: 2,	opcode:one(0o050700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sge", size: 2,	opcode:one(0o056300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sgt", size: 2,	opcode:one(0o057300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "shi", size: 2,	opcode:one(0o051300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sle", size: 2,	opcode:one(0o057700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sls", size: 2,	opcode:one(0o051700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "slt", size: 2,	opcode:one(0o056700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "smi", size: 2,	opcode:one(0o055700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sne", size: 2,	opcode:one(0o053300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "spl", size: 2,	opcode:one(0o055300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "st", size: 2,	opcode:one(0o050300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "svc", size: 2,	opcode:one(0o054300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "svs", size: 2,	opcode:one(0o054700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	
+	{ name: "stop", size: 4,	opcode:one(0o047162),	match: one(0o177777), args: "#w", arch: m68000up, type: dis.nonbranch },
+
+	{ name: "suba.l", size: 2,	opcode:one(0o110700),	match: one(0o170700), args: "*lAd", arch: m68000up , type: dis.nonbranch },
+	{ name: "suba.w", size: 2,	opcode:one(0o110300),	match: one(0o170700), args: "*wAd", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "subi.b", size: 4,	opcode:one(0o002000),	match: one(0o177700), args: "#b$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "subi.w", size: 4,	opcode:one(0o002100),	match: one(0o177700), args: "#w$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "subi.l", size: 6,	opcode:one(0o002200),	match: one(0o177700), args: "#l$s", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "subq.b", size: 2,	opcode:one(0o050400),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	{ name: "subq.w", size: 2,	opcode:one(0o050500),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	{ name: "subq.l", size: 2,	opcode:one(0o050600),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	
+	/* The sub opcode can generate the suba, subi, and subq instructions.  */
+	{ name: "sub.b", size: 2,	opcode:one(0o050400),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.b", size: 4,	opcode:one(0o002000),	match: one(0o177700), args: "#b$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.b", size: 2,	opcode:one(0o110000),	match: one(0o170700), args: ";bDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.b", size: 2,	opcode:one(0o110400),	match: one(0o170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.w", size: 2,	opcode:one(0o050500),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.w", size: 4,	opcode:one(0o002100),	match: one(0o177700), args: "#w$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.w", size: 2,	opcode:one(0o110300),	match: one(0o170700), args: "*wAd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.w", size: 2,	opcode:one(0o110100),	match: one(0o170700), args: "*wDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.w", size: 2,	opcode:one(0o110500),	match: one(0o170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.l", size: 2,	opcode:one(0o050600),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.l", size: 6,	opcode:one(0o002200),	match: one(0o177700), args: "#l$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.l", size: 2,	opcode:one(0o110700),	match: one(0o170700), args: "*lAd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.l", size: 2,	opcode:one(0o110200),	match: one(0o170700), args: "*lDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "sub.l", size: 2,	opcode:one(0o110600),	match: one(0o170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "subx.b", size: 2,	opcode:one(0o110400),	match: one(0o170770), args: "DsDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "subx.b", size: 2,	opcode:one(0o110410),	match: one(0o170770), args: "-s-d", arch: m68000up , type: dis.nonbranch },
+	{ name: "subx.w", size: 2,	opcode:one(0o110500),	match: one(0o170770), args: "DsDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "subx.w", size: 2,	opcode:one(0o110510),	match: one(0o170770), args: "-s-d", arch: m68000up , type: dis.nonbranch },
+	{ name: "subx.l", size: 2,	opcode:one(0o110600),	match: one(0o170770), args: "DsDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "subx.l", size: 2,	opcode:one(0o110610),	match: one(0o170770), args: "-s-d", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "swap", size: 2,	opcode:one(0o044100),	match: one(0o177770), args: "Ds", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "tas", size: 2,		opcode:one(0o045300),	match: one(0o177700), args: "$s", arch: m68000up, type: dis.nonbranch },
+
+	{ name: "trap", size: 2,	opcode:one(0o047100),	match: one(0o177760), args: "Ts", arch: m68000up, type: dis.nonbranch },
+
+	{ name: "tst.b", size: 2,	opcode:one(0o045000),	match: one(0o177700), args: ";b", arch: m68020up , type: dis.nonbranch },
+	{ name: "tst.b", size: 2,	opcode:one(0o045000),	match: one(0o177700), args: "$b", arch: m68000up , type: dis.nonbranch },
+	{ name: "tst.w", size: 2,	opcode:one(0o045100),	match: one(0o177700), args: "*w", arch: m68020up , type: dis.nonbranch },
+	{ name: "tst.w", size: 2,	opcode:one(0o045100),	match: one(0o177700), args: "$w", arch: m68000up , type: dis.nonbranch },
+	{ name: "tst.l", size: 2,	opcode:one(0o045200),	match: one(0o177700), args: "*l", arch: m68020up , type: dis.nonbranch },
+	{ name: "tst.l", size: 2,	opcode:one(0o045200),	match: one(0o177700), args: "$l", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "unlk", size: 2,	opcode:one(0o047130),	match: one(0o177770), args: "As", arch: m68000up , type: dis.nonbranch },
+
+	{ name: "unpk", size: 4,	opcode:one(0o100600),	match: one(0o170770), args: "DsDd#w", arch: m68020up , type: dis.nonbranch },
+	{ name: "unpk", size: 4,	opcode:one(0o100610),	match: one(0o170770), args: "-s-d#w", arch: m68020up , type: dis.nonbranch },
 ];
 
 const m68k_opcode_aliases: m68k_opcode_alias[] = [
@@ -1029,9 +1268,10 @@ function print_base(regno: number, disp: number): string {
 		return print_vma(disp) + "," + reg_names[regno];
 }
 
+// COERCE: make signed
 const COERCE8 = (x: number) => ((x ^ 0x80) & 0xff) - 128;
 const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
-const COERCE32 = (x: number) => (x ^ 0x80000000) - 0x80000000;
+const COERCE32 = (x: number) => (x >>> 0);
 const NEXTBYTE = (buffer: Uint8Array, p: number) => { p += 2; return [p, COERCE8(buffer[p - 1])]; };
 const NEXTWORD = (buffer: Uint8Array, p: number) => { p += 2; return [p, COERCE16((buffer[p - 2] << 8) + buffer[p - 1])]; };
 const NEXTLONG = (buffer: Uint8Array, p: number) => { p += 4; return [p, COERCE32((((buffer[p - 4] << 8) + buffer[p - 3] << 8) + buffer[p - 2] << 8) + buffer[p - 1])]; };
@@ -1189,8 +1429,15 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 		break;
 
 	case 'M':
-		console.log("not supported", d[0]);
-		return { len: 0 };
+		if(place === 'h') {
+			text = "<not supported: Mh>";
+		} else {
+			val = FETCH_ARG(8);
+			if(val & 0x80)
+				val -= 0x100;
+			text = `#${val}`;
+		}
+		break;
 
 	case 'T':
 		val = FETCH_ARG(4);
@@ -1274,7 +1521,7 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 		if(place === 'b')
 			[p, disp] = NEXTBYTE(buffer, p);
 		else if(place === 'B')
-			disp = COERCE8(buffer[p + 1]);
+			disp = COERCE8(buffer[1]);
 		else if(place === 'w' || place === 'W')
 			[p, disp] = NEXTWORD(buffer, p);
 		else if(place === 'l' || place === 'L' || place === 'C')
@@ -1375,8 +1622,22 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 				[text, p] = print_indexed(-1, buffer, p, addr);
 				break;
 			case 4:
-				console.log("float not supported");
-				return { len: 0 };
+				switch(place) {
+				case 'b':
+					[p, val] = NEXTBYTE(buffer, p);
+					break;
+				case 'w':
+					[p, val] = NEXTWORD(buffer, p);
+					break;
+				case 'l':
+					[p, val] = NEXTLONG(buffer, p);
+					break;
+				default:
+					console.log("float not supported");
+					return { len: 0 };
+				}
+				text = `#${val}`;
+				break;
 			}
 		}
 		break;
