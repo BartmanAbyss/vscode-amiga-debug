@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
-import * as unravel from '../../../src/client/68k-unravel.js';
 import { print_insn_m68k } from '../../client/68k-dis';
 
 suite("68k-cycles", () => {
@@ -116,29 +115,54 @@ suite("68k-jump", () => {
 });
 
 suite("68k-dis", () => {
-	/*test("ext", () => {
+	test("ext", () => {
 		const insn = new Uint8Array([0x48, 0xc4]); // ext.l d4
-		const dis = print_insn_m68k(insn);
+		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "ext.l d4");
 	});
 	test("cmp", () => {
 		const insn = new Uint8Array([0x0c, 0x42, 0x00, 0x10]); // cmpi.w #16,d2
-		const dis = print_insn_m68k(insn);
+		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "cmpi.w #16,d2");
 	});
 	test("neg", () => {
 		const insn = new Uint8Array([0x44, 0x03]); // neg.b d3
-		const dis = print_insn_m68k(insn);
+		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "neg.b d3");
 	});
 	test("link", () => {
 		const insn = new Uint8Array([0x4e, 0x55, 0xff, 0xc0]); // link.w a5,#-64
-		const dis = print_insn_m68k(insn);
+		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "link.w a5,#-64");
-	});*/
+	});
 	test("eor", () => {
 		const insn = new Uint8Array([0xb7, 0x40]); // eor.w d3,d0
-		const dis = print_insn_m68k(insn);
+		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "eor.w d3,d0");
+	});
+	test("mulu", () => {
+		const insn = new Uint8Array([0xc0, 0xef, 0x00, 0x0a]); // mulu.w 10(sp),d0
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "mulu.w 10(sp),d0");
+	});
+	test("jsr", () => {
+		const insn = new Uint8Array([0x4e, 0xb9, 0x00, 0xf0, 0xff, 0x60]); // jsr $f0ff60
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "jsr $f0ff60");
+	});
+	test("movem", () => {
+		const insn = new Uint8Array([0x48, 0xe7, 0x30, 0x20]); // movem.l d2-d3/a2,-(sp)
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "movem.l d2-d3/a2,-(sp)");
+	});
+	test("bmi", () => {
+		const insn = new Uint8Array([0x6b, 0x00, 0x03, 0xfa]);
+		const dis = print_insn_m68k(insn, 0x108);
+		assert.strictEqual(dis.text, "bmi.w $504");
+	});
+	test("btst", () => {
+		const insn = new Uint8Array([0x01, 0x3a, 0x01, 0x9a]);
+		const dis = print_insn_m68k(insn, 0x28de);
+		assert.strictEqual(dis.text, "btst d0,$2a7a(pc)");
 	});
 });

@@ -1,4 +1,5 @@
 // ported from binutils-gdb/include/opcode/m68k.h, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
+// removed all references to coldfire
 
 // tslint:disable: variable-name class-name
 
@@ -57,6 +58,7 @@ const SCOPE_PAGE = (0x2 << 3);
 const SCOPE_ALL  = (0x3 << 3);
 
 // ported from binutils-gdb/opcodes/m68k-opc.c, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
+// removed all coldfire opcodes, FPU opcodes missing
 
 const m68k_opcodes: m68k_opcode[] = [
 	{ name: "abcd",  size: 2,	opcode: one(0o0140400),	match: one(0o0170770), args: "DsDd", arch: m68000up, type: dis.nonbranch },
@@ -779,95 +781,6 @@ const reg_half_names: string[] = [
   "ps", "pc"
 ];
 
-function m68k_valid_ea(code: string, val: number): boolean {
-	let mask = 0;
-
-	const M = (n0: number, n1: number, n2: number, n3: number, n4: number, n5: number, n6: number, n70: number, n71: number, n72: number, n73: number, n74: number) => 
-		(n0 | n1 << 1 | n2 << 2 | n3 << 3 | n4 << 4 | n5 << 5 | n6 << 6 | n70 << 7 | n71 << 8 | n72 << 9 | n73 << 10 | n74 << 11);
-
-	switch(code) {
-	case '*':
-		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-		break;
-	case '~':
-		mask = M(0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '%':
-		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case ';':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-		break;
-	case '@':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '!':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '&':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '$':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '?':
-		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '/':
-		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '|':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '>':
-		mask = M(0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '<':
-		mask = M(0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case 'm':
-		mask = M(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'n':
-		mask = M(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'o':
-		mask = M(0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1);
-		break;
-	case 'p':
-		mask = M(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'q':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'v':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0);
-		break;
-	case 'b':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'w':
-		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'y':
-		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'z':
-		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case '4':
-		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	default:
-		throw new Error("abort");
-	}
-
-	let mode = (val >> 3) & 7;
-	if (mode === 7)
-		mode += val & 7;
-	return (mask & (1 << mode)) !== 0;
-}
-
 function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 	let val = 0;
 
@@ -1008,23 +921,333 @@ function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 	return val & ((1 << bits) - 1);
 }
 
-// TODO: memaddr
-function print_insn_arg(d: string, buffer: Uint8Array, p0: number): { text?: string, len: number } {
-	let val = 0;
+function m68k_valid_ea(code: string, val: number): boolean {
+	let mask = 0;
+
+	const M = (n0: number, n1: number, n2: number, n3: number, n4: number, n5: number, n6: number, n70: number, n71: number, n72: number, n73: number, n74: number) => 
+		(n0 | n1 << 1 | n2 << 2 | n3 << 3 | n4 << 4 | n5 << 5 | n6 << 6 | n70 << 7 | n71 << 8 | n72 << 9 | n73 << 10 | n74 << 11);
+
+	switch(code) {
+	case '*':
+		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+		break;
+	case '~':
+		mask = M(0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case '%':
+		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case ';':
+		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+		break;
+	case '@':
+		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0);
+		break;
+	case '!':
+		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
+		break;
+	case '&':
+		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case '$':
+		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case '?':
+		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case '/':
+		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
+		break;
+	case '|':
+		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
+		break;
+	case '>':
+		mask = M(0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0);
+		break;
+	case '<':
+		mask = M(0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
+		break;
+	case 'm':
+		mask = M(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0);
+		break;
+	case 'n':
+		mask = M(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0);
+		break;
+	case 'o':
+		mask = M(0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1);
+		break;
+	case 'p':
+		mask = M(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
+		break;
+	case 'q':
+		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
+		break;
+	case 'v':
+		mask = M(1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0);
+		break;
+	case 'b':
+		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
+		break;
+	case 'w':
+		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
+		break;
+	case 'y':
+		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+		break;
+	case 'z':
+		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0);
+		break;
+	case '4':
+		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
+		break;
+	default:
+		throw new Error("abort");
+	}
+
+	let mode = (val >> 3) & 7;
+	if (mode === 7)
+		mode += val & 7;
+	return (mask & (1 << mode)) !== 0;
+}
+
+function print_address(adr: number): string {
+	return "$" + adr.toString(16);
+}
+
+function print_vma(b: number): string {
+	return b.toString(); // needs to be signed
+}
+
+function print_base(regno: number, disp: number): string {
+	if(regno === -1)
+		return print_address(disp) + ",pc";
+	if(regno === -2)
+		return disp.toString();
+	if(regno === -3)
+		return print_vma(disp) + ",zpc";
+	else
+		return print_vma(disp) + "," + reg_names[regno];
+}
+
+const COERCE8 = (x: number) => ((x ^ 0x80) & 0xff) - 128;
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
+const COERCE32 = (x: number) => (x ^ 0x80000000) - 0x80000000;
+const NEXTBYTE = (buffer: Uint8Array, p: number) => { p += 2; return [p, COERCE8(buffer[p - 1])]; };
+const NEXTWORD = (buffer: Uint8Array, p: number) => { p += 2; return [p, COERCE16((buffer[p - 2] << 8) + buffer[p - 1])]; };
+const NEXTLONG = (buffer: Uint8Array, p: number) => { p += 4; return [p, COERCE32((((buffer[p - 4] << 8) + buffer[p - 3] << 8) + buffer[p - 2] << 8) + buffer[p - 1])]; };
+const NEXTULONG= (buffer: Uint8Array, p: number) => { p += 4; return [p, (((buffer[p - 4] << 8) + buffer[p - 3] << 8) + buffer[p - 2] << 8) + buffer[p - 1]]; };
+
+function print_indexed(basereg: number, buffer: Uint8Array, p: number, addr: number): [string, number] {
+	const scales = [ "", "*2", "*4", "*8" ];
 	let text = '';
-	const place = d[1];
+	let word: number;
+	let base_disp, outer_disp: number;
+	[p, word] = NEXTWORD(buffer, p);
+
+	let buf = `${reg_names[(word >> 12) & 0xf]}.${(word & 0x800) ? 'l' : 'w'}${scales[(word >> 9) & 3]}`;
+
+	/* Handle the 68000 style of indexing.  */
+	if((word & 0x100) === 0) {
+		base_disp = word & 0xff;
+		if ((base_disp & 0x80) !== 0)
+			base_disp -= 0x100;
+		if (basereg === -1)
+			base_disp += addr;
+		return ['(' + print_base(basereg, base_disp) + ',' + buf + ')', p];
+	}
+
+	/* Handle the generalized kind.  */
+	/* First, compute the displacement to add to the base register.  */
+	if(word & 0o200) {
+		if (basereg === -1)
+			basereg = -3;
+		else
+			basereg = -2;
+	}
+
+	if(word & 0o100)
+		buf = '';
+	base_disp = 0;
+	switch ((word >> 4) & 3) {
+	case 2:
+		[p, base_disp] = NEXTWORD(buffer, p);
+		break;
+	case 3:
+		[p, base_disp] = NEXTLONG(buffer, p);
+		break;
+	}
+	if(basereg === -1)
+		base_disp += addr;
+
+	/* Handle single-level case (not indirect).  */
+	if((word & 7) === 0)
+		return ['(' + print_base(basereg, base_disp) + ((buf !== '') ? (',' + buf) : '') + ')', p];
+
+	/* Two level.  Compute displacement to add after indirection.  */
+	outer_disp = 0;
+	switch (word & 3) {
+	case 2:
+		[p, outer_disp] = NEXTWORD(buffer, p);
+		break;
+	case 3:
+		[p, outer_disp] = NEXTLONG(buffer, p);
+		break;
+	}
+
+	text = "([" + print_base(basereg, base_disp);
+	if((word & 4) === 0 && buf !== '') {
+		text += "," + buf;
+		buf = '';
+	}
+	text += "]";
+	if(buf !== '')
+		text += "," + buf;
+	text += "," + print_vma(outer_disp) + ")";
+	return [text, p];
+}
+
+function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number): { text?: string, len: number } {
+	let val = 0;
+	let disp = 0;
+	let regno = 0;
+	let text = '';
+	let place = d[1];
+	let o = 0;
 	let p = p0;
 
-	const COERCE8 = (x: number) => ((x ^ 0x80) & 0xff) - 128;
-	const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
-	const COERCE32 = (x: number) => (x ^ 0x80000000) - 0x80000000;
 	const FETCH_ARG = (bits: number) => fetch_arg(buffer, place, bits);
-	const NEXTBYTE = (p: number) => { p += 2; return [p, COERCE8(buffer[p - 1])]; }
-	const NEXTWORD = (p: number) => { p += 2; return [p, COERCE16((buffer[p - 2] << 8) + buffer[p - 1])]; }
-	const NEXTLONG = (p: number) => { p += 4; return [p, COERCE32((((buffer[p - 4] << 8) + buffer[p - 3] << 8) + buffer[p - 2] << 8) + buffer[p - 1])]; }
 
 	switch(d[0]) {
-	// TODO: rest
+	case 'c': // Cache identifier.
+		const cacheFieldName = [ "nc", "dc", "ic", "bc" ];
+		val = FETCH_ARG(2);
+		text = cacheFieldName[val];
+		break;
+
+	case 'a': // Address register indirect only. Cf. case '+'.
+		val = FETCH_ARG(3);
+		text = `(${reg_names[val + 8]})`;
+		break;
+
+	case '_': // 32-bit absolute address for move16.
+		[p, val] = NEXTULONG(buffer, p);
+		text = print_address(val);
+		break;
+
+	case 'C':
+		text = "ccr";
+		break;
+
+	case 'S':
+		text = "sr";
+		break;
+
+	case 'U':
+		text = "usp";
+		break;
+
+	case 'E':
+		text = "acc";
+		break;
+
+	case 'G':
+		text = "macsr";
+		break;
+
+	case 'H':
+		text = "mask";
+		break;
+	
+	case 'J':
+		console.log("not supported", d[0]);
+		return { len: 0 };
+
+	case 'Q':
+		val = FETCH_ARG(3);
+		/* 0 means 8, except for the bkpt instruction... */
+		if(val === 0 && d[1] !== 's')
+			val = 8;
+		text = `#${val}`;
+		break;
+
+	case 'x':
+		val = FETCH_ARG(3);
+		/* 0 means -1 */
+		if(val === 0)
+			val = -1;
+		text = `#${val}`;
+		break;
+
+	case 'j':
+		val = FETCH_ARG(3);
+		text = `#${val + 1}`;
+		break;
+
+	case 'K':
+		val = FETCH_ARG(9);
+		text = `#${val}`;
+		break;
+
+	case 'M':
+		console.log("not supported", d[0]);
+		return { len: 0 };
+
+	case 'T':
+		val = FETCH_ARG(4);
+		text = `#${val}`;
+		break;
+	
+	case 'D':
+		val = FETCH_ARG(3);
+		text += reg_names[val];
+		break;
+
+	case 'A':
+		val = FETCH_ARG(3);
+		text += reg_names[val + 0o010];
+		break;
+
+	case 'R':
+		val = FETCH_ARG(4);
+		text += reg_names[val];
+		break;
+
+	case 'r':
+		regno = FETCH_ARG(4);
+		text = `(${reg_names[regno]})`;
+		break;
+
+	case 'O':
+		val = FETCH_ARG(6);
+		if(val & 0x20)
+			text = reg_names[val & 7];
+		else
+			text = val.toString();
+		break;
+
+	case '+':
+		val = FETCH_ARG(3);
+		text = `(${reg_names[val + 8]})+`;
+		break;
+
+	case '-':
+		val = FETCH_ARG(3);
+		text = `-(${reg_names[val + 8]})`;
+		break;
+
+	case 'k':
+		if(place === 'k') {
+			val = FETCH_ARG(3);
+			text = `{${reg_names[val]}}`;
+		} else if(place === 'C') {
+			val = FETCH_ARG(7);
+			if(val > 63)		/* This is a signed constant.  */
+				val -= 128;
+			text = `{#${val}}`;
+		} else
+			return { len: -1 };
+		break;
+
 	case '#':
 	case '^':
 		let p1 = d[0] === '#' ? 2 : 4;
@@ -1037,15 +1260,52 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number): { text?: str
 		else if (place === '3')
 			val = FETCH_ARG(8);
 		else if (place === 'b')
-			[p1, val] = NEXTBYTE(p1);
+			[p1, val] = NEXTBYTE(buffer, p1);
 		else if (place === 'w' || place === 'W')
-			[p1, val] = NEXTWORD(p1);
+			[p1, val] = NEXTWORD(buffer, p1);
 		else if (place === 'l')
-			[p1, val] = NEXTLONG(p1);
+			[p1, val] = NEXTLONG(buffer, p1);
 		else
 			throw new Error("<invalid op_table>");
 		text = `#${val}`;
 		break;
+
+	case 'B':
+		if(place === 'b')
+			[p, disp] = NEXTBYTE(buffer, p);
+		else if(place === 'B')
+			disp = COERCE8(buffer[p + 1]);
+		else if(place === 'w' || place === 'W')
+			[p, disp] = NEXTWORD(buffer, p);
+		else if(place === 'l' || place === 'L' || place === 'C')
+			[p, disp] = NEXTLONG(buffer, p);
+		else if(place === 'g') {
+			[o, disp] = NEXTBYTE(buffer, o);
+			if(disp === 0)
+				[p, disp] = NEXTWORD(buffer, p);
+			else if(disp === -1)
+				[p, disp] = NEXTLONG(buffer, p);
+		} else if(place === 'c') {
+			if(buffer[1] & 0x40) // If bit six is one, long offset.
+				[p, disp] = NEXTLONG(buffer, p);
+			else
+				[p, disp] = NEXTWORD(buffer, p);
+		} else
+			throw new Error("<invalid op_table>");
+		text = print_address(addr + disp);
+		break;
+
+	case 'd':
+		[p, val] = NEXTWORD(buffer, p);
+		const val1 = FETCH_ARG(3);
+		text = `${val}(${reg_names[val1 + 8]})`;
+		break;
+
+	case 's':
+		val = FETCH_ARG(3);
+		text = fpcr_names[val];
+		break;
+
 	case '4':
 	case '*':
 	case '~':
@@ -1082,39 +1342,148 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number): { text?: str
 			return { len: -1 };
 
 		/* Get register number assuming address register.  */
-		const regno = (val & 7) + 8;
+		regno = (val & 7) + 8;
 		const regname = reg_names[regno];
 		switch (val >> 3) {
-		case 0:
-			text += reg_names[val];
+		case 0: text = reg_names[val]; break;
+		case 1: text = regname; break;
+		case 2: text = `(${reg_names[regno]})`; break;
+		case 3: text = `(${reg_names[regno]})+`; break;
+		case 4: text = `-(${reg_names[regno]})`; break;
+		case 5: 
+			[p, val] = NEXTWORD(buffer, p);
+			text = `${val}(${regname})`;
 			break;
-
-		case 1:
-			text += regname;
+		case 6: 
+			[text, p] = print_indexed(regno, buffer, p, addr);
 			break;
-
-		// TODO
+		case 7:
+			switch(val & 7) {
+			case 0:
+				[p, val] = NEXTWORD(buffer, p);
+				text = print_address(val);
+				break;
+			case 1:
+				[p, val] = NEXTULONG(buffer, p);
+				text = print_address(val);
+				break;
+			case 2:
+				[p, val] = NEXTWORD(buffer, p);
+				text = print_address(addr + val) + "(pc)";
+				break;
+			case 3:
+				[text, p] = print_indexed(-1, buffer, p, addr);
+				break;
+			case 4:
+				console.log("float not supported");
+				return { len: 0 };
+			}
 		}
 		break;
 
-	case 'D':
-		val = fetch_arg(buffer, place, 3);
-		text += reg_names[val];
+	case 'L':
+	case 'l':
+		if(place === 'w') {
+			let doneany = false;
+			let p1 = 2;
+			[p1, val] = NEXTWORD(buffer, p1);
+			if(p1 > p)
+				p = p1;
+			if(val === 0) {
+				text = '#0';
+				break;
+			}
+			if(d[0] === 'l') {
+				let newval = 0;
+
+				for(regno = 0; regno < 16; ++regno)
+					if(val & (0x8000 >> regno))
+						newval |= 1 << regno;
+				val = newval;
+			}
+			val &= 0xffff;
+			doneany = false;
+			for(regno = 0; regno < 16; ++regno)
+				if(val & (1 << regno)) {
+					if(doneany)
+						text += "/";
+					doneany = true;
+					text += reg_names[regno];
+					const first_regno = regno;
+					while(val & (1 << (regno + 1)))
+						++regno;
+					if(regno > first_regno)
+						text += `-${reg_names[regno]}`;
+				}
+		} else if(place === '3') {
+			console.log("float not supported");
+		} else if(place === '8') {
+			val = FETCH_ARG(3);
+			text = fpcr_names[val];
+		} else
+			throw new Error("<invalid op_table>");
 		break;
 
-	case 'A':
-		val = fetch_arg(buffer, place, 3);
-		text += reg_names[val + 0o010];
+	case 'X':
+		place = '8';
+		// fall through
+	case 'Y':
+	case 'Z':
+	case 'W':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+		val = FETCH_ARG(5);
+		switch(val) {
+		case 2: text = "tt0"; break;
+		case 3: text = "tt1"; break;
+		case 0x10: text = "tc"; break;
+		case 0x11: text = "drp"; break;
+		case 0x12: text = "srp"; break;
+		case 0x13: text = "crp"; break;
+		case 0x14: text = "cal"; break;
+		case 0x15: text = "val"; break;
+		case 0x16: text = "scc"; break;
+		case 0x17: text = "ac"; break;
+		case 0x18: text = "psr"; break;
+		case 0x19: text = "pcsr"; break;
+		case 0x1c:
+		case 0x1d:
+			const break_reg = ((buffer[3] >> 2) & 7);
+			text = (val === 0x1c ? "bad" : "bac") + break_reg.toString();
+			break;
+		default:
+			text = `<mmu register ${val}>`;
+			break;
+		}
+	
+	case 'f':
+		const fc = FETCH_ARG(5);
+		if(fc === 1)
+			text = "dfc";
+		else if(fc === 0)
+			text = "sfc";
+		else
+			text = `<function code ${fc}>`;
 		break;
-	  
+
+	case 'V':
+		text = "val";
+		break;
+
+	case 't':
+		const level = FETCH_ARG(3);
+		text = level.toString();
+		break;
+
 	default: 
-		console.log("not supported", d[0]);
-		return { len: 0 };
+		throw new Error("<invalid op_table>");
 	}
 	return { text, len: p - p0 };
 }
 
-function match_insn_m68k(buffer: Uint8Array, best: m68k_opcode): { text: string, len: number } {
+function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode): { text: string, len: number } {
 	let text = '';
 	let d = 0;
 	if(best.args[d] === '.')
@@ -1151,11 +1520,27 @@ function match_insn_m68k(buffer: Uint8Array, best: m68k_opcode): { text: string,
 		}
 	}
 
-	// TODO: pflusha, lpstop
+	/* pflusha is an exceptions.  It takes no arguments but is two words
+	   long.  Recognize it by looking at the lower 16 bits of the mask.  */
+	if(p < 4 && (best.match & 0xffff) !== 0)
+		p = 4;
+
+	/* lpstop is another exception.  It takes a one word argument but is
+	   three words long.  */
+	if (p < 6
+		&& (best.match & 0xffff) === 0xffff
+		&& best.args[0] === '#'
+		&& best.args[1] === 'w') {
+		/* Copy the one word argument into the usual location for a one
+	   word argument, to simplify printing it.  We can get away with
+	   this because we know exactly what the second word is, and we
+	   aren't going to print anything based on it.  */
+		p = 6;
+		buffer[2] = buffer[4];
+		buffer[3] = buffer[5];
+	}
 
 	d = 0;
-
-	// TODO: add a . into movel and simila names.
 
 	text += best.name;
 
@@ -1163,7 +1548,7 @@ function match_insn_m68k(buffer: Uint8Array, best: m68k_opcode): { text: string,
 		text += ' ';
 
 	while(d < best.args.length) {
-		const arg_val = print_insn_arg(best.args.slice(d, d + 2), buffer, p);
+		const arg_val = print_insn_arg(best.args.slice(d, d + 2), buffer, p, memaddr + p);
 		if(arg_val.len === -1) // invalid argument, reject match
 			return { text: '', len: 0 };
 		p += arg_val.len;
@@ -1177,7 +1562,7 @@ function match_insn_m68k(buffer: Uint8Array, best: m68k_opcode): { text: string,
 	return { text, len: p };
 }
 
-function m68k_scan_mask(buffer: Uint8Array, arch_mask: number): { text: string, len: number } {
+function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number): { text: string, len: number } {
 	for(const opc of m68k_opcodes) {
 		if (((0xff & buffer[0] & (opc.match >> 24)) === (0xff & (opc.opcode >> 24)))
 		 && ((0xff & buffer[1] & (opc.match >> 16)) === (0xff & (opc.opcode >> 16)))
@@ -1185,9 +1570,9 @@ function m68k_scan_mask(buffer: Uint8Array, arch_mask: number): { text: string, 
 			  || (((0xff & buffer[2] & (opc.match >> 8)) === (0xff & (opc.opcode >> 8)))
 			   && ((0xff & buffer[3] & opc.match) === (0xff & opc.opcode))))
 		 && (opc.arch & arch_mask) !== 0) {
-			 // TODO: args!
-			console.log('match:', opc);
-			const val = match_insn_m68k(buffer, opc);
+ 			 // TODO: args for divul, divsl
+			//console.log('match:', opc);
+			const val = match_insn_m68k(buffer, memaddr, opc);
 			if(val.len)
 				return val;
 		}
@@ -1196,8 +1581,8 @@ function m68k_scan_mask(buffer: Uint8Array, arch_mask: number): { text: string, 
 	return { text: '', len: 0 };
 }
 
-export function print_insn_m68k(buffer: Uint8Array): { text: string, len: number } {
-	const ret = m68k_scan_mask(buffer, m68k_mask);
+export function print_insn_m68k(buffer: Uint8Array, memaddr: number): { text: string, len: number } {
+	const ret = m68k_scan_mask(buffer, memaddr, m68k_mask);
 	if(ret.len === 0) {
 		return { text: `.short 0x${buffer[0].toString(16).padStart(2, '0')}${buffer[1].toString(16).padStart(2, '0')}`, len: 2 };
 	}
