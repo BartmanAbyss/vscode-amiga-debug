@@ -189,5 +189,5 @@ suite("68k-dis", () => {
 		const insn = new Uint8Array([0x72, 0x01]);
 		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "moveq #1,d1");
-	})
+	});
 });

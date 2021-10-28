@@ -8,6 +8,7 @@ import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxReso
 import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
 import { profileCommon } from './profile_common';
 import { print_insn_m68k } from '../client/68k-dis';
+import { GetJump, JumpType } from '../client/68k';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -429,28 +430,51 @@ export class Profiler {
 	}
 
 	private disassembleSavestate(profileFile: ProfileFile, pcTrace: number[]): string {
-		pcTrace.sort();
-		let lastPC = 0xffffffff;
+		pcTrace.sort((a, b) => a - b);
 		let disasm = '00000000 <_start>:\n';
+
+		const functions = new Map<number, number>();
+
+		const processBranch = (mem: Uint8Array, addr: number, offset: number) => {
+			const mem16 = new Uint16Array(4);
+			for(let i = 0; i < 8 && offset + i < mem.length; i += 2) {
+				mem16[i >>> 1] = (mem[offset + i] << 8) | mem[offset + i + 1];
+			}
+			const jump = GetJump(addr, mem16);
+			if(jump?.type === JumpType.Jsr)
+				functions.set(jump.target, jump.target);
+		};
+
 		const disasmInsn = (mem: Uint8Array, addr: number, offset: number) => {
 			const insn = print_insn_m68k(mem.slice(offset, Math.min(offset + 16, mem.length)), addr);
 			if(insn.len > 0) {
+				if(functions.has(addr))
+					disasm += `${addr.toString(16).padStart(8, '0')} <_${functions.get(addr).toString(16).padStart(8, '0')}>:\n`;
 				disasm += ` ${addr.toString(16)}:\t`;
 				for(let i = 0; i < insn.len; i += 2)
 					disasm += ((mem[offset + i] << 8) | mem[offset + i + 1]).toString(16).padStart(4, '0') + ' ';
 				disasm += insn.text + '\n';
+				if(insn.text === 'rts' || insn.text === 'rte')
+					disasm += '\n';
 			}
 		};
 
-		for(const pc of pcTrace) {
-			if(pc !== lastPC) {
-				if(pc > 0 && pc < profileFile.chipMemSize)
-					disasmInsn(profileFile.chipMem, pc, pc - 0);
-				else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
-					disasmInsn(profileFile.bogoMem, pc, pc - 0xc00000);
-				lastPC = pc;
+		const process = (fn: (mem: Uint8Array, addr: number, offset: number) => void) => {
+			let lastPC = 0xffffffff;
+			for(const pc of pcTrace) {
+				if(pc !== lastPC) {
+					if(pc > 0 && pc < profileFile.chipMemSize)
+						fn(profileFile.chipMem, pc, pc - 0);
+					else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
+						fn(profileFile.bogoMem, pc, pc - 0xc00000);
+					lastPC = pc;
+				}
 			}
-		}
+		};
+
+		process(processBranch);
+		process(disasmInsn);
+
 		return disasm;
 	}
 
