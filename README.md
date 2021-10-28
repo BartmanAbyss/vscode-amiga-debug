@@ -211,6 +211,10 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: code lenses: update when display unit changes, when frame changes
 * "npm run serve": all colors in flame-graph are black
 
+### Savestate Debugger
+* document provider for .uss files to trigger start, profile (and how much frames) instead of context menu for .uss files
+* desertdream-dots: Copper bitmap detected at 320x256x0
+
 ### Assembly
 * TODO: parser needs to check for comments
 * TODO: show 68000 cycles
