@@ -401,7 +401,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	for(const c of copper) {
 		if(c.insn instanceof CopperMove) {
 			switch(c.insn.DA + 0xdff000) {
-			case regBPLCON0: BPLCON0 = c.insn.RD; break;
+			case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
 			case regBPL1MOD: modulos[0] = c.insn.RD; break;
 			case regBPL2MOD: modulos[1] = c.insn.RD; break;
 			case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
