@@ -1,0 +1,23 @@
+/* from customregs.css */
+.button {
+	background: none;
+	border: none;
+	align-items: center;
+	border: none;
+	outline: 0 !important;
+	margin-left: 3px;
+	margin-right: 3px;
+	padding: 0;
+  cursor: pointer;
+  height: 16px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.button > svg {
+  width: 16px;
+  height: 16px;
+}

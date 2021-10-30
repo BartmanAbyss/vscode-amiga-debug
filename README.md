@@ -212,7 +212,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * "npm run serve": all colors in flame-graph are black
 
 ### Savestate Debugger
-* document provider for .uss files to trigger start, profile (and how much frames) instead of context menu for .uss files
+* TODO: kill winuae/gdb when quitting vscode
 
 ### Assembly
 * TODO: parser needs to check for comments
