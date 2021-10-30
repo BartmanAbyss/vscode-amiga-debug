@@ -13,7 +13,7 @@ import { CancellationToken } from 'vscode-jsonrpc';
 
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { MemoryContentProvider } from './memory_content_provider';
-import { ProfileCodeLensProvider} from './profile_codelens_provider';
+import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { AmigaAssemblyLanguageProvider } from './assembly_language_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
@@ -21,7 +21,7 @@ import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler, ProfileFile } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
-import { MI2 } from './backend/mi2';
+import { SavestateEditorProvider } from './savestate_editor_provider';
 
 /*
  * Set the following compile time flag to true if the
@@ -55,10 +55,10 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
 		try {
 			this.config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-			for(let i = 0; i < this.config.includePath.length; i++) {
+			for (let i = 0; i < this.config.includePath.length; i++) {
 				this.config.includePath[i] = this.config.includePath[i].replace(/\$\{workspaceFolder\}/g, workspaceFolder);
 			}
-		} catch(e) { /**/ }
+		} catch (e) { /**/ }
 	}
 
 	public async canProvideConfiguration(uri: vscode.Uri, token?: CancellationToken) {
@@ -66,10 +66,10 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	}
 	public async provideConfigurations(uris: vscode.Uri[], token?: CancellationToken) {
 		const items: SourceFileConfigurationItem[] = [];
-		for(const uri of uris) {
+		for (const uri of uris) {
 			const configuration: SourceFileConfiguration = {
 				includePath: this.config.includePath,
-				defines: [ "__GNUC__=10", "_NO_INLINE", ...this.config.defines ],
+				defines: ["__GNUC__=11", "_NO_INLINE", ...this.config.defines],
 				intelliSenseMode: 'gcc-x64',
 				standard: uri.toString().endsWith('.c') ? 'gnu11' : 'gnu++20',
 				compilerPath: this.compilerPath
@@ -83,7 +83,7 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 		return true;
 	}
 	public async provideBrowseConfiguration(token?: CancellationToken) {
-		const config: WorkspaceBrowseConfiguration = { 
+		const config: WorkspaceBrowseConfiguration = {
 			browsePath: [],
 			compilerPath: this.compilerPath,
 		};
@@ -127,7 +127,6 @@ class AmigaDebugExtension {
 			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
-			//vscode.workspace.registerTextDocumentContentProvider('objdump', this.objdumpContentProvider),
 
 			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
@@ -141,7 +140,6 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
 			vscode.commands.registerCommand('amiga.disassembleElf', (uri: vscode.Uri) => this.disassembleElf(uri)),
-			vscode.commands.registerCommand('amiga.savestate', (uri: vscode.Uri) => this.debugSavestate(uri)),
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
@@ -150,8 +148,9 @@ class AmigaDebugExtension {
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
-			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true }}),
-			vscode.window.registerCustomEditorProvider('amiga.objdump', this.objdumpEditorProvider, { webviewOptions: { retainContextWhenHidden: true }}),
+			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true } }),
+			vscode.window.registerCustomEditorProvider('amiga.objdump', this.objdumpEditorProvider, { webviewOptions: { retainContextWhenHidden: true } }),
+			vscode.window.registerCustomEditorProvider('amiga.savestate', new SavestateEditorProvider(context), { webviewOptions: { retainContextWhenHidden: true } }),
 
 			// debugger
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),
@@ -195,15 +194,15 @@ class AmigaDebugExtension {
 				vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: `${uri.scheme}://${uri.authority}${uri.path}` });
 			}
 		}
-		if(editor === undefined || editor.document.uri.scheme !== 'objdump')
+		if (editor === undefined || editor.document.uri.scheme !== 'objdump')
 			this.objdumpEditorProvider.handleEditorChanged(editor);
 	}
 
 	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
-		if(vscode.window.activeTextEditor === e.textEditor)
+		if (vscode.window.activeTextEditor === e.textEditor)
 			this.objdumpEditorProvider.handleSelectionChanged(e);
 
-		if (e.textEditor.document.uri.scheme === 'examinememory') 
+		if (e.textEditor.document.uri.scheme === 'examinememory')
 			this.memoryProvider.handleSelectionChanged(e);
 	}
 
@@ -252,8 +251,8 @@ class AmigaDebugExtension {
 						description: f.scope === SymbolScope.Global ? 'Global Scope' : `Static in ${f.file}`
 					};
 				}), {
-						ignoreFocusOut: true
-					});
+					ignoreFocusOut: true
+				});
 
 				if (selected!.scope === SymbolScope.Global) {
 					url = `disassembly:///${selected!.name}.amigaasm`;
@@ -275,7 +274,7 @@ class AmigaDebugExtension {
 			if (exists && isDirectory) {
 				try {
 					fs.mkdirSync(dest);
-				} catch(err) {
+				} catch (err) {
 					// don't care...
 				}
 				fs.readdirSync(src).forEach((childItemName) => {
@@ -290,12 +289,12 @@ class AmigaDebugExtension {
 			const source = this.extensionPath + '/template';
 			const dest = vscode.workspace.workspaceFolders[0].uri.fsPath;
 			const files = fs.readdirSync(dest);
-			if(files.length) {
+			if (files.length) {
 				vscode.window.showErrorMessage(`Failed to init project. Project folder is not empty`);
 				return;
 			}
 			copyRecursiveSync(source, dest);
-		} catch(err) {
+		} catch (err) {
 			vscode.window.showErrorMessage(`Failed to init project. ${err.toString()}`);
 		}
 	}
@@ -335,7 +334,7 @@ class AmigaDebugExtension {
 	}
 
 	private async profileSize(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
+		if (uri.scheme !== 'file') {
 			vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
@@ -348,13 +347,13 @@ class AmigaDebugExtension {
 			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
 			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
-		} catch(error) {
+		} catch (error) {
 			vscode.window.showErrorMessage(`Error during size profiling: ${error.message}`);
 		}
 	}
 
 	private async disassembleElf(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
+		if (uri.scheme !== 'file') {
 			vscode.window.showErrorMessage(`Error during disassembly: Don't know how to open ${uri.toString()}`);
 			return;
 		}
@@ -363,113 +362,11 @@ class AmigaDebugExtension {
 		await vscode.commands.executeCommand("workbench.action.moveEditorToLeftGroup");
 	}
 
-	private async debugSavestate(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
-			vscode.window.showErrorMessage(`Error debugging savestate: Don't know how to open ${uri.toString()}`);
-			return;
-		}
-
-		// write config
-		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
-		const configPath = path.join(binPath, "savestate.uae");
-		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
-		const gdbArgs = ['-q', '--interpreter=mi2'];
-		let config = [];
-		config['use_gui'] = 'no';
-		config['win32.start_not_captured'] = 'yes';
-		config['win32.nonotificationicon'] = 'yes'; // tray icons remain after killing WinUAE, so just disable altogether
-		config['debugging_features'] = 'gdbserver';
-		config['debugging_trigger'] = '';
-		config['statefile'] = uri.fsPath;
-
-		// copy from amigaDebug.cpp
-		const stringifyCfg = (cfg) => {
-			let out: string = "";
-			for (const [key, value] of Object.entries(cfg)) {
-				out += key + '=' + cfg[key] + '\r\n';
-			}
-			return out;
-		};
-
-		try {
-			fs.writeFileSync(configPath, stringifyCfg(config));
-		} catch(e) {
-			vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
-			return;
-		}
-
-		const winuaePath = path.join(binPath, "winuae-gdb.exe");
-		const winuaeArgs = [ '-portable', '-f', configPath ];
-
-		// launch WinUAE
-		let winuae = cp.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
-
-		// init debugger
-		let miDebugger = new MI2(gdbPath, gdbArgs);
-		miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
-		//initDebugger();
-		//miDebugger.on('launcherror', this.launchErrorEvent.bind(this));
-		//miDebugger.on('quit', this.quitEvent.bind(this));
-		//miDebugger.on('exited-normally', this.quitEvent.bind(this));
-		//miDebugger.on('stopped', this.stopEvent.bind(this));
-		//miDebugger.on('msg', this.msgEvent.bind(this));
-		//miDebugger.on('breakpoint', this.breakpointEvent.bind(this));
-		//miDebugger.on('watchpoint', this.watchpointEvent.bind(this));
-		//miDebugger.on('step-end', this.stepEndEvent.bind(this));
-		//miDebugger.on('step-out-end', this.stepEndEvent.bind(this));
-		//miDebugger.on('signal-stop', this.signalStopEvent.bind(this));
-		//miDebugger.on('running', this.runningEvent.bind(this));
-		//miDebugger.on('thread-created', this.threadCreatedEvent.bind(this));
-		//miDebugger.on('thread-exited', this.threadExitedEvent.bind(this));
-		//miDebugger.on('thread-selected', this.threadSelectedEvent.bind(this));
-		miDebugger.trace = true; // DEBUG only
-
-		miDebugger.once('debug-ready', async () => {
-			console.log("debug-ready");
-			//await miDebugger.sendCommand('exec-continue');
-			//gdb = this.miDebugger.process;
-			//this.debugReady = true;
-			const numFrames = 1;
-			const date = new Date();
-			const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
-				date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
-			const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
-			// path to profile file
-			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
-			await miDebugger.sendUserInput(`monitor profile ${numFrames} "" "${tmpQuoted}"`);
-			// disconnect debugger / kill WinUAE
-			miDebugger.stop();
-			winuae.kill();
-
-			// read profile file
-			const profileArchive = new ProfileFile(tmp);
-			fs.unlinkSync(tmp); // !DEBUG
-
-			// generate output
-			const profiler = new Profiler(null, null);
-			//progress.report({ message: 'Writing profile...'});
-			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileSavestate(profileArchive));
-
-			// open output
-			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
-		});
-		const commands = [
-			'enable-pretty-printing',
-			//'interpreter-exec console "set debug remote 1"',
-			'interpreter-exec console "target remote localhost:2345"',
-		];
-
-		// launch GDB and connect to WinUAE
-		miDebugger.connect(".", "", commands).catch((err) => {
-			vscode.window.showErrorMessage(`Failed to launch GDB: ${err.toString()}`);
-		});
-	}
-
 	private shrinklerTerminal: vscode.Terminal;
 	private shrinklerFinished = false;
 
 	private async shrinkler(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
+		if (uri.scheme !== 'file') {
 			vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
@@ -481,8 +378,8 @@ class AmigaDebugExtension {
 			let config: AmigaConfiguration;
 			try {
 				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-			} catch(e) { /**/ }
-			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
+			} catch (e) { /**/ }
+			if (config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
 				vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
 				return;
 			}
@@ -490,12 +387,12 @@ class AmigaDebugExtension {
 			const items: vscode.QuickPickItem[] = [];
 
 			// tslint:disable-next-line: forin
-			for(const key in config.shrinkler) {
+			for (const key in config.shrinkler) {
 				items.push({ label: key, description: config.shrinkler[key] });
 			}
-			
+
 			const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
-			if(result === undefined)
+			if (result === undefined)
 				return;
 			const output = uri.fsPath + '.' + result.label + '.shrinkled';
 			const args = [...result.description.split(' '), uri.fsPath, output];
@@ -527,14 +424,14 @@ class AmigaDebugExtension {
 						this.shrinklerFinished = true;
 					});
 				},
-				close: () => {},
+				close: () => { },
 				handleInput: (char: string) => {
-					if(char === '\x03')
+					if (char === '\x03')
 						p.kill('SIGTERM');
 				}
 			};
 
-			if(this.shrinklerTerminal && this.shrinklerFinished) {
+			if (this.shrinklerTerminal && this.shrinklerFinished) {
 				this.shrinklerTerminal.dispose();
 				this.shrinklerTerminal = null;
 				this.shrinklerFinished = false;
@@ -545,7 +442,7 @@ class AmigaDebugExtension {
 				pty
 			});
 			this.shrinklerTerminal.show();
-		} catch(error) {
+		} catch (error) {
 			vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
 		}
 	}

@@ -12,10 +12,12 @@ import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
+import { SavestateView } from './savestate';
 
 // from HTML page
 declare const OBJDUMP: string;
 declare const PROFILE_URL: string;
+declare const SAVESTATE: string;
 declare let PROFILES: ICpuProfileRaw[];
 declare let MODELS: IProfileModel[];
 
@@ -79,6 +81,14 @@ async function Objdump() {
 	render(h(ObjdumpView, null), container);
 }
 
+async function Savestate() {
+	const container = document.createElement('div');
+	container.classList.add(styles.wrapper);
+	document.body.appendChild(container);
+	render(h(SavestateView, null), container);
+}
+
+
 function TryProfiler() {
 	try {
 		if(PROFILE_URL) {
@@ -101,8 +111,19 @@ function TryObjdump() {
 	return false;
 }
 
+function TrySavestate() {
+	try {
+		if(SAVESTATE) {
+			console.log("Savestate");
+			Savestate();
+			return true;
+		}
+	} catch(e) {}
+	return false;
+}
+
 // MAIN ENTRY POINT
 console.log("client.tsx START: " + new Date().toLocaleString());
 
-if(!TryProfiler())
-	TryObjdump();
+// tslint:disable-next-line: no-unused-expression
+TryProfiler() || TryObjdump() || TrySavestate();

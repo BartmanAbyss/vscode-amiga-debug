@@ -2,6 +2,16 @@ import * as fs from 'fs';
 import * as zlib from 'zlib';
 
 export class UssFile {
+	public cpuModel: number;
+	public cpuFlags: number;
+	public cpuExtraFlags: number;
+	public emuName: string;
+	public emuVersion: string;
+	public description: string;
+	public cram: number;
+	public bram: number;
+	public fram: number[] = [];
+
 	constructor(private filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
@@ -42,11 +52,11 @@ export class UssFile {
 			else if(chunk.name === 'CPUX')
 				this.readCpuExtra(chunk.buffer);
 			else if(chunk.name === 'CRAM')
-				console.log(`  CRAM: ${chunk.buffer.length >>> 10}k`);
+				this.cram = chunk.buffer.length; // console.log(`  CRAM: ${chunk.buffer.length >>> 10}k`);
 			else if(chunk.name === 'BRAM')
-				console.log(`  BRAM: ${chunk.buffer.length >>> 10}k`);
+				this.bram = chunk.buffer.length; // console.log(`  BRAM: ${chunk.buffer.length >>> 10}k`);
 			else if(chunk.name === 'A3K1' || chunk.name === 'A3K2' || chunk.name === 'FRAM' || chunk.name === 'ZRAM' || chunk.name === 'ZCRM')
-				console.log(`  FRAM: ${chunk.buffer.length >>> 10}k`);
+				this.fram.push(chunk.buffer.length); // console.log(`  FRAM: ${chunk.buffer.length >>> 10}k`);
 		} while(chunk.name !== 'END ' && chunk.name !== '');
 	}
 
@@ -61,24 +71,24 @@ export class UssFile {
 			return str;
 		};
 
-		const emuname = readString();
-		const emuversion = readString();
-		const description = readString();
-		console.log(`  Saved with: '${emuname} ${emuversion}', description: '${description}'`);
+		this.emuName = readString();
+		this.emuVersion = readString();
+		this.description = readString();
+		//console.log(`  Saved with: '${this.emuName} ${this.emuVersion}', description: '${this.description}'`);
 	}
 
 	private readCpu(buffer: Buffer) {
 		let bufferOffset = 0;
-		const model = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
-		const flags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
-		console.log(`  CPU model: ${model} flags: $${flags.toString(16)}`);
+		this.cpuModel = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+		this.cpuFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+		//console.log(`  CPU model: ${this.cpuModel} flags: $${this.cpuFlags.toString(16)}`);
 		// don't care about other stuff (registers, etc.)
 	}
 
 	private readCpuExtra(buffer: Buffer) {
 		let bufferOffset = 4;
-		const flags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
-		console.log(`  CPU extra flags: $${flags.toString(16)}`);
+		this.cpuExtraFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+		//console.log(`  CPU extra flags: $${this.cpuExtraFlags.toString(16)}`);
 		// don't care about other stuff (060_revision, fpu_revision)
 	}
 }
