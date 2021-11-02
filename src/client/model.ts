@@ -5,7 +5,7 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
 import { ISourceLocation } from './location-mapping';
-import { Memory, Blit, GetBlits, GetMemoryAfterDma } from './dma';
+import { Memory, Blit, GetBlits, GetMemoryAfterDma, Copper } from './dma';
 import { DisplayUnit, scaleValue } from './display';
 import { DmaRecord } from '../backend/profile_types';
 
@@ -76,6 +76,7 @@ export interface IProfileModel {
 
 	// these fields get filled in client.tsx
 	memory?: Memory;
+	copper?: Copper[];
 	blits?: Blit[];
 }
 
@@ -341,9 +342,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			const bogoMem = Uint8Array.from(atob(model.amiga.bogoMem), (c) => c.charCodeAt(0));
 			model.memory = new Memory(chipMem, bogoMem);
 		}
-		// get blits
-		const customRegs = new Uint16Array(model.amiga.customRegs);
-		model.blits = GetBlits(customRegs, model.amiga.dmaRecords);
 	}
 
 	console.timeEnd('buildModel');
@@ -351,12 +349,9 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	return model;
 };
 
-export function getMemory(base: Memory, dmas: DmaRecord[][]): Memory {
+export function GetMemory(base: Memory, dmaRecords: DmaRecord[]): Memory {
 	console.time('getMemory');
-	let memory = base;
-	for(const dmaRecords of dmas) {
-		memory = GetMemoryAfterDma(memory, dmaRecords, 0xffffffff);
-	}
+	const memory = GetMemoryAfterDma(base, dmaRecords, 0xffffffff);
 	console.timeEnd('getMemory');
 	return memory;
 }

@@ -6,7 +6,7 @@ import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './layout.module.css';
 
-import { IProfileModel, buildModel, getMemory } from './model';
+import { IProfileModel, buildModel, GetMemory } from './model';
 import { ICpuProfileRaw } from './types';
 declare const MODELS: IProfileModel[];
 declare let PROFILES: ICpuProfileRaw[];
@@ -78,10 +78,9 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 
 	const onClickFrame = useCallback((event) => {
 		const fr = parseInt(event.srcElement.attributes.data.nodeValue);
-		if(!MODELS[fr]) {
-			MODELS[fr] = buildModel(PROFILES[fr]);
-			MODELS[fr].memory = getMemory(MODELS[0].memory, PROFILES.slice(0, fr).map((p) => p.$amiga.dmaRecords));
-		}
+		// build models on demand. memory, copper, blits have already been filled by client.ts
+		if(!MODELS[fr].nodes)
+			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
 		setFrame(fr);
 	}, [setFrame]);
 

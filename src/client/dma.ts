@@ -301,7 +301,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 		}
 	}
 
-	console.log(BlitTrace);
+	//console.log(BlitTrace);
 
 	return blits;
 }
@@ -368,7 +368,11 @@ export interface IScreen {
 	height: number;
 	planes: number[];
 	modulos: number[]; // always [2]
+	hires: boolean;
 }
+
+// COERCE: make signed
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
 
 export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let planes = [0, 0, 0, 0, 0];
@@ -402,8 +406,8 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		if(c.insn instanceof CopperMove) {
 			switch(c.insn.DA + 0xdff000) {
 			case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
-			case regBPL1MOD: modulos[0] = c.insn.RD; break;
-			case regBPL2MOD: modulos[1] = c.insn.RD; break;
+			case regBPL1MOD: modulos[0] = COERCE16(c.insn.RD); break;
+			case regBPL2MOD: modulos[1] = COERCE16(c.insn.RD); break;
 			case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
 			case regBPL1PTL: planes[0] = (planes[0] & 0xffff0000) |  c.insn.RD; break;
 			case regBPL2PTH: planes[1] = (planes[1] & 0x0000ffff) | (c.insn.RD << 16); break;
@@ -422,12 +426,13 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		}
 	}
 
-	const width = (((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4;
+	const hires = (BPLCON0 & 0x8000) ? true : false;
+	const width = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
 	const height = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
-	return { width, height, planes, modulos };
+	return { width, height, planes, modulos, hires };
 }
 
 export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
@@ -450,7 +455,7 @@ export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScree
 	const modulo = blit.BLTxMOD[channel] + (numPlanes - 1) * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 	modulos.push(modulo, modulo);
 
-	return { width, height, planes, modulos };
+	return { width, height, planes, modulos, hires: false };
 }
 
 // returs chipMem after DMA requests up to endCycle

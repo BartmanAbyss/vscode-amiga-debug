@@ -19,6 +19,7 @@ export interface DmaRecord {
 	intlev?: number;
 }
 
+// needs to match gcc8_c_support.h
 export enum GfxResourceType {
 	bitmap,
 	palette,

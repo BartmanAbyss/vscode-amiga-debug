@@ -245,4 +245,5 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
+* Multi-frame: Resource from Copper: memory not ok?
 

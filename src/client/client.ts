@@ -6,13 +6,14 @@ if (process.env.NODE_ENV === 'development') {
 import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
-import { IProfileModel, buildModel, createLenses } from './model';
+import { IProfileModel, buildModel, createLenses, GetMemory } from './model';
 import { profileShrinkler } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
 import { SavestateView } from './savestate';
+import { GetBlits, GetCopper } from './dma';
 
 // from HTML page
 declare const OBJDUMP: string;
@@ -27,7 +28,7 @@ async function Profiler() {
 	loader.setAttribute('class', styles.spinner);
 
 	document.body.appendChild(loader);
-	let container:HTMLDivElement = null;
+	let container: HTMLDivElement = null;
 	try {
 		console.time('fetch+json');
 		const response = await fetch(PROFILE_URL);
@@ -39,14 +40,29 @@ async function Profiler() {
 			PROFILES = [ profileShrinkler(PROFILES as any) ];
 		}
 
+		console.time('models');
+
 		// build model for first profile
 		MODELS.push(buildModel(PROFILES[0]));
 
-		// add dummy models for rest of profiles
-		// will be built in layout.tsx as needed
-		for(let i = 1; i < PROFILES.length; i++)
-			MODELS.push(null);
-			//MODELS.push(buildModel(PROFILES[i]));
+		if(PROFILES[0].$amiga) {
+			// add dummy models for rest of profiles
+			// will be built in layout.tsx as needed, but we need memory to get all copper resources
+			for(let i = 1; i < PROFILES.length; i++) {
+				const memory = GetMemory(MODELS[i-1].memory, PROFILES[i].$amiga.dmaRecords);
+				MODELS.push({ memory } as IProfileModel);
+				//MODELS.push(null);
+				//MODELS.push(buildModel(PROFILES[i]));
+			}
+			// build copper, blits for all frames
+			for(let i = 0; i < PROFILES.length; i++) {
+				MODELS[i].copper = GetCopper(MODELS[i].memory.chipMem, PROFILES[i].$amiga.dmaRecords);
+				const customRegs = new Uint16Array(PROFILES[i].$amiga.customRegs);
+				MODELS[i].blits = GetBlits(customRegs, PROFILES[i].$amiga.dmaRecords);
+			}
+		}
+
+		console.timeEnd('models');
 
 		// TODO: set lenses when frame changed in layout.tsx
 		if(MODELS[0].amiga) {
@@ -87,7 +103,6 @@ async function Savestate() {
 	document.body.appendChild(container);
 	render(h(SavestateView, null), container);
 }
-
 
 function TryProfiler() {
 	try {

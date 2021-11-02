@@ -9,7 +9,7 @@ declare const MODELS: IProfileModel[];
 
 import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, Copper, CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
+import { CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 
@@ -17,7 +17,7 @@ export const CopperView: FunctionComponent<{
 	frame: number,
 	time: number
 }> = ({ frame, time }) => {
-	const copper = useMemo(() => GetCopper(MODELS[frame].memory.chipMem, MODELS[frame].amiga.dmaRecords), [frame]);
+	const copper = MODELS[frame].copper;
 	const containerRef = useRef<HTMLDivElement>();
 	const [hovered, setHovered] = useState<{ index: number, x: number, y: number, justify: string}>({ index: -1, x: -1, y: -1, justify: '' });
 	const tooltipRef = useRef<HTMLDivElement>();

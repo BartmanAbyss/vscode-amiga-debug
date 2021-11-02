@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## ???
+- resource viewer supports hires
+
 ## 1.2.4
 - fixed AbleICR, SetICR, AddICRVector, RemICRVector in resources/cia.h [tehKaiN] #80
 - Configurable ram size [tehKaiN] #79

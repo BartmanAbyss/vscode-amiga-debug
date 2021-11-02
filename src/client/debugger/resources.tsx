@@ -34,9 +34,10 @@ export const Screen: FunctionComponent<{
 	frame: number;
 }> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, time, overlay = '', frame }) => {
 	const canvas = useRef<HTMLCanvasElement>();
-	const canvasScale = scale;
-	const canvasWidth = screen.width * canvasScale;
-	const canvasHeight = screen.height * canvasScale;
+	const canvasScaleX = screen.hires ? scale / 2 : scale;
+	const canvasScaleY = scale;
+	const canvasWidth = screen.width * canvasScaleX;
+	const canvasHeight = screen.height * canvasScaleY;
 
 	const zoomDiv = useRef<HTMLDivElement>();
 	const zoomCanvas = useRef<HTMLCanvasElement>();
@@ -80,9 +81,9 @@ export const Screen: FunctionComponent<{
 		const imgData = context.createImageData(canvasWidth, canvasHeight);
 		const data = new Uint32Array(imgData.data.buffer);
 		const putPixel = (x: number, y: number, color: number) => {
-			for (let yy = 0; yy < canvasScale; yy++) {
-				for (let xx = 0; xx < canvasScale; xx++) {
-					const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx);
+			for (let yy = 0; yy < canvasScaleY; yy++) {
+				for (let xx = 0; xx < canvasScaleX; xx++) {
+					const offset = (((y * canvasScaleY + yy) * canvasWidth) + x * canvasScaleX + xx);
 					data[offset] = color;
 				}
 			}
@@ -198,9 +199,9 @@ export const Screen: FunctionComponent<{
 			}
 		}
 		const put8Pixels = (x: number, y: number, color: number) => {
-			for (let yy = 0; yy < canvasScale; yy++) {
-				for (let xx = 0; xx < canvasScale * 8; xx++) {
-					const offset = (((y * canvasScale + yy) * canvasWidth) + x * canvasScale + xx);
+			for (let yy = 0; yy < canvasScaleY; yy++) {
+				for (let xx = 0; xx < canvasScaleX * 8; xx++) {
+					const offset = (((y * canvasScaleY + yy) * canvasWidth) + x * canvasScaleX + xx);
 					data[offset] = color;
 				}
 			}
@@ -260,25 +261,26 @@ export const Screen: FunctionComponent<{
 		(evt: MouseEvent) => {
 			if (!useZoom)
 				return;
-			const snap = (p: number) => Math.floor(p / canvasScale) * canvasScale;
+			const snapX = (p: number) => Math.floor(p / canvasScaleX) * canvasScaleX;
+			const snapY = (p: number) => Math.floor(p / canvasScaleY) * canvasScaleY;
 			const context = zoomCanvas.current?.getContext('2d');
 			context.imageSmoothingEnabled = false;
 			context.clearRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			const srcWidth = zoomCanvasWidth / zoomCanvasScale;
 			const srcHeight = zoomCanvasHeight / zoomCanvasScale;
-			context.drawImage(canvas.current, snap(evt.offsetX) - srcWidth / 2, snap(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
+			context.drawImage(canvas.current, snapX(evt.offsetX) - srcWidth / 2, snapY(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			context.lineWidth = 2;
 			context.strokeStyle = 'rgba(0,0,0,1)';
-			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale, zoomCanvasScale * canvasScale, zoomCanvasScale * canvasScale);
+			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale, (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale, zoomCanvasScale * canvasScaleX, zoomCanvasScale * canvasScaleY);
 			context.strokeStyle = 'rgba(255,255,255,1)';
-			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScale) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScale + 4, zoomCanvasScale * canvasScale + 4);
-			const srcX = Math.floor(evt.offsetX / canvasScale);
-			const srcY = Math.floor(evt.offsetY / canvasScale);
+			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScaleX + 4, zoomCanvasScale * canvasScaleY + 4);
+			const srcX = Math.floor(evt.offsetX / canvasScaleX);
+			const srcY = Math.floor(evt.offsetY / canvasScaleY);
 			setZoomInfo({ x: srcX, y: srcY, color: getPixel(screen, srcX, srcY), mask: mask ? getPixel(mask, srcX, srcY) : undefined });
 
 			// position zoomCanvas
-			zoomDiv.current.style.top = snap(evt.offsetY) + 10 + "px";
-			zoomDiv.current.style.left = snap(evt.offsetX) + 10 + "px";
+			zoomDiv.current.style.top = snapY(evt.offsetY) + 10 + "px";
+			zoomDiv.current.style.left = snapX(evt.offsetX) + 10 + "px";
 			zoomDiv.current.style.display = 'block';
 		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom, time]);
 
@@ -379,7 +381,7 @@ export const GfxResourcesView: FunctionComponent<{
 	frame: number,
 	time: number
 }> = ({ frame, time }) => {
-	const copper = useMemo(() => GetCopper(MODELS[frame].memory.chipMem, MODELS[frame].amiga.dmaRecords), [frame]);
+	const copper = MODELS[frame].copper;
 	const bitmaps = useMemo(() => {
 		const bitmaps: GfxResourceWithPayload[] = [];
 		MODELS[frame].amiga.gfxResources.filter((r) => r.type === GfxResourceType.bitmap).sort((a, b) => a.name.localeCompare(b.name)).forEach((resource) => {
@@ -398,7 +400,7 @@ export const GfxResourcesView: FunctionComponent<{
 					planes.push(resource.address + p * width / 8 * height);
 				modulos.push(0, 0);
 			}
-			const screen: IScreen = { width, height, planes, modulos };
+			const screen: IScreen = { width, height, planes, modulos, hires: false };
 			let mask: IScreen;
 			if (resource.flags & GfxResourceFlags.bitmap_masked) {
 				const maskPlanes = [...planes];
@@ -410,24 +412,36 @@ export const GfxResourcesView: FunctionComponent<{
 					for (let p = 0; p < resource.bitmap.numPlanes; p++)
 						maskPlanes[p] += width / 8 * height;
 				}
-				mask = { width, height, planes: maskPlanes, modulos };
+				mask = { width, height, planes: maskPlanes, modulos, hires: false };
 			}
 			bitmaps.push({ resource, frame, screen, mask });
 		});
-		const copperScreen = GetScreenFromCopper(copper);
-		const copperResource: GfxResource = {
-			address: copperScreen.planes[0],
-			size: 0,
-			name: '*Copper*',
-			type: GfxResourceType.bitmap,
-			flags: 0,
-			bitmap: {
-				width: copperScreen.width,
-				height: copperScreen.height,
-				numPlanes: copperScreen.planes.length
-			}
-		};
-		bitmaps.unshift({ resource: copperResource, frame, screen: copperScreen });
+		const copperScreens: Array<{ screen: IScreen, frames: number[] }> = [];
+		// dupecheck copper screens from all frames
+		for(let i = 0; i < MODELS.length; i++) {
+			const copperScreen = GetScreenFromCopper(MODELS[i].copper);
+			const dupe = copperScreens.findIndex((cs) => JSON.stringify(cs.screen) === JSON.stringify(copperScreen));
+			if(dupe === -1)
+				copperScreens.push({ screen: copperScreen, frames: [i + 1] });
+			else
+				copperScreens[dupe].frames.push(i + 1);
+		}
+
+		for(const cs of copperScreens) {
+			const copperResource: GfxResource = {
+				address: cs.screen.planes[0],
+				size: 0,
+				name: `*Copper (fr. ${cs.frames.join(', ')})*`,
+				type: GfxResourceType.bitmap,
+				flags: 0,
+				bitmap: {
+					width: cs.screen.width,
+					height: cs.screen.height,
+					numPlanes: cs.screen.planes.length
+				}
+			};
+			bitmaps.unshift({ resource: copperResource, frame, screen: cs.screen });
+		}
 		return bitmaps;
 	}, [frame]);
 
