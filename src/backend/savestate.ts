@@ -1,7 +1,20 @@
 import * as fs from 'fs';
 import * as zlib from 'zlib';
 
-export class UssFile {
+export interface IUssFile {
+	filename: string;
+	cpuModel: number;
+	cpuFlags: number;
+	cpuExtraFlags: number;
+	emuName: string;
+	emuVersion: string;
+	description: string;
+	cram: number;
+	bram: number;
+	fram: number[];
+}
+
+export class UssFile implements IUssFile {
 	public cpuModel: number;
 	public cpuFlags: number;
 	public cpuExtraFlags: number;
@@ -12,7 +25,7 @@ export class UssFile {
 	public bram: number;
 	public fram: number[] = [];
 
-	constructor(private filename: string) {
+	constructor(public filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
 		const readChunk = (): { name: string, buffer: Buffer } => {

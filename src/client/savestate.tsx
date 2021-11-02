@@ -8,12 +8,14 @@ import * as ProfileSingle from './icons/graph.svg';
 import * as ProfileMulti from './icons/settings.svg';
 import styles from './savestate.module.css';
 import './styles.css';
+import { IUssFile } from '../backend/savestate';
 
 declare const SAVESTATE: string;
 
 export const SavestateView: FunctionComponent<{}> = ({ }) => {
-	const savestate = JSON.parse(SAVESTATE);
-
+	const savestate = useMemo(() => {
+		return JSON.parse(SAVESTATE) as IUssFile;
+	}, [SAVESTATE]);
 	const [running, setRunning] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -31,39 +33,38 @@ export const SavestateView: FunctionComponent<{}> = ({ }) => {
 	}, []);
 
 	const onClickStart = useCallback((evt: MouseEvent) => {
-		VsCodeApi.postMessage({
-			type: 'savestateStart'
-		});
+		VsCodeApi.postMessage({ type: 'savestateStart' });
 	}, []);
 
 	const onClickStop = useCallback((evt: MouseEvent) => {
-		VsCodeApi.postMessage({
-			type: 'savestateStop'
-		});
+		VsCodeApi.postMessage({ type: 'savestateStop' });
 	}, []);
 
 	const onClickProfileSingle = useCallback((evt: MouseEvent) => {
-		VsCodeApi.postMessage({
-			type: 'savestateProfile',
-			frames: 1
-		});
+		VsCodeApi.postMessage({ type: 'savestateProfile', frames: 1 });
 	}, []);
 
 	const onClickProfileMulti = useCallback((evt: MouseEvent) => {
-		VsCodeApi.postMessage({
-			type: 'savestateProfile',
-			frames: 10
-		});
+		VsCodeApi.postMessage({ type: 'savestateProfile', frames: 10 });
 	}, []);
 
 	return (
 		<Fragment>
-			<div>{SAVESTATE}</div>
-			<div style={{ textAlign: 'center'}}>
+			<div class={styles.container}>
+			<div>
 				<button class={styles.button} onMouseDown={onClickStart} disabled={running === true} type="button" title="Start" dangerouslySetInnerHTML={{__html: DebugStart}} />
 				<button class={styles.button} onMouseDown={onClickStop} disabled={running === false} type="button" title="Stop" dangerouslySetInnerHTML={{__html: DebugStop}} />
 				<button class={styles.button} onMouseDown={onClickProfileSingle} disabled={running === false} type="button" title="Profile" dangerouslySetInnerHTML={{__html: ProfileSingle}} />
 				<button class={styles.button} onMouseDown={onClickProfileMulti} disabled={running === false} type="button" title="Profile (Multi)" dangerouslySetInnerHTML={{__html: ProfileMulti}} />
+			</div>
+			<div class={styles.tooltip}>
+				<dl>
+					<dt>File</dt><dd>{savestate.filename}</dd>
+					<dt>Emulator</dt><dd>{savestate.emuName} {savestate.emuVersion}</dd>
+					<dt>CPU</dt><dd>{savestate.cpuModel}</dd>
+					<dt>Memory</dt><dd>{[`${savestate.cram >>> 10}kb Chip`, savestate.bram ? `${savestate.bram >>> 10}kb Slow` : undefined, ...savestate.fram.map((fram) => `${fram >>> 10}kb Fast`)].filter((item) => item !== undefined).join(', ')}</dd>
+				</dl>
+			</div>
 			</div>
 		</Fragment>
 	);
