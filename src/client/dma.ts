@@ -5,6 +5,9 @@ import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
 declare let PROFILES: ICpuProfileRaw[];
 
+// COERCE: make signed
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
+
 export function CpuCyclesToDmaCycles(cpuCycles: number) {
 	return (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
 }
@@ -265,7 +268,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					for(let channel = 0; channel < 4; channel++) {
 						const adr = customRegL(regBLTxPT[channel]) & 0x1ffffe; // ECS=0x1ffffe, OCS=0x7fffe;
 						BLTxPT.push(adr);
-						BLTxMOD.push(customReg(regBLTxMOD[channel]));
+						BLTxMOD.push(COERCE16(customReg(regBLTxMOD[channel])));
 						if(BLTCON0 & (1 << (11 - channel))) {
 							channels += 'ABCD'[channel];
 							addresses.push('ABCD'[channel] + ' = $' + adr.toString(16).padStart(8, '0'));
@@ -371,9 +374,6 @@ export interface IScreen {
 	hires: boolean;
 }
 
-// COERCE: make signed
-const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
-
 export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let planes = [0, 0, 0, 0, 0];
 	const modulos = [0, 0];
@@ -403,6 +403,8 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
 
 	for(const c of copper) {
+		if(c.vpos >= 200) // ignore bottom-of-screen HUD
+			continue;
 		if(c.insn instanceof CopperMove) {
 			switch(c.insn.DA + 0xdff000) {
 			case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
