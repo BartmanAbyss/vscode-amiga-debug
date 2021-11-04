@@ -29,10 +29,10 @@ export const Screen: FunctionComponent<{
 	flags?: GfxResourceFlags;
 	scale?: number;
 	useZoom?: boolean;
+	frame: number;
 	time: number;
 	overlay?: string;
-	frame: number;
-}> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, time, overlay = '', frame }) => {
+}> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, frame, time, overlay = '' }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScaleX = screen.hires ? scale / 2 : scale;
 	const canvasScaleY = scale;
@@ -76,7 +76,7 @@ export const Screen: FunctionComponent<{
 		return pixel;
 	}, [memory]);
 
-	useEffect(() => {
+	useEffect(() => { // screen
 		const context = canvas.current?.getContext('2d');
 		const imgData = context.createImageData(canvasWidth, canvasHeight);
 		const data = new Uint32Array(imgData.data.buffer);
@@ -146,9 +146,9 @@ export const Screen: FunctionComponent<{
 			}
 		}
 		context.putImageData(imgData, 0, 0);
-	}, [canvas.current, scale, screen, mask, time]);
+	}, [canvas.current, scale, screen, mask, frame, time]);
 
-	useEffect(() => {
+	useEffect(() => { // overdraw
 		if (overlay !== 'overdraw')
 			return;
 
@@ -221,9 +221,9 @@ export const Screen: FunctionComponent<{
 		}
 
 		context.putImageData(imgData, 0, 0);
-	}, [overdrawCanvas.current, scale, screen, time, overlay]);
+	}, [overdrawCanvas.current, scale, screen, frame, time, overlay]);
 
-	const blitRects = useMemo(() => {
+	const blitRects = useMemo(() => { // blitter rects
 		const blitRects: BlitRect[] = [];
 
 		if (overlay !== 'blitrects')
@@ -255,7 +255,7 @@ export const Screen: FunctionComponent<{
 			blitRects.push({ left: x, top: y, width: blit.BLTSIZH * 16, height: Math.floor(blit.BLTSIZV / screen.planes.length), active: blit.cycleEnd > dmaTime });
 		}
 		return blitRects;
-	}, [screen, time, frame, overlay]);
+	}, [screen, frame, time, overlay]);
 
 	const onMouseMove = useCallback(
 		(evt: MouseEvent) => {
@@ -296,7 +296,7 @@ export const Screen: FunctionComponent<{
 			{overlay === 'overdraw' && <canvas class={styles.overdraw_canvas} ref={overdrawCanvas} width={canvasWidth} height={canvasHeight} />}
 			{blitRects.map((blitRect) =>
 				<div class={blitRect.active ? styles.blitrect_active : styles.blitrect}
-					style={{ left: blitRect.left * scale, top: blitRect.top * scale, width: blitRect.width * scale, height: blitRect.height * scale }} />
+					style={{ left: blitRect.left * canvasScaleX, top: blitRect.top * canvasScaleY, width: blitRect.width * canvasScaleX, height: blitRect.height * canvasScaleY }} />
 			)}
 			{useZoom && <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
@@ -518,7 +518,7 @@ export const GfxResourcesView: FunctionComponent<{
 			</select>
 		</div>
 		<div style={{overflow: 'auto'}}>
-			<Screen frame={frame} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} time={time} overlay={overlay} />
+			<Screen frame={frame} time={time} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
 		</div>
 	</Fragment>);
 };
