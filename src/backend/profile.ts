@@ -426,7 +426,7 @@ export class Profiler {
 		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
 		out[0].$amiga.objdump = this.disassembleSavestate(profileFile, pcTrace);
-		return JSON.stringify(out, null, 2);
+		return JSON.stringify(out); //, null, 2);
 	}
 
 	private disassembleSavestate(profileFile: ProfileFile, pcTrace: number[]): string {
