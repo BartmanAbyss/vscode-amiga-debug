@@ -497,9 +497,7 @@ export class Profiler {
 				totalCycles += cyc;
 			}
 		}
-		console.log("totalCycles", totalCycles);
-		// 0c780010 cmpiw #16,%d0
-		//const dis = print_insn_m68k(profileFile.chipMem.slice(pcTrace[2], pcTrace[2] + 8)); console.log('dis: ', dis.text); // TEST
+		//console.log("totalCycles", totalCycles);
 
 		const out: ICpuProfileRaw = {
 			nodes: [],
