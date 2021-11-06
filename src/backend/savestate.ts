@@ -42,11 +42,11 @@ export class UssFile implements IUssFile {
 			let chunkData: Buffer;
 
 			if(flags & 1) {
+				// zuncompress
 				const totalLen = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
 				len -= 4;
 				chunkData = zlib.inflateSync(buffer.slice(bufferOffset, bufferOffset + len));
 				bufferOffset += len;
-				// zuncompress
 			} else {
 				chunkData = buffer.slice(bufferOffset, bufferOffset + len);
 				bufferOffset += len;
