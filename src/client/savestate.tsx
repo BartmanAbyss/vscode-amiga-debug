@@ -12,6 +12,19 @@ import { IUssFile } from '../backend/savestate';
 
 declare const SAVESTATE: string;
 
+function chipset(chipsetFlags: number) {
+	if(chipsetFlags === 0)
+		return 'OCS';
+	if(chipsetFlags === 4)
+		return 'AGA';
+	const f: string[] = [];
+	if(chipsetFlags & 1)
+		f.push('ECS Agnus');
+	if(chipsetFlags & 2)
+		f.push('ECS Denise');
+	return f.join(', ');
+}
+
 export const SavestateView: FunctionComponent<{}> = ({ }) => {
 	const savestate = useMemo(() => {
 		return JSON.parse(SAVESTATE) as IUssFile;
@@ -62,7 +75,9 @@ export const SavestateView: FunctionComponent<{}> = ({ }) => {
 					<dt>File</dt><dd>{savestate.filename}</dd>
 					<dt>Emulator</dt><dd>{savestate.emuName} {savestate.emuVersion}</dd>
 					<dt>CPU</dt><dd>{savestate.cpuModel}</dd>
+					<dt>Chipset</dt><dd>{chipset(savestate.chipsetFlags)}</dd>
 					<dt>Memory</dt><dd>{[`${savestate.cram >>> 10}kb Chip`, savestate.bram ? `${savestate.bram >>> 10}kb Slow` : undefined, ...savestate.fram.map((fram) => `${fram >>> 10}kb Fast`)].filter((item) => item !== undefined).join(', ')}</dd>
+					<dt>ROM</dt><dd>{savestate.romId}</dd>
 				</dl>
 			</div>
 			</div>

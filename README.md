@@ -215,7 +215,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: kill winuae/gdb when quitting vscode
 * (internal) status of tested savestates: `c:\amiga_state`
   - `desertdream-dots.uss`: ok
-  - `gods.uss`: palette missing, maybe WinUAE issue?
+  - `gods.uss`: blitrects' height not correct due to planar layout
 
 ### Assembly
 * TODO: parser needs to check for comments

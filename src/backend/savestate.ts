@@ -6,6 +6,8 @@ export interface IUssFile {
 	cpuModel: number;
 	cpuFlags: number;
 	cpuExtraFlags: number;
+	chipsetFlags: number;
+	romId: string;
 	emuName: string;
 	emuVersion: string;
 	description: string;
@@ -18,6 +20,8 @@ export class UssFile implements IUssFile {
 	public cpuModel: number;
 	public cpuFlags: number;
 	public cpuExtraFlags: number;
+	public chipsetFlags: number;
+	public romId: string;
 	public emuName: string;
 	public emuVersion: string;
 	public description: string;
@@ -60,16 +64,19 @@ export class UssFile implements IUssFile {
 		this.readHeader(chunk.buffer);
 		do {
 			chunk = readChunk();
-			if(chunk.name === 'CPU ')
-				this.readCpu(chunk.buffer);
-			else if(chunk.name === 'CPUX')
-				this.readCpuExtra(chunk.buffer);
-			else if(chunk.name === 'CRAM')
-				this.cram = chunk.buffer.length; // console.log(`  CRAM: ${chunk.buffer.length >>> 10}k`);
-			else if(chunk.name === 'BRAM')
-				this.bram = chunk.buffer.length; // console.log(`  BRAM: ${chunk.buffer.length >>> 10}k`);
-			else if(chunk.name === 'A3K1' || chunk.name === 'A3K2' || chunk.name === 'FRAM' || chunk.name === 'ZRAM' || chunk.name === 'ZCRM')
-				this.fram.push(chunk.buffer.length); // console.log(`  FRAM: ${chunk.buffer.length >>> 10}k`);
+			switch(chunk.name) {
+			case 'CPU ': this.readCpu(chunk.buffer); break;
+			case 'CPUX': this.readCpuExtra(chunk.buffer); break;
+			case 'CHIP': this.readChip(chunk.buffer); break;
+			case 'ROM ': this.readRom(chunk.buffer); break;
+			case 'CRAM': this.cram = chunk.buffer.length; break;
+			case 'BRAM': this.bram = chunk.buffer.length; break;
+			case 'A3K1':
+			case 'A3K2':
+			case 'FRAM':
+			case 'ZRAM':
+			case 'ZCRM': this.fram.push(chunk.buffer.length); break;
+			}
 		} while(chunk.name !== 'END ' && chunk.name !== '');
 	}
 
@@ -103,5 +110,24 @@ export class UssFile implements IUssFile {
 		this.cpuExtraFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
 		//console.log(`  CPU extra flags: $${this.cpuExtraFlags.toString(16)}`);
 		// don't care about other stuff (060_revision, fpu_revision)
+	}
+
+	private readChip(buffer: Buffer) {
+		let bufferOffset = 0;
+		this.chipsetFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+		// ...
+	}
+
+	private readRom(buffer: Buffer) {
+		let bufferOffset = 20;
+		const readString = (): string => {
+			let i = 0;
+			while(buffer[bufferOffset + i] !== 0)
+				i++;
+			const str = buffer.toString('utf8', bufferOffset, bufferOffset + i);
+			bufferOffset += i + 1;
+			return str;
+		};
+		this.romId = readString();
 	}
 }
