@@ -1,6 +1,6 @@
 if (process.env.NODE_ENV === 'development') {
 	// Must use require here as import statements are only allowed to exist at the top of a file.
-	// tslint:disable-next-line: no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	require("preact/debug");
 }
 import { h, render } from 'preact';
@@ -140,5 +140,5 @@ function TrySavestate() {
 // MAIN ENTRY POINT
 console.log("client.tsx START: " + new Date().toLocaleString());
 
-// tslint:disable-next-line: no-unused-expression
+// eslint-disable-next-line no-unused-expressions, @typescript-eslint/no-unused-expressions
 TryProfiler() || TryObjdump() || TrySavestate();

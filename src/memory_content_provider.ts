@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { hexFormat } from './utils';
 
 export class MemoryContentProvider implements vscode.TextDocumentContentProvider {
-	// tslint:disable-next-line:variable-name
+	// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle, id-denylist, id-match
 	private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
 	public readonly onDidChange = this._onDidChange.event;
 

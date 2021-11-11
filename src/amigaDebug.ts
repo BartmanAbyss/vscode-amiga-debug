@@ -1,3 +1,6 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -12,7 +15,7 @@ import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
 import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
-import { DisassemblyInstruction, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
+import { DisassemblyInstruction, Section, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
 
 // global debug switch
@@ -51,8 +54,8 @@ class CustomOutputEvent extends OutputEvent {
 
 class CustomStoppedEvent extends Event implements DebugProtocol.Event {
 	public readonly body: {
-		reason: string,
-		threadID: number,
+		reason: string;
+		threadID: number;
 	};
 	public readonly event: string;
 
@@ -68,7 +71,7 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 	};
 	public readonly event: string;
 
-	constructor(threadID: number, allThreads: boolean = true) {
+	constructor(threadID: number, allThreads = true) {
 		super('custom-continued', { threadID, allThreads });
 	}
 }
@@ -81,13 +84,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected variableHandlesReverse: { [id: string]: number } = {};
 	protected quit: boolean;
 	protected started: boolean;
-	protected firstBreak: boolean = true;
+	protected firstBreak = true;
 	protected crashed: boolean;
 	protected debugReady: boolean;
 	protected miDebugger: MI2;
-	protected forceDisassembly: boolean = false;
+	protected forceDisassembly = false;
 	protected activeEditorPath: string | null = null;
-	protected currentThreadId: number = 1;
+	protected currentThreadId = 1;
 
 	protected breakpointMap: Map<string, Breakpoint[]> = new Map();
 	protected watchpoints: Watchpoint[] = [];
@@ -99,8 +102,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	// we may need to temporarily stop the target when setting breakpoints; don't let VSCode let it know though,
 	// it will send requests for threads and registers, they will fail because we already continued..
 	protected disableSendStoppedEvents = false;
-	private stopped: boolean = false;
-	private stoppedReason: string = '';
+	private stopped = false;
+	private stoppedReason = '';
 	private stoppedEventPending = false;
 
 	private currentFile: string;
@@ -145,7 +148,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if(DEBUG)
 			logger.setup(Logger.LogLevel.Verbose, false);
 
-		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 		const dh0Path = path.join(binPath, "dh0");
 
@@ -153,7 +156,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const gdbArgs = ['-q', '--interpreter=mi2'];
 
 		const parseCfg = (str: string) => {
-			const out = [];
+			const out = new Map<string, string>();
 			const lines = str.split(/[\r\n]+/g);
 			const re = /^([^=]+)=(.*)$/i;
 			for(const line of lines) {
@@ -161,54 +164,54 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					continue;
 				const match = line.match(re);
 				if(match) {
-					out[match[1]] = match[2];
+					out.set(match[1], match[2]);
 				}
 			}
 			return out;
 		};
-		const stringifyCfg = (cfg) => {
-			let out: string = "";
-			for (const [key, value] of Object.entries(cfg)) {
-				out += key + '=' + cfg[key] + '\r\n';
-			}
+		const stringifyCfg = (cfg: Map<string, string>) => {
+			let out = "";
+			cfg.forEach((value, key) => {
+				out += `${key}=${value}\r\n`;
+			});
 			return out;
 		};
 
 		const defaultPath = path.join(binPath, "default.uae");
-		let config = [];
+		let config = new Map<string, string>();
 		try {
 			config = parseCfg(fs.readFileSync(defaultPath, 'utf-8'));
 		} catch(e) { /**/ }
 
 		// mandatory
-		config['use_gui'] = 'no';
-		config['win32.start_not_captured'] = 'yes';
-		config['win32.nonotificationicon'] = 'yes'; // tray icons remain after killing WinUAE, so just disable altogether
-		config['boot_rom_uae'] = 'min'; // so we can control warp mode, KPrintF, debug overlay from within amiga executables
+		config.set('use_gui', 'no');
+		config.set('win32.start_not_captured', 'yes');
+		config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
+		config.set('boot_rom_uae', 'min'); // so we can control warp mode, KPrintF, debug overlay from within amiga executables
 
 		// WinUAE: built_in_prefs
 		switch(args.config?.toLowerCase()) {
 		case 'a500':
 		default:
-			config['quickstart'] = 'a500,1'; // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+			config.set('quickstart', 'a500,1'); // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
 			break;
 		case 'a1200':
-			config['quickstart'] = 'a1200,0'; // 68020, 2MB Chip
+			config.set('quickstart', 'a1200,0'); // 68020, 2MB Chip
 			break;
 		case 'a1200-fast':
-			config['quickstart'] = 'a1200,1'; // 68020, 2MB Chip 4MB FAST
+			config.set('quickstart', 'a1200,1'); // 68020, 2MB Chip 4MB FAST
 			break;
 		case 'a1200-030':
-			config['quickstart'] = 'a1200,2'; // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
-			//config['quickstart'] = 'a1200,4'; // 68060, 2MB Chip 32MB FAST, Blizzard 1260
-			//config['quickstart'] = 'a1200,3'; // 68040, 2MB Chip 32MB FAST, Blizzard 1260
+			config.set('quickstart', 'a1200,2'); // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
+			//config.set('quickstart', 'a1200,4'); // 68060, 2MB Chip 32MB FAST, Blizzard 1260
+			//config.set('quickstart', 'a1200,3'); // 68040, 2MB Chip 32MB FAST, Blizzard 1260
 			break;
 		case 'a3000':
-			config['quickstart'] = 'a3000,2'; // 68030, 2MB Chip
+			config.set('quickstart', 'a3000,2'); // 68030, 2MB Chip
 			break;
 		case 'a4000':
-			config['quickstart'] = 'a4000,0'; // 68030, 68882, 2MB Chip 8MB FAST
-			//config['quickstart'] = 'a4000,1'; // 68040, 2MB Chip 8MB FAST
+			config.set('quickstart', 'a4000,0'); // 68030, 68882, 2MB Chip 8MB FAST
+			//config.set('quickstart', 'a4000,1'); // 68040, 2MB Chip 8MB FAST
 			break;
 		}
 
@@ -217,7 +220,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
 				return;
 			}
-			config['kickstart_rom_file'] = args.kickstart;
+			config.set('kickstart_rom_file', args.kickstart);
 		}
 
 		if(args.cpuboard !== undefined) {
@@ -225,109 +228,109 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
 				return;
 			}
-			config['cpuboard_rom_file'] = args.cpuboard;
+			config.set('cpuboard_rom_file', args.cpuboard);
 		}
 
 		// nice
-		config['cpu_cycle_exact'] = 'true';
-		config['cpu_memory_cycle_exact'] = 'true';
-		config['blitter_cycle_exact'] = 'true';
-		config['cycle_exact'] = 'true';
+		config.set('cpu_cycle_exact', 'true');
+		config.set('cpu_memory_cycle_exact', 'true');
+		config.set('blitter_cycle_exact', 'true');
+		config.set('cycle_exact', 'true');
 		// optional
-		config['input.config'] = '1';
-		config['input.1.keyboard.0.friendlyname'] = 'WinUAE keyboard';
-		config['input.1.keyboard.0.name'] = 'NULLKEYBOARD';
-		config['input.1.keyboard.0.empty'] = 'false';
-		config['input.1.keyboard.0.disabled'] = 'false';
-		config['input.1.keyboard.0.button.41.GRAVE'] = 'SPC_SINGLESTEP.0';
-		config['input.1.keyboard.0.button.201.PREV'] = 'SPC_WARP.0';
+		config.set('input.config', '1');
+		config.set('input.1.keyboard.0.friendlyname', 'WinUAE keyboard');
+		config.set('input.1.keyboard.0.name', 'NULLKEYBOARD');
+		config.set('input.1.keyboard.0.empty', 'false');
+		config.set('input.1.keyboard.0.disabled', 'false');
+		config.set('input.1.keyboard.0.button.41.GRAVE', 'SPC_SINGLESTEP.0');
+		config.set('input.1.keyboard.0.button.201.PREV', 'SPC_WARP.0');
 		// filesystems
-		delete config['uaehf0'];
-		delete config['uaehf1'];
+		config.delete('uaehf0');
+		config.delete('uaehf1');
 		// delete old filesystem, then add new filesystem so order is correct in config (otherwise won't boot)
-		delete config['filesystem'];
-		delete config['filesystem2'];
-		config['filesystem'] = 'rw,dh0:' + dh0Path;
-		config['filesystem2'] = 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128';
+		config.delete('filesystem');
+		config.delete('filesystem2');
+		config.set('filesystem', 'rw,dh0:' + dh0Path);
+		config.set('filesystem2', 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128');
 		// debugging options
-		config['debugging_features'] = 'gdbserver';
+		config.set('debugging_features', 'gdbserver');
 		if(args.endcli)
-			config['debugging_trigger'] = path.basename(args.program) + ".exe";
+			config.set('debugging_trigger', path.basename(args.program) + ".exe");
 		else
-			config['debugging_trigger'] = ':' + path.basename(args.program) + ".exe";
+			config.set('debugging_trigger', ':' + path.basename(args.program) + ".exe");
 
 		// Optional override memory config
 		switch(args.chipmem?.toLowerCase()) {
-			case '256k':
-				config['chipmem_size'] = 0;
-				break;
-			case '512k':
-				config['chipmem_size'] = 1;
-				break;
-			case '1m':
-				config['chipmem_size'] = 2;
-				break;
-			case '1.5m':
-				config['chipmem_size'] = 3;
-				break;
-			case '2m':
-				config['chipmem_size'] = 4;
-				break;
-			default:
-				delete config['chipmem_size'];
+		case '256k':
+			config.set('chipmem_size', '0');
+			break;
+		case '512k':
+			config.set('chipmem_size', '1');
+			break;
+		case '1m':
+			config.set('chipmem_size', '2');
+			break;
+		case '1.5m':
+			config.set('chipmem_size', '3');
+			break;
+		case '2m':
+			config.set('chipmem_size', '4');
+			break;
+		default:
+			config.delete('chipmem_size');
 		}
 		switch(args.fastmem?.toLowerCase()) {
-			case '0k':
-			case '0m':
-			case '0':
-				config['fastmem_size'] = 0;
-				break;
-			case '64k':
-				config['fastmem_size_k'] = 64;
-				break;
-			case '128k':
-				config['fastmem_size_k'] = 128;
-				break;
-			case '256k':
-				config['fastmem_size_k'] = 256;
-				break;
-			case '512k':
-			case '0.5m':
-			case '.5m':
-				config['fastmem_size_k'] = 512;
-				break;
-			case '1m':
-				config['fastmem_size'] = 1;
-				break;
-			case '2m':
-				config['fastmem_size'] = 2;
-				break;
-			case '4m':
-				config['fastmem_size'] = 4;
-				break;
-			case '8m':
-				config['fastmem_size'] = 8;
-				break;
-			default:
-				delete config['fastmem_size'];
+		case '0k':
+		case '0m':
+		case '0':
+			config.set('fastmem_size', '0');
+			break;
+		case '64k':
+			config.set('fastmem_size_k', '64');
+			break;
+		case '128k':
+			config.set('fastmem_size_k', '128');
+			break;
+		case '256k':
+			config.set('fastmem_size_k', '256');
+			break;
+		case '512k':
+		case '0.5m':
+		case '.5m':
+			config.set('fastmem_size_k', '512');
+			break;
+		case '1m':
+			config.set('fastmem_size', '1');
+			break;
+		case '2m':
+			config.set('fastmem_size', '2');
+			break;
+		case '4m':
+			config.set('fastmem_size', '4');
+			break;
+		case '8m':
+			config.set('fastmem_size', '8');
+			break;
+		default:
+			config.delete('fastmem_size');
 		}
 		switch(args.slowmem?.toLowerCase()) {
-			case '0k':
-			case '0m':
-			case '0':
-				config['bogomem_size'] = 0;
-				break;
-			case '512k':
-				config['bogomem_size'] = 2;
-				break;
-			case '1m':
-				config['bogomem_size'] = 4;
-				break;
-			case '1.8m':
-				config['bogomem_size'] = 7;
-				break;
-			default:
-				delete config['bogomem_size'];
+		case '0k':
+		case '0m':
+		case '0':
+			config.set('bogomem_size', '0');
+			break;
+		case '512k':
+			config.set('bogomem_size', '2');
+			break;
+		case '1m':
+			config.set('bogomem_size', '4');
+			break;
+		case '1.8m':
+			config.set('bogomem_size', '7');
+			break;
+		default:
+			config.delete('bogomem_size');
 		}
 
 		try {
@@ -365,11 +368,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
 			if(args.endcli)
-				fs.writeFileSync(ssPath, `cd dh1:\nrun >nil: <nil: ${config['debugging_trigger']} >nil: <nil:\nendcli >nil:\n`);
+				fs.writeFileSync(ssPath, `cd dh1:\nrun >nil: <nil: ${config.get('debugging_trigger')} >nil: <nil:\nendcli >nil:\n`);
 			else
-				fs.writeFileSync(ssPath, 'cd dh1:\n' + config['debugging_trigger']);
+				fs.writeFileSync(ssPath, 'cd dh1:\n' + config.get('debugging_trigger'));
 		} catch (err) {
-			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${err.toString()}`);
+			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${(err as Error).toString()}`);
 			return;
 		}
 
@@ -402,7 +405,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.miDebugger.trace = true;
 		}
 
-		this.miDebugger.once('sections-loaded', (sections) => {
+		this.miDebugger.once('sections-loaded', (sections: Section[]) => {
 			if(sections.length > 0) {
 				this.symbolTable.relocate(sections);
 				this.started = true;
@@ -423,7 +426,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		];
 
 		// launch GDB and connect to WinUAE
-		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err) => {
+		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
 	}
@@ -440,14 +443,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 			this.miDebugger.restart(commands).then((done) => {
 				this.sendResponse(response);
-				this.miDebugger.continue(this.currentThreadId);
+				void this.miDebugger.continue(this.currentThreadId);
 				/*setTimeout(() => {
 					this.stopped = true;
 					this.stoppedReason = 'restart';
 					this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
 					this.sendEvent(new StoppedEvent('restart', this.currentThreadId));
 				}, 50);*/
-			}, (msg) => {
+			}, (msg: string) => {
 				this.sendErrorResponse(response, 6, `Could not restart: ${msg}`);
 			});
 		};
@@ -456,81 +459,81 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			restartProcessing();
 		} else {
 			this.miDebugger.once('generic-stopped', restartProcessing);
-			this.miDebugger.sendCommand('exec-interrupt');
+			void this.miDebugger.sendCommand('exec-interrupt');
 		}
 	}
 
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any): void {
 		switch (command) {
-			case 'set-force-disassembly':
-				response.body = { success: true };
-				this.forceDisassembly = args.force;
-				if (this.stopped) {
-					this.activeEditorPath = null;
-					this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
-					this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
-				}
+		case 'set-force-disassembly':
+			response.body = { success: true };
+			this.forceDisassembly = args.force;
+			if (this.stopped) {
+				this.activeEditorPath = null;
+				this.sendEvent(new ContinuedEvent(this.currentThreadId, true));
+				this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId));
+			}
+			this.sendResponse(response);
+			break;
+		case 'load-function-symbols':
+			response.body = { functionSymbols: this.symbolTable.getFunctionSymbols() };
+			this.sendResponse(response);
+			break;
+		case 'set-active-editor':
+			if (args.path !== this.activeEditorPath) {
+				this.activeEditorPath = args.path;
+				// if (this.stopped) {
+				//     this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId, true));
+				// }
+			}
+			response.body = {};
+			this.sendResponse(response);
+			break;
+		case 'get-arguments':
+			response.body = this.args;
+			this.sendResponse(response);
+			break;
+		case 'read-memory':
+			if(!this.stopped) return;
+			this.customReadMemoryRequest(response, args['address'], args['length']);
+			break;
+		case 'write-memory':
+			if(!this.stopped) return;
+			this.customWriteMemoryRequest(response, args['address'], args['data']);
+			break;
+		case 'read-registers':
+			if(!this.stopped) return;
+			this.customReadRegistersRequest(response);
+			break;
+		case 'read-register-list':
+			if(!this.stopped) return;
+			this.customReadRegisterListRequest(response);
+			break;
+		case 'amiga-disassemble':
+			void this.customDisassembleRequest(response, args);
+			break;
+		case 'execute-command':
+			let cmd = args['command'] as string;
+			if (cmd.startsWith('-')) {
+				cmd = cmd.substring(1);
+			} else {
+				cmd = `interpreter-exec console "${cmd}"`;
+			}
+			this.miDebugger.sendCommand(cmd).then((node) => {
+				response.body = node.resultRecords;
 				this.sendResponse(response);
-				break;
-			case 'load-function-symbols':
-				response.body = { functionSymbols: this.symbolTable.getFunctionSymbols() };
-				this.sendResponse(response);
-				break;
-			case 'set-active-editor':
-				if (args.path !== this.activeEditorPath) {
-					this.activeEditorPath = args.path;
-					// if (this.stopped) {
-					//     this.sendEvent(new StoppedEvent(this.stoppedReason, this.currentThreadId, true));
-					// }
-				}
-				response.body = {};
-				this.sendResponse(response);
-				break;
-			case 'get-arguments':
-				response.body = this.args;
-				this.sendResponse(response);
-				break;
-			case 'read-memory':
-				if(!this.stopped) return;
-				this.customReadMemoryRequest(response, args['address'], args['length']);
-				break;
-			case 'write-memory':
-				if(!this.stopped) return;
-				this.customWriteMemoryRequest(response, args['address'], args['data']);
-				break;
-			case 'read-registers':
-				if(!this.stopped) return;
-				this.customReadRegistersRequest(response);
-				break;
-			case 'read-register-list':
-				if(!this.stopped) return;
-				this.customReadRegisterListRequest(response);
-				break;
-			case 'amiga-disassemble':
-				this.customDisassembleRequest(response, args);
-				break;
-			case 'execute-command':
-				let cmd = args['command'] as string;
-				if (cmd.startsWith('-')) {
-					cmd = cmd.substring(1);
-				} else {
-					cmd = `interpreter-exec console "${cmd}"`;
-				}
-				this.miDebugger.sendCommand(cmd).then((node) => {
-					response.body = node.resultRecords;
-					this.sendResponse(response);
-				}, (error) => {
-					response.body = error;
-					this.sendErrorResponse(response, 110, 'Unable to execute command');
-				});
-				break;
-			case 'start-profile':
-				this.customStartProfileRequest(response, args, true);
-				break;
-			default:
-				response.body = { error: 'Invalid command.' };
-				this.sendResponse(response);
-				break;
+			}, (error) => {
+				response.body = error;
+				this.sendErrorResponse(response, 110, 'Unable to execute command');
+			});
+			break;
+		case 'start-profile':
+			void this.customStartProfileRequest(response, args, true);
+			break;
+		default:
+			response.body = { error: 'Invalid command.' };
+			this.sendResponse(response);
+			break;
 		}
 	}
 
@@ -603,7 +606,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.miDebugger.once("signal-stop", async () => {
 					// try again after target execution has stopped
 					await this.customStartProfileRequest(response, args, false);
-					this.miDebugger.continue(this.currentThreadId);
+					void this.miDebugger.continue(this.currentThreadId);
 				});
 				this.miDebugger.once("running", async () => {
 					for(const l of oldListenersStop) {
@@ -625,7 +628,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}, async (progress, token) => {
 				const numFrames = args?.numFrames || 1;
 
-				const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+				const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
 				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 
@@ -733,7 +736,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				winuae = undefined;
 			}
 			this.sendResponse(response);
-			vscode.commands.executeCommand("workbench.view.explorer");
+			void vscode.commands.executeCommand("workbench.view.explorer");
 		};
 
 		if (this.miDebugger) {
@@ -826,11 +829,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected threadCreatedEvent(info: { threadId: number, threadGroupId: number }) {
+	protected threadCreatedEvent(info: { threadId: number; threadGroupId: number }) {
 		this.sendEvent(new ThreadEvent('started', info.threadId));
 	}
 
-	protected threadExitedEvent(info: { threadId: number, threadGroupId: number }) {
+	protected threadExitedEvent(info: { threadId: number; threadGroupId: number }) {
 		this.sendEvent(new ThreadEvent('exited', info.threadId));
 		this.quitEvent();
 	}
@@ -918,12 +921,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				await createBreakpoints(false);
 			} else {
 				this.disableSendStoppedEvents = true;
-				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
-				this.miDebugger.sendCommand('exec-interrupt');
+				this.miDebugger.once('generic-stopped', () => { void createBreakpoints(true); });
+				void this.miDebugger.sendCommand('exec-interrupt');
 			}
 		};
 
-		if (this.debugReady) { process(); } else { this.miDebugger.once('debug-ready', process); }
+		if (this.debugReady) { void process(); } else { this.miDebugger.once('debug-ready', process); }
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
@@ -931,7 +934,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.debugReady = true;
 			const currentBreakpoints = (this.breakpointMap.get(args.source.path) || [])
 				.filter((bp) => bp.line !== undefined)
-				.map((bp) => bp.number!);
+				.map((bp) => bp.number);
 
 			try {
 				this.disableSendStoppedEvents = false;
@@ -1042,12 +1045,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				await createBreakpoints(false);
 			} else {
 				this.disableSendStoppedEvents = true;
-				this.miDebugger.once('generic-stopped', () => { createBreakpoints(true); });
+				this.miDebugger.once('generic-stopped', () => { void createBreakpoints(true); });
 				await this.miDebugger.sendCommand('exec-interrupt');
 			}
 		};
 
-		if (this.debugReady) { process(); } else { this.miDebugger.once('debug-ready', process); }
+		if (this.debugReady) { void process(); } else { this.miDebugger.once('debug-ready', process); }
 	}
 
 	protected async dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments, request?: DebugProtocol.Request): Promise<void> {
@@ -1068,27 +1071,27 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	protected async setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request): Promise<void> {
 		// clear old watchpoints
 		try {
-		await this.miDebugger.removeBreakpoints(this.watchpoints.map((wp) => wp.number!));
-		this.watchpoints = [];
+			await this.miDebugger.removeBreakpoints(this.watchpoints.map((wp) => wp.number));
+			this.watchpoints = [];
 
-		// add new watchpoints
-		const all: Array<Promise<Watchpoint | null>> = [];
-		if (args.breakpoints) {
-			args.breakpoints.forEach((brk) => {
-				all.push(this.miDebugger.addWatchpoint(brk.dataId, /*brk.accessType as string*/'write')); // hmm.. there seems to be a bug in VSCode where we don't get accessType
-			});
-		}
-		this.watchpoints = await Promise.all(all);
+			// add new watchpoints
+			const all: Array<Promise<Watchpoint | null>> = [];
+			if (args.breakpoints) {
+				args.breakpoints.forEach((brk) => {
+					all.push(this.miDebugger.addWatchpoint(brk.dataId, /*brk.accessType as string*/'write')); // hmm.. there seems to be a bug in VSCode where we don't get accessType
+				});
+			}
+			this.watchpoints = await Promise.all(all);
 
-		// response
-		response.body = { breakpoints: [] };
-		for(const wp of this.watchpoints) {
-			response.body.breakpoints.push({
-				id: wp.number,
-				verified: true
-			});
-		}
-		this.sendResponse(response);
+			// response
+			response.body = { breakpoints: [] };
+			for(const wp of this.watchpoints) {
+				response.body.breakpoints.push({
+					id: wp.number,
+					verified: true
+				});
+			}
+			this.sendResponse(response);
 		} catch (e) {
 			this.sendErrorResponse(response, 1, `Unable to set data breakpoints: ${e}`);
 		}
@@ -1130,7 +1133,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				} else {
 					return null;
 				}
-			}).filter((t) => t !== null) as Thread[];
+			}).filter((t) => t !== null) ;
 
 			response.body = {
 				threads
@@ -1282,7 +1285,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return this.variableMembersRequest(id, response, args);
 			} else if (typeof id === 'object') {
 				if (id instanceof VariableObject) {
-					const pvar = id as VariableObject;
+					const pvar = id;
 					const variables: DebugProtocol.Variable[] = [];
 
 					// Variable members
@@ -1344,7 +1347,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 											value: expanded,
 											variablesReference: 0
 										});
-										addOne();
+										void addOne();
 									} else {
 										strArr.push({
 											name: '[err]',
@@ -1358,7 +1361,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 								this.sendErrorResponse(response, 14, `Could not expand variable: ${e}`);
 							}
 						};
-						addOne();
+						void addOne();
 					} else {
 						this.sendErrorResponse(response, 13, `Unimplemented variable request options: ${JSON.stringify(varReq.options)}`);
 					}
@@ -1414,7 +1417,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					}
 				}
 			}
-			const done = await stepIn ? this.miDebugger.step(args.threadId, assemblyMode) : this.miDebugger.next(args.threadId, assemblyMode);
+			const done = await (stepIn ? this.miDebugger.step(args.threadId, assemblyMode) : this.miDebugger.next(args.threadId, assemblyMode));
 			this.sendResponse(response);
 		} catch (msg) {
 			this.sendErrorResponse(response, 6, `Could not step: ${msg}`);

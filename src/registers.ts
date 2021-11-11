@@ -169,7 +169,7 @@ export class FieldNode extends BaseNode {
 }
 
 export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
-	// tslint:disable-next-line:variable-name
+	// eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle,id-denylist,id-match
 	public _onDidChangeTreeData: vscode.EventEmitter<TreeNode | undefined> = new vscode.EventEmitter<TreeNode | undefined>();
 	public readonly onDidChangeTreeData: vscode.Event<TreeNode | undefined> = this._onDidChangeTreeData.event;
 

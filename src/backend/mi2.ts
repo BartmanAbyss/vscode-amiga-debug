@@ -178,7 +178,7 @@ export class MI2 extends EventEmitter implements IBackend {
 				} else {
 					const match = numRegex.exec(breakpoint.countCondition)![0];
 					if (match.length !== breakpoint.countCondition.length) {
-						// tslint:disable-next-line:max-line-length
+						// eslint-disable-next-line max-len
 						this.log("log", "Unsupported break count expression: '" + breakpoint.countCondition + "'. Only supports 'X' for breaking once after X times or '>X' for ignoring the first X breaks");
 						location += "-t ";
 					} else if (parseInt(match) !== 0) {

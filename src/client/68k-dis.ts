@@ -1,7 +1,7 @@
 // ported from binutils-gdb/include/opcode/m68k.h, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 // removed all references to coldfire
 
-// tslint:disable: variable-name class-name
+/* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle,id-denylist,id-match, @typescript-eslint/naming-convention */
 
 enum dis {
 	noninsn,		/* Not a valid instruction.  */

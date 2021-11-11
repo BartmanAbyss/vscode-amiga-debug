@@ -386,7 +386,7 @@ class AmigaDebugExtension {
 
 			const items: vscode.QuickPickItem[] = [];
 
-			// tslint:disable-next-line: forin
+			// eslint-disable-next-line guard-for-in
 			for(const key in config.shrinkler) {
 				items.push({ label: key, description: config.shrinkler[key] });
 			}
@@ -486,7 +486,7 @@ class AmigaDebugExtension {
 						}
 
 						const timestamp = new Date().getTime();
-						// tslint:disable-next-line:max-line-length
+						// eslint-disable-next-line max-len
 						vscode.workspace.openTextDocument(vscode.Uri.parse(`examinememory:///Memory%20[${address}+${length}].amigamem?address=${address}&length=${length}&timestamp=${timestamp}`))
 							.then((doc) => {
 								vscode.window.showTextDocument(doc, { viewColumn: 2, preview: false });

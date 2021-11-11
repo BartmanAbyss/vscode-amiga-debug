@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CustomRegisters } from '../customRegisters';
-import { GetCopper, GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss } from '../dma';
+import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -186,9 +186,9 @@ export const Screen: FunctionComponent<{
 				let numBytes = 0;
 				if ((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
 					switch (dmaRecord.reg & 0xff) {
-						case 1: numBytes = 1; break;
-						case 2: numBytes = 2; break;
-						case 4: numBytes = 4; break;
+					case 1: numBytes = 1; break;
+					case 2: numBytes = 2; break;
+					case 4: numBytes = 4; break;
 					}
 				} else if (dmaRecord.reg === 0) { // Blitter write
 					numBytes = 2;
@@ -279,8 +279,8 @@ export const Screen: FunctionComponent<{
 			setZoomInfo({ x: srcX, y: srcY, color: getPixel(screen, srcX, srcY), mask: mask ? getPixel(mask, srcX, srcY) : undefined });
 
 			// position zoomCanvas
-			zoomDiv.current.style.top = snapY(evt.offsetY) + 10 + "px";
-			zoomDiv.current.style.left = snapX(evt.offsetX) + 10 + "px";
+			zoomDiv.current.style.top = `${snapY(evt.offsetY) + 10}px`;
+			zoomDiv.current.style.left = `${snapX(evt.offsetX) + 10}px`;
 			zoomDiv.current.style.display = 'block';
 		}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom, time]);
 
@@ -328,7 +328,7 @@ interface GfxResourceWithPayload {
 const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayload>> = ({ option, placeholder }) => {
 	const resource = option.resource;
 
-	const [hover, setHover] = useState<{ x: number, y: number }>({ x: -1, y: -1 });
+	const [hover, setHover] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
 
 	const onMouseEnter = (evt: JSX.TargetedMouseEvent<HTMLDivElement>) => {
 		const rect = evt.currentTarget.parentElement.parentElement.getBoundingClientRect();
@@ -378,8 +378,8 @@ interface IState {
 const Context = createContext<IState>({});
 
 export const GfxResourcesView: FunctionComponent<{
-	frame: number,
-	time: number
+	frame: number;
+	time: number;
 }> = ({ frame, time }) => {
 	const copper = MODELS[frame].copper;
 	const bitmaps = useMemo(() => {
@@ -388,7 +388,7 @@ export const GfxResourcesView: FunctionComponent<{
 			const width = resource.bitmap.width;
 			const height = resource.bitmap.height;
 			const modulos = [];
-			const planes = [];
+			const planes: number[] = [];
 			if (resource.flags & GfxResourceFlags.bitmap_interleaved) {
 				const moduloScale = (resource.flags & GfxResourceFlags.bitmap_masked) ? 2 : 1;
 				for (let p = 0; p < resource.bitmap.numPlanes; p++)
@@ -416,7 +416,7 @@ export const GfxResourcesView: FunctionComponent<{
 			}
 			bitmaps.push({ resource, frame, screen, mask });
 		});
-		const copperScreens: Array<{ screen: IScreen, frames: number[] }> = [];
+		const copperScreens: { screen: IScreen; frames: number[] }[] = [];
 		// dupecheck copper screens from all frames
 		for(let i = 0; i < MODELS.length; i++) {
 			const copperScreen = GetScreenFromCopper(MODELS[i].copper);
@@ -500,7 +500,7 @@ export const GfxResourcesView: FunctionComponent<{
 	const onChangePalette = (selected: GfxResourceWithPayload) => { state.palette = selected; setPalette(selected); };
 
 	const [overlay, setOverlay] = useState(state.overlay);
-	const onChangeOverlay = (event) => { const overlay = event.target.value as string; state.overlay = overlay; setOverlay(overlay); };
+	const onChangeOverlay = ({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => { const overlay = currentTarget.value; state.overlay = overlay; setOverlay(overlay); };
 
 	return (<Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
@@ -511,7 +511,7 @@ export const GfxResourcesView: FunctionComponent<{
 			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
 			&nbsp;
 			Overlay:&nbsp;
-			<select className="select" alt="Overlay" aria-label="Overlay" value={overlay} onChange={onChangeOverlay}>
+			<select className="select" alt="Overlay" aria-label="Overlay" value={overlay} onInput={onChangeOverlay}>
 				<option value="">None</option>
 				<option value="blitrects">Blit Rects</option>
 				<option value="overdraw">Overdraw</option>
