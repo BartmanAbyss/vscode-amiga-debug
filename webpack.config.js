@@ -1,14 +1,14 @@
 const path = require('path');
 const webpack = require('webpack');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const { pathToFileURL } = require('url');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
 	var config = {
 		entry: "./src/client/client.ts",
 		output: {
 			filename: "client.bundle.js",
-			chunkFilename: "client.bundle.[id].js"
+			chunkFilename: "client.bundle.[id].js",
+			clean: true
 		},
 		devtool: (argv.mode === 'development') ? 'inline-source-map' : undefined,
 		resolve: {
@@ -16,6 +16,9 @@ module.exports = (env, argv) => {
 			alias: {
 				"react": "preact/compat",
 				"react-dom": "preact/compat",
+			},
+			fallback: {
+				path: require.resolve('path-browserify')
 			}
 		},
 		performance: {
@@ -51,23 +54,33 @@ module.exports = (env, argv) => {
 					loader: 'svg-inline-loader',
 				},
 				{
-				  test: /\.(vert|frag|md)$/,
-				  loader: 'raw-loader',
+					test: /\.(vert|frag|md)$/,
+					loader: 'raw-loader',
 				},
-		  
+
 			],
 		},
 		plugins: [
 			new webpack.optimize.LimitChunkCountPlugin({
 				maxChunks: 1
-			}),
-			new CleanWebpackPlugin(),
+			})
 		],
+		optimization: {
+			minimize: argv.mode !== 'development',
+			minimizer: [new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					format: {
+						comments: false,
+					},
+				},
+			})]
+		},
 		devServer: {
 			open: true,
 			contentBase: path.join(__dirname, 'src/test/suite/data/output/')
 		}
 	};
-	
+
 	return config;
 };
