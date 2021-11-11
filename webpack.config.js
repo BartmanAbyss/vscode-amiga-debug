@@ -10,7 +10,7 @@ module.exports = (env, argv) => {
 			filename: "client.bundle.js",
 			chunkFilename: "client.bundle.[id].js"
 		},
-		devtool: (argv.mode === 'development') ? 'source-map' : undefined,
+		devtool: (argv.mode === 'development') ? 'inline-source-map' : undefined,
 		resolve: {
 			extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
 			alias: {

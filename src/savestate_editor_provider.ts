@@ -168,7 +168,7 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 	}
 
 	private async updateWebview(document: SavestateDocument, webview: vscode.Webview) {
-		const html = await bundlePage(webview, path.join(this.context.extensionPath, 'dist'), { 
+		const html = await bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
 			SAVESTATE: document.content
 		});
 		webview.html = html;
@@ -178,7 +178,7 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)) ]
+			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(path.join(this.context.extensionPath, 'dist')) ]
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
