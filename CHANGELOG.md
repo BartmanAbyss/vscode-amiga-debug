@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.1
+- (internal) use webpack for both extension and webview
+- fix "Disassemble ELF file" (broken since 1.3.0)
+
 ## 1.3.0
 - savestate gfx-debugging/profiling (.uss files created by any WinUAE)
 - resource viewer supports hires

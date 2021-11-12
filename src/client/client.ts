@@ -122,7 +122,9 @@ function TryObjdump() {
 			void Objdump();
 			return true;
 		}
-	} catch(e) {}
+	} catch(e) {
+		console.log((e as Error).message);
+	}
 	return false;
 }
 

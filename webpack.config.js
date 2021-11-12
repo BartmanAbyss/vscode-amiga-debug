@@ -3,12 +3,55 @@ const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
-	var config = {
+	var extensionConfig = {
+		target: 'node',
+		entry: { 
+			extension: './src/extension.ts',
+			debugAdapter: { import: './src/debugAdapter.ts', dependOn: 'extension' }
+		},
+		output: {
+			filename: '[name].js',
+			libraryTarget: 'commonjs2',
+			devtoolModuleFilenameTemplate: '../[resource-path]'
+		},
+		devtool: (argv.mode === 'development') ? 'inline-source-map' : undefined,
+		externals: {
+			vscode: 'commonjs vscode'
+		},
+		resolve: {
+			mainFields: ['browser', 'module', 'main'],
+			extensions: ['.ts', '.js']
+		},
+		module: {
+			rules: [
+				{
+					test: /\.ts$/,
+					exclude: /node_modules/,
+					use: [
+						{
+							loader: 'ts-loader'
+						}
+					]
+				}
+			]
+		},
+		optimization: {
+			minimize: argv.mode !== 'development',
+			minimizer: [new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					format: {
+						comments: false,
+					},
+				},
+			})]
+		}
+	};
+
+	var clientConfig = {
 		entry: "./src/client/client.ts",
 		output: {
-			filename: "client.bundle.js",
-			chunkFilename: "client.bundle.[id].js",
-			clean: true
+			filename: "client.js",
 		},
 		devtool: (argv.mode === 'development') ? 'inline-source-map' : undefined,
 		resolve: {
@@ -16,9 +59,6 @@ module.exports = (env, argv) => {
 			alias: {
 				"react": "preact/compat",
 				"react-dom": "preact/compat",
-			},
-			fallback: {
-				path: require.resolve('path-browserify')
 			}
 		},
 		performance: {
@@ -60,11 +100,6 @@ module.exports = (env, argv) => {
 
 			],
 		},
-		plugins: [
-			new webpack.optimize.LimitChunkCountPlugin({
-				maxChunks: 1
-			})
-		],
 		optimization: {
 			minimize: argv.mode !== 'development',
 			minimizer: [new TerserPlugin({
@@ -75,12 +110,8 @@ module.exports = (env, argv) => {
 					},
 				},
 			})]
-		},
-		devServer: {
-			open: true,
-			contentBase: path.join(__dirname, 'src/test/suite/data/output/')
 		}
 	};
 
-	return config;
+	return [extensionConfig, clientConfig];
 };

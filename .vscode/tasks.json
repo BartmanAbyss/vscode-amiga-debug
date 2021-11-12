@@ -6,10 +6,7 @@
 		{
 			"type": "npm",
 			"script": "watch",
-			"problemMatcher": [
-				"$tsc-watch",
-				"$ts-webpack-watch"
-			],
+			"problemMatcher": [ "$ts-webpack-watch" ],
 			"isBackground": true,
 			"presentation": {
 				"reveal": "never"
@@ -18,29 +15,6 @@
 				"kind": "build",
 				"isDefault": true
 			}
-		},
-		{
-			"type": "npm",
-			"script": "serve",
-			"problemMatcher": {
-				"owner": "webpack",
-				"severity": "error",
-				"fileLocation": "absolute",
-				"pattern": [
-					{
-						"regexp": "ERROR in [^ ]* (.*):(.*):(.*)",
-						"file": 1,
-						"line": 2,
-						"column": 3
-					},
-					{
-						"regexp": ".*",
-						"message": 0
-					}
-				]
-			},
-			"label": "npm: serve",
-			"detail": "webpack-dev-server"
 		},
 		{
 			"type": "npm",

@@ -168,7 +168,7 @@ function test_profile_time(base: string, elf: string) {
 	const profiler = new Profiler(sourceMap, symbolTable);
 	const json = profiler.profileTime(profileFile, Disassemble(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf)));
 	fs.writeFileSync(path.join(testOutDir, base + '.time.amigaprofile'), json);
-	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".time.amigaprofile");
+	const html = htmlPage(base, [ "client.js" ], "data/" + base + ".time.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.time.amigaprofile.html'), html);
 }
 
@@ -179,7 +179,7 @@ function test_profile_size(base: string, elf: string) {
 	const profiler = new Profiler(sourceMap, symbolTable);
 	const json = profiler.profileSize(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	fs.writeFileSync(path.join(testOutDir, base + '.size.amigaprofile'), json);
-	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".size.amigaprofile");
+	const html = htmlPage(base, [ "client.js" ], "data/" + base + ".size.amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.size.amigaprofile.html'), html);
 }
 
@@ -187,7 +187,7 @@ function test_profile_shrinkler(base: string) {
 	makeDirs();
 	const data = fs.readFileSync(path.join(testDataDir, base + '.shrinklerstats'));
 	fs.writeFileSync(path.join(testOutDir, base + '.shrinklerstats'), data);
-	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".shrinklerstats");
+	const html = htmlPage(base, [ "client.js" ], "data/" + base + ".shrinklerstats");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.shrinklerstats.html'), html);
 }
 
@@ -201,7 +201,7 @@ function test_profile_savestate(base: string) {
 	const profileArchive = new ProfileFile(path.join(testDataDir, base));
 	const profiler = new Profiler(null, null);
 	fs.writeFileSync(path.join(testOutDir, base + ".amigaprofile"), profiler.profileSavestate(profileArchive));
-	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".amigaprofile");
+	const html = htmlPage(base, [ "client.js" ], "data/" + base + ".amigaprofile");
 	fs.writeFileSync(path.join(testHtmlDir, base + '.amigaprofile.html'), html);
 }
 

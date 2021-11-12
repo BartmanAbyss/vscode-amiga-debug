@@ -17,13 +17,12 @@ import { ISourceLocation } from './client/location-mapping';
 import { Lens, LensData } from './client/types';
 
 export const bundlePage = (webview: vscode.Webview, title: string, bundlePath: vscode.Uri, constants: { [key: string]: unknown }) => {
-	try {
-		const nonce = randomBytes(16).toString('hex');
-		const constantDecls = Object.keys(constants)
-			.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
-			.join('\n');
+	const nonce = randomBytes(16).toString('hex');
+	const constantDecls = Object.keys(constants)
+		.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
+		.join('\n');
 
-		const html = `<!DOCTYPE html>
+	const html = `<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
@@ -34,13 +33,10 @@ export const bundlePage = (webview: vscode.Webview, title: string, bundlePath: v
 	</head>
 	<body>
 		<script type="text/javascript" nonce="${nonce}">${constantDecls}</script>
-		<script type="text/javascript" src="client.bundle.js"></script>
+		<script type="text/javascript" src="client.js"></script>
 	</body>
 </html>`;
-		return html;
-	} catch(e) {
-		return `<html><body>Failed to open client.bundle.js</body></html>`;
-	}
+	return html;
 };
 
 async function showPosition(doc: vscode.TextDocument, lineNumber: number, columnNumber: number, viewColumn?: vscode.ViewColumn) {

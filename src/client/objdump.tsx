@@ -16,7 +16,7 @@ import { useCssVariables } from './useCssVariables';
 import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
-import { resolve } from 'path';
+import { resolvePath } from './pathResolve';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -149,7 +149,7 @@ export class ObjdumpModel {
 
 			const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/); // C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/support/gcc8_c_support.c:62 (discriminator 1)
 			if(locMatch) {
-				loc = { file: locMatch[1], normalizedFile: resolve(locMatch[1]), line: parseInt(locMatch[2]) };
+				loc = { file: locMatch[1], normalizedFile: resolvePath(locMatch[1]), line: parseInt(locMatch[2]) };
 				continue;
 			}
 
@@ -264,7 +264,7 @@ export const ObjdumpView: FunctionComponent<{
 						result.push(index);
 				});
 			} else {
-				const findLoc = resolve(find.text.replace(/\\/g, '/')).toLowerCase();
+				const findLoc = resolvePath(find.text.replace(/\\/g, '/')).toLowerCase();
 				content.forEach((line, index) => {
 					if(line.loc) {
 						const loc = `${line.loc.normalizedFile.toLowerCase()}:${line.loc.line}`;
