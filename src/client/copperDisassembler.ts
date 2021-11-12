@@ -33,7 +33,7 @@ export class CopperInstruction {
 		}
 	}
 	public getAsmInstruction(): string {
-		return `\$${this.format(this.first)},\$${this.format(this.second)}`;
+		return `$${this.format(this.first)},$${this.format(this.second)}`;
 	}
 	protected format(value: number): string {
 		return value.toString(16).padStart(4, '0');
@@ -59,10 +59,10 @@ export class CopperMove extends CopperInstruction {
 		if (this.label) {
 			l = this.label;
 		} else {
-			l = `\$${this.format(this.DA)}`;
+			l = `$${this.format(this.DA)}`;
 		}
 		const inst = this.getAsmInstruction();
-		const value = `\$${this.format(this.RD)}`;
+		const value = `$${this.format(this.RD)}`;
 		return `${inst}; ${l} = ${value}`;
 	}
 }

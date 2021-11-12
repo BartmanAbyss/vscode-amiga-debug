@@ -50,8 +50,8 @@ interface m68k_opcode_alias {
 	primary: string;
 }
 
-function one(x: number) { return x << 16 >>> 0; } // >>> 0: make unsigned
-function two(x: number, y: number) { return ((x << 16) + y) >>> 0; }
+const one = (x: number) => x << 16 >>> 0; // >>> 0: make unsigned
+const two = (x: number, y: number) => ((x << 16) + y) >>> 0;
 
 const SCOPE_LINE = (0x1 << 3);
 const SCOPE_PAGE = (0x2 << 3);
@@ -1249,13 +1249,9 @@ function m68k_valid_ea(code: string, val: number): boolean {
 	return (mask & (1 << mode)) !== 0;
 }
 
-function print_address(adr: number): string {
-	return "$" + adr.toString(16);
-}
+const print_address = (adr: number): string => "$" + adr.toString(16);
 
-function print_vma(b: number): string {
-	return b.toString(); // needs to be signed
-}
+const print_vma = (b: number): string => b.toString(); // needs to be signed;
 
 function print_base(regno: number, disp: number): string {
 	if(regno === -1)
@@ -1281,7 +1277,7 @@ function print_indexed(basereg: number, buffer: Uint8Array, p: number, addr: num
 	const scales = [ "", "*2", "*4", "*8" ];
 	let text = '';
 	let word: number;
-	let base_disp, outer_disp: number;
+	let base_disp: number, outer_disp: number;
 	[p, word] = NEXTWORD(buffer, p);
 
 	let buf = `${reg_names[(word >> 12) & 0xf]}.${(word & 0x800) ? 'l' : 'w'}${scales[(word >> 9) & 3]}`;
@@ -1346,7 +1342,7 @@ function print_indexed(basereg: number, buffer: Uint8Array, p: number, addr: num
 	return [text, p];
 }
 
-function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number): { text?: string, len: number } {
+function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number): { text?: string; len: number } {
 	let val = 0;
 	let disp = 0;
 	let regno = 0;
@@ -1744,7 +1740,7 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 	return { text, len: p - p0 };
 }
 
-function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode): { text: string, len: number } {
+function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode): { text: string; len: number } {
 	let text = '';
 	let d = 0;
 	if(best.args[d] === '.')
@@ -1823,7 +1819,7 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 	return { text, len: p };
 }
 
-function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number): { text: string, len: number } {
+function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number): { text: string; len: number } {
 	for(const opc of m68k_opcodes) {
 		if (((0xff & buffer[0] & (opc.match >> 24)) === (0xff & (opc.opcode >> 24)))
 		 && ((0xff & buffer[1] & (opc.match >> 16)) === (0xff & (opc.opcode >> 16)))
@@ -1842,7 +1838,7 @@ function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number):
 	return { text: '', len: 0 };
 }
 
-export function print_insn_m68k(buffer: Uint8Array, memaddr: number): { text: string, len: number } {
+export function print_insn_m68k(buffer: Uint8Array, memaddr: number): { text: string; len: number } {
 	const ret = m68k_scan_mask(buffer, memaddr, m68k_mask);
 	if(ret.len === 0) {
 		return { text: `.short 0x${buffer[0].toString(16).padStart(2, '0')}${buffer[1].toString(16).padStart(2, '0')}`, len: 2 };

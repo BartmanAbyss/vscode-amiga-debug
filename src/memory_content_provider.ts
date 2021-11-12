@@ -14,7 +14,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
 			const address: number = query['address'].startsWith('0x') ? parseInt(query['address'].substring(2), 16) : parseInt(query['address'], 10);
 			const length: number = query['length'].startsWith('0x') ? parseInt(query['length'].substring(2), 16) : parseInt(query['length'], 10);
 
-			vscode.debug.activeDebugSession!.customRequest('read-memory', { address, length: length || 32 }).then((data) => {
+			vscode.debug.activeDebugSession.customRequest('read-memory', { address, length: length || 32 }).then((data) => {
 				const bytes = data.bytes;
 
 				let lineAddress = address - (address % 16);
@@ -55,8 +55,8 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
 				output += '\n';
 
 				resolve(output);
-			}, (error) => {
-				vscode.window.showErrorMessage(`Unable to read memory from ${hexFormat(address, 8)} to ${hexFormat(address + length, 8)}`);
+			}, (error: Error) => {
+				void vscode.window.showErrorMessage(`Unable to read memory from ${hexFormat(address, 8)} to ${hexFormat(address + length, 8)}`);
 				reject(error.toString());
 			});
 		});
@@ -105,7 +105,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
 		return offset;
 	}
 
-	private getPosition(offset: number, ascii: boolean = false): vscode.Position {
+	private getPosition(offset: number, ascii = false): vscode.Position {
 		const row = 1 + Math.floor(offset / 16);
 		let column = offset % 16;
 

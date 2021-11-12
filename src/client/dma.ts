@@ -8,13 +8,9 @@ declare let PROFILES: ICpuProfileRaw[];
 // COERCE: make signed
 const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
 
-export function CpuCyclesToDmaCycles(cpuCycles: number) {
-	return (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
-}
+export const CpuCyclesToDmaCycles = (cpuCycles: number) => (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
 
-export function DmaCyclesToCpuCycles(dmaCycles: number) {
-	return (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
-}
+export const DmaCyclesToCpuCycles = (dmaCycles: number) => (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
 
 export class Memory {
 	private chipMemAddr = 0x00000000;
@@ -542,37 +538,27 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 }
 
 // AABBGGRR
-function GetAmigaColor(color: number): number {
-	return ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
+const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
 		   (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
 		   (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
-		0xff000000) >>> 0; // AA
-}
+		0xff000000) >>> 0;// AA;
 
 // AABBGGRR <-> AARRGGBB
-function ColorSwap(color: number): number {
-	return (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
-}
+const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
 
 // AABBGGRR
-export function GetColorCss(color: number): string {
-	return '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
-}
+export const GetColorCss = (color: number): string => '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
 
 // 0RGB
-export function GetAmigaColorCss(color: number): string {
-	return '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
-}
+export const GetAmigaColorCss = (color: number): string => '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
 
-function GetAmigaColorEhb(color: number): number {
-	return GetAmigaColor((color & 0xeee) >>> 1);
-}
+const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color & 0xeee) >>> 1);
 
 // returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
-	const palette = [], ehbPalette = [];
+	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		const color = customReg(regCOLOR + i * 2);
 		palette.push(GetAmigaColor(color));
@@ -582,7 +568,7 @@ export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 }
 
 export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: number): number[] {
-	const palette = [], ehbPalette = [];
+	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		if(i < numEntries) {
 			const color = memory.readWord(addr + i * 2);
@@ -612,29 +598,29 @@ export function GetPaletteFromCopper(copper: Copper[]): number[] {
 }
 
 export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
-	const addressString = `\$${address.toString(16).padStart(8, '0')}`;
+	const addressString = `$${address.toString(16).padStart(8, '0')}`;
 
 	if(address !== 0) {
 		if(address >= amiga.systemStackLower && address < amiga.systemStackUpper)
-			return `SYSSTACK-\$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
+			return `SYSSTACK-$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
 		if(address >= amiga.stackLower && address < amiga.stackUpper)
-			return `STACK-\$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
+			return `STACK-$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
 
 		const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 		if(resource)
-			return `${resource.name}+\$${(address - resource.address).toString(16)} (${addressString})`;
+			return `${resource.name}+$${(address - resource.address).toString(16)} (${addressString})`;
 
 		const section = amiga.sections.find((r) => address >= r.address && address < r.address + r.size);
 		if(section) {
 			if(section.name === '.text') {
 				const offset = address - section.address;
 				const callFrame = amiga.uniqueCallFrames[amiga.callFrames[offset >> 1]];
-				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+\$${offset.toString(16)}) (${addressString})`;
+				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+$${offset.toString(16)}) (${addressString})`;
 			}
 			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
 			if(symbol)
-				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+\$${symbol.address.toString(16)}) (${addressString})`;
-			return `${section.name}+\$${(address - section.address).toString(16)} (${addressString})`;
+				return `${symbol.name}+$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+$${symbol.address.toString(16)}) (${addressString})`;
+			return `${section.name}+$${(address - section.address).toString(16)} (${addressString})`;
 		}
 
 		const customReg = CustomRegisters.getCustomName(address);

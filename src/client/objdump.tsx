@@ -1,4 +1,4 @@
-import { Component, Fragment, FunctionComponent, h } from 'preact';
+import { Component, Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
@@ -210,8 +210,8 @@ class FunctionDropdown extends DropdownComponent<Function> {
 
 // used with { frame, time } for profiling, frame === -1 for 'Disassemble ELF File'
 export const ObjdumpView: FunctionComponent<{
-	frame?: number,
-	time?: number
+	frame?: number;
+	time?: number;
 }> = ({ frame = -1, time = -1 }) => {
 	const cssVariables = useCssVariables();
 	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
@@ -251,7 +251,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [curRow, setCurRow] = useState(0);
 
-	const [find, setFind] = useState<{ text: string, internal: boolean }>({ text: '', internal: true });
+	const [find, setFind] = useState<{ text: string; internal: boolean }>({ text: '', internal: true });
 	const [curFind, setCurFind] = useState(0);
 	const findRef = useRef<HTMLDivElement>();
 	const findResult = useMemo(() => {
@@ -307,20 +307,20 @@ export const ObjdumpView: FunctionComponent<{
 		return [row, pc, func];
 	}, [frame, time, content, curRow, findResult.length]);
 
-	const onClickLoc = useCallback((evt: MouseEvent) => {
+	const onClickLoc = useCallback((evt: JSX.TargetedMouseEvent<HTMLElement>) => {
 		VsCodeApi.postMessage<IOpenDocumentMessage>({
 			type: 'openDocument',
 			location: {
-				lineNumber: (evt.srcElement as HTMLElement).attributes['data-line'].value,
+				lineNumber: parseInt(evt.currentTarget.attributes.getNamedItem('data-line').value),
 				columnNumber: 0,
-				source: { path: (evt.srcElement as HTMLElement).attributes['data-file'].value }
+				source: { path: evt.currentTarget.attributes.getNamedItem('data-file').value }
 			},
 			toSide: true,
 		});
 	}, []);
 
 	const renderRow = useCallback((c: Line, index: number) => {
-		const extra = [];
+		const extra: string[] = [];
 
 		function getLoc(row: number) {
 			for(let i = row; i > 0; i--) {
@@ -385,7 +385,7 @@ export const ObjdumpView: FunctionComponent<{
 			return '';
 		})();
 
-		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
+		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: `${jump.top}px`, height: `${jump.height}px`}}>
 			{jump.start.map((startRow) => {
 				const start = startRow - min;
 				const y = start * rowHeight + rowMiddle;

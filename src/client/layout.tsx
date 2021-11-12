@@ -33,7 +33,7 @@ import 'pubsub-js';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
 import { ObjdumpView } from './objdump';
 
-export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
+export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	const [frame, setFrame] = useState(0);
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
@@ -76,8 +76,8 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		return () => PubSub.unsubscribe(token);
 	}, []);*/
 
-	const onClickFrame = useCallback((event) => {
-		const fr = parseInt(event.srcElement.attributes.data.nodeValue);
+	const onClickFrame = useCallback((event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
+		const fr = parseInt(event.currentTarget.attributes.getNamedItem('data').nodeValue);
 		// build models on demand. memory, copper, blits have already been filled by client.ts
 		if(!MODELS[fr].nodes)
 			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
@@ -91,8 +91,8 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 		const rect = evt.currentTarget.getBoundingClientRect();
 		frameHover.current.src = evt.currentTarget.src;
 		frameHover.current.parentElement.style.visibility = '';
-		frameHover.current.parentElement.style.left = Math.min(window.innerWidth - 20 - evt.currentTarget.naturalWidth, rect.left) + 'px';
-		frameHover.current.parentElement.style.top = (rect.bottom + 10) + 'px';
+		frameHover.current.parentElement.style.left = `${Math.min(window.innerWidth - 20 - evt.currentTarget.naturalWidth, rect.left)}px`;
+		frameHover.current.parentElement.style.top = `${(rect.bottom + 10)}px`;
 	}, [frameHover.current]);
 	const onLeaveFrame = useCallback((evt: JSX.TargetedMouseEvent<HTMLImageElement>) => {
 		frameHover.current.parentElement.style.visibility = 'hidden';
@@ -123,8 +123,8 @@ export const CpuProfileLayout: FunctionComponent<{}> = ({ }) => {
 					{PROFILES.map((PROFILE, fr) => <div class={styles.frame}>
 						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent') }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
 						<div class={styles.label}>{fr + 1}</div>
-						<div style={{width: (100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))) + '%', backgroundColor: cpuColor, height: '5px'}} />
-						<div style={{width: (100 * frameBlitCycles[fr] / (7_093_790 / 2 / 50)) + '%', backgroundColor: blitColor, height: '5px'}} />
+						<div style={{width: `${100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))}%`, backgroundColor: cpuColor, height: '5px'}} />
+						<div style={{width: `${100 * frameBlitCycles[fr] / (7_093_790 / 2 / 50)}%`, backgroundColor: blitColor, height: '5px'}} />
 					</div>)}
 				</div>
 				<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>

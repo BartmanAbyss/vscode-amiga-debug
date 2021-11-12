@@ -54,7 +54,7 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
 		try {
-			this.config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+			this.config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
 			for(let i = 0; i < this.config.includePath.length; i++) {
 				this.config.includePath[i] = this.config.includePath[i].replace(/\$\{workspaceFolder\}/g, workspaceFolder);
 			}
@@ -98,6 +98,7 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	}
 
 	public dispose() {
+		/**/
 	}
 }
 
@@ -108,7 +109,7 @@ class AmigaDebugExtension {
 	private objdumpEditorProvider: ObjdumpEditorProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
-	private extensionPath: string = '';
+	private extensionPath = '';
 	private cppToolsApi: CppToolsApi;
 
 	constructor(private context: vscode.ExtensionContext) {
@@ -191,7 +192,7 @@ class AmigaDebugExtension {
 			if(uri.scheme === 'file') {
 				// vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: uri.path });
 			} else if(uri.scheme === 'disassembly') {
-				vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: `${uri.scheme}://${uri.authority}${uri.path}` });
+				void vscode.debug.activeDebugSession.customRequest('set-active-editor', { path: `${uri.scheme}://${uri.authority}${uri.path}` });
 			}
 		}
 		if(editor === undefined || editor.document.uri.scheme !== 'objdump')
@@ -200,7 +201,7 @@ class AmigaDebugExtension {
 
 	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
 		if(vscode.window.activeTextEditor === e.textEditor)
-			this.objdumpEditorProvider.handleSelectionChanged(e);
+			void this.objdumpEditorProvider.handleSelectionChanged(e);
 
 		if(e.textEditor.document.uri.scheme === 'examinememory')
 			this.memoryProvider.handleSelectionChanged(e);
@@ -208,7 +209,7 @@ class AmigaDebugExtension {
 
 	private async showDisassembly() {
 		if(!vscode.debug.activeDebugSession) {
-			vscode.window.showErrorMessage('No debugging session available');
+			void vscode.window.showErrorMessage('No debugging session available');
 			return;
 		}
 
@@ -217,7 +218,7 @@ class AmigaDebugExtension {
 				const resp = await vscode.debug.activeDebugSession.customRequest('load-function-symbols');
 				this.functionSymbols = resp.functionSymbols;
 			} catch(e) {
-				vscode.window.showErrorMessage('Unable to load symbol table. Disassembly view unavailable.');
+				void vscode.window.showErrorMessage('Unable to load symbol table. Disassembly view unavailable.');
 			}
 		}
 
@@ -228,12 +229,12 @@ class AmigaDebugExtension {
 				prompt: 'Function Name to Disassemble'
 			}) || "";
 
-			const functions = this.functionSymbols!.filter((s) => s.name === funcname);
+			const functions = this.functionSymbols.filter((s) => s.name === funcname);
 
 			let url: string;
 
 			if(functions.length === 0) {
-				vscode.window.showErrorMessage(`No function with name ${funcname} found.`);
+				void vscode.window.showErrorMessage(`No function with name ${funcname} found.`);
 				return;
 			} else if(functions.length === 1) {
 				if(functions[0].scope === SymbolScope.Global) {
@@ -254,16 +255,16 @@ class AmigaDebugExtension {
 					ignoreFocusOut: true
 				});
 
-				if(selected!.scope === SymbolScope.Global) {
-					url = `disassembly:///${selected!.name}.amigaasm`;
+				if(selected.scope === SymbolScope.Global) {
+					url = `disassembly:///${selected.name}.amigaasm`;
 				} else {
-					url = `disassembly:///${selected!.file}::${selected!.name}.amigaasm`;
+					url = `disassembly:///${selected.file}::${selected.name}.amigaasm`;
 				}
 			}
 
-			vscode.window.showTextDocument(vscode.Uri.parse(url));
+			void vscode.window.showTextDocument(vscode.Uri.parse(url));
 		} catch(e) {
-			vscode.window.showErrorMessage('Unable to show disassembly.');
+			void vscode.window.showErrorMessage('Unable to show disassembly.');
 		}
 	}
 	private initProject() {
@@ -290,12 +291,12 @@ class AmigaDebugExtension {
 			const dest = vscode.workspace.workspaceFolders[0].uri.fsPath;
 			const files = fs.readdirSync(dest);
 			if(files.length) {
-				vscode.window.showErrorMessage(`Failed to init project. Project folder is not empty`);
+				void vscode.window.showErrorMessage(`Failed to init project. Project folder is not empty`);
 				return;
 			}
 			copyRecursiveSync(source, dest);
 		} catch(err) {
-			vscode.window.showErrorMessage(`Failed to init project. ${err.toString()}`);
+			void vscode.window.showErrorMessage(`Failed to init project. ${(err as Error).toString()}`);
 		}
 	}
 
@@ -320,22 +321,22 @@ class AmigaDebugExtension {
 			],
 			{ matchOnDescription: true, ignoreFocusOut: true }
 		).then((result) => {
-			const force = result!.label === 'Forced';
-			vscode.debug.activeDebugSession!.customRequest('set-force-disassembly', { force });
-		}, (error) => { });
+			const force = result.label === 'Forced';
+			void vscode.debug.activeDebugSession.customRequest('set-force-disassembly', { force });
+		}, (error) => { /**/ });
 	}
 
 	private startProfile() {
-		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 1 });
+		void vscode.debug.activeDebugSession.customRequest('start-profile', { numFrames: 1 });
 	}
 
 	private startProfileMulti() {
-		vscode.debug.activeDebugSession!.customRequest('start-profile', { numFrames: 50 });
+		void vscode.debug.activeDebugSession.customRequest('start-profile', { numFrames: 50 });
 	}
 
 	private async profileSize(uri: vscode.Uri) {
 		if(uri.scheme !== 'file') {
-			vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
+			void vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
 		const binPath = path.join(this.extensionPath, 'bin/opt/bin');
@@ -348,13 +349,13 @@ class AmigaDebugExtension {
 			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
 		} catch(error) {
-			vscode.window.showErrorMessage(`Error during size profiling: ${error.message}`);
+			void vscode.window.showErrorMessage(`Error during size profiling: ${(error as Error).message}`);
 		}
 	}
 
 	private async disassembleElf(uri: vscode.Uri) {
 		if(uri.scheme !== 'file') {
-			vscode.window.showErrorMessage(`Error during disassembly: Don't know how to open ${uri.toString()}`);
+			void vscode.window.showErrorMessage(`Error during disassembly: Don't know how to open ${uri.toString()}`);
 			return;
 		}
 		const uri2 = vscode.Uri.file(uri.fsPath + ".objdump");
@@ -367,7 +368,7 @@ class AmigaDebugExtension {
 
 	private async shrinkler(uri: vscode.Uri) {
 		if(uri.scheme !== 'file') {
-			vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
+			void vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
 		const binPath = path.join(this.extensionPath, 'bin');
@@ -380,7 +381,7 @@ class AmigaDebugExtension {
 				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
 			} catch(e) { /**/ }
 			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
-				vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
+				void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
 				return;
 			}
 
@@ -419,12 +420,12 @@ class AmigaDebugExtension {
 							writeEmitter.fire('-----------------------\r\n');
 							writeEmitter.fire('\r\n');
 						} else {
-							vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+							void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
 						}
 						this.shrinklerFinished = true;
 					});
 				},
-				close: () => { },
+				close: () => { /**/ },
 				handleInput: (char: string) => {
 					if(char === '\x03')
 						p.kill('SIGTERM');
@@ -443,7 +444,7 @@ class AmigaDebugExtension {
 			});
 			this.shrinklerTerminal.show();
 		} catch(error) {
-			vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
+			void vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
 		}
 	}
 
@@ -459,7 +460,7 @@ class AmigaDebugExtension {
 		}
 
 		if(!vscode.debug.activeDebugSession) {
-			vscode.window.showErrorMessage('No debugging session available');
+			void vscode.window.showErrorMessage('No debugging session available');
 			return;
 		}
 
@@ -470,7 +471,7 @@ class AmigaDebugExtension {
 		}).then(
 			(address) => {
 				if(!validateValue(address)) {
-					vscode.window.showErrorMessage('Invalid memory address entered');
+					void vscode.window.showErrorMessage('Invalid memory address entered');
 					return;
 				}
 
@@ -481,7 +482,7 @@ class AmigaDebugExtension {
 				}).then(
 					(length) => {
 						if(!validateValue(length)) {
-							vscode.window.showErrorMessage('Invalid length entered');
+							void vscode.window.showErrorMessage('Invalid length entered');
 							return;
 						}
 
@@ -489,15 +490,15 @@ class AmigaDebugExtension {
 						// eslint-disable-next-line max-len
 						vscode.workspace.openTextDocument(vscode.Uri.parse(`examinememory:///Memory%20[${address}+${length}].amigamem?address=${address}&length=${length}&timestamp=${timestamp}`))
 							.then((doc) => {
-								vscode.window.showTextDocument(doc, { viewColumn: 2, preview: false });
+								void vscode.window.showTextDocument(doc, { viewColumn: 2, preview: false });
 							}, (error) => {
-								vscode.window.showErrorMessage(`Failed to examine memory: ${error}`);
+								void vscode.window.showErrorMessage(`Failed to examine memory: ${error}`);
 							});
 					},
-					(error) => { }
+					(error) => { /**/ }
 				);
 			},
-			(error) => { }
+			(error) => { /**/ }
 		);
 	}
 
@@ -508,9 +509,9 @@ class AmigaDebugExtension {
 	}
 
 	private registersCopyValue(tn: RTreeNode): void {
-		const cv = tn.node!.getCopyValue();
+		const cv = tn.node.getCopyValue();
 		if(cv) {
-			vscode.env.clipboard.writeText(cv);
+			void vscode.env.clipboard.writeText(cv);
 		}
 	}
 
@@ -522,7 +523,7 @@ class AmigaDebugExtension {
 			{ label: 'Binary', description: 'Format value in binary', value: NumberFormat.Binary }
 		]);
 
-		tn.node!.setFormat(result ? result.value : NumberFormat.Auto);
+		tn.node.setFormat(result ? result.value : NumberFormat.Auto);
 		this.registerProvider.refresh();
 	}
 

@@ -25,7 +25,7 @@ function chipset(chipsetFlags: number) {
 	return f.join(', ');
 }
 
-export const SavestateView: FunctionComponent<{}> = ({ }) => {
+export const SavestateView: FunctionComponent<{}> = (_) => {
 	const savestate = useMemo(() => {
 		return JSON.parse(SAVESTATE) as IUssFile;
 	}, [SAVESTATE]);

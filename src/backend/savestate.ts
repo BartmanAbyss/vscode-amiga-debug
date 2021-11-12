@@ -32,7 +32,7 @@ export class UssFile implements IUssFile {
 	constructor(public filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
-		const readChunk = (): { name: string, buffer: Buffer } => {
+		const readChunk = (): { name: string; buffer: Buffer } => {
 			if(bufferOffset + 3 * 4 > buffer.length)
 				return { name: '', buffer: null };
 			// see WinUAE:savestate.cpp@restore_chunk

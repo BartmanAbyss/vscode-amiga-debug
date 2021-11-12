@@ -64,10 +64,10 @@ export interface IGraphNode extends ILocation {
  * so the same source location will have multiple different nodes in the model.
  */
 export interface IProfileModel {
-	nodes: ReadonlyArray<IComputedNode>;
-	locations: ReadonlyArray<ILocation>;
-	samples: ReadonlyArray<number>;
-	timeDeltas: ReadonlyArray<number>;
+	nodes: readonly IComputedNode[];
+	locations: readonly ILocation[];
+	samples: readonly number[];
+	timeDeltas: readonly number[];
 	rootPath?: string;
 	duration: number;
 
@@ -114,7 +114,7 @@ const computeOrigAggregateTime = (index: number, nodes: IComputedNode[]): number
 
 const getBestLocation = (
 	profile: ICpuProfileRaw,
-	candidates: ReadonlyArray<ISourceLocation> = [],
+	candidates: readonly ISourceLocation[] = [],
 ) => {
 	return candidates[0];
 };
@@ -139,7 +139,7 @@ const categorize = (callFrame: Cdp.Runtime.CallFrame, src: ISourceLocation | und
  * Ensures that all profile nodes have a location ID, setting them if they
  * aren't provided by default.
  */
-const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotationLocation> => {
+const ensureSourceLocations = (profile: ICpuProfileRaw): readonly IAnnotationLocation[] => {
 	if (profile.$vscode) {
 		return profile.$vscode.locations; // profiles we generate are already good
 	}
@@ -269,7 +269,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			aggregateTime: 0,
 			origSelfTime: 0,
 			origAggregateTime: 0,
-			locationId: node.locationId as number,
+			locationId: node.locationId ,
 			children: node.children?.map(mapId) || [],
 		};
 

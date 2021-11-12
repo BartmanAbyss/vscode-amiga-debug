@@ -7,7 +7,7 @@ import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel, createLenses, GetMemory } from './model';
-import { profileShrinkler } from '../backend/shrinkler';
+import { profileShrinkler, Stats } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
 import { ISetCodeLenses, ICpuProfileRaw } from './types';
 import { DisplayUnit } from './display';
@@ -32,12 +32,12 @@ async function Profiler() {
 	try {
 		console.time('fetch+json');
 		const response = await fetch(PROFILE_URL);
-		PROFILES = await response.json();
+		PROFILES = await response.json() as ICpuProfileRaw[];
 		console.timeEnd('fetch+json');
 
-		if((PROFILES as any).hunks) { // shrinklerstats
+		if((PROFILES as unknown as Stats).hunks) { // shrinklerstats
 			console.log("Shrinkler");
-			PROFILES = [ profileShrinkler(PROFILES as any) ];
+			PROFILES = [ profileShrinkler(PROFILES as unknown as Stats) ];
 		}
 
 		console.time('models');
@@ -89,7 +89,7 @@ async function Profiler() {
 	}
 }
 
-async function Objdump() {
+function Objdump() {
 	document.body.style.paddingRight = '0px';
 	const container = document.createElement('div');
 	container.classList.add(styles.wrapper);
@@ -97,7 +97,7 @@ async function Objdump() {
 	render(h(ObjdumpView, null), container);
 }
 
-async function Savestate() {
+function Savestate() {
 	const container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
@@ -108,7 +108,7 @@ function TryProfiler() {
 	try {
 		if(PROFILE_URL) {
 			console.log("Profile: " + PROFILE_URL);
-			Profiler();
+			void Profiler();
 			return true;
 		}
 	} catch(e) {}
@@ -119,7 +119,7 @@ function TryObjdump() {
 	try {
 		if(OBJDUMP) {
 			console.log("Objdump");
-			Objdump();
+			void Objdump();
 			return true;
 		}
 	} catch(e) {}
@@ -130,7 +130,7 @@ function TrySavestate() {
 	try {
 		if(SAVESTATE) {
 			console.log("Savestate");
-			Savestate();
+			void Savestate();
 			return true;
 		}
 	} catch(e) {}

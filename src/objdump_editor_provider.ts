@@ -44,7 +44,7 @@ class ObjdumpDocument implements vscode.CustomDocument {
 	}
 
 	public async load() {
-		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
 		this.content = Disassemble(objdumpPath, this.elfPath);
 	}
@@ -74,8 +74,8 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		return doc;
 	}
 
-	private async updateWebview(document: ObjdumpDocument, webview: vscode.Webview) {
-		const html = await bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
+	private updateWebview(document: ObjdumpDocument, webview: vscode.Webview) {
+		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
 			OBJDUMP: document.content
 		});
 		webview.html = html;
@@ -107,27 +107,29 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		document.watcher.onDidChange(async (e) => {
 			// wait 2000ms before reloading, linker may not be finished writing .elf file, and if we don't wait, we get crap
 			console.log(`ObjdumpEditorProvider: onDidChange(${e.fsPath}) -- wait 2000 msec`);
-			webviewPanel.webview.postMessage({
+			await webviewPanel.webview.postMessage({
 				type: 'fileChanged',
 				body: document.content
 			});
 			document.timers.forEach((t) => clearTimeout(t));
 			document.timers = [];
-			document.timers.push(setTimeout(async () => {
-				document.timers = [];
-				console.log(`ObjdumpEditorProvider: Reload ${e.fsPath}`);
-				await document.load();
-				webviewPanel.webview.postMessage({
-					type: 'reload',
-					body: document.content
-				});
+			document.timers.push(setTimeout(() => {
+				void (async () => {
+					document.timers = [];
+					console.log(`ObjdumpEditorProvider: Reload ${e.fsPath}`);
+					await document.load();
+					await webviewPanel.webview.postMessage({
+						type: 'reload',
+						body: document.content
+					});
+				})();
 			}, 2000));
 		});
 	}
 
 	public async handleSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
 		for (const webviewPanel of this.webviews.all()) { 
-			webviewPanel.webview.postMessage({ 
+			await webviewPanel.webview.postMessage({ 
 				type: 'findLocation', 
 				body: { 
 					file: e.textEditor.document.uri.fsPath, 

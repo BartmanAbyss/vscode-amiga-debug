@@ -50,12 +50,11 @@ export class BaseNode {
 
 export class RegisterNode extends BaseNode {
 	private fields: FieldNode[];
-	private width: number = 32; // width in bits
+	private width = 32; // width in bits
 	private currentValue: number|undefined;
 
 	constructor(public name: string, public index: number) {
 		super(RecordType.Register);
-		this.name = this.name;
 
 		if (name.toUpperCase() === 'SR') {
 			this.width = 16;
@@ -175,7 +174,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	private registers: RegisterNode[];
 	private registerMap: { [index: number]: RegisterNode };
-	private loaded: boolean = false;
+	private loaded = false;
 
 	constructor() {
 		this.registers = [];
@@ -185,7 +184,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 	public refresh(): void {
 		if (vscode.debug.activeDebugSession) {
 			if (!this.loaded) {
-				vscode.debug.activeDebugSession.customRequest('read-register-list').then((data) => {
+				void vscode.debug.activeDebugSession.customRequest('read-register-list').then((data) => {
 					this.createRegisters(data);
 					this._refreshRegisterValues();
 				});
@@ -196,7 +195,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	public _refreshRegisterValues() {
-		vscode.debug.activeDebugSession!.customRequest('read-registers').then((data) => {
+		void vscode.debug.activeDebugSession.customRequest('read-registers').then((data) => {
 			data.forEach((reg) => {
 				const index = parseInt(reg.number, 10);
 				if(reg.value === "<unavailable>")
@@ -245,7 +244,7 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 	public getChildren(element?: TreeNode): vscode.ProviderResult<TreeNode[]> {
 		if (this.loaded && this.registers.length > 0) {
 			if (element) {
-				return element.node!.getChildren().map((c) => c.getTreeNode()) as TreeNode[];
+				return element.node.getChildren().map((c) => c.getTreeNode()) ;
 			} else {
 				return this.registers.map((r) => r.getTreeNode());
 			}
@@ -275,6 +274,6 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	public debugContinued() {
-
+		/**/
 	}
 }

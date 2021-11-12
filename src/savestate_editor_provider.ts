@@ -13,12 +13,12 @@ class SavestateDocument implements vscode.CustomDocument {
 		this.ussPath = this.uri.fsPath;
 	}
 
-	public async load() {
+	public load() {
 		try {
 			const ussFile = new UssFile(this.ussPath);
 			this.content = JSON.stringify(ussFile);
 		} catch(err) {
-			this.content = `Error: ${err}`;
+			this.content = `Error: ${(err as Error).message}`;
 		}
 	}
 
@@ -32,39 +32,39 @@ class SavestateDocument implements vscode.CustomDocument {
 	private winuae: cp.ChildProcess;
 	private gdb: cp.ChildProcess;
 	private miDebugger: MI2;
-	private currentThreadId: number = 1;
-	private ready: boolean = false;
+	private currentThreadId = 1;
+	private ready = false;
 
 	public async start(onReady: () => void) {
 		if(this.winuae || this.gdb || this.miDebugger)
 			return;
 
 		// write config
-		const binPath = await vscode.commands.executeCommand("amiga.bin-path") as string;
+		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const configPath = path.join(binPath, "savestate.uae");
 		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
-		const config = [];
-		config['use_gui'] = 'no';
-		config['win32.start_not_captured'] = 'yes';
-		config['win32.nonotificationicon'] = 'yes'; // tray icons remain after killing WinUAE, so just disable altogether
-		config['debugging_features'] = 'gdbserver';
-		config['debugging_trigger'] = '';
-		config['statefile'] = this.ussPath;
+		const config = new Map<string, string>();
+		config.set('use_gui', 'no');
+		config.set('win32.start_not_captured', 'yes');
+		config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
+		config.set('debugging_features', 'gdbserver');
+		config.set('debugging_trigger', '');
+		config.set('statefile', this.ussPath);
 
 		// copy from amigaDebug.cpp
-		const stringifyCfg = (cfg) => {
-			let out: string = "";
-			for (const [key, value] of Object.entries(cfg)) {
-				out += key + '=' + cfg[key] + '\r\n';
-			}
+		const stringifyCfg = (cfg: Map<string, string>) => {
+			let out = "";
+			cfg.forEach((value, key) => {
+				out += `${key}=${value}\r\n`;
+			});
 			return out;
 		};
 
 		try {
 			fs.writeFileSync(configPath, stringifyCfg(config));
 		} catch (e) {
-			vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
+			void vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
 			return;
 		}
 
@@ -94,12 +94,14 @@ class SavestateDocument implements vscode.CustomDocument {
 		//miDebugger.on('thread-selected', this.threadSelectedEvent.bind(this));
 		this.miDebugger.trace = true; // DEBUG only
 
-		this.miDebugger.once('debug-ready', async () => {
-			console.log("debug-ready");
-			await this.miDebugger.sendCommand('exec-continue');
-			this.gdb = this.miDebugger.process;
-			this.ready = true;
-			onReady();
+		this.miDebugger.once('debug-ready', () => {
+			void (async () => {
+				console.log("debug-ready");
+				await this.miDebugger.sendCommand('exec-continue');
+				this.gdb = this.miDebugger.process;
+				this.ready = true;
+				onReady();
+			})();
 		});
 		const commands = [
 			'enable-pretty-printing',
@@ -108,8 +110,8 @@ class SavestateDocument implements vscode.CustomDocument {
 		];
 
 		// launch GDB and connect to WinUAE
-		this.miDebugger.connect(".", "", commands).catch((err) => {
-			vscode.window.showErrorMessage(`Failed to launch GDB: ${err.toString()}`);
+		this.miDebugger.connect(".", "", commands).catch((err: Error) => {
+			void vscode.window.showErrorMessage(`Failed to launch GDB: ${err.toString()}`);
 		});
 	}
 
@@ -117,32 +119,34 @@ class SavestateDocument implements vscode.CustomDocument {
 		if(!this.ready)
 			return;
 
-		this.miDebugger.once("signal-stop", async () => {
-			const date = new Date();
-			const dateString = date.getFullYear().toString() + "." + (date.getMonth() + 1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
-				date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
-			const tmp = path.join(os.tmpdir(), path.basename(this.ussPath) + '-' + dateString);
-			// path to profile file
-			const tmpQuoted = tmp.replace(/\\/g, '\\\\');
-			await this.miDebugger.sendUserInput(`monitor profile ${frames} "" "${tmpQuoted}"`);
-	
-			// read profile file
-			const profileArchive = new ProfileFile(tmp);
-			fs.unlinkSync(tmp); // !DEBUG
-	
-			// generate output
-			const profiler = new Profiler(null, null);
-			//progress.report({ message: 'Writing profile...'});
-			fs.writeFileSync(tmp + ".amigaprofile", profiler.profileSavestate(profileArchive));
-	
-			// open output
-			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
-			this.miDebugger.continue(this.currentThreadId);
+		this.miDebugger.once("signal-stop", () => {
+			void (async () => {
+				const date = new Date();
+				const dateString = date.getFullYear().toString() + "." + (date.getMonth() + 1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
+					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
+				const tmp = path.join(os.tmpdir(), path.basename(this.ussPath) + '-' + dateString);
+				// path to profile file
+				const tmpQuoted = tmp.replace(/\\/g, '\\\\');
+				await this.miDebugger.sendUserInput(`monitor profile ${frames} "" "${tmpQuoted}"`);
+		
+				// read profile file
+				const profileArchive = new ProfileFile(tmp);
+				fs.unlinkSync(tmp); // !DEBUG
+		
+				// generate output
+				const profiler = new Profiler(null, null);
+				//progress.report({ message: 'Writing profile...'});
+				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileSavestate(profileArchive));
+		
+				// open output
+				void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
+				void this.miDebugger.continue(this.currentThreadId);
+			})();
 		});
 		await this.miDebugger.interrupt(this.currentThreadId);
 	}
 
-	public async stop() {
+	public stop() {
 		if(!this.ready)
 			return;
 
@@ -161,14 +165,14 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 	constructor(private readonly context: vscode.ExtensionContext) {
 	}
 
-	public async openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): Promise<SavestateDocument> {
+	public openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): SavestateDocument {
 		const doc = new SavestateDocument(uri);
-		await doc.load();
+		doc.load();
 		return doc;
 	}
 
-	private async updateWebview(document: SavestateDocument, webview: vscode.Webview) {
-		const html = await bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
+	private updateWebview(document: SavestateDocument, webview: vscode.Webview) {
+		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
 			SAVESTATE: document.content
 		});
 		webview.html = html;
@@ -182,17 +186,17 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
-		webviewPanel.webview.onDidReceiveMessage(async (message) => {
+		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
 			case 'savestateStart':
-				document.start(() => { webviewPanel.webview.postMessage({ type: 'status', body: { running: true }}); });
+				void document.start(() => { void webviewPanel.webview.postMessage({ type: 'status', body: { running: true }}); });
 				break;
 			case 'savestateStop':
 				document.stop();
-				webviewPanel.webview.postMessage({ type: 'status', body: { running: false }});
+				void webviewPanel.webview.postMessage({ type: 'status', body: { running: false }});
 				break;
 			case 'savestateProfile':
-				document.profile(message.frames);
+				void document.profile(message.frames);
 				break;
 			}
 		});

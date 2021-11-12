@@ -9,11 +9,9 @@ import { MINode, parseMI } from "./mi_parse";
 import { Section } from "../symbols";
 const path = posix;
 
-export function escape(str: string) {
-	return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
+export const escape = (str: string) => str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
-const nonOutput = /^(?:\d*|undefined)[\*\+\=]|[\~\@\&\^]/;
+const nonOutput = /^(?:\d*|undefined)[*+=]|[~@&^]/;
 const gdbMatch = /(?:\d*|undefined)\(gdb\)/;
 const numRegex = /\d+/;
 const gdbTimeout = 500; // in milliseconds
@@ -29,10 +27,10 @@ export class MI2 extends EventEmitter implements IBackend {
 	public trace = false;
 	public debugOutput = false;
 	public procEnv: any;
-	protected currentToken: number = 1;
+	protected currentToken = 1;
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
-	protected buffer: string = "";
-	protected errbuf: string = "";
+	protected buffer = "";
+	protected errbuf = "";
 	public process: cp.ChildProcess;
 	protected stream;
 
@@ -57,7 +55,7 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.process.on("error", ((err) => { this.emit("launcherror", err); }).bind(this));
 
 			const asyncPromise = this.sendCommand("gdb-set mi-async on", true);
-			const promises: Array<Thenable<any>> = commands.map((c) => this.sendCommand(c));
+			const promises: Thenable<any>[] = commands.map((c) => this.sendCommand(c));
 			promises.push(asyncPromise);
 
 			if(executable !== '') {
@@ -388,7 +386,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		return this.sendCommand("data-evaluate-expression " + name, true);
 	}
 
-	public async varCreate(expression: string, name: string = "-"): Promise<VariableObject> {
+	public async varCreate(expression: string, name = "-"): Promise<VariableObject> {
 		if (this.trace) {
 			this.log("log", "varCreate");
 		}
@@ -414,7 +412,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		return omg;
 	}
 
-	public async varUpdate(name: string = "*"): Promise<MINode> {
+	public async varUpdate(name = "*"): Promise<MINode> {
 		if (this.trace) {
 			this.log("log", "varUpdate");
 		}
@@ -440,7 +438,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		if (command.startsWith("-")) {
 			return this.sendCommand(command.substr(1));
 		} else {
-			return this.sendCommand(`interpreter-exec console "${command.replace(/\"/g, "\\\"")}"`);
+			return this.sendCommand(`interpreter-exec console "${command.replace(/"/g, "\\\"")}"`);
 		}
 	}
 
@@ -451,7 +449,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		this.process.stdin.write(raw + "\n");
 	}
 
-	public sendCommand(command: string, suppressFailure: boolean = false): Thenable<MINode> {
+	public sendCommand(command: string, suppressFailure = false): Thenable<MINode> {
 		const sel = this.currentToken++;
 		return new Promise((resolve, reject) => {
 			this.handlers[sel] = (node: MINode) => {

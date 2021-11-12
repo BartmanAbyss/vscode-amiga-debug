@@ -17,7 +17,7 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
 				args = { file: parts[0], function: parts[1] };
 			}
 
-			vscode.debug.activeDebugSession!.customRequest('amiga-disassemble', args).then((data) => {
+			vscode.debug.activeDebugSession.customRequest('amiga-disassemble', args).then((data) => {
 				const lines: SourceLineWithDisassembly[] = data.lines;
 
 				let output = '';
@@ -30,8 +30,8 @@ export class DisassemblyContentProvider implements vscode.TextDocumentContentPro
 				});
 
 				resolve(output);
-			}, (error) => {
-				vscode.window.showErrorMessage(error.message);
+			}, (error: Error) => {
+				void vscode.window.showErrorMessage(error.message);
 				reject(error.message);
 			});
 		});

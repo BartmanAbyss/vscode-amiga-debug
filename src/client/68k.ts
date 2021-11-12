@@ -222,13 +222,11 @@ function GetAddressingMode(insn: number, registerBit: number, modeBit: number): 
 	}
 }
 
-function AddCycles(ea: Cycles, cy: Cycles): Cycles {
-	return {
-		total: ea.total + cy.total,
-		read: ea.read + cy.read,
-		write: ea.write + cy.write
-	};
-}
+const AddCycles = (ea: Cycles, cy: Cycles): Cycles => ({
+	total: ea.total + cy.total,
+	read: ea.read + cy.read,
+	write: ea.write + cy.write
+});
 
 function GetCyclesStandard(insn: Uint16Array): Cycles[] {
 	enum Opxxx {
@@ -434,16 +432,16 @@ function GetCyclesJmp(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	switch(effectiveAddress) {
 	case AddressingMode.AddressRegisterIndirect:
-	case AddressingMode.AbsoluteShort: 
 		return [ { total: 8, read: 2, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
-	case AddressingMode.ProgramCounterIndirectWithIndex: 
+	case AddressingMode.ProgramCounterIndirectWithDisplacement: 
+	case AddressingMode.AbsoluteShort: 
 		return [ { total: 10, read: 2, write: 0 } ];
-	case AddressingMode.AddressRegisterIndirectWithIndex:
-	case AddressingMode.ProgramCounterIndirectWithIndex:
-		return [ { total: 14, read: 3, write: 0 } ];
 	case AddressingMode.AbsoluteLong: 
 		return [ { total: 12, read: 3, write: 0 } ];
+	case AddressingMode.ProgramCounterIndirectWithIndex:
+	case AddressingMode.AddressRegisterIndirectWithIndex:
+		return [ { total: 14, read: 3, write: 0 } ];
 	}
 }
 
@@ -453,14 +451,14 @@ function GetCyclesJsr(insn: Uint16Array): Cycles[] {
 	case AddressingMode.AddressRegisterIndirect: 
 		return [ { total: 16, read: 2, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
-	case AddressingMode.ProgramCounterIndirectWithIndex:
+	case AddressingMode.ProgramCounterIndirectWithDisplacement:
 	case AddressingMode.AbsoluteShort: 
 		return [ { total: 18, read: 2, write: 2 } ];
+	case AddressingMode.AbsoluteLong: 
+		return [ { total: 20, read: 3, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
 	case AddressingMode.ProgramCounterIndirectWithIndex: 
 		return [ { total: 22, read: 2, write: 2 } ];
-	case AddressingMode.AbsoluteLong: 
-		return [ { total: 20, read: 3, write: 2 } ];
 	}
 }
 
@@ -470,7 +468,7 @@ function GetCyclesLea(insn: Uint16Array): Cycles[] {
 	case AddressingMode.AddressRegisterIndirect: 
 		return [ { total: 4, read: 1, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
-	case AddressingMode.ProgramCounterIndirectWithIndex: 
+	case AddressingMode.ProgramCounterIndirectWithDisplacement: 
 	case AddressingMode.AbsoluteShort:	
 		return [ { total: 8, read: 2, write: 0 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:
@@ -487,7 +485,7 @@ function GetCyclesPea(insn: Uint16Array): Cycles[] {
 	case AddressingMode.AddressRegisterIndirect: 
 		return [ { total: 12, read: 1, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithDisplacement:
-	case AddressingMode.ProgramCounterIndirectWithIndex: 
+	case AddressingMode.ProgramCounterIndirectWithDisplacement: 
 	case AddressingMode.AbsoluteShort: 
 		return [ { total: 16, read: 2, write: 2 } ];
 	case AddressingMode.AddressRegisterIndirectWithIndex:

@@ -27,12 +27,12 @@ export class VirtualList<R, A extends Absolute> extends Component<VirtualListPro
 		if (this.state.height !== (this.base as HTMLElement).offsetHeight) {
 			this.setState({ height: (this.base as HTMLElement).offsetHeight });
 		}
-	}
+	};
 
 	private handleScroll = () => {
 		this.setState({ offset: (this.base as HTMLElement).scrollTop });
 		if (this.props.sync) this.forceUpdate();
-	}
+	};
 
 	public componentDidUpdate() {
 		this.resize();

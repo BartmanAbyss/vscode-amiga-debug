@@ -32,7 +32,7 @@ export class SourceMap {
 		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeStart = textSection.vma;
 		this.codeSize = textSection.size;
-		let str: string = "";
+		let str = "";
 		for (let i = this.codeStart; i < this.codeStart + this.codeSize; i += 2) {
 			str += i.toString(16) + ' ';
 		}
@@ -118,7 +118,7 @@ export class UnwindTable {
 			r13: -1,
 			ra: -1
 		};
-		const unwind: Unwind[] = new Array(this.codeSize).fill(invalidUnwind);
+		const unwind = new Array<Unwind>(this.codeSize).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.elfPath], { maxBuffer: 10 * 1024 * 1024 });
 		if (objdump.status !== 0)
@@ -141,7 +141,7 @@ export class UnwindTable {
 			raStart = l.indexOf("ra");
 		};
 
-		const parseLine = (): { loc: number, unwind: Unwind } => {
+		const parseLine = (): { loc: number; unwind: Unwind } => {
 			const l = outputs[line++];
 			const loc = parseInt(l.substr(locStart, 8), 16);
 			const cfaStr = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
@@ -730,7 +730,7 @@ export class Profiler {
 
 				const sourceLine = this.sourceMap.uniqueLines[this.sourceMap.lines[addr >> 1]];
 				const sourceFrame = { ...sourceLine.frames[sourceLine.frames.length - 1] };
-				sourceFrame.func = `${section}+\$${offset.toString(16)} (${sourceFrame.func})`;
+				sourceFrame.func = `${section}+$${offset.toString(16)} (${sourceFrame.func})`;
 				const callstack: CallFrame = {
 					frames: [
 						{
