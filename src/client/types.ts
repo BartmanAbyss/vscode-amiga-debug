@@ -29,7 +29,7 @@ export interface IJsDebugAnnotations {
 	 * For each node in the profile, the list of locations in corresponds to
 	 * in the workspace (if any).
 	 */
-	locations: ReadonlyArray<IAnnotationLocation>;
+	locations: readonly IAnnotationLocation[];
 
 	/**
 	 * Optional cell data saved from previously opening the profile as a notebook.
@@ -41,10 +41,10 @@ export interface IJsDebugAnnotations {
 
 export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 	locationId?: number;
-	positionTicks?: Array<Cdp.Profiler.PositionTickInfo & {
+	positionTicks?: (Cdp.Profiler.PositionTickInfo & {
 		startLocationId?: number;
 		endLocationId?: number;
-	}>;
+	})[];
 }
 
 export interface IAmigaProfileExtra {

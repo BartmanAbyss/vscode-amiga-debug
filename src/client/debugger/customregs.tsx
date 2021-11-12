@@ -1,5 +1,5 @@
 import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { StateUpdater, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './customregs.module.css';
 import * as ChevronLeft from '../icons/chevron-left.svg';
@@ -12,12 +12,12 @@ import { CustomRegisters, CustomReadWrite, CustomSpecial } from '../customRegist
 import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles } from '../dma';
 
 const CustomReg: FunctionComponent<{
-	frame: number,
-	time: number,
-	setTime,
-	index: number,
-	prevRegs: number[],
-	customRegs: number[],
+	frame: number;
+	time: number;
+	setTime: StateUpdater<number>;
+	index: number;
+	prevRegs: number[];
+	customRegs: number[];
 }> = ({ frame, time, setTime, index, prevRegs, customRegs }) => {
 	const dmaTime = CpuCyclesToDmaCycles(time);
 	const navPrev = useCallback(() => {
@@ -60,9 +60,9 @@ const CustomReg: FunctionComponent<{
 };
 
 export const CustomRegsView: FunctionComponent<{
-	frame: number,
-	time: number,
-	setTime
+	frame: number;
+	time: number;
+	setTime: StateUpdater<number>;
 }> = ({ frame, time, setTime }) => {
 	const dmaTime = CpuCyclesToDmaCycles(time);
 	const prevRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, Math.max(0, dmaTime - 1)), [dmaTime, frame]);

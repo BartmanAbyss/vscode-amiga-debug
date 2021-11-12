@@ -6,7 +6,10 @@
 		{
 			"type": "npm",
 			"script": "watch",
-			"problemMatcher": ["$tsc-watch", "$ts-webpack-watch"],
+			"problemMatcher": [
+				"$tsc-watch",
+				"$ts-webpack-watch"
+			],
 			"isBackground": true,
 			"presentation": {
 				"reveal": "never"
@@ -16,7 +19,6 @@
 				"isDefault": true
 			}
 		},
-		// https://gist.github.com/johnhamm/d8256fc9ce1561b62af35b90341fb44e
 		{
 			"type": "npm",
 			"script": "serve",
@@ -39,6 +41,13 @@
 			},
 			"label": "npm: serve",
 			"detail": "webpack-dev-server"
+		},
+		{
+			"type": "npm",
+			"script": "lint",
+			"problemMatcher": [ "$eslint-stylish" ],
+			"label": "npm: lint",
+			"detail": "eslint -c .eslintrc.js --ext .ts,.tsx src"
 		}
 	]
 }

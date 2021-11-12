@@ -7,7 +7,7 @@
  * is found, or the *negative* of the index where it should be placed to
  * maintain sort order.
  */
-export function binarySearch<T>(array: ReadonlyArray<T>, comparator: (value: T) => number): number {
+export function binarySearch<T>(array: readonly T[], comparator: (value: T) => number): number {
   let low = 0;
   let high = array.length - 1;
 

@@ -35,7 +35,7 @@ enum SortFn {
 //const selfTime: SortFn = (n) => n.selfTime;
 //const aggTime: SortFn = (n) => n.aggregateTime;
 
-interface NodeAtDepth { node: IGraphNode; depth: number; position: number; }
+interface NodeAtDepth { node: IGraphNode; depth: number; position: number }
 
 const getGlobalUniqueId = (node: IGraphNode) => {
 	const parts = [node.id];
@@ -56,7 +56,7 @@ interface IState {
 const Context = createContext<IState>({ sortFn: SortFn.Agg, focused: undefined, expanded: new Set(), filterExpanded: new Set() });
 
 export const TimeView: FunctionComponent<{
-	data: ReadonlyArray<IGraphNode>;
+	data: readonly IGraphNode[];
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 }> = ({ data, filter, displayUnit }) => {
@@ -86,7 +86,7 @@ export const TimeView: FunctionComponent<{
 	const sort = (nodes: IGraphNode[]) => {
 		switch(sortFn) {
 			case SortFn.Agg: nodes.sort((a, b) => b.aggregateTime - a.aggregateTime); break;
-			case SortFn.Agg: nodes.sort((a, b) => b.selfTime - a.selfTime); break;
+			case SortFn.Self: nodes.sort((a, b) => b.selfTime - a.selfTime); break;
 		}
 		return nodes;
 	};

@@ -18,7 +18,7 @@ export interface IColumnLocation extends ILocation {
 export interface IColumn {
 	x1: number;
 	x2: number;
-	rows: Array<IColumnLocation | number>;
+	rows: (IColumnLocation | number)[];
 }
 
 /**
@@ -54,7 +54,7 @@ export class LocationAccessor implements ILocation {
 	/**
 	 * Gets root-level accessors for the list of columns.
 	 */
-	public static rootAccessors(columns: ReadonlyArray<IColumn>) {
+	public static rootAccessors(columns: readonly IColumn[]) {
 		const accessors: LocationAccessor[] = [];
 		for (let x = 0; x < columns.length; x++) {
 			if (typeof columns[x].rows[0] === 'object') {
@@ -69,8 +69,8 @@ export class LocationAccessor implements ILocation {
 	 * Gets the columns from the list that are in the included accessors.
 	 */
 	public static getFilteredColumns(
-		columns: ReadonlyArray<IColumn>,
-		accessors: ReadonlyArray<LocationAccessor>,
+		columns: readonly IColumn[],
+		accessors: readonly LocationAccessor[],
 	) {
 		const validX = new Array<true | undefined>(columns.length);
 		for (const accessor of accessors) {
@@ -110,7 +110,7 @@ export class LocationAccessor implements ILocation {
 	}
 
 	constructor(
-		private readonly model: ReadonlyArray<IColumn>,
+		private readonly model: readonly IColumn[],
 		public readonly x: number,
 		public readonly y: number,
 	) {
@@ -155,7 +155,7 @@ export const buildColumns = (model: IProfileModel) => {
 		];
 
 		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-		for (let id = root.parent; id; id = model.nodes[id!].parent) {
+		for (let id = root.parent; id; id = model.nodes[id].parent) {
 			rows.unshift({
 				...model.locations[model.nodes[id].locationId],
 				graphId: graphIdCounter++,

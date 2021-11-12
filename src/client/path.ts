@@ -37,17 +37,13 @@ export function setCaseSensitivePaths(sensitive: boolean) {
   isCaseSensitive = sensitive;
 }
 
-export function getCaseSensitivePaths() {
-  return isCaseSensitive;
-}
+export const getCaseSensitivePaths = () => isCaseSensitive;
 
 /**
  * Lowercases the path if the filesystem is case-insensitive. Warning: this
  * should only be done for the purposes of comparing paths.
  */
-export function lowerCaseInsensitivePath(path: string) {
-  return isCaseSensitive ? path : path.toLowerCase();
-}
+export const lowerCaseInsensitivePath = (path: string) => isCaseSensitive ? path : path.toLowerCase();
 
 /**
  * Converts the file URL to an absolute path, if possible.

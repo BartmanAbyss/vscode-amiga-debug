@@ -1,8 +1,8 @@
 export interface MIInfo {
 	token: number;
 	output: string[];
-	outOfBandRecord: Array<{ isStream: boolean, type: string, asyncClass: string, output: Array<[string, any]>, content: string }>;
-	resultRecords: { resultClass: string, results: Array<[string, any]> };
+	outOfBandRecord: { isStream: boolean; type: string; asyncClass: string; output: [string, any][]; content: string }[];
+	resultRecords: { resultClass: string; results: [string, any][] };
 }
 
 const octalMatch = /^[0-7]{3}/;
@@ -61,14 +61,14 @@ function parseString(str: string): string {
 export class MINode implements MIInfo {
 	public token: number;
 	public output: string[] = []; // stream output from stdout that may be relevant
-	public outOfBandRecord: Array<{ isStream: boolean, type: string, asyncClass: string, output: Array<[string, any]>, content: string }>;
-	public resultRecords: { resultClass: string, results: Array<[string, any]> };
+	public outOfBandRecord: { isStream: boolean; type: string; asyncClass: string; output: [string, any][]; content: string }[];
+	public resultRecords: { resultClass: string; results: [string, any][] };
 
 	public static valueOf(start: any, path: string): any {
 		if (!start) {
 			return undefined;
 		}
-		const pathRegex = /^\.?([a-zA-Z_\-][a-zA-Z0-9_\-]*)/;
+		const pathRegex = /^\.?([a-zA-Z_-][a-zA-Z0-9_-]*)/;
 		const indexRegex = /^\[(\d+)\](?:$|\.)/;
 		path = path.trim();
 		if (!path) { return start; }
@@ -119,8 +119,8 @@ export class MINode implements MIInfo {
 
 	constructor(
 		token: number,
-		info: Array<{ isStream: boolean, type: string, asyncClass: string, output: Array<[string, any]>, content: string }>,
-		result: { resultClass: string, results: Array<[string, any]> }
+		info: { isStream: boolean; type: string; asyncClass: string; output: [string, any][]; content: string }[],
+		result: { resultClass: string; results: [string, any][] }
 	) {
 		this.token = token;
 		this.outOfBandRecord = info;
@@ -143,11 +143,11 @@ export class MINode implements MIInfo {
 }
 
 const tokenRegex = /^\d+/;
-const outOfBandRecordRegex = /^(?:(\d*|undefined)([\*\+\=])|([\~\@\&]))/;
+const outOfBandRecordRegex = /^(?:(\d*|undefined)([*+=])|([~@&]))/;
 const resultRecordRegex = /^(\d*)\^(done|running|connected|error|exit)/;
 const newlineRegex = /^\r\n?/;
 const endRegex = /^\(gdb\)\r\n?/;
-const variableRegex = /^([a-zA-Z_\-][a-zA-Z0-9_\-]*)/;
+const variableRegex = /^([a-zA-Z_-][a-zA-Z0-9_-]*)/;
 const asyncClassRegex = /^(.*?),/;
 
 export function parseMI(output: string): MINode {

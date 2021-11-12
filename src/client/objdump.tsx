@@ -1,4 +1,4 @@
-import { Component, Fragment, FunctionComponent, h } from 'preact';
+import { Component, Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
@@ -16,7 +16,7 @@ import { useCssVariables } from './useCssVariables';
 import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
-import resolve from 'path-resolve';
+import { resolve } from 'path';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -119,10 +119,17 @@ export class ObjdumpModel {
 		this.jumps.push(...sortedJumps);
 	}
 
-	constructor(objdump: string, theoreticalCycles = true, traceHits?: number[], traceCycles?: number[]) {
+	constructor(objdump: string, theoreticalCycles = true, pcTrace: number[] = []) {
 		const lines = objdump.replace(/\r/g, '').split('\n');
 		let loc: Location;
 		let funcJumps: JumpInfo[] = [];
+
+		const hits = new Map<number, number>();
+		const cycles = new Map<number, number>();
+		for(let i = 0; i < pcTrace.length; i += 2) {
+			hits.set(pcTrace[i], (hits.get(pcTrace[i]) || 0) + 1);
+			cycles.set(pcTrace[i], (cycles.get(pcTrace[i]) || 0) + pcTrace[i + 1]);
+		}
 
 		for(const line of lines) {
 			const funcMatch = line.match(/([0-9a-f]+) <(.*)>:$/); // 00000000 <_start>:
@@ -165,9 +172,11 @@ export class ObjdumpModel {
 				}
 				this.content.push({
 					pc,
-					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
+					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`, // ${insnMatch[2].padEnd(20, ' ')} 
 					theoreticalCycles: theoreticalCycles ? GetCycles(insn) : undefined,
-					loc
+					loc,
+					traceHits: hits.get(pc),
+					traceCycles: cycles.get(pc)
 				});
 				loc = undefined;
 			} else {
@@ -176,14 +185,6 @@ export class ObjdumpModel {
 		}
 		if(this.functions.length)
 			this.addJumps(this.functions[this.functions.length - 1], funcJumps);
-		if(traceHits && traceCycles) {
-			this.content.forEach((l) => {
-				if(l.pc !== undefined) {
-					l.traceHits = traceHits[l.pc >> 1];
-					l.traceCycles = traceCycles[l.pc >> 1];
-				}
-			});
-		}
 	}
 }
 
@@ -209,8 +210,8 @@ class FunctionDropdown extends DropdownComponent<Function> {
 
 // used with { frame, time } for profiling, frame === -1 for 'Disassemble ELF File'
 export const ObjdumpView: FunctionComponent<{
-	frame?: number,
-	time?: number
+	frame?: number;
+	time?: number;
 }> = ({ frame = -1, time = -1 }) => {
 	const cssVariables = useCssVariables();
 	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
@@ -218,17 +219,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(frame === -1)
 			return new ObjdumpModel(OBJDUMP);
 
-		const textSection = MODELS[0].amiga.sections.find((section) => section.name === '.text');
-		const hits = new Array<number>(textSection.size >> 1).fill(0);
-		const cycles = new Array<number>(textSection.size >> 1).fill(0);
-		const pcTrace = MODELS[frame].amiga.pcTrace;
-		for(let i = 0; i < pcTrace.length; i += 2) {
-			if(pcTrace[i] >= 0 && pcTrace[i] < textSection.size) {
-				hits[pcTrace[i] >> 1]++;
-				cycles[pcTrace[i] >> 1] += pcTrace[i + 1];
-			}
-		}
-		return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, hits, cycles); // theoretical cycles only for 7MHz (68000)
+		return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, MODELS[frame].amiga.pcTrace); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
 
@@ -260,7 +251,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [curRow, setCurRow] = useState(0);
 
-	const [find, setFind] = useState<{ text: string, internal: boolean }>({ text: '', internal: true });
+	const [find, setFind] = useState<{ text: string; internal: boolean }>({ text: '', internal: true });
 	const [curFind, setCurFind] = useState(0);
 	const findRef = useRef<HTMLDivElement>();
 	const findResult = useMemo(() => {
@@ -316,20 +307,20 @@ export const ObjdumpView: FunctionComponent<{
 		return [row, pc, func];
 	}, [frame, time, content, curRow, findResult.length]);
 
-	const onClickLoc = useCallback((evt: MouseEvent) => {
+	const onClickLoc = useCallback((evt: JSX.TargetedMouseEvent<HTMLElement>) => {
 		VsCodeApi.postMessage<IOpenDocumentMessage>({
 			type: 'openDocument',
 			location: {
-				lineNumber: (evt.srcElement as HTMLElement).attributes['data-line'].value,
+				lineNumber: parseInt(evt.currentTarget.attributes.getNamedItem('data-line').value),
 				columnNumber: 0,
-				source: { path: (evt.srcElement as HTMLElement).attributes['data-file'].value }
+				source: { path: evt.currentTarget.attributes.getNamedItem('data-file').value }
 			},
 			toSide: true,
 		});
 	}, []);
 
 	const renderRow = useCallback((c: Line, index: number) => {
-		const extra = [];
+		const extra: string[] = [];
 
 		function getLoc(row: number) {
 			for(let i = row; i > 0; i--) {
@@ -394,7 +385,7 @@ export const ObjdumpView: FunctionComponent<{
 			return '';
 		})();
 
-		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: jump.top + 'px', height: jump.height + 'px'}}>
+		return (<svg class={[styles.jump, jump.type === JumpType.ConditionalBranch ? styles.jumpcond : styles.jumpalways, jump.start.map((l) => content[l].pc).find((a) => a === pc) ? styles.jumpcur : ''].join(' ')} style={{top: `${jump.top}px`, height: `${jump.height}px`}}>
 			{jump.start.map((startRow) => {
 				const start = startRow - min;
 				const y = start * rowHeight + rowMiddle;

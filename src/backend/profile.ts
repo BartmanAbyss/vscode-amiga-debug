@@ -7,6 +7,8 @@ import { ICpuProfileRaw } from '../client/types';
 import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxResourceFlags } from './profile_types';
 import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
 import { profileCommon } from './profile_common';
+import { print_insn_m68k } from '../client/68k-dis';
+import { GetJump, JumpType } from '../client/68k';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -30,7 +32,7 @@ export class SourceMap {
 		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeStart = textSection.vma;
 		this.codeSize = textSection.size;
-		let str: string = "";
+		let str = "";
 		for (let i = this.codeStart; i < this.codeStart + this.codeSize; i += 2) {
 			str += i.toString(16) + ' ';
 		}
@@ -116,7 +118,7 @@ export class UnwindTable {
 			r13: -1,
 			ra: -1
 		};
-		const unwind: Unwind[] = new Array(this.codeSize).fill(invalidUnwind);
+		const unwind = new Array<Unwind>(this.codeSize).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.elfPath], { maxBuffer: 10 * 1024 * 1024 });
 		if (objdump.status !== 0)
@@ -139,7 +141,7 @@ export class UnwindTable {
 			raStart = l.indexOf("ra");
 		};
 
-		const parseLine = (): { loc: number, unwind: Unwind } => {
+		const parseLine = (): { loc: number; unwind: Unwind } => {
 			const l = outputs[line++];
 			const loc = parseInt(l.substr(locStart, 8), 16);
 			const cfaStr = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
@@ -409,6 +411,122 @@ export class Profiler {
 	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable) {
 	}
 
+	public profileSavestate(profileFile: ProfileFile): string {
+		const out: ICpuProfileRaw[] = [];
+
+		for (const frame of profileFile.frames)
+			out.push(this.profileSavestateFrame(profileFile, frame));
+
+		const pcTrace: number[] = [];
+		for(const frame of out)
+			for(let i = 0; i < frame.$amiga.pcTrace.length; i += 2)
+				pcTrace.push(frame.$amiga.pcTrace[i]);
+
+		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
+		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
+		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
+		out[0].$amiga.objdump = this.disassembleSavestate(profileFile, pcTrace);
+		return JSON.stringify(out); //, null, 2);
+	}
+
+	private disassembleSavestate(profileFile: ProfileFile, pcTrace: number[]): string {
+		pcTrace.sort((a, b) => a - b);
+		let disasm = '00000000 <_start>:\n';
+
+		const functions = new Map<number, number>();
+
+		const processBranch = (mem: Uint8Array, addr: number, offset: number) => {
+			const mem16 = new Uint16Array(4);
+			for(let i = 0; i < 8 && offset + i < mem.length; i += 2) {
+				mem16[i >>> 1] = (mem[offset + i] << 8) | mem[offset + i + 1];
+			}
+			const jump = GetJump(addr, mem16);
+			if(jump?.type === JumpType.Jsr)
+				functions.set(jump.target, jump.target);
+		};
+
+		const disasmInsn = (mem: Uint8Array, addr: number, offset: number) => {
+			const insn = print_insn_m68k(mem.slice(offset, Math.min(offset + 16, mem.length)), addr);
+			if(insn.len > 0) {
+				if(functions.has(addr))
+					disasm += `${addr.toString(16).padStart(8, '0')} <_${functions.get(addr).toString(16).padStart(8, '0')}>:\n`;
+				disasm += ` ${addr.toString(16)}:\t`;
+				for(let i = 0; i < insn.len; i += 2)
+					disasm += ((mem[offset + i] << 8) | mem[offset + i + 1]).toString(16).padStart(4, '0') + ' ';
+				disasm += insn.text + '\n';
+				if(insn.text === 'rts' || insn.text === 'rte')
+					disasm += '\n';
+			}
+		};
+
+		const process = (fn: (mem: Uint8Array, addr: number, offset: number) => void) => {
+			let lastPC = 0xffffffff;
+			for(const pc of pcTrace) {
+				if(pc !== lastPC) {
+					if(pc > 0 && pc < profileFile.chipMemSize)
+						fn(profileFile.chipMem, pc, pc - 0);
+					else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
+						fn(profileFile.bogoMem, pc, pc - 0xc00000);
+					lastPC = pc;
+				}
+			}
+		};
+
+		process(processBranch);
+		process(disasmInsn);
+
+		return disasm;
+	}
+
+	private profileSavestateFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {
+		const pcTrace: number[] = [];
+
+		let lastPC: number;
+		let totalCycles = 0;
+		for (const p of frame.profileArray) {
+			if (p < 0xffff0000) {
+				if (lastPC === undefined)
+					lastPC = p;
+			} else {
+				const cyc = (0xffffffff - p) | 0;
+
+				if (lastPC === undefined)
+					lastPC = 0xffffffff;
+				pcTrace.push(lastPC, cyc);
+				lastPC = undefined;
+				totalCycles += cyc;
+			}
+		}
+		//console.log("totalCycles", totalCycles);
+
+		const out: ICpuProfileRaw = {
+			nodes: [],
+			startTime: 0,
+			endTime: totalCycles,
+			$amiga: {
+				dmacon: frame.dmacon,
+				baseClock: profileFile.baseClock,
+				cpuCycleUnit: profileFile.cpuCycleUnit,
+				customRegs: Array.from(frame.customRegs),
+				dmaRecords: frame.dmaRecords,
+				gfxResources: frame.gfxResources,
+				idleCycles: frame.idleCycles,
+				symbols: [],
+				sections: [],
+				systemStackLower: profileFile.systemStackLower,
+				systemStackUpper: profileFile.systemStackUpper,
+				stackLower: profileFile.stackLower,
+				stackUpper: profileFile.stackUpper,
+				uniqueCallFrames: [],
+				callFrames: [],
+				pcTrace
+			}
+		};
+		if (frame.screenshot)
+			out.$amiga.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
+		return out;
+	}
+
 	public profileTime(profileFile: ProfileFile, disassembly: string): string {
 		const out: ICpuProfileRaw[] = [];
 
@@ -612,7 +730,7 @@ export class Profiler {
 
 				const sourceLine = this.sourceMap.uniqueLines[this.sourceMap.lines[addr >> 1]];
 				const sourceFrame = { ...sourceLine.frames[sourceLine.frames.length - 1] };
-				sourceFrame.func = `${section}+\$${offset.toString(16)} (${sourceFrame.func})`;
+				sourceFrame.func = `${section}+$${offset.toString(16)} (${sourceFrame.func})`;
 				const callstack: CallFrame = {
 					frames: [
 						{

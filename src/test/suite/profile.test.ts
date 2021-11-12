@@ -196,6 +196,15 @@ function test_unwind(elf: string) {
 	const unwindTable = new UnwindTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf), symbolTable);
 }
 
+function test_profile_savestate(base: string) {
+	makeDirs();
+	const profileArchive = new ProfileFile(path.join(testDataDir, base));
+	const profiler = new Profiler(null, null);
+	fs.writeFileSync(path.join(testOutDir, base + ".amigaprofile"), profiler.profileSavestate(profileArchive));
+	const html = htmlPage(base, [ "client.bundle.js" ], "data/" + base + ".amigaprofile");
+	fs.writeFileSync(path.join(testHtmlDir, base + '.amigaprofile.html'), html);
+}
+
 suite("Profiler", () => {
 /*	test("unwind bobble.debug.elf", () => {
 		test_unwind('private/bobble.debug.elf');
@@ -230,5 +239,9 @@ suite("Profiler", () => {
 	});*/
 	test("Shrinkler: bobble.shrinklerstats", () => {
 		test_profile_shrinkler('bobble');
+	});
+
+	test("Savestate: desertdream-dots.profile", () => {
+		test_profile_savestate('desertdream-dots.profile');
 	});
 });

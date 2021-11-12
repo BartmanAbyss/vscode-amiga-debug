@@ -1,6 +1,8 @@
 import * as assert from 'assert';
 import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
+import { print_insn_m68k } from '../../client/68k-dis';
+
 suite("68k-cycles", () => {
 	test("move1", () => {
 		const insn = new Uint16Array([0x205a]); // movea.l (a2)+,a0
@@ -109,5 +111,83 @@ suite("68k-jump", () => {
 		const insn = new Uint16Array([0x4eb9, 0x00f0, 0xff60]); // jsr $f0ff60
 		const jump = GetJump(0xdb4, insn);
 		assert.deepEqual(jump, { type: JumpType.Jsr, target: 0xf0ff60 });
+	});
+});
+
+suite("68k-dis", () => {
+	test("ext", () => {
+		const insn = new Uint8Array([0x48, 0xc4]); // ext.l d4
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "ext.l d4");
+	});
+	test("cmp", () => {
+		const insn = new Uint8Array([0x0c, 0x42, 0x00, 0x10]); // cmpi.w #16,d2
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "cmpi.w #16,d2");
+	});
+	test("neg", () => {
+		const insn = new Uint8Array([0x44, 0x03]); // neg.b d3
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "neg.b d3");
+	});
+	test("link", () => {
+		const insn = new Uint8Array([0x4e, 0x55, 0xff, 0xc0]); // link.w a5,#-64
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "link.w a5,#-64");
+	});
+	test("eor", () => {
+		const insn = new Uint8Array([0xb7, 0x40]); // eor.w d3,d0
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "eor.w d3,d0");
+	});
+	test("mulu", () => {
+		const insn = new Uint8Array([0xc0, 0xef, 0x00, 0x0a]); // mulu.w 10(sp),d0
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "mulu.w 10(sp),d0");
+	});
+	test("jsr", () => {
+		const insn = new Uint8Array([0x4e, 0xb9, 0x00, 0xf0, 0xff, 0x60]); // jsr $f0ff60
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "jsr $f0ff60");
+	});
+	test("movem", () => {
+		const insn = new Uint8Array([0x48, 0xe7, 0x30, 0x20]); // movem.l d2-d3/a2,-(sp)
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "movem.l d2-d3/a2,-(sp)");
+	});
+	test("bmi.w", () => {
+		const insn = new Uint8Array([0x6b, 0x00, 0x03, 0xfa]);
+		const dis = print_insn_m68k(insn, 0x108);
+		assert.strictEqual(dis.text, "bmi.w $504");
+	});
+	test("bne.s", () => {
+		const insn = new Uint8Array([0x66, 0xf8]);
+		const dis = print_insn_m68k(insn, 0x42dfe);
+		assert.strictEqual(dis.text, "bne.s $42df8");
+	});
+	test("btst", () => {
+		const insn = new Uint8Array([0x01, 0x3a, 0x01, 0x9a]);
+		const dis = print_insn_m68k(insn, 0x28de);
+		assert.strictEqual(dis.text, "btst d0,$2a7a(pc)");
+	});
+	test("sf", () => {
+		const insn = new Uint8Array([0x51, 0xd0]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "sf (a0)");
+	});
+	test("move.w", () => {
+		const insn = new Uint8Array([0x33, 0xfc, 0x00, 0x20, 0x00, 0xdf, 0xf0, 0x9c]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "move.w #32,$dff09c");
+	});
+	test("move.l", () => {
+		const insn = new Uint8Array([0x2d, 0x7c, 0x01, 0x00, 0x00, 0x00, 0x00, 0x40]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "move.l #16777216,64(a6)");
+	});
+	test("moveq", () => {
+		const insn = new Uint8Array([0x72, 0x01]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "moveq #1,d1");
 	});
 });

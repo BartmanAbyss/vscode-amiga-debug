@@ -2,6 +2,11 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## ???
+- savestate gfx-debugging/profiling (.uss files created by any WinUAE)
+- resource viewer supports hires
+- resource viewer shows copper screens of every profiled frame
+
 ## 1.2.4
 - fixed AbleICR, SetICR, AddICRVector, RemICRVector in resources/cia.h [tehKaiN] #80
 - Configurable ram size [tehKaiN] #79

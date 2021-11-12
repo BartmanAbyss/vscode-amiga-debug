@@ -209,6 +209,13 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
+* "npm run serve": all colors in flame-graph are black
+
+### Savestate Debugger
+* TODO: kill winuae/gdb when quitting vscode
+* (internal) status of tested savestates: `c:\amiga_state`
+  - `desertdream-dots.uss`: ok
+  - `gods.uss`: blitrects' height not correct due to planar layout
 
 ### Assembly
 * TODO: parser needs to check for comments
@@ -241,4 +248,5 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
+* Multi-frame: Resource from Copper: memory not ok?
 

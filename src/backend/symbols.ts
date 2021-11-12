@@ -4,7 +4,7 @@ import * as path from 'path';
 
 import { SymbolInformation, SymbolScope, SymbolType, Section } from '../symbols';
 
-const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg\ !])([w\ ])([C\ ])([W\ ])([I\ ])([dD\ ])([FfO\ ])\s([^\s]+)\s([0-9a-f]+)\s(.*)\r?$/;
+const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg !])([w ])([C ])([W ])([I ])([dD ])([FfO ])\s([^\s]+)\s([0-9a-f]+)\s(.*)\r?$/;
 
 // [1] = Idx
 // [2] = Name

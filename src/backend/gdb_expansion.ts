@@ -1,8 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import { MINode } from './mi_parse';
 
-const resultRegex = /^([a-zA-Z_\-][a-zA-Z0-9_\-]*|\[\d+\])\s*=\s*/;
-const variableRegex = /^[a-zA-Z_\-][a-zA-Z0-9_\-]*/;
-const errorRegex = /^\<.+?\>/;
+const resultRegex = /^([a-zA-Z_-][a-zA-Z0-9_-]*|\[\d+\])\s*=\s*/;
+const variableRegex = /^[a-zA-Z_-][a-zA-Z0-9_-]*/;
+const errorRegex = /^<.+?>/;
 const referenceStringRegex = /^(0x[0-9a-fA-F]+\s*)"/;
 const referenceRegex = /^0x[0-9a-fA-F]+/;
 const nullpointerRegex = /^0x0+\b/;
@@ -11,25 +18,24 @@ const numberRegex = /^\d+(\.\d+)?/;
 const pointerCombineChar = '.';
 
 export function isExpandable(value: string): number {
-	let match;
 	value = value.trim();
 	if (value.length === 0) { return 0; }
 	else if (value.startsWith('{...}')) { return 2; } // lldb string/array
 	else if (value[0] === '{') { return 1; } // object
 	else if (value.startsWith('true')) { return 0; }
 	else if (value.startsWith('false')) { return 0; }
-	else if (match = nullpointerRegex.exec(value)) { return 0; }
-	else if (match = referenceStringRegex.exec(value)) { return 0; }
-	else if (match = referenceRegex.exec(value)) { return 2; } // reference
-	else if (match = charRegex.exec(value)) { return 0; }
-	else if (match = numberRegex.exec(value)) { return 0; }
-	else if (match = variableRegex.exec(value)) { return 0; }
-	else if (match = errorRegex.exec(value)) { return 0; }
+	else if (nullpointerRegex.exec(value)) { return 0; }
+	else if (referenceStringRegex.exec(value)) { return 0; }
+	else if (referenceRegex.exec(value)) { return 2; } // reference
+	else if (charRegex.exec(value)) { return 0; }
+	else if (numberRegex.exec(value)) { return 0; }
+	else if (variableRegex.exec(value)) { return 0; }
+	else if (errorRegex.exec(value)) { return 0; }
 	else { return 0; }
 }
 
-// tslint:disable-next-line:ban-types
-export function expandValue(variableCreate: Function, value: string, root: string = '', extra?: any): any {
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function expandValue(variableCreate: Function, value: string, root = '', extra?: any): any {
 	const parseCString = () => {
 		value = value.trim();
 		if (value[0] !== '"' && value[0] !== '\'') {
@@ -218,7 +224,7 @@ export function expandValue(variableCreate: Function, value: string, root: strin
 		}
 	};
 
-	parseResult = (pushToStack: boolean = false) => {
+	parseResult = (pushToStack = false) => {
 		value = value.trim();
 		const variableMatch = resultRegex.exec(value);
 		if (!variableMatch) {
@@ -274,7 +280,7 @@ export function expandValue(variableCreate: Function, value: string, root: strin
 		return parseValue();
 	};
 
-	parseCommaResult = (pushToStack: boolean = false) => {
+	parseCommaResult = (pushToStack = false) => {
 		value = value.trim();
 		if (value[0] !== ',') {
 			return undefined;
