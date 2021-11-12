@@ -2,7 +2,7 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
-## ???
+## 1.3.0
 - savestate gfx-debugging/profiling (.uss files created by any WinUAE)
 - resource viewer supports hires
 - resource viewer shows copper screens of every profiled frame
