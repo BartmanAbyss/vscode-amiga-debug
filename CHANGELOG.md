@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.2
+- updated to WinUAE 4.9.0 beta 42
+- fixed debug overlay redraw issue (broken since 1.2.0)
+
 ## 1.3.1
 - (internal) use webpack for both extension and webview
 - fix "Disassemble ELF file" (broken since 1.3.0)
