@@ -2,7 +2,45 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.2
+- updated to WinUAE 4.9.0 beta 42
+- fixed debug overlay redraw issue (broken since 1.2.0)
+
+## 1.3.1
+- (internal) use webpack for both extension and webview
+- fix "Disassemble ELF file" (broken since 1.3.0)
+
+## 1.3.0
+- savestate gfx-debugging/profiling (.uss files created by any WinUAE)
+- resource viewer supports hires
+- resource viewer shows copper screens of every profiled frame
+
+## 1.2.4
+- fixed AbleICR, SetICR, AddICRVector, RemICRVector in resources/cia.h [tehKaiN] #80
+- Configurable ram size [tehKaiN] #79
+
+## 1.2.3
+- fix incorrect blitter size (broken since 1.2.1) #85
+- fix palette/copper colors (broken since a while) #71
+- Updated to WinUAE 4.9.0 beta 38 (2021.10.23) #84
+
+## 1.2.2
+- fix multi-frame profile screenshot thumbnails (broken since 1.2.1 for 32-bit machine models)
+- fix multi-frame profile error message "Unable to start profiling: RangeError: start offset of Uint16Array should be a multiple of 2" (broken since 1.2.1)
+
+## 1.2.1
+- Updated to WinUAE 4.9.0 beta 37 (2021.10.14)
+
+## 1.2.0
+- Updated to GCC 11.2.0 and GDB 12.0.50.20211014-git
+
 ## 1.1.0
+- Disassembly now demangles C++ names
+- Bitmap visualizer now supports HAM5, HAM6 and EHB modes (see `debug_resource_bitmap_ham`)
+- Blitter visualizer now uses number of bitplanes from registered bitmap resources (channel D)
+- WinUAE now handles debugging commands when emulation is paused
+- Better handling of closing WinUAE during debugging
+- Fixed WinUAE to reset debug resources on restart
 - `Profile File Size` working again, now demangles C++ names
 - bump IntelliSense to gnu11, g++20
 - moved elf2hunk to a seperate repository, limit symbol length, C++ name demangling

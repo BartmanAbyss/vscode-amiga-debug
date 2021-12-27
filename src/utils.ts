@@ -1,10 +1,10 @@
-export function hexFormat(value: number, padding: number = 8, includePrefix: boolean = true): string {
+export function hexFormat(value: number, padding = 8, includePrefix = true): string {
 	let base = value.toString(16);
 	while (base.length < padding) { base = '0' + base; }
 	return includePrefix ? '0x' + base : base;
 }
 
-export function binaryFormat(value: number, padding: number = 0, includePrefix: boolean = true, group: boolean = false): string {
+export function binaryFormat(value: number, padding = 0, includePrefix = true, group = false): string {
 	let base = (value >>> 0).toString(2);
 	while (base.length < padding) { base = '0' + base; }
 

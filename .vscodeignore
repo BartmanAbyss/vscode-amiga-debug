@@ -1,6 +1,6 @@
 .vscode/**
 .vscode-test/**
-out/test/**
+out/**
 src/**
 .gitignore
 **/tsconfig*.json
@@ -13,6 +13,7 @@ bin/winuaebootlog.txt
 bin/dh0/runme.exe
 bin/configuration.*
 bin/*.uae
+bin/*.uss
 bin/*.ini
 **/*.dmp
 template/obj8mingw

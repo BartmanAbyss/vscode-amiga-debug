@@ -1,0 +1,60 @@
+/* from customregs.css */
+.button {
+	background: none;
+	border: none;
+	align-items: center;
+	border: none;
+	outline: 0 !important;
+	margin-left: 3px;
+	margin-right: 3px;
+	padding: 0;
+	cursor: pointer;
+	height: 16px;
+}
+
+.button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.button > svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* from flame-graph.module.css */
+.tooltip {
+	margin-top: 10px;
+	box-sizing: border-box;
+	width: 400px;
+	padding: 5px;
+	background: var(--vscode-editorWidget-background);
+	border: 1px solid var(--vscode-editorWidget-border);
+	pointer-events: none;
+	box-shadow: 0 .25em .5em 0 black;
+}
+  
+.tooltip dl {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	grid-row-gap: 0.4em;
+}
+  
+.tooltip dd {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+  
+.tooltip dt {
+	font-weight: bold;
+	margin-right: 0.5em;
+}
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+}

@@ -9,11 +9,9 @@ import { MINode, parseMI } from "./mi_parse";
 import { Section } from "../symbols";
 const path = posix;
 
-export function escape(str: string) {
-	return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
+export const escape = (str: string) => str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
-const nonOutput = /^(?:\d*|undefined)[\*\+\=]|[\~\@\&\^]/;
+const nonOutput = /^(?:\d*|undefined)[*+=]|[~@&^]/;
 const gdbMatch = /(?:\d*|undefined)\(gdb\)/;
 const numRegex = /\d+/;
 const gdbTimeout = 500; // in milliseconds
@@ -29,10 +27,10 @@ export class MI2 extends EventEmitter implements IBackend {
 	public trace = false;
 	public debugOutput = false;
 	public procEnv: any;
-	protected currentToken: number = 1;
+	protected currentToken = 1;
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
-	protected buffer: string = "";
-	protected errbuf: string = "";
+	protected buffer = "";
+	protected errbuf = "";
 	public process: cp.ChildProcess;
 	protected stream;
 
@@ -43,8 +41,8 @@ export class MI2 extends EventEmitter implements IBackend {
 		super();
 	}
 
-	public connect(cwd: string, executable: string, commands: string[]): Promise<any> {
-		if (!nativePath.isAbsolute(executable)) {
+	public connect(cwd: string, executable: string, commands: string[]): Promise<void> {
+		if (executable !== '' && !nativePath.isAbsolute(executable)) {
 			executable = nativePath.join(cwd, executable);
 		}
 
@@ -57,13 +55,15 @@ export class MI2 extends EventEmitter implements IBackend {
 			this.process.on("error", ((err) => { this.emit("launcherror", err); }).bind(this));
 
 			const asyncPromise = this.sendCommand("gdb-set mi-async on", true);
-			const promises: Array<Thenable<any>> = commands.map((c) => this.sendCommand(c));
+			const promises: Thenable<any>[] = commands.map((c) => this.sendCommand(c));
 			promises.push(asyncPromise);
 
-			const sectionsPromise = this.getSections().then((sections) => {
-				this.emit("sections-loaded", sections);
-			});
-			promises.push(sectionsPromise);
+			if(executable !== '') {
+				const sectionsPromise = this.getSections().then((sections) => {
+					this.emit("sections-loaded", sections);
+				});
+				promises.push(sectionsPromise);
+			}
 
 			Promise.all(promises).then(() => {
 				this.emit("debug-ready");
@@ -73,33 +73,14 @@ export class MI2 extends EventEmitter implements IBackend {
 	}
 
 	public stop() {
+		if(this.trace) this.log("log", "stop");
 		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-gdb-exit");
 	}
 
-	public abort(needToStop: boolean): Thenable<boolean> {
-		if(this.trace) this.log("log", "abort");
-		return new Promise(async (resolve, reject) => {
-			const to = setTimeout(() => { this.process.kill('SIGTERM'); resolve(true); }, gdbTimeout);
-			this.process.on("exit", (code) => { clearTimeout(to); });
-			const killAndExit = async () => {
-				await this.sendUserInput('kill');
-				await this.sendCommand("gdb-exit");
-				resolve(true);
-			};
-			if(needToStop) {
-				this.removeAllListeners("stopped");
-				this.removeAllListeners("signal-stop");
-				this.once("generic-stopped", killAndExit);
-				this.sendCommand("exec-interrupt");
-			} else {
-				await killAndExit();
-			}
-		});
-	}
-
 	public detach() {
+		if(this.trace) this.log("log", "detach");
 		const to = setTimeout(() => { this.process.kill('SIGTERM'); }, gdbTimeout);
 		this.process.on("exit", (code) => { clearTimeout(to); });
 		this.sendRaw("-target-detach");
@@ -195,7 +176,7 @@ export class MI2 extends EventEmitter implements IBackend {
 				} else {
 					const match = numRegex.exec(breakpoint.countCondition)![0];
 					if (match.length !== breakpoint.countCondition.length) {
-						// tslint:disable-next-line:max-line-length
+						// eslint-disable-next-line max-len
 						this.log("log", "Unsupported break count expression: '" + breakpoint.countCondition + "'. Only supports 'X' for breaking once after X times or '>X' for ignoring the first X breaks");
 						location += "-t ";
 					} else if (parseInt(match) !== 0) {
@@ -405,7 +386,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		return this.sendCommand("data-evaluate-expression " + name, true);
 	}
 
-	public async varCreate(expression: string, name: string = "-"): Promise<VariableObject> {
+	public async varCreate(expression: string, name = "-"): Promise<VariableObject> {
 		if (this.trace) {
 			this.log("log", "varCreate");
 		}
@@ -431,7 +412,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		return omg;
 	}
 
-	public async varUpdate(name: string = "*"): Promise<MINode> {
+	public async varUpdate(name = "*"): Promise<MINode> {
 		if (this.trace) {
 			this.log("log", "varUpdate");
 		}
@@ -457,7 +438,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		if (command.startsWith("-")) {
 			return this.sendCommand(command.substr(1));
 		} else {
-			return this.sendCommand(`interpreter-exec console "${command.replace(/\"/g, "\\\"")}"`);
+			return this.sendCommand(`interpreter-exec console "${command.replace(/"/g, "\\\"")}"`);
 		}
 	}
 
@@ -468,7 +449,7 @@ export class MI2 extends EventEmitter implements IBackend {
 		this.process.stdin.write(raw + "\n");
 	}
 
-	public sendCommand(command: string, suppressFailure: boolean = false): Thenable<MINode> {
+	public sendCommand(command: string, suppressFailure = false): Thenable<MINode> {
 		const sel = this.currentToken++;
 		return new Promise((resolve, reject) => {
 			this.handlers[sel] = (node: MINode) => {

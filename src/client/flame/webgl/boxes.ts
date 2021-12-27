@@ -51,7 +51,7 @@ interface IOptions {
 	scale: number;
 	canvas: HTMLCanvasElement;
 	focusColor: string;
-	boxes: ReadonlyArray<IBox>;
+	boxes: readonly IBox[];
 }
 
 export const setupGl = ({
@@ -76,7 +76,7 @@ export const setupGl = ({
 	const colorAttributeLocation = gl.getAttribLocation(boxProgram, 'colors');
 
 	let vertexCount = 0;
-	const setBoxes = (boxes: ReadonlyArray<IBox>) => {
+	const setBoxes = (boxes: readonly IBox[]) => {
 		const boxBuffer = gl.createBuffer();
 		const colorBuffer = gl.createBuffer();
 
@@ -198,7 +198,7 @@ export const setupGl = ({
 			setBounds(bounds, size, scale);
 			redraw();
 		},
-		setBoxes: (boxes: ReadonlyArray<IBox>) => {
+		setBoxes: (boxes: readonly IBox[]) => {
 			setBoxes(boxes);
 			redraw();
 		},

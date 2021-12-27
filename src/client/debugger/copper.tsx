@@ -1,5 +1,5 @@
-import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { Fragment, FunctionComponent, h, JSX } from 'preact';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
 import Markdown from 'markdown-to-jsx';
@@ -7,19 +7,18 @@ import Markdown from 'markdown-to-jsx';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { CopperDisassembler, CopperInstructionType, CopperMove } from '../copperDisassembler';
-import { CustomRegisters } from '../customRegisters';
-import { GetCopper, Copper, CpuCyclesToDmaCycles } from '../dma';
+import { CopperInstructionType, CopperMove } from '../copperDisassembler';
+import { CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 
 export const CopperView: FunctionComponent<{
-	frame: number,
-	time: number
+	frame: number;
+	time: number;
 }> = ({ frame, time }) => {
-	const copper = useMemo(() => GetCopper(MODELS[frame].memory.chipMem, MODELS[frame].amiga.dmaRecords), [frame]);
+	const copper = MODELS[frame].copper;
 	const containerRef = useRef<HTMLDivElement>();
-	const [hovered, setHovered] = useState<{ index: number, x: number, y: number, justify: string}>({ index: -1, x: -1, y: -1, justify: '' });
+	const [hovered, setHovered] = useState<{ index: number; x: number; y: number; justify: string}>({ index: -1, x: -1, y: -1, justify: '' });
 	const tooltipRef = useRef<HTMLDivElement>();
 
 	// get copper instruction that is executing at 'time'
@@ -49,6 +48,7 @@ export const CopperView: FunctionComponent<{
 	}, [curInsn, containerRef.current]);
 
 	const onMouseEnter = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
 		const h = parseInt(evt.currentTarget.attributes['data'].nodeValue);
 		const rect = evt.currentTarget.getBoundingClientRect();
 		if(copper[h].insn.instructionType === CopperInstructionType.MOVE) {
@@ -76,7 +76,7 @@ export const CopperView: FunctionComponent<{
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <Fragment>
 				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = ${(c.insn as CopperMove).RD.toString(16).padStart(4, '0')}
-				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: `#${(c.insn as CopperMove).RD.toString(16).padStart(3, '0')}`}}>&nbsp;&nbsp;</span> : ''}
+				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
 			</Fragment> : c.insn.toString()}
 		</div>)}
 		{hovered.index !== -1 && (createPortal(

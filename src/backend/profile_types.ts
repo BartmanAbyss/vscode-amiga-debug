@@ -10,7 +10,8 @@ export interface CallFrame {
 
 export interface DmaRecord {
 	reg?: number; // & 0x1000 => CPU
-	dat?: number;
+	dat?: number; // 16, 32 or 64 bit
+	size?: number; // 2 = 16 bit, 4 = 32 bit, 8 = 64 bit
 	addr?: number;
 	evt?: number;
 	type?: number;
@@ -18,15 +19,18 @@ export interface DmaRecord {
 	intlev?: number;
 }
 
+// needs to match gcc8_c_support.h
 export enum GfxResourceType {
 	bitmap,
 	palette,
 	copperlist
 }
 
+// needs to match gcc8_c_support.h
 export enum GfxResourceFlags {
 	bitmap_interleaved = 1 << 0,
 	bitmap_masked = 1 << 1, 
+	bitmap_ham = 1 << 2, 
 }
 
 export interface GfxResource {

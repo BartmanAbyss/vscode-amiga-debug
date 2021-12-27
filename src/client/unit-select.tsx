@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { FunctionComponent, h, Fragment } from 'preact';
+import { FunctionComponent, h, Fragment, JSX } from 'preact';
 import { useCallback } from 'preact/hooks';
 import './styles.css';
 import { DisplayUnit, DisplayUnitType } from './display';
@@ -12,8 +12,8 @@ export const UnitSelect: FunctionComponent<{
 	type: DisplayUnitType;
 	onChange?: (value: DisplayUnit) => void;
 }> = ({ value, type, onChange }) => {
-	const toggle = useCallback((event) => {
-		const u = DisplayUnit[event.target.value as string];
+	const toggle = useCallback(({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => {
+		const u = DisplayUnit[currentTarget.value];
 		onChange?.(u);
 	}, [onChange]);
 
@@ -23,7 +23,7 @@ export const UnitSelect: FunctionComponent<{
 			alt="Display Unit"
 			aria-label="Display Unit"
 			value={DisplayUnit[value]}
-			onChange={toggle}
+			onInput={toggle}
 		>
 			{type === DisplayUnitType.Time && <Fragment>
 				<option value={DisplayUnit[DisplayUnit.Microseconds]}>Microseconds</option>

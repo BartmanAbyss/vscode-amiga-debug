@@ -5,7 +5,7 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
 import { ISourceLocation } from './location-mapping';
-import { Memory, Blit, GetBlits, GetMemoryAfterDma } from './dma';
+import { Memory, Blit, GetBlits, GetMemoryAfterDma, Copper } from './dma';
 import { DisplayUnit, scaleValue } from './display';
 import { DmaRecord } from '../backend/profile_types';
 
@@ -64,10 +64,10 @@ export interface IGraphNode extends ILocation {
  * so the same source location will have multiple different nodes in the model.
  */
 export interface IProfileModel {
-	nodes: ReadonlyArray<IComputedNode>;
-	locations: ReadonlyArray<ILocation>;
-	samples: ReadonlyArray<number>;
-	timeDeltas: ReadonlyArray<number>;
+	nodes: readonly IComputedNode[];
+	locations: readonly ILocation[];
+	samples: readonly number[];
+	timeDeltas: readonly number[];
 	rootPath?: string;
 	duration: number;
 
@@ -76,6 +76,7 @@ export interface IProfileModel {
 
 	// these fields get filled in client.tsx
 	memory?: Memory;
+	copper?: Copper[];
 	blits?: Blit[];
 }
 
@@ -113,7 +114,7 @@ const computeOrigAggregateTime = (index: number, nodes: IComputedNode[]): number
 
 const getBestLocation = (
 	profile: ICpuProfileRaw,
-	candidates: ReadonlyArray<ISourceLocation> = [],
+	candidates: readonly ISourceLocation[] = [],
 ) => {
 	return candidates[0];
 };
@@ -138,7 +139,7 @@ const categorize = (callFrame: Cdp.Runtime.CallFrame, src: ISourceLocation | und
  * Ensures that all profile nodes have a location ID, setting them if they
  * aren't provided by default.
  */
-const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotationLocation> => {
+const ensureSourceLocations = (profile: ICpuProfileRaw): readonly IAnnotationLocation[] => {
 	if (profile.$vscode) {
 		return profile.$vscode.locations; // profiles we generate are already good
 	}
@@ -209,7 +210,11 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
  * Computes the model for the given profile.
  */
 export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
-	if (!profile.timeDeltas || !profile.samples) {
+	if(!profile.timeDeltas)
+		profile.timeDeltas = [];
+	if(!profile.samples)
+		profile.samples = [];
+/*	if (!profile.timeDeltas || !profile.samples) {
 		return {
 			nodes: [],
 			locations: [],
@@ -221,7 +226,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			amiga: profile.$amiga,
 		};
 	}
-
+*/
 	console.time('buildModel');
 
 	const sourceLocations = ensureSourceLocations(profile);
@@ -255,9 +260,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	// 1. Created a sorted list of nodes. It seems that the profile always has
 	// incrementing IDs, although they are just not initially sorted.
 	const nodes = new Array<IComputedNode>(profile.nodes.length);
-	for (let i = 0; i < profile.nodes.length; i++) {
-		const node = profile.nodes[i];
-
+	for (const node of profile.nodes) {
 		// make them 0-based:
 		const id = mapId(node.id);
 		nodes[id] = {
@@ -266,7 +269,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			aggregateTime: 0,
 			origSelfTime: 0,
 			origAggregateTime: 0,
-			locationId: node.locationId as number,
+			locationId: node.locationId ,
 			children: node.children?.map(mapId) || [],
 		};
 
@@ -339,9 +342,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 			const bogoMem = Uint8Array.from(atob(model.amiga.bogoMem), (c) => c.charCodeAt(0));
 			model.memory = new Memory(chipMem, bogoMem);
 		}
-		// get blits
-		const customRegs = new Uint16Array(model.amiga.customRegs);
-		model.blits = GetBlits(customRegs, model.amiga.dmaRecords);
 	}
 
 	console.timeEnd('buildModel');
@@ -349,12 +349,9 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	return model;
 };
 
-export function getMemory(base: Memory, dmas: DmaRecord[][]): Memory {
+export function GetMemory(base: Memory, dmaRecords: DmaRecord[]): Memory {
 	console.time('getMemory');
-	let memory = base;
-	for(const dmaRecords of dmas) {
-		memory = GetMemoryAfterDma(memory, dmaRecords, 0xffffffff);
-	}
+	const memory = GetMemoryAfterDma(base, dmaRecords, 0xffffffff);
 	console.timeEnd('getMemory');
 	return memory;
 }

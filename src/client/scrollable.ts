@@ -29,14 +29,12 @@ function createEaseOutCubic(from: number, to: number): IAnimation {
 	};
 }
 
-function createComposed(a: IAnimation, b: IAnimation, cut: number): IAnimation {
-	return (completion: number): number => {
+const createComposed = (a: IAnimation, b: IAnimation, cut: number): IAnimation => (completion: number): number => {
 		if (completion < cut) {
 			return a(completion / cut);
 		}
 		return b((completion - cut) / (1 - cut));
 	};
-}
 
 class SmoothScrollingOperation {
 	public readonly from: ISmoothScrollPosition;
@@ -109,13 +107,9 @@ class SmoothScrollingOperation {
 	}
 }
 
-function easeInCubic(t: number) {
-	return Math.pow(t, 3);
-}
+const easeInCubic = (t: number) => Math.pow(t, 3);
 
-function easeOutCubic(t: number) {
-	return 1 - easeInCubic(1 - t);
-}
+const easeOutCubic = (t: number) => 1 - easeInCubic(1 - t);
 
 class ScrollState {
 	public readonly height: number;

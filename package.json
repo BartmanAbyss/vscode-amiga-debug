@@ -2,11 +2,11 @@
 	"name": "amiga-debug",
 	"displayName": "Amiga C/C++ Compile, Debug & Profile",
 	"publisher": "BartmanAbyss",
-	"description": "One-stop VS Code Extension to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 10.1 with the bundled WinUAE (Windows only)",
+	"description": "One-stop VS Code Extension to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 11.2 with the bundled WinUAE (Windows only)",
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.1.0-preview38-WB3.0",
+	"version": "1.3.1-WB3.0",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -24,9 +24,10 @@
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
 		"onCustomEditor:amiga.profile",
+		"onCustomEditor:amiga.savestate",
 		"workspaceContains:.vscode/amiga.json"
 	],
-	"main": "./out/extension.js",
+	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -165,6 +166,16 @@
 						"filenamePattern": "*.objdump"
 					}
 				]
+			},
+			{
+				"viewType": "amiga.savestate",
+				"displayName": "Amiga WinUAE Savestate",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "*.uss"
+					}
+				]
 			}
 		],
 		"breakpoints": [
@@ -182,7 +193,7 @@
 			{
 				"type": "amiga",
 				"label": "Amiga Debug",
-				"program": "./out/src/debugAdapter.js",
+				"program": "./dist/debugAdapter.js",
 				"runtime": "node",
 				"configurationAttributes": {
 					"launch": {
@@ -227,6 +238,48 @@
 								"type": "string",
 								"description": "Absolute path to a CPU Board Extension ROM",
 								"default": ""
+							},
+							"chipmem": {
+								"type": "string",
+								"description": "Override CHIP memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"",
+									"256k",
+									"512k",
+									"1m",
+									"1.5m",
+									"2m"
+								]
+							},
+							"fastmem": {
+								"type": "string",
+								"description": "Override FAST memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"",
+									"0",
+									"64k",
+									"128k",
+									"256k",
+									"512k",
+									"1M",
+									"2M",
+									"4M",
+									"8M"
+								]
+							},
+							"slowmem": {
+								"type": "string",
+								"description": "Override SLOW memory size. Set to empty string for configuration defaults.",
+								"default": "",
+								"enum": [
+									"",
+									"0",
+									"512k",
+									"1M",
+									"1.8M"
+								]
 							}
 						}
 					}
@@ -330,56 +383,57 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "concurrently -r \"npm:compile:ext\" \"webpack --mode=production\"",
-		"compile": "concurrently -r \"npm:compile:*\"",
-		"compile:ext": "tsc -p ./",
-		"compile:client": "webpack --mode=development",
-		"watch": "concurrently -r \"npm:watch:*\"",
-		"watch:ext": "tsc -watch -p ./",
-		"watch:client": "webpack --watch --mode=development --info-verbosity verbose",
-		"serve": "webpack-dev-server --mode=development",
-		"pretest": "npm run compile:ext",
-		"test": "node ./out/test/runTest.js"
+		"vscode:prepublish": "webpack --mode=production",
+		"compile": "webpack --mode=development",
+		"watch": "webpack --watch --mode=development",
+		"pretest": "tsc -p .",
+		"test": "node ./out/test/runTest.js",
+		"lint": "eslint -c .eslintrc.js --ext .ts,.tsx src"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.11.10",
+		"@types/mocha": "^9.0.0",
+		"@types/node": "^16.11.7",
 		"@types/pubsub-js": "^1.8.0",
 		"@types/react-highlight-words": "^0.16.1",
 		"@types/react-tabs": "^2.3.1",
 		"@types/vscode": "^1.46",
-		"clean-webpack-plugin": "^3.0.0",
-		"concurrently": "^5.3.0",
-		"css-loader": "^3.4.2",
-		"devtools-protocol": "0.0.748504",
+		"@typescript-eslint/eslint-plugin": "^5.3.1",
+		"@typescript-eslint/parser": "^5.3.1",
+		"clean-webpack-plugin": "^4.0.0",
+		"concurrently": "^6.3.0",
+		"css-loader": "^6.5.1",
+		"devtools-protocol": "^0.0.940865",
+		"eslint": "^8.2.0",
+		"eslint-config-prettier": "^8.3.0",
+		"eslint-plugin-import": "^2.25.3",
+		"eslint-plugin-jsdoc": "^37.0.3",
+		"eslint-plugin-prefer-arrow": "^1.2.3",
 		"glob": "^7.1.6",
-		"markdown-to-jsx": "^6.11.4",
-		"mocha": "^7.1.2",
-		"path-resolve": "0.0.1",
+		"markdown-to-jsx": "6.11.4",
+		"mocha": "^9.1.3",
 		"preact": "^10.3.4",
 		"preact-virtual-list": "^0.3.1",
 		"pubsub-js": "^1.8.0",
 		"raw-loader": "^4.0.1",
-		"react-highlight-words": "^0.16.0",
-		"react-split": "^2.0.7",
+		"react-highlight-words": "^0.17.0",
+		"react-split": "2.0.7",
 		"react-tabs": "^3.1.1",
-		"style-loader": "^1.1.3",
+		"style-loader": "^3.3.1",
 		"svg-inline-loader": "^0.8.2",
-		"ts-loader": "^6.2.2",
-		"tslint": "^5.20.1",
-		"typescript": "^3.9.2",
+		"terser-webpack-plugin": "^5.2.5",
+		"ts-loader": "^9.2.6",
+		"typescript": "^4.4.4",
 		"vscode-debugadapter-testsupport": "^1.40.3",
 		"vscode-test": "^1.3.0",
-		"webpack": "^4.42.0",
-		"webpack-cli": "^3.3.11",
-		"webpack-dev-server": "^3.11.0"
+		"webpack": "^5.64.0",
+		"webpack-cli": "^4.9.1"
 	},
 	"dependencies": {
-		"vscode-cpptools": "^4.0.1",
+		"vscode-cpptools": "^5.0.0",
 		"vscode-debugadapter": "^1.40.0",
 		"vscode-debugprotocol": "^1.40.0",
-		"vscode-jsonrpc": "^5.0.1"
+		"vscode-jsonrpc": "^6.0.0"
 	},
 	"extensionDependencies": [
 		"ms-vscode.cpptools"

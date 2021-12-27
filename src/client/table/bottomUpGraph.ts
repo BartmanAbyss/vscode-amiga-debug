@@ -87,7 +87,7 @@ const processNode = (aggregate: BottomUpNode, node: IComputedNode, model: IProfi
  * Creates a bottom-up graph of the process information
  */
 export const createBottomUpGraph = (model: IProfileModel) => {
-  const byLocation: IComputedNode[][] = new Array(model.locations.length).fill([]);
+  const byLocation = new Array<IComputedNode[]>(model.locations.length).fill([]);
   for (const node of model.nodes) {
     byLocation[node.locationId].push(node);
   }

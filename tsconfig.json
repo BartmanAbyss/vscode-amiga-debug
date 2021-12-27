@@ -7,12 +7,14 @@
 			"es6",
 			"dom"
 		],
+		//"esModuleInterop": true, // only enabled because of new versions of react-split, markdown-to-jsx required it, but breaks test/suite/index.ts
 		"sourceMap": true,
 		"jsx": "react",
 		"jsxFactory": "h",
 		"moduleResolution": "node",
 		"rootDir": "src",
-		"strict": false   /* enable all strict type-checking options */
+		"strict": false, /* enable all strict type-checking options */
+		"strictBindCallApply": true
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
 		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */

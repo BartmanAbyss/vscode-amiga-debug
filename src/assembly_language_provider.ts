@@ -8,10 +8,10 @@ enum TokenTypes {
 
 function split_with_offset(str: string, re: RegExp) {
 	if (!re.global) {
-		throw "no no no no :(";
+		throw new Error("no no no no :(");
 	}
 	const results = [];
-	let m, p;
+	let m: RegExpExecArray, p: number;
 	while (p = re.lastIndex, m = re.exec(str)) {
 		results.push([str.substring(p, m.index), p]);
 	}

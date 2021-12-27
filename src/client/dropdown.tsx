@@ -1,3 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable prefer-spread */
+/* eslint-disable @typescript-eslint/unbound-method */
 // code based on react-dropdown, Copyright (c) 2014 xvfeng, MIT license
 
 import { h, Component, ComponentType, createRef, JSX } from 'preact';
@@ -14,7 +21,7 @@ export interface DropdownOptionProps<ValueType> {
 }
 
 export interface DropdownProps<ValueType> {
-	options: Array<Group<ValueType> | ValueType>;
+	options: (Group<ValueType> | ValueType)[];
 	baseClassName?: string;
 	className?: string;
 	controlClassName?: string;
@@ -52,7 +59,7 @@ function classNames(...args: any[]) {
 	return classes.join(' ');
 } 
 
-export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueType>, { selected: ValueType; isOpen: boolean; }> {
+export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueType>, { selected: ValueType; isOpen: boolean }> {
 	public static defaultProps = { baseClassName: 'Dropdown' };
 
 	private mounted: boolean;
@@ -90,7 +97,21 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		if (this.props.onFocus && typeof this.props.onFocus === 'function') {
 			this.props.onFocus(this.state.isOpen);
 		}
-		if (event.type === 'mousedown' && event.button !== 0) return;
+		if (event.button !== 0) return;
+		event.stopPropagation();
+		event.preventDefault();
+
+		if (!this.props.disabled) {
+			this.setState({
+				isOpen: !this.state.isOpen
+			});
+		}
+	}
+
+	private handleTouchEnd(event: JSX.TargetedTouchEvent<HTMLElement>) {
+		if (this.props.onFocus && typeof this.props.onFocus === 'function') {
+			this.props.onFocus(this.state.isOpen);
+		}
 		event.stopPropagation();
 		event.preventDefault();
 
@@ -217,7 +238,7 @@ export class DropdownComponent<ValueType> extends Component<DropdownProps<ValueT
 		const OptionComponent = this.props.optionComponent;
 		return (
 			<div class={dropdownClass}>
-				<div class={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleMouseDown.bind(this)} aria-haspopup='listbox'>
+				<div class={controlClass} onMouseDown={this.handleMouseDown.bind(this)} onTouchEnd={this.handleTouchEnd.bind(this)} aria-haspopup='listbox'>
 					<div class={placeholderClass}>
 						<OptionComponent option={this.state.selected} placeholder={true} />
 					</div>

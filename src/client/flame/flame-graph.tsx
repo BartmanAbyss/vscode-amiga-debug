@@ -85,7 +85,7 @@ export interface IBox {
 	amiga?: IBoxAmiga;
 }
 
-const buildBoxes = (columns: ReadonlyArray<IColumn>, rowOffset: number) => {
+const buildBoxes = (columns: readonly IColumn[], rowOffset: number) => {
 	const boxes: Map<number, IBox> = new Map();
 	let maxY = 0;
 	for (let x = 0; x < columns.length; x++) {
@@ -287,7 +287,7 @@ const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max)
 const dpr = window.devicePixelRatio || 1;
 
 const getBoxInRowColumn = (
-	columns: ReadonlyArray<IColumn>,
+	columns: readonly IColumn[],
 	boxes: ReadonlyMap<number, IBox>,
 	column: number,
 	row: number,
@@ -320,7 +320,7 @@ const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
 	frame: number;
-	data: ReadonlyArray<IColumn>;
+	data: readonly IColumn[];
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 	time;
@@ -572,7 +572,7 @@ export const FlameGraph: FunctionComponent<{
 			return;
 		}
 
-		const { width, height } = (webCanvas.current.parentElement as HTMLElement).getBoundingClientRect();
+		const { width, height } = (webCanvas.current.parentElement ).getBoundingClientRect();
 		if (width === canvasSize.width && height === canvasSize.height) {
 			return;
 		}
@@ -600,7 +600,7 @@ export const FlameGraph: FunctionComponent<{
 			}
 
 			const from = bounds;
-			const to = 'minX' in target ? target : { minX: (target as IBox).x1, maxX: (target as IBox).x2 };
+			const to = 'minX' in target ? target : { minX: (target ).x1, maxX: (target ).x2 };
 			if(from.minX === to.minX && from.maxX === to.maxX)
 				to.minX = 0, to.maxX = 1;
 
@@ -1235,7 +1235,7 @@ const Tooltip: FunctionComponent<{
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
-			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={DmaCyclesToCpuCycles(amiga.blit.cycleEnd)} />
+			<Screen frame={frame} screen={GetScreenFromBlit(amiga.blit, MODELS[frame].amiga)} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[frame].amiga.customRegs))} useZoom={false} time={DmaCyclesToCpuCycles(amiga.blit.cycleEnd)} />
 		</div>}
 	</Fragment>);
 };

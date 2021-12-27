@@ -5,13 +5,12 @@ import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
 declare let PROFILES: ICpuProfileRaw[];
 
-export function CpuCyclesToDmaCycles(cpuCycles: number) {
-	return (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
-}
+// COERCE: make signed
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
 
-export function DmaCyclesToCpuCycles(dmaCycles: number) {
-	return (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
-}
+export const CpuCyclesToDmaCycles = (cpuCycles: number) => (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
+
+export const DmaCyclesToCpuCycles = (dmaCycles: number) => (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
 
 export class Memory {
 	private chipMemAddr = 0x00000000;
@@ -240,7 +239,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					let BLTSIZV = 0;
 					if(reg === regBLTSIZE - 0xdff000) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
-						BLTSIZV = dmaRecord.dat >>> 6;
+						BLTSIZV = (dmaRecord.dat >>> 6) & 0x3ff;
 						if(BLTSIZH === 0)
 							BLTSIZH = 64;
 						if(BLTSIZV === 0)
@@ -265,7 +264,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					for(let channel = 0; channel < 4; channel++) {
 						const adr = customRegL(regBLTxPT[channel]) & 0x1ffffe; // ECS=0x1ffffe, OCS=0x7fffe;
 						BLTxPT.push(adr);
-						BLTxMOD.push(customReg(regBLTxMOD[channel]));
+						BLTxMOD.push(COERCE16(customReg(regBLTxMOD[channel])));
 						if(BLTCON0 & (1 << (11 - channel))) {
 							channels += 'ABCD'[channel];
 							addresses.push('ABCD'[channel] + ' = $' + adr.toString(16).padStart(8, '0'));
@@ -300,6 +299,9 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 			}
 		}
 	}
+
+	//console.log(BlitTrace);
+
 	return blits;
 }
 
@@ -365,6 +367,7 @@ export interface IScreen {
 	height: number;
 	planes: number[];
 	modulos: number[]; // always [2]
+	hires: boolean;
 }
 
 export function GetScreenFromCopper(copper: Copper[]): IScreen {
@@ -396,11 +399,13 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
 
 	for(const c of copper) {
+		if(c.vpos >= 200) // ignore bottom-of-screen HUD
+			continue;
 		if(c.insn instanceof CopperMove) {
 			switch(c.insn.DA + 0xdff000) {
-			case regBPLCON0: BPLCON0 = c.insn.RD; break;
-			case regBPL1MOD: modulos[0] = c.insn.RD; break;
-			case regBPL2MOD: modulos[1] = c.insn.RD; break;
+			case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
+			case regBPL1MOD: modulos[0] = COERCE16(c.insn.RD); break;
+			case regBPL2MOD: modulos[1] = COERCE16(c.insn.RD); break;
 			case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
 			case regBPL1PTL: planes[0] = (planes[0] & 0xffff0000) |  c.insn.RD; break;
 			case regBPL2PTH: planes[1] = (planes[1] & 0x0000ffff) | (c.insn.RD << 16); break;
@@ -419,17 +424,24 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		}
 	}
 
-	const width = (((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4;
+	const hires = (BPLCON0 & 0x8000) ? true : false;
+	const width = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
 	const height = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
-	return { width, height, planes, modulos };
+	return { width, height, planes, modulos, hires };
 }
 
-export function GetScreenFromBlit(blit: Blit): IScreen {
-	const numPlanes = 5;
+export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
 	const channel = BlitterChannel.D; // visualize D channel
+
+	// try to get number of planes from registered bitmap resource
+	let numPlanes = 5; // default
+	const resource = amiga.gfxResources.find((r) => blit.BLTxPT[channel] >= r.address && blit.BLTxPT[channel] < r.address + r.size);
+	if(resource && resource.bitmap)
+		numPlanes = resource.bitmap.numPlanes;
+
 	const width = blit.BLTSIZH * 16;
 	const height = blit.BLTSIZV / numPlanes;
 	const planes = [];
@@ -441,7 +453,7 @@ export function GetScreenFromBlit(blit: Blit): IScreen {
 	const modulo = blit.BLTxMOD[channel] + (numPlanes - 1) * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 	modulos.push(modulo, modulo);
 
-	return { width, height, planes, modulos };
+	return { width, height, planes, modulos, hires: false };
 }
 
 // returs chipMem after DMA requests up to endCycle
@@ -525,75 +537,90 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 	return undefined;
 }
 
-function GetAmigaColor(color: number): number {
-	return (((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) |
-		(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) |
-		(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) |
-		0xff000000;
-}
+// AABBGGRR
+const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
+		   (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
+		   (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
+		0xff000000) >>> 0;// AA;
 
-// returns 32-element array of 3-element array (R, G, B) (0x00-0xff)
+// AABBGGRR <-> AARRGGBB
+const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
+
+// AABBGGRR
+export const GetColorCss = (color: number): string => '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
+
+// 0RGB
+export const GetAmigaColorCss = (color: number): string => '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
+
+const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color & 0xeee) >>> 1);
+
+// returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
 	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
-	const palette = [];
+	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		const color = customReg(regCOLOR + i * 2);
 		palette.push(GetAmigaColor(color));
+		ehbPalette.push(GetAmigaColorEhb(color));
 	}
-	return palette;
+	return [...palette, ...ehbPalette];
 }
 
 export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: number): number[] {
-	const palette = [];
+	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		if(i < numEntries) {
 			const color = memory.readWord(addr + i * 2);
 			palette.push(GetAmigaColor(color));
+			ehbPalette.push(GetAmigaColorEhb(color));
 		} else {
-			palette.push([0, 0, 0]);
+			palette.push(0);
+			ehbPalette.push(0);
 		}
 	}
-	return palette;
+	return [...palette, ...ehbPalette];
 }
 
 export function GetPaletteFromCopper(copper: Copper[]): number[] {
 	const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
-	const palette = new Array(32).fill([]);
+	const palette = new Array(64).fill([]);
 	for(const c of copper) {
 		if(c.insn instanceof CopperMove && c.insn.DA >= regCOLOR00 && c.insn.DA < regCOLOR00 + 32 * 2) {
 			const idx = (c.insn.DA - regCOLOR00) >>> 1;
-			if(palette[idx].length === 0) // don't overwrite color
+			if(palette[idx].length === 0) { // don't overwrite color
 				palette[idx] = GetAmigaColor(c.insn.RD);
+				palette[idx + 32] = GetAmigaColorEhb(c.insn.RD);
+			}
 		}
 	}
 	return palette;
 }
 
 export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
-	const addressString = `\$${address.toString(16).padStart(8, '0')}`;
+	const addressString = `$${address.toString(16).padStart(8, '0')}`;
 
 	if(address !== 0) {
 		if(address >= amiga.systemStackLower && address < amiga.systemStackUpper)
-			return `SYSSTACK-\$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
+			return `SYSSTACK-$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
 		if(address >= amiga.stackLower && address < amiga.stackUpper)
-			return `STACK-\$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
+			return `STACK-$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
 
 		const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 		if(resource)
-			return `${resource.name}+\$${(address - resource.address).toString(16)} (${addressString})`;
+			return `${resource.name}+$${(address - resource.address).toString(16)} (${addressString})`;
 
 		const section = amiga.sections.find((r) => address >= r.address && address < r.address + r.size);
 		if(section) {
 			if(section.name === '.text') {
 				const offset = address - section.address;
 				const callFrame = amiga.uniqueCallFrames[amiga.callFrames[offset >> 1]];
-				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+\$${offset.toString(16)}) (${addressString})`;
+				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+$${offset.toString(16)}) (${addressString})`;
 			}
 			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
 			if(symbol)
-				return `${symbol.name}+\$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+\$${symbol.address.toString(16)}) (${addressString})`;
-			return `${section.name}+\$${(address - section.address).toString(16)} (${addressString})`;
+				return `${symbol.name}+$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+$${symbol.address.toString(16)}) (${addressString})`;
+			return `${section.name}+$${(address - section.address).toString(16)} (${addressString})`;
 		}
 
 		const customReg = CustomRegisters.getCustomName(address);

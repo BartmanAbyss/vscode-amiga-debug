@@ -34,6 +34,7 @@ void debug_stop_idle();
 enum debug_resource_flags {
     debug_resource_bitmap_interleaved = 1 << 0,
     debug_resource_bitmap_masked = 1 << 1,
+    debug_resource_bitmap_ham = 1 << 2,
 };
 
 void debug_register_bitmap(const void* addr, const char* name, short width, short height, short numPlanes, unsigned short flags);

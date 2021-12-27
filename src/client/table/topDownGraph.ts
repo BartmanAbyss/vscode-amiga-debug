@@ -234,13 +234,15 @@ export const createTopDownGraph = (model: IProfileModel) => {
 		root.children[0] = cpuRoot;
 	}
 	// CPU
-	for(const ch of model.nodes[0].children) {
-		const node = model.nodes[ch];
-		processNode(cpuRoot, node, model);
-		cpuRoot.selfTime += node.aggregateTime;
-		cpuRoot.aggregateTime += node.aggregateTime;
-		cpuRoot.origSelfTime += node.origAggregateTime;
-		cpuRoot.origAggregateTime += node.origAggregateTime;
+	if(model.nodes.length) {
+		for(const ch of model.nodes[0].children) {
+			const node = model.nodes[ch];
+			processNode(cpuRoot, node, model);
+			cpuRoot.selfTime += node.aggregateTime;
+			cpuRoot.aggregateTime += node.aggregateTime;
+			cpuRoot.origSelfTime += node.origAggregateTime;
+			cpuRoot.origAggregateTime += node.origAggregateTime;
+		}
 	}
 	// DMA
 	if(model.amiga) {
