@@ -141,13 +141,14 @@ sudo apt install build-essential flex bison expect dejagnu texinfo mingw-w64
 
 ### Binutils+GDB
 ```bash
+git clone https://github.com/BartmanAbyss/binutils-gdb.git
 cd binutils-gdb
-./contrib/download_prerequisites
+bash ./contrib/download_prerequisites
 cd ..
 mkdir build-binutils-gdb
 cd build-binutils-gdb
 LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
-make -j6
+make -j16
 make install
 ```
 
@@ -180,11 +181,11 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-11.2.0/configure \
   --disable-clocale \
   --host=x86_64-w64-mingw32 \
   --enable-static
-make all-gcc -j6
+make all-gcc -j16
 sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
 mv gcc/Makefile.tmp gcc/Makefile
 gcc/gcc-cross.exe -dumpspecs >gcc/specs
-make all-gcc -j6
+make all-gcc -j16
 make install-gcc
 ```
 
