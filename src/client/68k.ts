@@ -1,5 +1,7 @@
 // https://www.nxp.com/docs/en/reference-manual/MC68000UM.pdf
 // https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf
+// https://raw.githubusercontent.com/larsbrinkhoff/m68k-microcode/master/doc/Yacht.txt
+// https://www.atari-forum.com/viewtopic.php?t=16240
 
 export interface Cycles {
 	total: number;
@@ -286,8 +288,7 @@ function GetCyclesImmediate(insn: Uint16Array): Cycles[] {
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	const op = ((insn[0] >> 8) & 0b1111);
 	if(effectiveAddress === AddressingMode.DataRegisterDirect) {
-		const extra = (op === 0b0010 || op === 0b1100) ? 2 : 0; // ANDI, CMPI are 2 cycles faster for LONG
-		return [ size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 16 - extra, read: 3, write: 0 } ];
+		return [ size !== Size.Long ? { total: 8, read: 2, write: 0 } : { total: 16, read: 3, write: 0 } ];
 	} else {
 		const ea = size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 		const cy = size !== Size.Long ? { total: 12, read: 2, write: 1 } : { total: 20, read: 3, write: 2 };
@@ -299,7 +300,7 @@ function GetCyclesAddqSubq(insn: Uint16Array): Cycles[] {
 	const size = GetSize(insn[0], 6);
 	const effectiveAddress = GetAddressingMode(insn[0], 0, 3);
 	if(effectiveAddress === AddressingMode.DataRegisterDirect || effectiveAddress === AddressingMode.AddressRegisterDirect) {
-		return [ size !== Size.Long ? { total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0 } ];
+		return [ (size !== Size.Long && effectiveAddress === AddressingMode.DataRegisterDirect) ? { total: 4, read: 1, write: 0 } : { total: 8, read: 1, write: 0 } ];
 	} else {
 		const ea = size !== Size.Long ? EffectiveAddressCalculationTimes[effectiveAddress].short : EffectiveAddressCalculationTimes[effectiveAddress].long;
 		const cy = size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
@@ -400,7 +401,7 @@ function GetCyclesSingleOperand(insn: Uint16Array): Cycles[] {
 		if(isTST)
 			return { total: 4, read: 1, write: 0 };
 		if(isTAS)
-			return { total: 14, read: 2, write: 1 };
+			return { total: 10, read: 1, write: 1 };
 		return size !== Size.Long ? { total: 8, read: 1, write: 1 } : { total: 12, read: 1, write: 2 };
 	})();
 	return [ AddCycles(ea, cy) ];
@@ -441,7 +442,7 @@ function GetCyclesJmp(insn: Uint16Array): Cycles[] {
 		return [ { total: 12, read: 3, write: 0 } ];
 	case AddressingMode.ProgramCounterIndirectWithIndex:
 	case AddressingMode.AddressRegisterIndirectWithIndex:
-		return [ { total: 14, read: 3, write: 0 } ];
+		return [ { total: 14, read: 2, write: 0 } ];
 	}
 }
 
