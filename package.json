@@ -186,6 +186,9 @@
 				"language": "cpp"
 			},
 			{
+				"language": "amiga.assembly"
+			},
+			{
 				"language": "amiga.disassembly"
 			}
 		],
