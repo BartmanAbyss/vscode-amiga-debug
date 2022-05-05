@@ -210,6 +210,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
 * "npm run serve": all colors in flame-graph are black
+* stack sizes > 1024 cause UnwindTable to fail parsing
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
@@ -219,11 +220,12 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ### Assembly
 * TODO: parser needs to check for comments
-* TODO: show 68000 cycles
 * TODO: more...
 
 ### Objdump
+* jump levels not correct, thus missing cycles for loops
 * TODO: click/follow any addresses
+* editing source while having disassembly open doesn't really work
 
 ### Terminal
 * Terminal doesn't open again once closed

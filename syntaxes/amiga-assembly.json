@@ -39,8 +39,8 @@
 		},
 		{
 			"comment": "Meta",
-			"name": "meta.preprocessor",
-			"match": "(?:^|\\s)(\\.(?:abort|ABORT|align|app-file|ascii|asciz|balign|byte|comm|data|def|desc|dim|double|eject|else|endef|endif|equ|equiv|err|extern|file|fill|float|global|hword|ident|if|include|int|irp|irpc|lcomm|lflags|line|linkonce|ln|mri|list|long|macro|endm|exitm|nolist|octa|org|p2align|psize|quad|rept|sbttl|scl|section|set|short|single|size|sleb128|skip|space|stab|string|symver|tag|text|title|type|val|uleb128|word))"
+			"name": "keyword.control.directive.include.cpp",
+			"match": "(?:^|\\s)(\\.(?:abort|ABORT|align|app-file|ascii|asciz|balign|byte|cfi_adjust_cfa_offset|cfi_endproc|cfi_startproc|comm|data|def|desc|dim|double|eject|else|endef|endif|endr|equ|equiv|err|extern|file|fill|float|globl|global|hword|ident|if|include|int|irp|irpc|lcomm|lflags|line|linkonce|ln|mri|list|long|macro|endm|exitm|nolist|octa|org|p2align|psize|quad|rept|sbttl|scl|section|set|short|single|size|sleb128|skip|space|stab|string|symver|tag|text|title|type|val|uleb128|word))"
 		}
 	]
 }
