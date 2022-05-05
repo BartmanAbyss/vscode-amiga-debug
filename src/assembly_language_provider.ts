@@ -23,7 +23,7 @@ function split_with_offset(str: string, re: RegExp) {
 	return results;
 }
 
-function getEditorForDocument(doc: vscode.TextDocument): vscode.TextEditor {
+export function getEditorForDocument(doc: vscode.TextDocument): vscode.TextEditor {
 	for(const textEditor of vscode.window.visibleTextEditors) {
 		if(textEditor.document === doc)
 			return textEditor;
@@ -208,7 +208,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	constructor(extensionPath: string) {
 		SourceContext.extensionPath = extensionPath;
 
-		const changeTimers = new Map<string, any>(); // Keyed by file name.
+		const changeTimers = new Map<string, NodeJS.Timeout>(); // Keyed by file name.
 
 		// parse documents that are already open when extension is activated
 		for(const document of vscode.workspace.textDocuments) {
@@ -248,7 +248,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		});
 	}
 
-	private getSourceContext(fileName: string): SourceContext {
+	public getSourceContext(fileName: string): SourceContext {
 		let context = this.sourceContexts.get(fileName);
 		if(context)
 			return context;
