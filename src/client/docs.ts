@@ -234,7 +234,7 @@ import doc1ea from './doc/1ea.md';
 import doc1ec from './doc/1ec.md';
 import doc1ee from './doc/1ee.md';
 import doc1fc from './doc/1fc.md';
-const docs = {
+const customDocs = {
 	0x000: doc000,
 	0x002: doc002,
 	0x004: doc004,
@@ -474,8 +474,386 @@ const docs = {
 };
 
 export function GetCustomRegDoc(reg: number): string {
-	if (docs[reg])
-		return docs[reg];
+	if (customDocs[reg])
+		return customDocs[reg];
+	else
+		return undefined;
+}
+
+import cpu_abcd from './doc/68k/abcd.md';
+import cpu_add from './doc/68k/add.md';
+import cpu_adda from './doc/68k/adda.md';
+import cpu_addi from './doc/68k/addi.md';
+import cpu_addq from './doc/68k/addq.md';
+import cpu_addx from './doc/68k/addx.md';
+import cpu_and from './doc/68k/and.md';
+import cpu_andi from './doc/68k/andi.md';
+import cpu_asl_asr from './doc/68k/asl_asr.md';
+import cpu_bcc from './doc/68k/bcc.md';
+import cpu_bchg from './doc/68k/bchg.md';
+import cpu_bclr from './doc/68k/bclr.md';
+import cpu_bkpt from './doc/68k/bkpt.md';
+import cpu_bra from './doc/68k/bra.md';
+import cpu_bset from './doc/68k/bset.md';
+import cpu_bsr from './doc/68k/bsr.md';
+import cpu_btst from './doc/68k/btst.md';
+import cpu_chk from './doc/68k/chk.md';
+import cpu_clr from './doc/68k/clr.md';
+import cpu_cmp from './doc/68k/cmp.md';
+import cpu_cmpa from './doc/68k/cmpa.md';
+import cpu_cmpi from './doc/68k/cmpi.md';
+import cpu_cmpm from './doc/68k/cmpm.md';
+import cpu_dbcc from './doc/68k/dbcc.md';
+import cpu_divs_divu from './doc/68k/divs_divu.md';
+import cpu_eor from './doc/68k/eor.md';
+import cpu_eori from './doc/68k/eori.md';
+import cpu_exg from './doc/68k/exg.md';
+import cpu_ext from './doc/68k/ext.md';
+import cpu_illegal from './doc/68k/illegal.md';
+import cpu_jmp from './doc/68k/jmp.md';
+import cpu_jsr from './doc/68k/jsr.md';
+import cpu_lea from './doc/68k/lea.md';
+import cpu_link from './doc/68k/link.md';
+import cpu_lsl_lsr from './doc/68k/lsl_lsr.md';
+import cpu_move from './doc/68k/move.md';
+import cpu_movea from './doc/68k/movea.md';
+import cpu_movec from './doc/68k/movec.md';
+import cpu_movem from './doc/68k/movem.md';
+import cpu_movep from './doc/68k/movep.md';
+import cpu_moveq from './doc/68k/moveq.md';
+import cpu_moves from './doc/68k/moves.md';
+import cpu_muls_mulu from './doc/68k/muls_mulu.md';
+import cpu_nbcd from './doc/68k/nbcd.md';
+import cpu_neg from './doc/68k/neg.md';
+import cpu_negx from './doc/68k/negx.md';
+import cpu_nop from './doc/68k/nop.md';
+import cpu_not from './doc/68k/not.md';
+import cpu_or from './doc/68k/or.md';
+import cpu_ori from './doc/68k/ori.md';
+import cpu_pea from './doc/68k/pea.md';
+import cpu_reset from './doc/68k/reset.md';
+import cpu_rol_ror from './doc/68k/rol_ror.md';
+import cpu_roxl_roxr from './doc/68k/roxl_roxr.md';
+import cpu_rte from './doc/68k/rte.md';
+import cpu_rtr from './doc/68k/rtr.md';
+import cpu_rts from './doc/68k/rts.md';
+import cpu_sbcd from './doc/68k/sbcd.md';
+import cpu_scc from './doc/68k/scc.md';
+import cpu_stop from './doc/68k/stop.md';
+import cpu_sub from './doc/68k/sub.md';
+import cpu_suba from './doc/68k/suba.md';
+import cpu_subi from './doc/68k/subi.md';
+import cpu_subq from './doc/68k/subq.md';
+import cpu_subx from './doc/68k/subx.md';
+import cpu_swap from './doc/68k/swap.md';
+import cpu_tas from './doc/68k/tas.md';
+import cpu_trap from './doc/68k/trap.md';
+import cpu_trapv from './doc/68k/trapv.md';
+import cpu_tst from './doc/68k/tst.md';
+import cpu_unlk from './doc/68k/unlk.md';
+
+const cpuDocs = {
+	'abcd': cpu_abcd,
+	'add': cpu_add,
+	'adda': cpu_adda,
+	'addi': cpu_addi,
+	'addq': cpu_addq,
+	'addx': cpu_addx,
+	'and': cpu_and,
+	'andi': cpu_andi,
+	'asl': cpu_asl_asr,
+	'asr': cpu_asl_asr,
+	'bcc': cpu_bcc,
+	'bchg': cpu_bchg,
+	'bclr': cpu_bclr,
+	'bkpt': cpu_bkpt,
+	'bra': cpu_bra,
+	'bset': cpu_bset,
+	'bsr': cpu_bsr,
+	'btst': cpu_btst,
+	'chk': cpu_chk,
+	'clr': cpu_clr,
+	'cmp': cpu_cmp,
+	'cmpa': cpu_cmpa,
+	'cmpi': cpu_cmpi,
+	'cmpm': cpu_cmpm,
+	'dbcc': cpu_dbcc,
+	'divs': cpu_divs_divu,
+	'divu': cpu_divs_divu,
+	'eor': cpu_eor,
+	'eori': cpu_eori,
+	'exg': cpu_exg,
+	'ext': cpu_ext,
+	'illegal': cpu_illegal,
+	'jmp': cpu_jmp,
+	'jsr': cpu_jsr,
+	'lea': cpu_lea,
+	'link': cpu_link,
+	'lsl': cpu_lsl_lsr,
+	'lsr': cpu_lsl_lsr,
+	'move': cpu_move,
+	'movea': cpu_movea,
+	'movec': cpu_movec,
+	'movem': cpu_movem,
+	'movep': cpu_movep,
+	'moveq': cpu_moveq,
+	'moves': cpu_moves,
+	'muls': cpu_muls_mulu,
+	'mulu': cpu_muls_mulu,
+	'nbcd': cpu_nbcd,
+	'neg': cpu_neg,
+	'negx': cpu_negx,
+	'nop': cpu_nop,
+	'not': cpu_not,
+	'or': cpu_or,
+	'ori': cpu_ori,
+	'pea': cpu_pea,
+	'reset': cpu_reset,
+	'rol': cpu_rol_ror,
+	'ror': cpu_rol_ror,
+	'roxl': cpu_roxl_roxr,
+	'roxr': cpu_roxl_roxr,
+	'rte': cpu_rte,
+	'rtr': cpu_rtr,
+	'rts': cpu_rts,
+	'sbcd': cpu_sbcd,
+	'scc': cpu_scc,
+	'stop': cpu_stop,
+	'sub': cpu_sub,
+	'suba': cpu_suba,
+	'subi': cpu_subi,
+	'subq': cpu_subq,
+	'subx': cpu_subx,
+	'swap': cpu_swap,
+	'tas': cpu_tas,
+	'trap': cpu_trap,
+	'trapv': cpu_trapv,
+	'tst': cpu_tst,
+	'unlk': cpu_unlk
+};
+
+const cpuCc = {
+	'cc': 'carry clear',
+	'ge': 'greater than or equal',
+	'ls': 'lower or same',
+	'pl': 'plus',
+	'cs': 'carry set',
+	'gt': 'greater than',
+	'lt': 'less than',
+	'eq': 'equal',
+	'hi': 'higher',
+	'mi': 'minus',
+	'vc': 'overflow clear',
+	'le': 'less than or equal',
+	'ne': 'not equal',
+	'vs': 'overflow set'
+};
+
+// not for branch
+const cpuCc2 = {
+	't':  'always true',
+	'f':  'never true',
+};
+
+const cpuName = {
+	'abcd': 'Add decimal with extend',
+	'add': 'Add binary',
+	'adda': 'Add address',
+	'addi': 'Add immediate',
+	'addq': 'Add quick',
+	'addx': 'Add extended',
+	'and': 'AND logical',
+	'andi': 'AND immediate',
+	'asl': 'Arithmetic shift left',
+	'asr': 'Arithmetic shift right',
+	'bchg': 'Test a bit and change',
+	'bclr': 'Test a bit and clear',
+	'bkpt': 'Breakpoint',
+	'bra': 'Branch always',
+	'bset': 'Test a bit and set',
+	'bsr': 'Branch to subroutine',
+	'btst': 'Test a bit',
+	'chk': 'Check register against bounds',
+	'clr': 'Clear an operand',
+	'cmp': 'Compare',
+	'cmpa': 'Compare address',
+	'cmpi': 'Compare immediate',
+	'cmpm': 'Compare memory with memory',
+	'dbcc': 'Test condition, decrement, and branch',
+	'divs': 'Signed divide',
+	'divu': 'Unsigned divide',
+	'eor': 'Exclusive-OR logical',
+	'eori': 'Exclusive-OR immediate',
+	'exg': 'Exchange registers',
+	'ext': 'Sign-extend a data register',
+	'illegal': 'Illegal instruction',
+	'jmp': 'Jump (unconditionally)',
+	'jsr': 'Jump to subroutine',
+	'lea': 'Load effective address',
+	'link': 'Link and allocate',
+	'lsl': 'Logical shift left',
+	'lsr': 'Logical shift right',
+	'move': 'Copy data from source to destination',
+	'movea': 'Move address',
+	'movec': 'Move Control Register',
+	'movem': 'Move multiple registers',
+	'movep': 'Move peripheral data',
+	'moveq': 'Move quick (copy a small literal to a destination)',
+	'moves': 'Move Address Space',
+	'muls': 'Signed multiply',
+	'mulu': 'Unsigned multiply',
+	'nbcd': 'Negate decimal with sign extend',
+	'neg': 'Negate',
+	'negx': 'Negate with extend',
+	'nop': 'No operation',
+	'not': 'Logical complement',
+	'or': 'OR logical',
+	'ori': 'OR immediate',
+	'pea': 'Push effective address',
+	'reset': 'Reset external devices',
+	'rol': 'Rotate left (without extend)',
+	'ror': 'Rotate right (without extend)',
+	'roxl': 'Rotate left with extend',
+	'roxr': 'Rotate right with extend',
+	'rte': 'Return from exception',
+	'rtr': 'Return and restore condition codes',
+	'rts': 'Return from subroutine',
+	'sbcd': 'Subtract decimal with extend',
+	'scc': 'Set according to condition cc',
+	'stop': 'Load status register and stop',
+	'sub': 'Subtract binary',
+	'suba': 'Subtract address',
+	'subi': 'Subtract immediate',
+	'subq': 'Subtract quick',
+	'subx': 'Subtract extended',
+	'swap': 'Swap register halves',
+	'tas': 'Test and set an operand',
+	'trap': 'Trap',
+	'trapv': 'Trap on overflow',
+	'tst': 'Test an operand',
+	'unlk': 'Unlink'
+};
+
+const cpuOperation = {
+	'abcd': '[destination]<sub>10</sub> ← [source]<sub>10</sub> + [destination]<sub>10</sub> + [X]',
+	'add': '[destination] ← [source] + [destination]',
+	'adda': '[destination] ← [source] + [destination]',
+	'addi': '[destination] ← \\<literal\\> + [destination]',
+	'addq': '[destination] ← \\<literal\\> + [destination]',
+	'addx': '[destination] ← [source] + [destination] + [X]',
+	'and': '[destination] ← [source] . [destination]',
+	'andi': '[destination] ← \\<literal\\> . [destination]',
+	'asl': '[destination] ← [destination] shifted by \\<count\\>',
+	'asr': '[destination] ← [destination] shifted by \\<count\\>',
+	'bcc': 'If cc = 1 THEN [PC] ← [PC] + d',
+	'bchg': '[Z] ← ¬(\\<bit number\\> OF [destination])<br/>\\<bit number\\> OF [destination] ← ¬(\\<bit number\\> OF [destination])',
+	'bclr': '[Z] ← ¬(\\<bit number\\> OF [destination])<br/>\\<bit number\\> OF [destination] ← 0',
+	'bkpt': 'Run Breakpoint Acknowledge Cycle; TRAP As Illegal Instruction',
+	'bra': '[PC] ← [PC] + d',
+	'bset': '[Z] ← ¬(\\<bit number\\> OF [destination])<br/>\\<bit number\\> OF [destination] ← 1',
+	'bsr': '[SP] ← [SP] - 4; [M([SP])] ← [PC]; [PC] ← [PC] + d',
+	'btst': '[Z] ← ¬(\\<bit number\\> OF [destination])',
+	'chk': 'IF [Dn] < 0 OR [Dn] > [\\<ea\\>] THEN TRAP',
+	'clr': '[destination] ← 0',
+	'cmp': '[destination] - [source]',
+	'cmpa': '[destination] - [source]',
+	'cmpi': '[destination] - \\<immediate data\\>',
+	'cmpm': '[destination] - [source]',
+	'dbcc': 'IF(condition false)<br/>&nbsp;&nbsp;THEN [Dn] ← [Dn] - 1 {decrement loop counter}<br/>&nbsp;&nbsp;&nbsp;&nbsp;IF [Dn] = -1<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;THEN [PC] ← [PC] + 2 {fall through to next instruction}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSE [PC] ← [PC] + d {take branch}<br/>&nbsp;&nbsp;ELSE [PC] ← [PC] + 2 {fall through to next instruction}<br/>',
+	'divs': '[destination] ← [destination]/[source]',
+	'divu': '[destination] ← [destination]/[source]',
+	'eor': '[destination] ← [source] ⊕ [destination]',
+	'eori': '[destination] ← [source] ⊕ [destination]',
+	'exg': '[Rx] ← [Ry]; [Ry] ← [Rx]',
+	'ext': '[destination] ← sign-extended[destination]',
+	'illegal': '[SSP] ← [SSP] - 4; [M([SSP])] ← [PC];<br/>[SSP] ← [SSP] - 2; [M([SSP])] ← [SR];<br/>[PC] ← Illegal instruction vector',
+	'jmp': '[PC] ← destination',
+	'jsr': '[SP] ← [SP] - 4; [M([SP])] ← [PC]<br/>[PC] ← destination',
+	'lea': '[An] ← \\<ea\\>',
+	'link': '[SP] ← [SP] - 4; [M([SP])] ← [An];<br/>[An] ← [SP]; [SP] ← [SP] + d',
+	'lsl': '[destination] ← [destination] shifted by \\<count\\>',
+	'lsr': '[destination] ← [destination] shifted by \\<count\\>',
+	'move': '[destination] ← [source]',
+	'movea': '[An] ← [source]',
+	'movec': 'If Supervisor State<br/>&nbsp;&nbsp;Then Rc → Rn or Rn → Rc<br/>Else TRAP',
+	'movem': 'REPEAT<br/>&nbsp;&nbsp;[destination] ← [source]<br/>UNTIL all registers in list moved',
+	'movep': '[destination] ← [source]',
+	'moveq': '[destination] ← \\<literal\\>',
+	'moves': 'If Supervisor State<br/>&nbsp;&nbsp;Then Rn → Destination [DFC] or Source [SFC] → Rn<br/>Else TRAP',
+	'muls': '[destination] ← [destination] * [source]',
+	'mulu': '[destination] ← [destination] * [source]',
+	'nbcd': '[destination]<sub>10</sub> ← 0 − [destination]<sub>10</sub> - [X]',
+	'neg': '[destination] ← 0 - [destination]',
+	'negx': '[destination] ← 0 - [destination] - [X]',
+	'nop': 'None',
+	'not': '[destination] ← ¬[destination]',
+	'or': '[destination] ← [source] + [destination]',
+	'ori': '[destination] ← \\<literal\\> + [destination]',
+	'pea': '[SP] ← [SP] - 4; [M([SP])] ← \\<ea\\>',
+	'reset': 'IF [S] = 1 THEN<br/>&nbsp;&nbsp;Assert RESET* line<br/>&nbsp;ELSE TRAP',
+	'rol': '[destination] ← [destination] rotated by \\<count\\>',
+	'ror': '[destination] ← [destination] rotated by \\<count\\>',
+	'roxl': '[destination] ← [destination] rotated by \\<count\\>',
+	'roxr': '[destination] ← [destination] rotated by \\<count\\>',
+	'rte': 'IF [S] = 1 THEN<br/>&nbsp;&nbsp;[SR] ← [M([SP])]; [SP] ← [SP] + 2<br/>&nbsp;&nbsp;[PC] ← [M([SP])]; [SP] ← [SP] + 4<br/>&nbsp;ELSE TRAP',
+	'rtr': '[CCR] ← [M([SP])]; [SP] ← [SP] + 2<br/>[PC] ← [M([SP])]; [SP] ← [SP] + 4',
+	'rts': '[PC] ← [M([SP])]; [SP] ← [SP] + 4',
+	'sbcd': '[destination]<sub>10</sub> ← [destination]<sub>10</sub> - [source]<sub>10</sub> - [X]',
+	'scc': 'IF cc = 1 THEN [destination] ← 11111111<sub>2</sub><br/>&nbsp;&nbsp;ELSE [destination] ← 00000000<sub>2</sub>',
+	'stop': 'IF [S] = 1 THEN<br/>&nbsp;&nbsp;&nbsp;&nbsp;[SR] ← \\<data\\><br/>&nbsp;&nbsp;&nbsp;&nbsp;STOP<br/>&nbsp;&nbsp;ELSE TRAP',
+	'sub': '[destination] ← [destination] - [source]',
+	'suba': '[destination] ← [destination] - [source]',
+	'subi': '[destination] ← [destination] - \\<literal\\>',
+	'subq': '[destination] ← [destination] - \\<literal\\>',
+	'subx': '[destination] ← [destination] - [source] - [X]',
+	'swap': '[Register(16:31)] ← [Register(0:15)];<br/>[Register(0:15)] ← [Register(16:31]',
+	'tas': '[CCR] ← tested([operand]); [destination(7)] ← 1',
+	'trap': 'S ← 1;</br>[SSP] ← [SSP] - 4;[M([SSP])] ← [PC];</br>[SSP] ← [SSP] - 2;[M([SSP])] ← [SR];</br>[PC] ← vector',
+	'trapv': 'IF V = 1 THEN:<br/>&nbsp;&nbsp;[SSP] ← [SSP] - 4; [M([SSP])] ← [PC];<br/>&nbsp;&nbsp;[SSP] ← [SSP] - 2; [M([SSP])] ← [SR];<br/>&nbsp;&nbsp;[PC] ← [M($01C)]<br/>&nbsp;&nbsp;ELSE no action',
+	'tst': '[CCR] ← tested([operand])<br/>***i.e.,*** [operand] - 0; update CCR',
+	'unlk': '[SP] ← [An]; [An] ← [M([SP])]; [SP] ← [SP] + 4'
+};
+
+function normalizeInsn(insn: string): string {
+	insn = insn.toLowerCase();
+	// remove size suffix
+	if(insn.endsWith(".w") || insn.endsWith(".b") || insn.endsWith(".l") || insn.endsWith(".s"))
+		insn = insn.substring(0, insn.length - 2);
+	return insn;
+}
+
+export function GetCpuDoc(insn: string): string {
+	insn = normalizeInsn(insn);
+	if (cpuDocs[insn])
+		return cpuDocs[insn];
+	else
+		return undefined;
+}
+
+let cpuNamesInited = false;
+
+export function GetCpuName(insn: string): string {
+	if(!cpuNamesInited) {
+		cpuNamesInited = true;
+		// eslint-disable-next-line guard-for-in
+		for(const cc in cpuCc) {
+			cpuName[`b${cc}`] = `Branch if ${cpuCc[cc]}`;
+		}
+//		'bcc': 'Branch on condition cc',
+
+	}
+
+	insn = normalizeInsn(insn);
+	if (cpuName[insn])
+		return cpuName[insn];
+	else
+		return undefined;
+}
+
+export function GetCpuOperation(insn: string): string {
+	insn = normalizeInsn(insn);
+	if (cpuOperation[insn])
+		return cpuOperation[insn];
 	else
 		return undefined;
 }

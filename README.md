@@ -77,7 +77,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
-Copper Disassembly and hardware register documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
+Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 
