@@ -199,7 +199,7 @@ class SourceContext {
 	}
 }
 
-export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.CompletionItemProvider {
+export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSemanticTokensProvider, vscode.CompletionItemProvider, vscode.HoverProvider {
 	private sourceContexts = new Map<string, SourceContext>();
 	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(AmigaAssemblyLanguageProvider.getLanguageId());
 
@@ -259,12 +259,12 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return context;
 	}
 
-	// interface implementations
-
+	// CompletionItemProvider
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 		const items: vscode.CompletionItem[] = [];
 		for(const opc of get_all_insn_m68k()) {
-			items.push(new vscode.CompletionItem({ label: opc, description: GetCpuName(opc) }, vscode.CompletionItemKind.Keyword));
+			if(!(opc.endsWith(".w") || opc.endsWith(".b") || opc.endsWith(".l") || opc.endsWith(".s")))
+				items.push(new vscode.CompletionItem({ label: opc, description: GetCpuName(opc) }, vscode.CompletionItemKind.Keyword));
 		}
 		const sourceContext = this.getSourceContext(document.fileName);
 		sourceContext.labels.forEach((value, key) => {
@@ -278,6 +278,17 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		//throw new Error('Method not implemented.');
 	}
 
+	// HoverProvider
+	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+		const word = document.getText(document.getWordRangeAtPosition(position));
+		console.log(word);
+		const doc = GetCpuDoc(word);
+		if(doc)
+			return new vscode.Hover(new vscode.MarkdownString(doc));
+		return null;
+	}
+
+	// DocumentSymbolProvider
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
 		const context = this.getSourceContext(document.fileName);
 		const symbols: vscode.DocumentSymbol[] = [];
@@ -287,6 +298,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return symbols;
 	}
 
+	// DefinitionProvider	
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Location | vscode.Location[] | vscode.LocationLink[]> {
 		const context = this.getSourceContext(document.fileName);
 		const word = document.getText(document.getWordRangeAtPosition(position));
@@ -297,9 +309,10 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return new vscode.Location(document.uri, new vscode.Position(line, 0));
 	}
 
+	// DocumentSemanticTokensProvider
 	public static getSemanticTokensLegend() {
 		const tokenTypes = ['function'];
-		const tokenModifiers = [];
+		const tokenModifiers: string[] = [];
 		return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
 	}
 

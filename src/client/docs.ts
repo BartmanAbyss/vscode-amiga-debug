@@ -632,25 +632,27 @@ const cpuDocs = {
 	'unlk': cpu_unlk
 };
 
-const cpuCc = {
-	'cc': 'carry clear',
-	'ge': 'greater than or equal',
-	'ls': 'lower or same',
-	'pl': 'plus',
-	'cs': 'carry set',
-	'gt': 'greater than',
-	'lt': 'less than',
-	'eq': 'equal',
-	'hi': 'higher',
-	'mi': 'minus',
+const cpuCc: { [x: string]: string } = {
+	// unsigned
+	'cs': 'carry set (unsigned <)',
+	'ls': 'lower or same (unsigned <=)',
+	'eq': 'equal (zero set)',
+	'ne': 'not equal (zero clear)',
+	'hi': 'higher than (unsigned >)',
+	'cc': 'carry clear (unsigned >=)',
+	'pl': 'plus (negative clear)',
 	'vc': 'overflow clear',
-	'le': 'less than or equal',
-	'ne': 'not equal',
+	// signed
+	'lt': 'less than (signed <)',
+	'le': 'less than or equal (signed <=)',
+	'gt': 'greater than (signed >)',
+	'ge': 'greater than or equal (signed >=)',
+	'mi': 'minus (negative set)',
 	'vs': 'overflow set'
 };
 
 // not for branch
-const cpuCc2 = {
+const cpuCc2: { [x: string]: string } = {
 	't':  'always true',
 	'f':  'never true',
 };
@@ -668,18 +670,15 @@ const cpuName = {
 	'asr': 'Arithmetic shift right',
 	'bchg': 'Test a bit and change',
 	'bclr': 'Test a bit and clear',
-	'bkpt': 'Breakpoint',
 	'bra': 'Branch always',
 	'bset': 'Test a bit and set',
 	'bsr': 'Branch to subroutine',
 	'btst': 'Test a bit',
-	'chk': 'Check register against bounds',
 	'clr': 'Clear an operand',
 	'cmp': 'Compare',
 	'cmpa': 'Compare address',
 	'cmpi': 'Compare immediate',
 	'cmpm': 'Compare memory with memory',
-	'dbcc': 'Test condition, decrement, and branch',
 	'divs': 'Signed divide',
 	'divu': 'Unsigned divide',
 	'eor': 'Exclusive-OR logical',
@@ -695,11 +694,9 @@ const cpuName = {
 	'lsr': 'Logical shift right',
 	'move': 'Copy data from source to destination',
 	'movea': 'Move address',
-	'movec': 'Move Control Register',
 	'movem': 'Move multiple registers',
 	'movep': 'Move peripheral data',
 	'moveq': 'Move quick (copy a small literal to a destination)',
-	'moves': 'Move Address Space',
 	'muls': 'Signed multiply',
 	'mulu': 'Unsigned multiply',
 	'nbcd': 'Negate decimal with sign extend',
@@ -719,7 +716,6 @@ const cpuName = {
 	'rtr': 'Return and restore condition codes',
 	'rts': 'Return from subroutine',
 	'sbcd': 'Subtract decimal with extend',
-	'scc': 'Set according to condition cc',
 	'stop': 'Load status register and stop',
 	'sub': 'Subtract binary',
 	'suba': 'Subtract address',
@@ -731,7 +727,62 @@ const cpuName = {
 	'trap': 'Trap',
 	'trapv': 'Trap on overflow',
 	'tst': 'Test an operand',
-	'unlk': 'Unlink'
+	'unlk': 'Unlink',
+	// pseudo
+	'jbsr': '(Pseudo) Branch to subroutine',
+	'jbra': '(Pseudo) Branch always',
+	'jra': '(Pseudo) Branch always',
+	'dbra': 'Decrement, and branch',
+	// 010+
+	'bkpt': 'Breakpoint (010+)',
+	'movec': 'Move control register (010+)',
+	'moves': 'Move address space (010+)',
+	'rtd': 'Return and deallocate (010+)',
+	// 020+
+	'bfchg': 'Test bit field and change (020+)',
+	'bfclr': 'Test bit field and clear (020+)',
+	'bfexts': 'Signed bit field extract (020+)',
+	'bfextu': 'Unsigned bit field extract (020+)',
+	'bfffo': 'Bit field find first one (020+)',
+	'bfins': 'Bit field insert (020+)',
+	'bfset': 'Test bit field and set (020+)',
+	'bftst': 'Test bit field (020+)',
+	'callm': 'Call module (020+)',
+	'cas': 'Compare and swap operands (020+)',
+	'cas2': 'Compare and swap dual operands (020+)',
+	'chk': 'Check register against bound (020+)',
+	'chk2': 'Check register against upper and lower bounds (020+)',
+	'cmp2': 'Compare register against upper and lower bounds (020+)',
+	'divsl': 'Signed divide (020+)',
+	'divul': 'Unsigned divide (020+)',
+	'pack': 'Pack BCD (020+)',
+	'rtm': 'Return from module (020+)',
+	'unpk': 'Unpack BCD (020+)',
+	// 030+
+	'pflush': 'Flush entry(ies) in the ATC (030+)',
+	'pflusha': 'Flush all entries in the ATC (030+)',
+	'ploadr': 'Load entry into the ATC (030+)',
+	'ploadw': 'Load entry into the ATC (030+)',
+	'pmove': 'Move to-from MMU registers (030+)',
+	'pmovefd': 'Move to-from MMU registers with flush disable (030+)',
+	'ptestr': 'Test a logical address (030+)',
+	'ptestw': 'Test a logical address (030+)',
+	// 040+
+	'cinva': 'Invalidate all cache lines (040+)',
+	'cinvl': 'Invalidate cache line matching physical address (040+)',
+	'cinvp': 'Invalidate cache line matching physical memory page (040+)',
+	'cpusha': 'Push and possibly invalidate all cache lines (040+)',
+	'cpushl': 'Push and possibly invalidate cache line matching physical address (040+)',
+	'cpushp': 'Push and possibly invalidate cache line matching physical memory page (040+)',
+	'move16': 'Move16 (040+)',
+	'pflushn': 'Flush non-global entry(ies) in the ATC (040+)',
+	'pflushan': 'Flush all non-global entries in the ATC (040+)',
+	// 060
+	'halt': 'Halt the processor (060)',
+	'lpstop': 'Low-power stop (060)',
+	'plpar': 'Load physical address (060)',
+	'plpaw': 'Load physical address (060)',
+	'pulse': 'Toggle in and out of nonpipelined mode (060)',
 };
 
 const cpuOperation = {
@@ -838,9 +889,16 @@ export function GetCpuName(insn: string): string {
 		// eslint-disable-next-line guard-for-in
 		for(const cc in cpuCc) {
 			cpuName[`b${cc}`] = `Branch if ${cpuCc[cc]}`;
+			cpuName[`j${cc}`] = `(Pseudo) Branch if ${cpuCc[cc]}`;
+			cpuName[`jb${cc}`] = `(Pseudo) Branch if ${cpuCc[cc]}`;
 		}
-//		'bcc': 'Branch on condition cc',
-
+		const cpuCcAll = { ...cpuCc, ...cpuCc2 };
+		// eslint-disable-next-line guard-for-in
+		for(const cc in cpuCcAll) {
+			cpuName[`db${cc}`] = `Test if ${cpuCcAll[cc]}, decrement, and branch`;
+			cpuName[`s${cc}`] = `Set if ${cpuCcAll[cc]}`;
+			cpuName[`trap${cc}`] = `Trap if ${cpuCc[cc]} (020+)`;
+		}
 	}
 
 	insn = normalizeInsn(insn);
