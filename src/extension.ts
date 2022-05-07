@@ -167,6 +167,7 @@ class AmigaDebugExtension {
 			vscode.languages.registerDocumentSemanticTokensProvider(assemblyLanguageSelector, this.assemblyLanguageProvider, AmigaAssemblyLanguageProvider.getSemanticTokensLegend()),
 			vscode.languages.registerDocumentSymbolProvider(assemblyLanguageSelector, this.assemblyLanguageProvider),
 			vscode.languages.registerDefinitionProvider(assemblyLanguageSelector, this.assemblyLanguageProvider),
+			vscode.languages.registerCompletionItemProvider(assemblyLanguageSelector, this.assemblyLanguageProvider),
 			this.assemblyLanguageProvider.diagnosticCollection,
 
 			// output channel

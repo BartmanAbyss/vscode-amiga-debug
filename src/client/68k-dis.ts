@@ -1845,3 +1845,15 @@ export function print_insn_m68k(buffer: Uint8Array, memaddr: number): { text: st
 	}
 	return ret;
 }
+
+export function get_all_insn_m68k(): string[] {
+	const set = new Set<string>();
+	for(const opc of m68k_opcodes)
+		set.add(opc.name);
+	for(const alias of m68k_opcode_aliases)
+		set.add(alias.alias);
+	const ret: string[] = [];
+	for(const v of set.values())
+		ret.push(v);
+	return ret;
+}

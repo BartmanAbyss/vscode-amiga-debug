@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCycles } from './client/68k';
+import { get_all_insn_m68k } from './client/68k-dis';
 
 enum TokenTypes {
 	function,
@@ -197,7 +198,7 @@ class SourceContext {
 	}
 }
 
-export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider {
+export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.CompletionItemProvider {
 	private sourceContexts = new Map<string, SourceContext>();
 	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(AmigaAssemblyLanguageProvider.getLanguageId());
 
@@ -255,6 +256,20 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		context = new SourceContext(fileName, this.diagnosticCollection);
 		this.sourceContexts.set(fileName, context);
 		return context;
+	}
+
+	// interface implementations
+
+	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
+		const items: vscode.CompletionItem[] = [];
+		for(const opc of get_all_insn_m68k())
+			items.push(new vscode.CompletionItem(opc));
+		return items;
+	}
+
+	public resolveCompletionItem?(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
+		return null;
+		//throw new Error('Method not implemented.');
 	}
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
