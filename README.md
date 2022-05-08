@@ -226,7 +226,6 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: more...
 
 ### Objdump
-* jump levels not correct, thus missing cycles for loops
 * TODO: click/follow any addresses
 * editing source while having disassembly open doesn't really work
 

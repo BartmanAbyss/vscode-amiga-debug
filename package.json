@@ -24,6 +24,7 @@
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
 		"onCustomEditor:amiga.profile",
+		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
 		"onLanguage:amiga.assembly",
 		"workspaceContains:.vscode/amiga.json"

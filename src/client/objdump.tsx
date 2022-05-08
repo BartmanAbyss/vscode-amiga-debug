@@ -18,7 +18,6 @@ import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
 import { resolvePath } from './pathResolve';
-import { debug } from 'console';
 import { GetCpuDoc, GetCpuName, NormalizeInsn } from './docs';
 import Markdown from 'markdown-to-jsx';
 
@@ -65,7 +64,7 @@ export class ObjdumpModel {
 	public jumps: JumpInfo[] = [];
 
 	private addJumps(func: Function, funcJumps: JumpInfo[]) {
-		// based on binutils-gdb/binutils/objdump.c
+		//console.time('addJumps');
 		const sortedJumps = funcJumps.filter((j) => j.end >= func.pc && j.end < func.end).sort((a: JumpInfo, b: JumpInfo) => {
 			const aMin  = Math.min(...a.start, a.end);
 			const bMin  = Math.min(...b.start, b.end);
@@ -85,44 +84,25 @@ export class ObjdumpModel {
 			return aMax >= bMin && aMin <= bMax;
 		}
 
-		let lastJump = 0;
+		//console.log(`func: ${func.name}`);
 		let maxLevel = -1;
-		while(lastJump < sortedJumps.length) {
-			// The last jump is part of the next group
-			const base = lastJump;
-			// Increment level
-			sortedJumps[base].level = ++maxLevel;
-			// Find jumps that can be combined on the same level, with the largest jumps tested first.
-			// This has the advantage that large jumps are on lower levels and do not intersect with small
-			// jumps that get grouped on higher levels.
-			let exchangeItem = lastJump + 1;
-			for(let it = exchangeItem; it < sortedJumps.length; it++) {
-				// test if the jump intersects with any jump from current group
-				let ok = true;
-				for(let itCollision = base; itCollision !== exchangeItem; itCollision++) {
-					// this jump intersects so we leave it out
-					if(jumpIntersects(sortedJumps[itCollision], sortedJumps[it])) {
-						ok = false;
-						break;
-					}
-				}
-				// add jump to group
-				if(ok) {
-					// move current element to the front
-					if(it !== exchangeItem) {
-						// hmm.. this code is not good
-						[sortedJumps[exchangeItem], sortedJumps[it]] = [sortedJumps[it], sortedJumps[exchangeItem]];
-						lastJump = it;
-					} else {
-						lastJump = exchangeItem;
-						exchangeItem++;
-					}
-					sortedJumps[lastJump].level = maxLevel;
+		for(let i = 0; i < sortedJumps.length; i++) {
+			if(sortedJumps[i].level !== -1)
+				continue;
+			sortedJumps[i].level = ++maxLevel;
+			const currentGroup: number[] = [i];
+			for(let j = i + 1; j < sortedJumps.length; j++) {
+				if(sortedJumps[j].level !== -1)
+					continue;
+				if(currentGroup.every((e) => sortedJumps[j].level !== -1 || !jumpIntersects(sortedJumps[e], sortedJumps[j]))) {
+					sortedJumps[j].level = maxLevel;
+					currentGroup.push(j);
 				}
 			}
-			lastJump = exchangeItem; // move to next group
+			//console.log(`  level ${maxLevel}: ${JSON.stringify(currentGroup)}`);
 		}
 		this.jumps.push(...sortedJumps);
+		//console.timeEnd('addJumps');
 	}
 
 	constructor(objdump: string, theoreticalCycles = true, pcTrace: number[] = []) {
@@ -238,6 +218,7 @@ export const ObjdumpView: FunctionComponent<{
 				pcMap.set(line.pc, index);
 		});
 
+
 		const jumps: JumpAbsolute[] = model.jumps.filter((jump) =>
 			[...jump.start, jump.end].every((pc) => pcMap.has(pc))
 		).map((jump) => {
@@ -252,10 +233,6 @@ export const ObjdumpView: FunctionComponent<{
 				height: (max - min + 1) * rowHeight
 			};
 		});
-		//console.log(jumps);
-		//console.log(jumps.find((j) => j.end === 2264)); // level 3
-		//console.log(pcMap.get(0x1aea)); 2264
-
 		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())), jumps];
 	}, [model, rowHeight]);
 
@@ -416,7 +393,7 @@ export const ObjdumpView: FunctionComponent<{
 		const endY = end * rowHeight + rowMiddle;
 
 		const loopCycles = (() => {
-			if(/*jump.level === 0 &&*/ jump.start.length === 1 && jump.end < jump.start[0]) {
+			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
 				const loop = content.slice(jump.end, jump.start[0] + 1).map((l) => l.theoreticalCycles);
 				if(loop.every((l) => l?.length > 0)) {
 					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
@@ -424,9 +401,14 @@ export const ObjdumpView: FunctionComponent<{
 					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
 					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
 				}
-			} else {
-				return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>;
-			}
+			}/* else {
+				// debug
+				return <Fragment>
+					<text transform={`translate(${Math.max(15, indent + 2)}, ${((0) * rowHeight + rowMiddle)})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
+					<text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
+					<text transform={`translate(${Math.max(15, indent + 2)}, ${end * rowHeight})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
+				</Fragment>;
+			}*/
 			return '';
 		})();
 

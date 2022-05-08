@@ -724,5 +724,5 @@ export function GetCycles(insn: Uint16Array): Cycles[] {
 		console.log(`Error decoding opcode ${insn[0].toString(16).padStart(4, '0')}`);
 		return;
 	}
-	console.log(`Unknown opcode ${insn[0].toString(16)}.padStart(4, '0')`);
+	console.log(`Unknown opcode ${insn[0].toString(16).padStart(4, '0')}`);
 }
