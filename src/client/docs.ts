@@ -883,7 +883,7 @@ export function GetCpuDoc(insn: string): string {
 
 let cpuNamesInited = false;
 
-export function GetCpuName(insn: string): string {
+function InitCpuName() {
 	if(!cpuNamesInited) {
 		cpuNamesInited = true;
 		// eslint-disable-next-line guard-for-in
@@ -900,6 +900,15 @@ export function GetCpuName(insn: string): string {
 			cpuName[`trap${cc}`] = `Trap if ${cpuCc[cc]} (020+)`;
 		}
 	}
+}
+
+export function GetCpuInsns(): string[] {
+	InitCpuName();
+	return Object.keys(cpuName);
+}
+
+export function GetCpuName(insn: string): string {
+	InitCpuName();
 
 	insn = normalizeInsn(insn);
 	if (cpuName[insn])

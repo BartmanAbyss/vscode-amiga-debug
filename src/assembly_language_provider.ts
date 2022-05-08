@@ -5,8 +5,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCycles } from './client/68k';
-import { get_all_insn_m68k } from './client/68k-dis';
-import { GetCpuDoc, GetCpuName } from './client/docs';
+import { GetCpuDoc, GetCpuInsns, GetCpuName } from './client/docs';
 
 enum TokenTypes {
 	function,
@@ -262,9 +261,8 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	// CompletionItemProvider
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 		const items: vscode.CompletionItem[] = [];
-		for(const opc of get_all_insn_m68k()) {
-			if(!(opc.endsWith(".w") || opc.endsWith(".b") || opc.endsWith(".l") || opc.endsWith(".s")))
-				items.push(new vscode.CompletionItem({ label: opc, description: GetCpuName(opc) }, vscode.CompletionItemKind.Keyword));
+		for(const opc of GetCpuInsns()) {
+			items.push(new vscode.CompletionItem({ label: opc, description: GetCpuName(opc) }, vscode.CompletionItemKind.Keyword));
 		}
 		const sourceContext = this.getSourceContext(document.fileName);
 		sourceContext.labels.forEach((value, key) => {
