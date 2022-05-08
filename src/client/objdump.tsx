@@ -1,5 +1,6 @@
 import { Component, Fragment, FunctionComponent, h, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
 import { Icon } from './icons';
@@ -17,6 +18,9 @@ import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
 import { resolvePath } from './pathResolve';
+import { debug } from 'console';
+import { GetCpuDoc, GetCpuName, NormalizeInsn } from './docs';
+import Markdown from 'markdown-to-jsx';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -43,6 +47,8 @@ export interface Line {
 	traceHits?: number;
 	traceCycles?: number;
 	theoreticalCycles?: Cycles[];
+	opcode?: string;
+	rest?: string;
 	text: string;
 	loc?: Location;
 }
@@ -172,7 +178,9 @@ export class ObjdumpModel {
 				}
 				this.content.push({
 					pc,
-					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`, // ${insnMatch[2].padEnd(20, ' ')} 
+					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
+					opcode,
+					rest,
 					theoreticalCycles: theoreticalCycles ? GetCycles(insn) : undefined,
 					loc,
 					traceHits: hits.get(pc),
@@ -245,6 +253,8 @@ export const ObjdumpView: FunctionComponent<{
 			};
 		});
 		//console.log(jumps);
+		//console.log(jumps.find((j) => j.end === 2264)); // level 3
+		//console.log(pcMap.get(0x1aea)); 2264
 
 		return [model.content, model.functions.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())), jumps];
 	}, [model, rowHeight]);
@@ -319,6 +329,33 @@ export const ObjdumpView: FunctionComponent<{
 		});
 	}, []);
 
+	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
+	const tooltipRef = useRef<HTMLDivElement>();
+
+	const onMouseEnterOpcode = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
+		const opcode = evt.currentTarget.attributes['data'].nodeValue as string;
+		const rect = evt.currentTarget.getBoundingClientRect();
+		const markdown = GetCpuDoc(opcode);
+		if(markdown) {
+			const hov = { 
+				markdown, 
+				x: Math.min(rect.left, window.innerWidth - 530), 
+				y: rect.bottom < window.innerHeight - 260 ? rect.bottom + 10 : rect.top - 260,
+				justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end' 
+			};
+			setHovered(hov);
+		}
+	}, []);
+	const onMouseLeaveOpcode = useCallback(() => {
+		setHovered({ markdown: '', x: -1, y: -1, justify: '' });
+	}, []);
+	const onWheelOpcode = useCallback((evt: WheelEvent) => {
+		evt.preventDefault();
+		// dunno how to make smooth scrolling that works when wheeling repeatedly
+		tooltipRef.current.scrollTop += evt.deltaY;
+	}, [tooltipRef.current]);
+
 	const renderRow = useCallback((c: Line, index: number) => {
 		const extra: string[] = [];
 
@@ -343,7 +380,13 @@ export const ObjdumpView: FunctionComponent<{
 
 		const text = (find.internal && findResult.length > 0) 
 		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
-		: c.text;
+		: (c.opcode 
+			? <Fragment>
+				<span>{c.pc.toString(16).padStart(8, ' ')}: </span>
+				<span class={styles.opcode} data={c.opcode} onMouseEnter={onMouseEnterOpcode} onMouseLeave={onMouseLeaveOpcode} onWheel={onWheelOpcode}>{c.opcode}</span>
+				<span>{' '.repeat(7 - c.opcode.length)} {c.rest}</span>
+			</Fragment> 
+			: c.text);
 
 		return (c.pc === undefined
 		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
@@ -358,7 +401,7 @@ export const ObjdumpView: FunctionComponent<{
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row, content, frame, findResult, find, curFind]);
+	}, [onClickLoc, row, content, frame, findResult, find, curFind, onMouseEnterOpcode, onMouseLeaveOpcode, onWheelOpcode]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -373,7 +416,7 @@ export const ObjdumpView: FunctionComponent<{
 		const endY = end * rowHeight + rowMiddle;
 
 		const loopCycles = (() => {
-			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
+			if(/*jump.level === 0 &&*/ jump.start.length === 1 && jump.end < jump.start[0]) {
 				const loop = content.slice(jump.end, jump.start[0] + 1).map((l) => l.theoreticalCycles);
 				if(loop.every((l) => l?.length > 0)) {
 					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
@@ -381,6 +424,8 @@ export const ObjdumpView: FunctionComponent<{
 					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
 					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
 				}
+			} else {
+				return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>;
 			}
 			return '';
 		})();
@@ -621,5 +666,11 @@ export const ObjdumpView: FunctionComponent<{
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>
 		<VirtualListLine ref={listRef} class={styles.container} style={{opacity}} rows={content} renderRow={renderRow} rowHeight={rowHeight} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
+		{hovered.markdown !== '' && (createPortal(
+			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
+				<div ref={tooltipRef} class={styles.tooltip}>
+					<Markdown>{hovered.markdown}</Markdown>
+				</div>
+			</div>, document.body))}
 	</Fragment>;
 };

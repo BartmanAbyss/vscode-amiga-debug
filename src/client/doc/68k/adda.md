@@ -26,7 +26,7 @@ To add to the contents of an address register and not update the CCR. Note that 
 An `ADDA` operation does not affect the state of the CCR.
 
 ### Source operand addressing modes
-|Dn|An|(An)|(An)+|&#x2011;(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
+|Dn|An|(An)|(An)+|-(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |✓|✓|✓|✓|✓|✓|✓|✓|✓|✓|✓|✓|
 

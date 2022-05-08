@@ -30,7 +30,7 @@ CHK    #max_bound,D0   ;Test subscript against 0 and upper bound
 N: set if [Dn] < 0 ; cleared if [Dn] > [\<ea\>]; undefined otherwise.
 
 ### Source operand addressing modes
-|Dn|An|(An)|(An)+|&#x2011;(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
+|Dn|An|(An)|(An)+|-(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |✓||✓|✓|✓|✓|✓|✓|✓||||
 

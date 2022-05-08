@@ -23,7 +23,7 @@ A bit in the destination operand is tested and the state of the specified bit is
 Z: set if the bit tested is zero, cleared otherwise.
 
 ### Destination operand addressing modes
-|Dn|An|(An)|(An)+|&#x2011;(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
+|Dn|An|(An)|(An)+|-(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |✓||✓|✓|✓|✓|✓|✓|✓|✓|✓||
 

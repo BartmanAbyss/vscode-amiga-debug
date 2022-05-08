@@ -563,7 +563,6 @@ const cpuDocs = {
 	'andi': cpu_andi,
 	'asl': cpu_asl_asr,
 	'asr': cpu_asl_asr,
-	'bcc': cpu_bcc,
 	'bchg': cpu_bchg,
 	'bclr': cpu_bclr,
 	'bkpt': cpu_bkpt,
@@ -577,7 +576,6 @@ const cpuDocs = {
 	'cmpa': cpu_cmpa,
 	'cmpi': cpu_cmpi,
 	'cmpm': cpu_cmpm,
-	'dbcc': cpu_dbcc,
 	'divs': cpu_divs_divu,
 	'divu': cpu_divs_divu,
 	'eor': cpu_eor,
@@ -617,7 +615,6 @@ const cpuDocs = {
 	'rtr': cpu_rtr,
 	'rts': cpu_rts,
 	'sbcd': cpu_sbcd,
-	'scc': cpu_scc,
 	'stop': cpu_stop,
 	'sub': cpu_sub,
 	'suba': cpu_suba,
@@ -865,7 +862,7 @@ const cpuOperation = {
 	'unlk': '[SP] ← [An]; [An] ← [M([SP])]; [SP] ← [SP] + 4'
 };
 
-function normalizeInsn(insn: string): string {
+export function NormalizeInsn(insn: string): string {
 	insn = insn.toLowerCase();
 	// remove size suffix
 	if(insn.endsWith(".w") || insn.endsWith(".b") || insn.endsWith(".l") || insn.endsWith(".s"))
@@ -873,24 +870,18 @@ function normalizeInsn(insn: string): string {
 	return insn;
 }
 
-export function GetCpuDoc(insn: string): string {
-	insn = normalizeInsn(insn);
-	if (cpuDocs[insn])
-		return cpuDocs[insn];
-	else
-		return undefined;
-}
+let cpuInited = false;
 
-let cpuNamesInited = false;
-
-function InitCpuName() {
-	if(!cpuNamesInited) {
-		cpuNamesInited = true;
+function InitCpu() {
+	if(!cpuInited) {
+		cpuInited = true;
 		// eslint-disable-next-line guard-for-in
 		for(const cc in cpuCc) {
 			cpuName[`b${cc}`] = `Branch if ${cpuCc[cc]}`;
 			cpuName[`j${cc}`] = `(Pseudo) Branch if ${cpuCc[cc]}`;
 			cpuName[`jb${cc}`] = `(Pseudo) Branch if ${cpuCc[cc]}`;
+			cpuDocs[`b${cc}`] = cpu_bcc;
+		
 		}
 		const cpuCcAll = { ...cpuCc, ...cpuCc2 };
 		// eslint-disable-next-line guard-for-in
@@ -898,19 +889,20 @@ function InitCpuName() {
 			cpuName[`db${cc}`] = `Test if ${cpuCcAll[cc]}, decrement, and branch`;
 			cpuName[`s${cc}`] = `Set if ${cpuCcAll[cc]}`;
 			cpuName[`trap${cc}`] = `Trap if ${cpuCc[cc]} (020+)`;
+			cpuDocs[`db${cc}`] = cpu_dbcc;
+			cpuDocs[`s${cc}`] = cpu_scc;
 		}
 	}
 }
 
 export function GetCpuInsns(): string[] {
-	InitCpuName();
+	InitCpu();
 	return Object.keys(cpuName);
 }
 
 export function GetCpuName(insn: string): string {
-	InitCpuName();
-
-	insn = normalizeInsn(insn);
+	InitCpu();
+	insn = NormalizeInsn(insn);
 	if (cpuName[insn])
 		return cpuName[insn];
 	else
@@ -918,9 +910,19 @@ export function GetCpuName(insn: string): string {
 }
 
 export function GetCpuOperation(insn: string): string {
-	insn = normalizeInsn(insn);
+	InitCpu();
+	insn = NormalizeInsn(insn);
 	if (cpuOperation[insn])
 		return cpuOperation[insn];
+	else
+		return undefined;
+}
+
+export function GetCpuDoc(insn: string): string {
+	InitCpu();
+	insn = NormalizeInsn(insn);
+	if (cpuDocs[insn])
+		return cpuDocs[insn];
 	else
 		return undefined;
 }

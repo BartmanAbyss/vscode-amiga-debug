@@ -22,7 +22,7 @@ The operand addressed as the destination and the extend bit in the CCR are subtr
 The Z-bit is cleared if the result is non-zero and is unchanged otherwise. The C-bit is set if a decimal borrow occurs. The X-bit is set to the same value as the C-bit.
 
 ## Destination operand addressing modes
-|Dn|An|(An)|(An)+|&#x2011;(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
+|Dn|An|(An)|(An)+|-(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |✓||✓|✓|✓|✓|✓|✓|✓||||
 

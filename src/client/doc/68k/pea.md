@@ -34,7 +34,7 @@ Subroutine MOVEA.L (4,SP),A0   ;A0 points to parameter under return address
 |-|-|-|-|-|
 
 ## Source operand addressing modes
-|Dn|An|(An)|(An)+|&#x2011;(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
+|Dn|An|(An)|(An)+|-(An)|(d,An)|(d,An,Xi)|ABS.W|ABS.L|(d,PC)|(d,PC,Xn)|imm|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |||✓|||✓|✓|✓|✓|✓|✓||
 
