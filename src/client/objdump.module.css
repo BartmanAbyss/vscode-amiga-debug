@@ -227,3 +227,33 @@ a:focus {
   width: 16px;
   height: 16px;
 }
+
+/* from copper.css */
+.opcode {
+	text-decoration-line: underline;
+	text-decoration-style: dotted;
+	cursor: help;
+}
+
+.tooltip_parent {
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+	height: 250px;
+	z-index: 100;
+	pointer-events: none;
+}
+
+/* from resources.module.css */
+.tooltip {
+	vertical-align: bottom;
+	max-height: 250px;
+	width: 500px;
+
+	box-sizing: border-box;
+	box-shadow: 0 .25em .5em 0 black;
+	padding: 5px;
+	background: var(--vscode-editorWidget-background);
+	border: 1px solid var(--vscode-editorWidget-border);
+	overflow-y: auto;
+}

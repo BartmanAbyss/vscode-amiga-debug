@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.3.2",
+	"version": "1.3.3",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -24,7 +24,9 @@
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
 		"onCustomEditor:amiga.profile",
+		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
+		"onLanguage:amiga.assembly",
 		"workspaceContains:.vscode/amiga.json"
 	],
 	"main": "./dist/extension.js",
@@ -184,6 +186,9 @@
 			},
 			{
 				"language": "cpp"
+			},
+			{
+				"language": "amiga.assembly"
 			},
 			{
 				"language": "amiga.disassembly"
@@ -410,7 +415,7 @@
 		"eslint-plugin-jsdoc": "^37.0.3",
 		"eslint-plugin-prefer-arrow": "^1.2.3",
 		"glob": "^7.1.6",
-		"markdown-to-jsx": "6.11.4",
+		"markdown-to-jsx": "^7.1.7",
 		"mocha": "^9.1.3",
 		"preact": "^10.3.4",
 		"preact-virtual-list": "^0.3.1",

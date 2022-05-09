@@ -44,6 +44,11 @@ suite("68k-cycles", () => {
 		const cycles = GetCycles(insn);
 		assert.deepEqual(cycles, [ { total: 8, read: 1, write: 0 } ]);
 	});
+	test("andi", () => {
+		const insn = new Uint16Array([0x0281, 0x0000, 0x00ff]); // andi.l #255, d1
+		const cycles = GetCycles(insn);
+		assert.deepEqual(cycles, [ { total: 16, read: 3, write: 0 } ]);
+	});
 	test("clr", () => {
 		const insn = new Uint16Array([0x42b9, 0x0000, 0xa3b0]); // clr.l $a3b0
 		const cycles = GetCycles(insn);

@@ -2,6 +2,15 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.3
+- fix some 68k cycle timings
+- support breakpoints in .s files
+- Assembly: show theoretical 68000 cycles as decoration
+- Assembly: fix F12 on local labels
+- Assembly: Autocomplete for opcodes, labels
+- Disassembly: Hover over CPU instructions to view documentation
+- Diassembly: fix loop cycle display in some cases
+
 ## 1.3.2
 - updated to WinUAE 4.9.0 beta 42
 - fixed debug overlay redraw issue (broken since 1.2.0)

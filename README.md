@@ -77,7 +77,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
-Copper Disassembly and hardware register documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
+Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
 
 Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
 
@@ -126,12 +126,14 @@ To build a `.vsix`, `npm install -g vsce` (once), and then `vsce package`.
 Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
 Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
 
-Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`)
+Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`).
+Replace the `16` in `make -j16` with your number of CPU cores
 
 ### Ubuntu 20.4 LTS from Microsoft Store
 ```powershell
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
+wsl --install -d ubuntu
 ```
 
 ### MinGW on WSL2 (Ubuntu 20.04)
@@ -211,6 +213,7 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
 * "npm run serve": all colors in flame-graph are black
+* stack sizes > 1024 cause UnwindTable to fail parsing
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
@@ -220,11 +223,11 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ### Assembly
 * TODO: parser needs to check for comments
-* TODO: show 68000 cycles
 * TODO: more...
 
 ### Objdump
 * TODO: click/follow any addresses
+* editing source while having disassembly open doesn't really work
 
 ### Terminal
 * Terminal doesn't open again once closed

@@ -13,7 +13,7 @@
             "options": {
                 "cwd": "${workspaceRoot}",
                 "env": {
-                    "PATH": "${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                    "PATH": "${env:PATH};${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
                 }
             },
             "problemMatcher": [

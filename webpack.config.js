@@ -32,7 +32,11 @@ module.exports = (env, argv) => {
 							loader: 'ts-loader'
 						}
 					]
-				}
+				},
+				{
+					test: /\.md$/,
+					loader: 'raw-loader',
+				},
 			]
 		},
 		optimization: {
@@ -97,7 +101,6 @@ module.exports = (env, argv) => {
 					test: /\.(vert|frag|md)$/,
 					loader: 'raw-loader',
 				},
-
 			],
 		},
 		optimization: {
