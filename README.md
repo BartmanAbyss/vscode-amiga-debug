@@ -1,6 +1,6 @@
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 11.2 with the bundled WinUAE.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
 
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
@@ -96,10 +96,10 @@ P61.testmod - Module by Skylord/Sector 7
 [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
 
 This extension contains binaries of:
-- modified [GCC 11.2.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-11.2.0/) (patch included)
-  - Copyright (C) 2021 Free Software Foundation, Inc.
+- modified [GCC 12.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-12.1.0/) (patch included)
+  - Copyright (C) 2022 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU gdb (GDB) 12.0.50.20211014-git](https://github.com/BartmanAbyss/binutils-gdb)
+- modified [GNU gdb (GDB) 13.0.50.20220509-git](https://github.com/BartmanAbyss/binutils-gdb)
   - Copyright (C) 2021 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 - modified [WinUAE 4.9.0](https://github.com/BartmanAbyss/WinUAE)
@@ -129,23 +129,24 @@ Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb 
 Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`).
 Replace the `16` in `make -j16` with your number of CPU cores
 
-### Ubuntu 20.4 LTS from Microsoft Store
+### Ubuntu 22.4 LTS from Microsoft Store
 ```powershell
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
 wsl --install -d ubuntu
 ```
 
-### MinGW on WSL2 (Ubuntu 20.04)
+### MinGW on WSL2 (Ubuntu 22.04)
 ```bash
 sudo apt install build-essential flex bison expect dejagnu texinfo mingw-w64
+sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 ```
 
 ### Binutils+GDB
 ```bash
 git clone https://github.com/BartmanAbyss/binutils-gdb.git
 cd binutils-gdb
-./contrib/download_prerequisites
+bash ./contrib/download_prerequisites
 cd ..
 mkdir build-binutils-gdb
 cd build-binutils-gdb
@@ -156,15 +157,15 @@ make install
 
 ### GCC
 ```bash
-wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-11.2.0/gcc-11.2.0.tar.xz
-tar -xf gcc-11.2.0.tar.xz
-cd gcc-11.2.0
+wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.1.0/gcc-12.1.0.tar.xz
+tar -xf gcc-12.1.0.tar.xz
+cd gcc-12.1.0
 patch -p1 < ../gcc-barto.patch
-./contrib/download_prerequisites
+bash ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-11.2.0
-cd build-gcc-11.2.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-11.2.0/configure \
+mkdir -p build-gcc-12.1.0
+cd build-gcc-12.1.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.1.0/configure \
   --target=m68k-amiga-elf \
   --disable-nls \
   --enable-languages=c,c++ \
@@ -199,6 +200,13 @@ https://github.com/BartmanAbyss/elf2hunk
 rm -r /mnt/c/amiga-mingw/opt/include
 rm -r /mnt/c/amiga-mingw/opt/share
 find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
+```
+
+## Internal Development
+
+### Create new GCC patch
+```bash
+diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 ```
 
 ## Known Issues/TODOs

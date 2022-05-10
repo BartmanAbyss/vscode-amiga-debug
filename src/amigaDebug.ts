@@ -350,20 +350,20 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if(args.uaelog === undefined)
 			args.uaelog = true;
 
+		if (!fs.existsSync(args.program + ".elf")) {
+			this.sendErrorResponse(response, 103, `Unable to find executable file at ${args.program}.elf.`);
+			return;
+		}
+
+		if (!fs.existsSync(args.program + ".exe")) {
+			this.sendErrorResponse(response, 103, `Unable to find executable file at ${args.program}.exe.`);
+			return;
+		}
+	
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
-
-		if (!fs.existsSync(this.args.program + ".elf")) {
-			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".elf"}.`);
-			return;
-		}
-
-		if (!fs.existsSync(this.args.program + ".exe")) {
-			this.sendErrorResponse(response, 103, `Unable to find executable file at ${this.args.program + ".exe"}.`);
-			return;
-		}
 
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {

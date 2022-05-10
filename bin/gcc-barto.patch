@@ -1,6 +1,6 @@
-diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.c gcc-10.1.0-barto/gcc/config/m68k/m68k.c
---- gcc-10.1.0/gcc/config/m68k/m68k.c	2020-05-07 12:49:59.000000000 +0200
-+++ gcc-10.1.0-barto/gcc/config/m68k/m68k.c	2020-07-09 12:52:15.717037000 +0200
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.cc gcc-12.1.0-barto/gcc/config/m68k/m68k.cc
+--- gcc-12.1.0/gcc/config/m68k/m68k.cc	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.cc	2022-05-09 21:06:38.690933500 +0200
 @@ -1279,8 +1279,17 @@
  	      addr = gen_rtx_POST_INC (Pmode, stack_pointer_rtx);
  	    else
@@ -62,9 +62,9 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.c gcc-10.1.0-barto/gcc/config/m68k/m68
  
    if (crtl->calls_eh_return)
      emit_insn (gen_addsi3 (stack_pointer_rtx,
-diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.h gcc-10.1.0-barto/gcc/config/m68k/m68k.h
---- gcc-10.1.0/gcc/config/m68k/m68k.h	2020-05-07 12:49:59.000000000 +0200
-+++ gcc-10.1.0-barto/gcc/config/m68k/m68k.h	2020-07-11 20:02:06.255666700 +0200
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.h gcc-12.1.0-barto/gcc/config/m68k/m68k.h
+--- gcc-12.1.0/gcc/config/m68k/m68k.h	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.h	2022-05-09 21:16:00.610933500 +0200
 @@ -398,7 +398,7 @@
  /* Most m68k targets use %a6 as a frame pointer.  The AmigaOS
     ABI uses %a6 for shared library calls, therefore the frame
@@ -77,17 +77,18 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.h gcc-10.1.0-barto/gcc/config/m68k/m68
 @@ -733,8 +733,9 @@
  #define DWARF_FRAME_RETURN_COLUMN 24
  #define DWARF_ALT_FRAME_RETURN_COLUMN 25
-
+ 
 -/* Before the prologue, the top of the frame is at 4(%sp).  */
 -#define INCOMING_FRAME_SP_OFFSET 4
 +/* Before the prologue, the top of the frame is at 4(%sp), except in interrupt handlers: 6(%sp)  */
 +#define DEFAULT_INCOMING_FRAME_SP_OFFSET 4
 +#define INCOMING_FRAME_SP_OFFSET (m68k_get_function_kind(current_function_decl) == m68k_fk_interrupt_handler ? 6 : 4)
-
- #define EPILOGUE_USES(REGNO) m68k_epilogue_uses (REGNO)  
-diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.md gcc-10.1.0-barto/gcc/config/m68k/m68k.md
---- gcc-10.1.0/gcc/config/m68k/m68k.md	2020-05-07 12:49:59.000000000 +0200
-+++ gcc-10.1.0-barto/gcc/config/m68k/m68k.md	2020-07-09 12:29:24.637407900 +0200
+ 
+ #define EPILOGUE_USES(REGNO) m68k_epilogue_uses (REGNO)
+ 
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.md gcc-12.1.0-barto/gcc/config/m68k/m68k.md
+--- gcc-12.1.0/gcc/config/m68k/m68k.md	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.md	2022-05-09 21:09:25.180933500 +0200
 @@ -133,7 +133,8 @@
    [(D0_REG		0)
     (A0_REG		8)
@@ -98,10 +99,10 @@ diff -ruN gcc-10.1.0/gcc/config/m68k/m68k.md gcc-10.1.0-barto/gcc/config/m68k/m6
     (A6_REG		14)
     (SP_REG		15)
     (FP0_REG		16)
-diff -ruN gcc-10.1.0/tree-scalar-evolution.c gcc-10.1.0-barto/gcc/tree-scalar-evolution.c
---- gcc-10.1.0/tree-scalar-evolution.c  2020-05-07 12:50:02.000000000 +0200
-+++ gcc-10.1.0-barto/gcc/tree-scalar-evolution.c     2020-07-31 12:48:17.490142200 +0200
-@@ -3373,6 +3373,7 @@
+diff -ruN gcc-12.1.0/gcc/tree-scalar-evolution.cc gcc-12.1.0-barto/gcc/tree-scalar-evolution.cc
+--- gcc-12.1.0/gcc/tree-scalar-evolution.cc	2022-05-06 09:30:59.000000000 +0200
++++ gcc-12.1.0-barto/gcc/tree-scalar-evolution.cc	2022-05-09 21:10:36.320933500 +0200
+@@ -3364,6 +3364,7 @@
        || code == CEIL_DIV_EXPR
        || code == FLOOR_DIV_EXPR
        || code == ROUND_DIV_EXPR

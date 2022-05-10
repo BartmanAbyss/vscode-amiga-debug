@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.4
+- updated to GCC 12.1.0, binutils, GNU gdb (GDB) 13.0.50.20220509-git
+- fixed missing error message during launching a debug session when .elf file was not found
+
 ## 1.3.3
 - fix some 68k cycle timings
 - support breakpoints in .s files
