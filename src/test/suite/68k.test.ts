@@ -109,6 +109,16 @@ suite("68k-cycles", () => {
 		const cycles = GetCycles(insn);
 		assert.deepEqual(cycles, [ { total: 4, read: 1, write: 0 } ]);
 	});
+	test("lea", () => { // #96
+		const insn = new Uint16Array([0x4BE9, 0x0050]); // lea     $50(a1),a5
+		const cycles = GetCycles(insn);
+		assert.deepEqual(cycles, [ { total: 8, read: 2, write: 0 } ]);
+	});
+	test("bchg", () => { // #96
+		const insn = new Uint16Array([0x0574, 0x3000]); // bchg    d2,(a4,d3.w)	
+		const cycles = GetCycles(insn);
+		assert.deepEqual(cycles, [ { total: 18, read: 3, write: 1 } ]);
+	});
 });
 
 suite("68k-jump", () => {
