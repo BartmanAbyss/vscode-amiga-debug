@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.3.4",
+	"version": "1.3.5",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -436,8 +436,8 @@
 	},
 	"dependencies": {
 		"vscode-cpptools": "^5.0.0",
-		"vscode-debugadapter": "^1.40.0",
-		"vscode-debugprotocol": "^1.40.0",
+		"vscode-debugadapter": "^1.51.0",
+		"vscode-debugprotocol": "^1.51.0",
 		"vscode-jsonrpc": "^6.0.0"
 	},
 	"extensionDependencies": [

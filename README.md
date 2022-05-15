@@ -246,6 +246,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: debugger: detect more exceptions in a better way (not just setting a single breakpoint at every exception vector)
 
 ### Debugger
+* memory, disassembly: use VSCode built-in requests; memory: can't get memoryReference to work on WATCH items
 * disassembly chokes a bit on newlines
 * data breakpoints read/read-write (there doesn't seem to be an UI for this in VSCode)
 * store assembly breakpoints in one "virtual" file in breakpointMap (how?!)
@@ -253,7 +254,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * not getting handleThreadSelected(), thread ID now set in class
 * sometimes Pause/Resume button doesn't correctly switch to "Pause" icon while amiga program is running
 * step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
-* memory, disassembly: use VSCode built-in requests <= not implemented in VSCode, only in DebugAdapter specification
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Gfx Debugger

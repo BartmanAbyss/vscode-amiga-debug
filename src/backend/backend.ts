@@ -1,4 +1,5 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { hexFormat } from '../utils';
 import { MINode } from './mi_parse';
 
 export interface Breakpoint {
@@ -102,8 +103,11 @@ export class VariableObject {
 			presentationHint: {
 				kind: this.displayhint
 			},
-			variablesReference: this.id
+			variablesReference: this.id,
 		};
+		if((this.numchild > 0) && this.value.startsWith('0x')) {
+			res.memoryReference = hexFormat(parseInt(this.value));
+		}
 		if (this.displayhint) {
 			// res.kind = this.displayhint;
 		}

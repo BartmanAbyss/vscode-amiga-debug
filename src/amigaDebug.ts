@@ -140,6 +140,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		response.body.supportsEvaluateForHovers = true;
 		response.body.supportsSetVariable = true;
 		response.body.supportsRestartRequest = true;
+		response.body.supportsReadMemoryRequest = true;
+		response.body.supportsWriteMemoryRequest = true;
 		this.sendResponse(response);
 	}
 
@@ -593,6 +595,35 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			response.body = { error };
 			this.sendErrorResponse(response, 114, `Unable to write memory: ${error.toString()}`);
 		});
+	}
+
+	protected readMemoryRequest(response: DebugProtocol.ReadMemoryResponse, args: DebugProtocol.ReadMemoryArguments, request?: DebugProtocol.Request) {
+		//const address = parseInt(args.memoryReference, args.memoryReference.startsWith('0x') ? 16 : 10) + (args.offset || 0);
+		if(args.count === 0) {
+			response.body = {
+				address: args.memoryReference,
+				data: ''
+			};
+			this.sendResponse(response);
+			return;
+		}
+		this.miDebugger.sendCommand(`data-read-memory-bytes -o ${args.offset || 0} ${args.memoryReference} ${args.count}`).then((node) => {
+			const startAddress = node.resultRecords.results[0][1][0][0][1] as string;
+			const endAddress = node.resultRecords.results[0][1][0][2][1] as string;
+			const data = node.resultRecords.results[0][1][0][3][1] as string;
+			const bytes = new Uint8Array(data.match(/[0-9a-f]{2}/g).map((b) => parseInt(b, 16)));
+			response.body = {
+				address: startAddress,
+				data: Buffer.from(bytes).toString('base64')
+			};
+			this.sendResponse(response);
+		}, (error) => {
+			this.sendErrorResponse(response, 114, `Unable to read memory: ${error.toString()}`);
+		});
+	}
+    protected writeMemoryRequest(response: DebugProtocol.WriteMemoryResponse, args: DebugProtocol.WriteMemoryArguments, request?: DebugProtocol.Request) {
+		// TODO
+		this.sendResponse(response);
 	}
 
 	protected async customStartProfileRequest(response: DebugProtocol.Response, args: any, autoStop: boolean) {
@@ -1507,7 +1538,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					varObj = this.variableHandles.get(varId) as any;
 					response.body = {
 						result: varObj.value,
-						variablesReference: varObj.id
+						variablesReference: varObj.id,
+						memoryReference: varObj.toProtocolVariable().memoryReference
 					};
 				} catch (err) {
 					if (err instanceof MIError && err.message === 'Variable object not found') {
@@ -1517,7 +1549,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 						varObj.id = varId;
 						response.body = {
 							result: varObj.value,
-							variablesReference: varObj.id
+							variablesReference: varObj.id,
+							memoryReference: varObj.toProtocolVariable().memoryReference
 						};
 					} else {
 						throw err;
@@ -1669,13 +1702,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					changelist.forEach((change) => {
 						const name = MINode.valueOf(change, 'name');
 						const vId = this.variableHandlesReverse[name];
-						const v = this.variableHandles.get(vId) as any;
+						const v = this.variableHandles.get(vId) as VariableObject;
 						v.applyChanges(change);
 					});
 					const varId = this.variableHandlesReverse[varObjName];
-					varObj = this.variableHandles.get(varId) as any;
+					varObj = this.variableHandles.get(varId) as VariableObject;
 				} catch (err) {
 					if (err instanceof MIError && err.message === 'Variable object not found') {
+						//let address = await this.miDebugger.symbolAddress(symbol.name);
 						varObj = await this.miDebugger.varCreate(symbol.name, varObjName);
 						const varId = this.findOrCreateVariable(varObj);
 						varObj.exp = symbol.name;
