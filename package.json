@@ -117,15 +117,6 @@
 					".s"
 				],
 				"configuration": "./amiga.assembly-language-configuration.json"
-			},
-			{
-				"id": "amiga.memoryview",
-				"aliases": [
-					"Amiga Memory View"
-				],
-				"extensions": [
-					".amigamem"
-				]
 			}
 		],
 		"grammars": [
@@ -133,11 +124,6 @@
 				"language": "amiga.disassembly",
 				"scopeName": "source.amiga-disassembly",
 				"path": "./syntaxes/amiga-disassembly.json"
-			},
-			{
-				"language": "amiga.memoryview",
-				"scopeName": "source.amiga-memoryview",
-				"path": "./syntaxes/amiga-memoryview.json"
 			},
 			{
 				"language": "amiga.assembly",

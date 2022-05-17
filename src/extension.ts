@@ -12,7 +12,6 @@ import { CppToolsApi, Version, CustomConfigurationProvider, getCppToolsApi, Sour
 import { CancellationToken } from 'vscode-jsonrpc';
 
 import { DisassemblyContentProvider } from './disassembly_content_provider';
-import { MemoryContentProvider } from './memory_content_provider';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { AmigaAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
@@ -104,7 +103,6 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
-	private memoryProvider: MemoryContentProvider;
 	private outputChannel: vscode.OutputChannel;
 	private objdumpEditorProvider: ObjdumpEditorProvider;
 	private assemblyLanguageProvider: AmigaAssemblyLanguageProvider;
@@ -116,7 +114,6 @@ class AmigaDebugExtension {
 	constructor(private context: vscode.ExtensionContext) {
 		this.extensionPath = context.extensionPath;
 		this.registerProvider = new RegisterTreeProvider();
-		this.memoryProvider = new MemoryContentProvider();
 		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.assemblyLanguageProvider = new AmigaAssemblyLanguageProvider(context.extensionPath);
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
@@ -126,7 +123,6 @@ class AmigaDebugExtension {
 
 		context.subscriptions.push(
 			// text editors
-			vscode.workspace.registerTextDocumentContentProvider('examinememory', this.memoryProvider),
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
 
 			// commands
@@ -208,9 +204,6 @@ class AmigaDebugExtension {
 	private editorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
 		if(vscode.window.activeTextEditor === e.textEditor)
 			void this.objdumpEditorProvider.handleSelectionChanged(e);
-
-		if(e.textEditor.document.uri.scheme === 'examinememory')
-			this.memoryProvider.handleSelectionChanged(e);
 	}
 
 	private async showDisassembly() {
@@ -454,8 +447,8 @@ class AmigaDebugExtension {
 		}
 	}
 
-	private examineMemory() {
-		function validateValue(address) {
+	private async examineMemory() {
+		function validateValue(address: string) {
 			if(/^0x[0-9a-f]{1,8}$/i.test(address)) {
 				return address;
 			} else if(/^[0-9]+$/i.test(address)) {
@@ -470,42 +463,25 @@ class AmigaDebugExtension {
 			return;
 		}
 
-		vscode.window.showInputBox({
-			placeHolder: 'Prefix with 0x for hexidecimal format',
-			ignoreFocusOut: true,
-			prompt: 'Memory Address'
-		}).then(
-			(address) => {
-				if(!validateValue(address)) {
-					void vscode.window.showErrorMessage('Invalid memory address entered');
-					return;
+		try {
+			const address = await vscode.window.showInputBox({
+				placeHolder: 'Prefix with 0x for hexidecimal format',
+				ignoreFocusOut: true,
+				prompt: 'Memory Address'
+			});
+
+			if(!validateValue(address)) {
+				void vscode.window.showErrorMessage('Invalid memory address entered');
+				return;
+			}
+
+			const result = await vscode.commands.executeCommand("workbench.debug.viewlet.action.viewMemory", {
+				sessionId: vscode.debug.activeDebugSession.id,
+				variable: {
+					memoryReference: address
 				}
-
-				vscode.window.showInputBox({
-					placeHolder: 'Prefix with 0x for hexidecimal format',
-					ignoreFocusOut: true,
-					prompt: 'Length'
-				}).then(
-					(length) => {
-						if(!validateValue(length)) {
-							void vscode.window.showErrorMessage('Invalid length entered');
-							return;
-						}
-
-						const timestamp = new Date().getTime();
-						// eslint-disable-next-line max-len
-						vscode.workspace.openTextDocument(vscode.Uri.parse(`examinememory:///Memory%20[${address}+${length}].amigamem?address=${address}&length=${length}&timestamp=${timestamp}`))
-							.then((doc) => {
-								void vscode.window.showTextDocument(doc, { viewColumn: 2, preview: false });
-							}, (error) => {
-								void vscode.window.showErrorMessage(`Failed to examine memory: ${error}`);
-							});
-					},
-					(error) => { /**/ }
-				);
-			},
-			(error) => { /**/ }
-		);
+			});
+		} catch(e) {}
 	}
 
 	// Registers
@@ -575,8 +551,6 @@ class AmigaDebugExtension {
 
 	private receivedStopEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugStopped();
-		vscode.workspace.textDocuments.filter((td) => td.fileName.endsWith('.amigamem'))
-			.forEach((doc) => { this.memoryProvider.update(doc); });
 	}
 
 	private receivedContinuedEvent(e: vscode.DebugSessionCustomEvent) {
