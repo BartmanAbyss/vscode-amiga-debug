@@ -598,7 +598,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected readMemoryRequest(response: DebugProtocol.ReadMemoryResponse, args: DebugProtocol.ReadMemoryArguments, request?: DebugProtocol.Request) {
-		//const address = parseInt(args.memoryReference, args.memoryReference.startsWith('0x') ? 16 : 10) + (args.offset || 0);
 		if(args.count === 0) {
 			response.body = {
 				address: args.memoryReference,
@@ -623,7 +622,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
     protected writeMemoryRequest(response: DebugProtocol.WriteMemoryResponse, args: DebugProtocol.WriteMemoryArguments, request?: DebugProtocol.Request) {
 		// TODO
-		this.sendResponse(response);
+		this.sendErrorResponse(response, 114, `writeMemoryRequest not implemented yet`);
 	}
 
 	protected async customStartProfileRequest(response: DebugProtocol.Response, args: any, autoStop: boolean) {
