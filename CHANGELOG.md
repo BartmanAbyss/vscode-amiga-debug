@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.7
+- fixed crash in assembly view #97
+
 ## 1.3.6
 - use VSCode built-in memory viewer for `Amiga: View Memory` 
 
