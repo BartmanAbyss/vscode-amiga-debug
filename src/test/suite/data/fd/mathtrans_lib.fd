@@ -1,0 +1,22 @@
+##base _MathTransBase
+##bias 30
+##public
+SPAtan(parm)(d0)
+SPSin(parm)(d0)
+SPCos(parm)(d0)
+SPTan(parm)(d0)
+SPSincos(cosResult,parm)(d1,d0)
+SPSinh(parm)(d0)
+SPCosh(parm)(d0)
+SPTanh(parm)(d0)
+SPExp(parm)(d0)
+SPLog(parm)(d0)
+SPPow(power,arg)(d1,d0)
+SPSqrt(parm)(d0)
+SPTieee(parm)(d0)
+SPFieee(parm)(d0)
+*--- functions in V31 or higher (Release 1.1) ---
+SPAsin(parm)(d0)
+SPAcos(parm)(d0)
+SPLog10(parm)(d0)
+##end

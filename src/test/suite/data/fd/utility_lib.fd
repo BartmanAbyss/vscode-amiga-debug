@@ -1,0 +1,90 @@
+##base _UtilityBase
+##bias 30
+##public
+*--- functions in V36 or higher (Release 2.0) ---
+*
+* Tag item functions
+*
+FindTagItem(tagVal,tagList)(d0/a0)
+GetTagData(tagValue,defaultVal,tagList)(d0/d1/a0)
+PackBoolTags(initialFlags,tagList,boolMap)(d0/a0/a1)
+NextTagItem(tagListPtr)(a0)
+FilterTagChanges(changeList,originalList,apply)(a0/a1,d0)
+MapTags(tagList,mapList,mapType)(a0/a1,d0)
+AllocateTagItems(numTags)(d0)
+CloneTagItems(tagList)(a0)
+FreeTagItems(tagList)(a0)
+RefreshTagItemClones(clone,original)(a0/a1)
+TagInArray(tagValue,tagArray)(d0/a0)
+FilterTagItems(tagList,filterArray,logic)(a0/a1,d0)
+*
+* Hook functions
+*
+CallHookPkt(hook,object,paramPacket)(a0/a2,a1)
+*--- (1 function slot reserved here) ---
+##bias 114
+*
+* Date functions
+*
+*--- (1 function slot reserved here) ---
+##bias 120
+Amiga2Date(seconds,result)(d0/a0)
+Date2Amiga(date)(a0)
+CheckDate(date)(a0)
+*
+* 32 bit integer muliply functions
+*
+SMult32(arg1,arg2)(d0/d1)
+UMult32(arg1,arg2)(d0/d1)
+*
+* 32 bit integer division funtions. The quotient and the remainder are
+* returned respectively in d0 and d1
+*
+SDivMod32(dividend,divisor)(d0/d1)
+UDivMod32(dividend,divisor)(d0/d1)
+*--- functions in V37 or higher (Release 2.04) ---
+*
+* International string routines
+*
+Stricmp(string1,string2)(a0/a1)
+Strnicmp(string1,string2,length)(a0/a1,d0)
+ToUpper(character)(d0)
+ToLower(character)(d0)
+*--- functions in V39 or higher (Release 3) ---
+*
+* More tag Item functions
+*
+ApplyTagChanges(list,changeList)(a0/a1)
+*--- (1 function slot reserved here) ---
+##bias 198
+*
+* 64 bit integer muliply functions. The results are 64 bit quantities
+* returned in D0 and D1
+*
+SMult64(arg1,arg2)(d0/d1)
+UMult64(arg1,arg2)(d0/d1)
+*
+* Structure to Tag and Tag to Structure support routines
+*
+PackStructureTags(pack,packTable,tagList)(a0/a1/a2)
+UnpackStructureTags(pack,packTable,tagList)(a0/a1/a2)
+*
+* New, object-oriented NameSpaces
+*
+AddNamedObject(nameSpace,object)(a0/a1)
+AllocNamedObjectA(name,tagList)(a0/a1)
+AttemptRemNamedObject(object)(a0)
+FindNamedObject(nameSpace,name,lastObject)(a0/a1/a2)
+FreeNamedObject(object)(a0)
+NamedObjectName(object)(a0)
+ReleaseNamedObject(object)(a0)
+RemNamedObject(object,message)(a0/a1)
+*
+* Unique ID generator
+*
+GetUniqueID()()
+*
+*--- (4 function slots reserved here) ---
+##bias 300
+*
+##end

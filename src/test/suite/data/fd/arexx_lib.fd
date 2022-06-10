@@ -1,0 +1,5 @@
+##base _ARexxBase
+##bias 30
+##public
+AREXX_GetClass()()
+##end

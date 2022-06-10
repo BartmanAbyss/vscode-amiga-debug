@@ -1,0 +1,9 @@
+##base _ChooserBase
+##bias 30
+##public
+CHOOSER_GetClass()()
+AllocChooserNodeA(tags)(a0)
+FreeChooserNode(node)(a0)
+SetChooserNodeAttrsA(node,tags)(a0/a1)
+GetChooserNodeAttrsA(node,tags)(a0/a1)
+##end

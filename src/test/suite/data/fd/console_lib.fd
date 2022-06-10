@@ -1,0 +1,12 @@
+##base _ConsoleDevice
+##bias 42
+##public
+CDInputHandler(events,consoleDevice)(a0/a1)
+RawKeyConvert(events,buffer,length,keyMap)(a0/a1,d1/a2)
+##private
+*--- functions in V36 or higher (Release 2.0) ---
+consolePrivate1()()
+consolePrivate2()()
+consolePrivate3()()
+consolePrivate4()()
+##end

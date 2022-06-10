@@ -1,0 +1,42 @@
+##base _LocaleBase
+##bias 30
+##public
+*--- functions in V38 or higher (Release 2.1) ---
+##private
+localePrivate1()()
+##public
+CloseCatalog(catalog)(a0)
+CloseLocale(locale)(a0)
+ConvToLower(locale,character)(a0,d0)
+ConvToUpper(locale,character)(a0,d0)
+FormatDate(locale,fmtTemplate,date,putCharFunc)(a0/a1/a2/a3)
+FormatString(locale,fmtTemplate,dataStream,putCharFunc)(a0/a1/a2/a3)
+GetCatalogStr(catalog,stringNum,defaultString)(a0,d0/a1)
+GetLocaleStr(locale,stringNum)(a0,d0)
+IsAlNum(locale,character)(a0,d0)
+IsAlpha(locale,character)(a0,d0)
+IsCntrl(locale,character)(a0,d0)
+IsDigit(locale,character)(a0,d0)
+IsGraph(locale,character)(a0,d0)
+IsLower(locale,character)(a0,d0)
+IsPrint(locale,character)(a0,d0)
+IsPunct(locale,character)(a0,d0)
+IsSpace(locale,character)(a0,d0)
+IsUpper(locale,character)(a0,d0)
+IsXDigit(locale,character)(a0,d0)
+OpenCatalogA(locale,name,tags)(a0/a1/a2)
+OpenLocale(name)(a0)
+ParseDate(locale,date,fmtTemplate,getCharFunc)(a0/a1/a2/a3)
+##private
+localePrivate2()()
+##public
+StrConvert(locale,string,buffer,bufferSize,type)(a0/a1/a2,d0/d1)
+StrnCmp(locale,string1,string2,length,type)(a0/a1/a2,d0/d1)
+##private
+localePrivate3()()
+localePrivate4()()
+localePrivate5()()
+localePrivate6()()
+localePrivate7()()
+localePrivate8()()
+##end

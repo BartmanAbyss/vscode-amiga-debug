@@ -1,0 +1,9 @@
+##base _PopCycleBase
+##bias 30
+##public
+POPCYCLE_GetClass()()
+AllocPopCycleNodeA(tags)(a0)
+FreePopCycleNode(node)(a0)
+SetPopCycleNodeAttrsA(node,tags)(a0/a1)
+GetPopCycleNodeAttrsA(node,tags)(a0/a1)
+##end

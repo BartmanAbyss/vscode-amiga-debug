@@ -1,0 +1,12 @@
+##base _LayoutBase
+##bias 30
+##public
+LAYOUT_GetClass()()
+ActivateLayoutGadget(gadget,window,requester,object)(a0/a1/a2,d0)
+FlushLayoutDomainCache(gadget)(a0)
+RethinkLayout(gadget,window,requester,refresh)(a0/a1/a2,d0)
+LayoutLimits(gadget,limits,font,screen)(a0/a1/a2/a3)
+PAGE_GetClass()()
+SetPageGadgetAttrsA(gadget,object,window,requester,tags)(a0/a1/a2/a3/a4)
+RefreshPageGadget(gadget,object,window,requester)(a0/a1/a2/a3)
+##end

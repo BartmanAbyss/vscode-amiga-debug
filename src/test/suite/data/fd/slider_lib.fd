@@ -1,0 +1,5 @@
+##base _SliderBase
+##bias 30
+##public
+SLIDER_GetClass()()
+##end

@@ -1,0 +1,5 @@
+##base _BitMapBase
+##bias 30
+##public
+BITMAP_GetClass()()
+##end

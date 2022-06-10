@@ -1,0 +1,5 @@
+##base _BevelBase
+##bias 30
+##public
+BEVEL_GetClass()()
+##end

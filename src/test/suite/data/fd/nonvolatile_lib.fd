@@ -1,0 +1,12 @@
+##base _NVBase
+##bias 30
+##public
+*--- functions in V40 or higher (Release 3.1) ---
+GetCopyNV(appName,itemName,killRequesters)(a0/a1,d1)
+FreeNVData(data)(a0)
+StoreNV(appName,itemName,data,length,killRequesters)(a0/a1/a2,d0/d1)
+DeleteNV(appName,itemName,killRequesters)(a0/a1,d1)
+GetNVInfo(killRequesters)(d1)
+GetNVList(appName,killRequesters)(a0,d1)
+SetNVProtection(appName,itemName,mask,killRequesters)(a0/a1,d2,d1)
+##end

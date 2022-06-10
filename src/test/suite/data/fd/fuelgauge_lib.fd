@@ -1,0 +1,5 @@
+##base _FuelGaugeBase
+##bias 30
+##public
+FUELGAUGE_GetClass()()
+##end

@@ -1,0 +1,5 @@
+##base _ButtonBase
+##bias 30
+##public
+BUTTON_GetClass()()
+##end

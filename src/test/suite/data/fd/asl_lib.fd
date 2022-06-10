@@ -1,0 +1,20 @@
+##base _AslBase
+##bias 30
+##public
+*--- functions in V36 or higher (Release 2.0) ---
+*
+* OBSOLETE -- Please use the generic requester functions instead
+*
+AllocFileRequest()()
+FreeFileRequest(fileReq)(a0)
+RequestFile(fileReq)(a0)
+AllocAslRequest(reqType,tagList)(d0/a0)
+FreeAslRequest(requester)(a0)
+AslRequest(requester,tagList)(a0/a1)
+##private
+aslPrivate1()()
+aslPrivate2()()
+##public
+AbortAslRequest(requester)(a0)
+ActivateAslRequest(requester)(a0)
+##end

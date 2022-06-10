@@ -1,0 +1,196 @@
+##base _SysBase
+##bias 30
+##public
+*------ misc ---------------------------------------------------------
+Supervisor(userFunction)(a5)
+*------ special patchable hooks to internal exec activity ------------
+##private
+execPrivate1()()
+execPrivate2()()
+execPrivate3()()
+execPrivate4()()
+execPrivate5()()
+execPrivate6()()
+##public
+*------ module creation ----------------------------------------------
+InitCode(startClass,version)(d0/d1)
+InitStruct(initTable,memory,size)(a1/a2,d0)
+MakeLibrary(funcInit,structInit,libInit,dataSize,segList)(a0/a1/a2,d0/d1)
+MakeFunctions(target,functionArray,funcDispBase)(a0/a1/a2)
+FindResident(name)(a1)
+InitResident(resident,segList)(a1,d1)
+*------ diagnostics --------------------------------------------------
+Alert(alertNum)(d7)
+Debug(flags)(d0)
+*------ interrupts ---------------------------------------------------
+Disable()()
+Enable()()
+Forbid()()
+Permit()()
+SetSR(newSR,mask)(d0/d1)
+SuperState()()
+UserState(sysStack)(d0)
+SetIntVector(intNumber,interrupt)(d0/a1)
+AddIntServer(intNumber,interrupt)(d0/a1)
+RemIntServer(intNumber,interrupt)(d0/a1)
+Cause(interrupt)(a1)
+*------ memory allocation --------------------------------------------
+Allocate(freeList,byteSize)(a0,d0)
+Deallocate(freeList,memoryBlock,byteSize)(a0/a1,d0)
+AllocMem(byteSize,requirements)(d0/d1)
+AllocAbs(byteSize,location)(d0/a1)
+FreeMem(memoryBlock,byteSize)(a1,d0)
+AvailMem(requirements)(d1)
+AllocEntry(entry)(a0)
+FreeEntry(entry)(a0)
+*------ lists --------------------------------------------------------
+Insert(list,node,pred)(a0/a1/a2)
+AddHead(list,node)(a0/a1)
+AddTail(list,node)(a0/a1)
+Remove(node)(a1)
+RemHead(list)(a0)
+RemTail(list)(a0)
+Enqueue(list,node)(a0/a1)
+FindName(list,name)(a0/a1)
+*------ tasks --------------------------------------------------------
+AddTask(task,initPC,finalPC)(a1/a2/a3)
+RemTask(task)(a1)
+FindTask(name)(a1)
+SetTaskPri(task,priority)(a1,d0)
+SetSignal(newSignals,signalSet)(d0/d1)
+SetExcept(newSignals,signalSet)(d0/d1)
+Wait(signalSet)(d0)
+Signal(task,signalSet)(a1,d0)
+AllocSignal(signalNum)(d0)
+FreeSignal(signalNum)(d0)
+AllocTrap(trapNum)(d0)
+FreeTrap(trapNum)(d0)
+*------ messages -----------------------------------------------------
+AddPort(port)(a1)
+RemPort(port)(a1)
+PutMsg(port,message)(a0/a1)
+GetMsg(port)(a0)
+ReplyMsg(message)(a1)
+WaitPort(port)(a0)
+FindPort(name)(a1)
+*------ libraries ----------------------------------------------------
+AddLibrary(library)(a1)
+RemLibrary(library)(a1)
+OldOpenLibrary(libName)(a1)
+CloseLibrary(library)(a1)
+SetFunction(library,funcOffset,newFunction)(a1,a0,d0)
+SumLibrary(library)(a1)
+*------ devices ------------------------------------------------------
+AddDevice(device)(a1)
+RemDevice(device)(a1)
+OpenDevice(devName,unit,ioRequest,flags)(a0,d0/a1,d1)
+CloseDevice(ioRequest)(a1)
+DoIO(ioRequest)(a1)
+SendIO(ioRequest)(a1)
+CheckIO(ioRequest)(a1)
+WaitIO(ioRequest)(a1)
+AbortIO(ioRequest)(a1)
+*------ resources ----------------------------------------------------
+AddResource(resource)(a1)
+RemResource(resource)(a1)
+OpenResource(resName)(a1)
+*------ private diagnostic support -----------------------------------
+##private
+execPrivate7()()
+execPrivate8()()
+execPrivate9()()
+##public
+*------ misc ---------------------------------------------------------
+RawDoFmt(formatString,dataStream,putChProc,putChData)(a0/a1/a2/a3)
+GetCC()()
+TypeOfMem(address)(a1)
+Procure(sigSem,bidMsg)(a0/a1)
+Vacate(sigSem,bidMsg)(a0/a1)
+OpenLibrary(libName,version)(a1,d0)
+*--- functions in V33 or higher (Release 1.2) ---
+*------ signal semaphores (note funny registers)----------------------
+InitSemaphore(sigSem)(a0)
+ObtainSemaphore(sigSem)(a0)
+ReleaseSemaphore(sigSem)(a0)
+AttemptSemaphore(sigSem)(a0)
+ObtainSemaphoreList(sigSem)(a0)
+ReleaseSemaphoreList(sigSem)(a0)
+FindSemaphore(name)(a1)
+AddSemaphore(sigSem)(a1)
+RemSemaphore(sigSem)(a1)
+*------ kickmem support ----------------------------------------------
+SumKickData()()
+*------ more memory support ------------------------------------------
+AddMemList(size,attributes,pri,base,name)(d0/d1/d2/a0/a1)
+CopyMem(source,dest,size)(a0/a1,d0)
+CopyMemQuick(source,dest,size)(a0/a1,d0)
+*------ cache --------------------------------------------------------
+*--- functions in V36 or higher (Release 2.0) ---
+CacheClearU()()
+CacheClearE(address,length,caches)(a0,d0/d1)
+CacheControl(cacheBits,cacheMask)(d0/d1)
+*------ misc ---------------------------------------------------------
+CreateIORequest(port,size)(a0,d0)
+DeleteIORequest(iorequest)(a0)
+CreateMsgPort()()
+DeleteMsgPort(port)(a0)
+ObtainSemaphoreShared(sigSem)(a0)
+*------ even more memory support -------------------------------------
+AllocVec(byteSize,requirements)(d0/d1)
+FreeVec(memoryBlock)(a1)
+*------ V39 Pool LVOs...
+CreatePool(requirements,puddleSize,threshSize)(d0/d1/d2)
+DeletePool(poolHeader)(a0)
+AllocPooled(poolHeader,memSize)(a0,d0)
+FreePooled(poolHeader,memory,memSize)(a0/a1,d0)
+*------ misc ---------------------------------------------------------
+AttemptSemaphoreShared(sigSem)(a0)
+ColdReboot()()
+StackSwap(newStack)(a0)
+##private
+execPrivate10()()
+execPrivate11()()
+execPrivate12()()
+execPrivate13()()
+##public
+*------ future expansion ---------------------------------------------
+CachePreDMA(address,length,flags)(a0/a1,d0)
+CachePostDMA(address,length,flags)(a0/a1,d0)
+*------ New, for V39
+*--- functions in V39 or higher (Release 3) ---
+*------ Low memory handler functions
+AddMemHandler(memhand)(a1)
+RemMemHandler(memhand)(a1)
+*------ Function to attempt to obtain a Quick Interrupt Vector...
+ObtainQuickVector(interruptCode)(a0)
+##private
+execPrivate14()()
+execPrivate15()()
+execPrivate16()()
+execPrivate17()()
+execPrivate18()()
+execPrivate19()()
+##public
+*--- functions in V45 or higher ---
+*------ Finally the list functions are complete
+NewMinList(minlist)(a0)
+##private
+execPrivate20()()
+execPrivate21()()
+execPrivate22()()
+##public
+*------ New AVL tree support for V45. Yes, this is intentionally part of Exec!
+AVL_AddNode(root,node,func)(a0/a1/a2)
+AVL_RemNodeByAddress(root,node)(a0/a1)
+AVL_RemNodeByKey(root,key,func)(a0/a1/a2)
+AVL_FindNode(root,key,func)(a0/a1/a2)
+AVL_FindPrevNodeByAddress(node)(a0)
+AVL_FindPrevNodeByKey(root,key,func)(a0/a1/a2)
+AVL_FindNextNodeByAddress(node)(a0)
+AVL_FindNextNodeByKey(root,key,func)(a0/a1/a2)
+AVL_FindFirstNode(root)(a0)
+AVL_FindLastNode(root)(a0)
+##private
+*--- (10 function slots reserved here) ---
+##bias 972
+##end

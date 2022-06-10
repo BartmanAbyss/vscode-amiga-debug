@@ -1,0 +1,12 @@
+##base _BulletBase
+##bias 30
+##public
+OpenEngine()()
+CloseEngine(glyphEngine)(a0)
+SetInfoA(glyphEngine,tagList)(a0/a1)
+ObtainInfoA(glyphEngine,tagList)(a0/a1)
+ReleaseInfoA(glyphEngine,tagList)(a0/a1)
+##private
+bulletPrivate1()()
+##public
+##end
