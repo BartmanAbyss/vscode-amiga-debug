@@ -14,7 +14,7 @@ suite("kickstart", () => {
 	});
 	test("FD", () => {
 		const fd = new FD(path.join(testDataDir, 'fd/graphics_lib.fd'));
-		assert.deepEqual(fd.functions.get(228), { lvo: 228, name: 'WaitBlit', minVersion: 0 });
-		assert.deepEqual(fd.functions.get(828), { lvo: 828, name: 'CalcIVG', minVersion: 39 });
+		assert.deepEqual(fd.functions.find((f) => f.lvo === 228), { lvo: 228, name: 'WaitBlit', minVersion: 0 });
+		assert.deepEqual(fd.functions.find((f) => f.lvo === 828), { lvo: 828, name: 'CalcIVG', minVersion: 39 });
 	});
 });
