@@ -9,7 +9,7 @@ const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
 
 suite("kickstart", () => {
 	test("1.3", () => {
-		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom'));
+		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom'), path.join(testDataDir, 'fd'));
 		assert.equal(0, 0);
 	});
 	test("FD", () => {
