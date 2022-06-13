@@ -431,8 +431,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if(args.kickstart !== undefined) {
 			const kickstart = new Kickstart(args.kickstart);
 			const kickId = kickstart.getId();
-			if(kickId !== '')
-				commands.push(`interpreter-exec console "add-symbol-file ${path.join(binPath, `symbols/kick${kickId}.elf`).replace(/\\/g, '/')} -s .kick 0x${kickstart.getBase().toString(16)}"`);
+			if(kickId !== '' ) {
+				const symbols = path.join(binPath, `symbols/kick${kickId}.elf`);
+				if(fs.existsSync(symbols))
+					commands.push(`interpreter-exec console "add-symbol-file ${symbols.replace(/\\/g, '/')} -s .kick 0x${kickstart.getBase().toString(16)}"`);
+			}
 		}
 
 		// launch GDB and connect to WinUAE

@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.9
+- fix debugger not working when kickstart symbols not found (broken since 1.3.8)
+
 ## 1.3.8
 - symbols for Kickstart 1.3 [exec 34.2] (GDB only, dos.library missing)
 
