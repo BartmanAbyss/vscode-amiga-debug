@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.3.8
+- symbols for Kickstart 1.3 [exec 34.2] (GDB only)
+
 ## 1.3.7
 - fixed crash in assembly view #97
 

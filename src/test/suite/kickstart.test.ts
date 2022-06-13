@@ -6,11 +6,14 @@ import { print_insn_m68k } from '../../client/68k-dis';
 import { FD, Kickstart } from '../../kickstart';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
+const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
+const symDir = path.resolve(__dirname, "../../../bin/symbols");
 
 suite("kickstart", () => {
 	test("1.3", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom'), path.join(testDataDir, 'fd'));
-		assert.equal(0, 0);
+		kickstart.writeIdc();
+		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("FD", () => {
 		const fd = new FD(path.join(testDataDir, 'fd/graphics_lib.fd'));

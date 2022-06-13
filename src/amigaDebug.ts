@@ -15,6 +15,7 @@ import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
 import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
+import { Kickstart } from './kickstart';
 import { DisassemblyInstruction, Section, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
 
@@ -426,6 +427,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			//'interpreter-exec console "set debug remote 1"',
 			'interpreter-exec console "target remote localhost:2345"',
 		];
+
+		if(args.kickstart !== undefined) {
+			const kickstart = new Kickstart(args.kickstart);
+			const kickId = kickstart.getId();
+			if(kickId !== '')
+				commands.push(`interpreter-exec console "add-symbol-file ${path.join(binPath, `symbols/kick${kickId}.elf`).replace(/\\/g, '/')} -s .kick 0x${kickstart.getBase().toString(16)}"`);
+		}
 
 		// launch GDB and connect to WinUAE
 		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {

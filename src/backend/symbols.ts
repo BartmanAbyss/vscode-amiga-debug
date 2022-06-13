@@ -119,14 +119,14 @@ export class SymbolTable {
 	public relocate(relocatedSections: Section[]) {
 		relocatedSections.forEach((relocatedSection) => {
 			const section = this.sections.find((s) => s.name === relocatedSection.name);
-			section.address = relocatedSection.address;
+			if(section)
+				section.address = relocatedSection.address;
 		});
 
 		this.symbols.forEach((symbol) => {
 			const section = this.sections.find((s) => s.name === symbol.section);
-			if(section) {
+			if(section)
 				symbol.base = section.address/* - section.vma*/;
-			}
 		});
 	}
 

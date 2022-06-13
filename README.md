@@ -256,6 +256,13 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * step out of kickstart: set fake breakpoint at 0xfffffff, WinUAE should enter TRACE_RANGE_PC mode (TODO: tighten range around loaded program), but keeps breaking later
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
+### Kickstart
+* TODO: detect used kickstart and add debug symbols to GDB
+* TODO: profiler: use kickstart debug symbols
+* TODO: dos.library
+* TODO: manual or automatic function size detection?
+* TODO: stack unwinding for kickstart
+
 ### Gfx Debugger
 * TODO: show source blitter-rects
 * TODO: show 2 resources
