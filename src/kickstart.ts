@@ -5,6 +5,8 @@ import * as childProcess from 'child_process';
 // https://5e7b2c0d467b5.site123.me/
 // https://wandel.ca/homepage/execdis/exec_disassembly.txt
 // https://github.com/jotd666/amiga68ktools/blob/master/tools/LVOs.i
+// Structure Offsets http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_2._guide/node0551.html
+// BCPL stuff (for dos.library) http://aminet.net/package/dev/misc/dosgv
 
 interface LibraryFunction {
 	lvo: number;
@@ -60,14 +62,19 @@ interface Library {
 	id: string;
 }
 
-// TODO: dos.library needs special handling to get to the vectors
+enum LvoFlags {
+	long = 0, // [1] 32-bit pointers to functions
+	short = 1, // [1] 16-bit offsets to functions
+	dos = 2, // [1] seglists, [2] gvindices
+}
 
 const libraryVectors: { [x: string]: number[] } = {
 	// Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom
-	'exec 34.2 (28 Oct 1987)': [ 0xFC1A7C, -1 ],
-	'graphics 34.1 (18 Aug 1987)': [ 0xFCB05A, 0 ],
-	'layers 34.1 (18 Aug 1987)': [ 0xFE0B4E, -1 ],
-	'romboot 34.1 (18 Aug 1987)': [ 0xFEB114, 0 ],
+	'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C  ],
+	'graphics 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFCB05A ],
+	'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
+	'romboot 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFEB114 ],
+	'dos 34.3 (9 Dec 1987)': [ LvoFlags.dos, 0xFF3E24, 0xFF4060 ],
 };
 
 export class Kickstart {
@@ -168,6 +175,7 @@ export class Kickstart {
 	}
 
 	private parseLibrary(lib: Library) {
+		this.idc += `\t// ${lib.id}\n`;
 		const vectors: number[] = [];
 		if(this.data[lib.offset + 10] & RTF_AUTOINIT) {
 			const initOffset = this.data.readInt32BE(lib.offset + 22) - this.base;
@@ -180,15 +188,63 @@ export class Kickstart {
 					vectors.push(this.data.readInt32BE(vectorsOffset + v));
 			}
 		} else if(libraryVectors[lib.id]) { // lookup
-			const vectorsOffset = libraryVectors[lib.id][0] - this.base;
-			if(libraryVectors[lib.id][1] === 0)
+			switch(libraryVectors[lib.id][0]) {
+			case LvoFlags.long: {
+				const vectorsOffset = libraryVectors[lib.id][1] - this.base;
 				for(let v = 0; this.data.readInt32BE(vectorsOffset + v) !== -1; v += 4)
 					vectors.push(this.data.readInt32BE(vectorsOffset + v));
-			else if(libraryVectors[lib.id][1] === -1)
-				for(let v = 0; this.data.readInt16BE(vectorsOffset + v) !== -1; v += 2)
+				break;
+			}
+			case LvoFlags.short: {
+				const vectorsOffset = libraryVectors[lib.id][1] - this.base;
+				for(let v = 0; v === 0 || this.data.readInt16BE(vectorsOffset + v) !== -1; v += 2)
 					vectors.push(vectorsOffset + this.base + this.data.readInt16BE(vectorsOffset + v));
+				break;
+			}
+			case LvoFlags.dos: {
+				const seglistsOffset = libraryVectors[lib.id][1] - this.base;
+				const gvIndicesOffset = libraryVectors[lib.id][2] - this.base;
+				const gvMap: Map<number, number> = new Map();
+				const numSeglists = this.data.readInt32BE(seglistsOffset);
+				//console.log(`numSeglists: ${numSeglists}`);
+				for(let s = 0; s < numSeglists; s++) {
+					//console.log(`seglist: ${s}`);
+					let seglistAddr = (this.data.readInt32BE(seglistsOffset + (1 + s) * 4) << 2);
+					while(seglistAddr !== 0) {
+						const nextSeglistAddr = this.data.readInt32BE(seglistAddr - this.base) << 2;
+						let tableOffset = this.data.readInt32BE(seglistAddr + 4 - this.base) << 2;
+						//console.log(`  seglistAddr: ${seglistAddr.toString(16)} tableOffset: ${tableOffset.toString(16)}`);
+						for(;;) {
+							const funcOffset = this.data.readInt32BE(seglistAddr - this.base + tableOffset - 4);
+							if(funcOffset === 0)
+								break;
+							const funcAddr = funcOffset + seglistAddr + 4;
+							const gvIndex = this.data.readInt32BE(seglistAddr - this.base + tableOffset - 8);
+							gvMap.set(gvIndex, funcAddr);
+							let name = gvo.get(gvIndex);
+							if(!name) {
+								if(gvIndex >= 0)
+									name = `gv_${gvIndex}`;
+								else
+									name = `gv_n${-gvIndex}`;
+							}
+							//console.log(`    funcAddr: ${funcAddr.toString(16)} gvIndex: ${gvIndex} name: ${name}`);
+							if(name)
+								this.idc += `\tMakeName (0x${funcAddr.toString(16)}, "${name}"); // GV ${gvIndex}\n`;
+							tableOffset -= 8;
+						}
+						seglistAddr = nextSeglistAddr;
+					}
+				}
+				for(let v = 0; this.data.readInt8(gvIndicesOffset + v) !== 0; v++) {
+					const gvIndex = this.data.readInt8(gvIndicesOffset + v);
+					vectors.unshift(gvMap.get(gvIndex));
+				}
+				vectors.unshift(0, 0, 0, 0); // 4 reserved vectors
+				break;
+			}
+			} // switch
 		}
-		this.idc += `\t// ${lib.id}\n`;
 		console.log(`Found library @ ${(lib.offset + this.base).toString(16)}: ${lib.name} V${lib.version} [${lib.id}] flags: ${this.data[lib.offset + 10].toString(16)}; ${vectors.length} LVOs`);
 		if(this.fdPath !== '') {
 			const fdPath = path.join(this.fdPath, lib.name.replace('.library', '_lib.fd'));
@@ -197,7 +253,7 @@ export class Kickstart {
 				for(const func of fd.functions) {
 					const index = func.lvo / 6 - 1;
 					if(lib.version >= func.minVersion && vectors.length > index)
-						this.idc += `\tMakeName (0x${vectors[index].toString(16)}, "${func.name}");\n`;
+						this.idc += `\tMakeName (0x${vectors[index].toString(16)}, "${func.name}"); // LVO -${func.lvo}\n`;
 				}
 			}
 		}
@@ -499,3 +555,85 @@ SPMul	0000000000FE40E4	0000009A
 SPCeil	0000000000FE4228	0000000A
 SPFloor	0000000000FE4232	00000056
 `;
+
+// adapted from gvo.h "5/2018 -=ONIX=-" http://aminet.net/package/dev/misc/dosgv
+const gvo: Map<number, string> = new Map([
+	[ 0x00, 'g_globsize' ],
+	[ 0x01, 'g_start' ],
+	[ 0x02, 'g_stop' ],
+	[ 0x03, 'g_mul' ],
+	[ 0x04, 'g_div' ],
+	[ 0x05, 'g_mod' ],
+	[ 0x0a, 'g_res2' ],
+	[ 0x0c, 'g_stackbase' ],
+	[ 0x0e, 'g_findtask' ],
+	[ 0x0f, 'g_getchar' ],
+	[ 0x10, 'g_putchar' ],
+	[ 0x11, 'g_frameptr' ],
+	[ 0x1c, 'g_globin' ],
+	[ 0x1d, 'g_getmem' ],
+	[ 0x1e, 'g_freemem' ],
+	[ 0x25, 'g_break' ],
+	[ 0x26, 'g_alert' ],
+	[ 0x27, 'g_findrootnode' ],
+	[ 0x2e, 'g_endtask' ],
+	[ 0x2f, 'g_delay' ],
+	[ 0x34, 'g_sysrequest' ],
+	[ 0x35, 'g_writepad' ],
+	[ 0x3b, 'g_findinput' ],
+	[ 0x3c, 'g_findoutput' ],
+	[ 0x3d, 'g_selectinput' ],
+	[ 0x3e, 'g_selectoutput' ],
+	[ 0x44, 'g_newline' ],
+	[ 0x45, 'g_writed' ],
+	[ 0x46, 'g_writen' ],
+	[ 0x47, 'g_writehex' ],
+	[ 0x48, 'g_writeoct' ],
+	[ 0x49, 'g_writes' ],
+	[ 0x4a, 'g_writef' ],
+	[ 0x4e, 'g_rdargs' ],
+	[ 0x59, 'g_findseglist' ],
+	[ 0x65, 'g_runcommand' ],
+	[ 0x68, 'g_fault' ],
+	[ 0x6b, 'g_copystring' ],
+	[ 0x6e, 'g_putword' ],
+	[ 0x6f, 'g_getword' ],
+	[ 0x86, 'g_findcli' ], // OS 1.2+
+	[ 0x21, 'g_newproc' ],
+	[ 0x23, 'g_parentdir' ],
+	[ 0x33, 'g_currdir' ],
+	[ 0x41, 'g_input' ],
+	[ 0x42, 'g_output' ],
+	[ 0x52, 'g_unloadseg' ],
+	[ 0x57, 'g_waitforchar' ],
+	[ 0x5a, 'g_delete' ],
+	[ 0x5b, 'g_rename' ],
+	[ 0x5d, 'g_close' ],
+	[ 0x6c, 'g_lock' ],
+	[ 0x6d, 'g_unlock' ],
+	[ 0x71, 'g_duplock' ],
+	[ 0x7d, 'g_createdir' ],
+	[ -27, 'g_execute' ],
+	[ -26, 'g_isinteractive' ],
+	[ -25, 'g_datestamp' ],
+	[ -24, 'g_setprotect' ],
+	[ -23, 'g_setcomment' ],
+	[ -22, 'g_deviceproc' ],
+	[ -21, 'g_queuepacket' ],
+	[ -20, 'g_getpacket' ],
+	[ -19, 'g_loadseg' ],
+	[ -18, 'g_createproc' ],
+	[ -17, 'g_ioerror' ],
+	[ -16, 'g_currentdir' ],
+	[ -15, 'g_doscreatedir' ],
+	[ -14, 'g_info' ],
+	[ -13, 'g_exnext' ],
+	[ -12, 'g_examine' ],
+	[ -11, 'g_doslock' ],
+	[ -10, 'g_dosrename' ],
+	[ -9, 'g_deletefile' ],
+	[ -8, 'g_seek' ],
+	[ -6, 'g_write' ],
+	[ -3, 'g_read' ],
+	[ -1, 'g_open' ],
+]);
