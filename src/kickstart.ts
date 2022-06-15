@@ -83,6 +83,14 @@ const libraryVectors: { [x: string]: number[] } = {
 	'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
 	'romboot 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFEB114 ],
 	'dos 34.3 (9 Dec 1987)': [ LvoFlags.dos, 0xFF3E24, 0xFF4060 ],
+
+	// Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom
+	'exec 37.132 (23.5.91)': [ LvoFlags.short, 0xF81F84 ],
+	'expansion 37.44 (23.5.91)': [ LvoFlags.short, 0xF83CA6],
+	'dos 37.44 (22.5.91)': [ LvoFlags.short, 0xF91544],
+	'graphics 37.35 (23.5.91)': [ LvoFlags.long, 0xFA8E64 ],
+	'layers 37.7 (13.3.91)': [ LvoFlags.short, 0xFC272C ],
+//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ], // our disassembler doesn't support float instructions
 };
 
 interface KickFunction {

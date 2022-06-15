@@ -257,10 +257,8 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Kickstart
-* TODO: detect used kickstart and add debug symbols to GDB
+* TODO: disassembler needs to understand FPU instructions, exec.library 2.04+ uses some and we need to be able to disassemble to get function sizes
 * TODO: profiler: use kickstart debug symbols
-* TODO: dos.library
-* TODO: manual or automatic function size detection?
 * TODO: stack unwinding for kickstart
 
 ### Gfx Debugger
