@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as childProcess from 'child_process';
+import { print_insn_m68k } from './client/68k-dis';
+import { GetJump, JumpType } from './client/68k';
 
 // https://5e7b2c0d467b5.site123.me/
 // https://wandel.ca/homepage/execdis/exec_disassembly.txt
@@ -69,19 +71,33 @@ enum LvoFlags {
 }
 
 const libraryVectors: { [x: string]: number[] } = {
+	// Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom
+	'exec 33.192 (8 Oct 1986)': [LvoFlags.short, 0xFC1A40 ],
+	'graphics 33.97 (8 Oct 1986)': [ LvoFlags.long, 0xFCB0A6 ],
+	'layers 33.33 (2 Oct 1986)': [ LvoFlags.short, 0xFE0F38 ],
+	'dos 33.124 (11 Sep 1986)': [ LvoFlags.dos, 0xFF421C, 0xFF43E0 ],
+
 	// Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom
-	'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C  ],
+	'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C ],
 	'graphics 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFCB05A ],
 	'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
 	'romboot 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFEB114 ],
 	'dos 34.3 (9 Dec 1987)': [ LvoFlags.dos, 0xFF3E24, 0xFF4060 ],
 };
 
+interface KickFunction {
+	name: string;
+	addr: number;
+	size: number;
+}
+
 export class Kickstart {
 	private data: Buffer;
 	private base = 0xfc0000;
 	private idc = '';
 	private libraries: Library[] = [];
+	private functions: KickFunction[] = [];
+
 	constructor(private path: string, private fdPath = '') {
 		this.data = fs.readFileSync(path);
 		if(this.data.length === 512*1024)
@@ -117,8 +133,28 @@ export class Kickstart {
 	public getBase = () => this.base;
 
 	public parseLibraries() {
-		this.idc = '';
-		this.idc += '#include <idc.idc>\nstatic main(void) {\n';
+		this.idc = '#include <idc.idc>\n';
+		this.idc += `
+static Structures(void) {
+	auto id;
+	begin_type_updating(UTP_STRUCT);
+	auto mid;
+	id = add_struc(-1,"Resident",0);
+	id = get_struc_id("Resident");
+	mid = add_struc_member(id,"rt_MatchWord",	0,	0x10000400,	-1,	2);
+	mid = add_struc_member(id,"rt_MatchTag",	0X2,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
+	mid = add_struc_member(id,"rt_EndSkip",	0X6,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
+	mid = add_struc_member(id,"rt_Flags",	0XA,	0x000400,	-1,	1);
+	mid = add_struc_member(id,"rt_Version",	0XB,	0x100400,	-1,	1);
+	mid = add_struc_member(id,"rt_Type",	0XC,	0x000400,	-1,	1);
+	mid = add_struc_member(id,"rt_Pri",	0XD,	0x000400,	-1,	1);
+	mid = add_struc_member(id,"rt_Name",	0XE,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
+	mid = add_struc_member(id,"rt_IdString",	0X12,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
+	mid = add_struc_member(id,"rt_Init",	0X16,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
+	end_type_updating(UTP_STRUCT);
+}`;
+	
+		this.idc += '\nstatic main(void) {\n\tStructures();\n';
 		for(const lib of this.libraries) {
 			this.parseLibrary(lib);
 		}
@@ -131,33 +167,16 @@ export class Kickstart {
 	}
 
 	public writeSymbols(binDir: string, outDir: string) {
-		interface KickFunction {
-			name: string;
-			addr: number;
-			size: number;
-		}
-		const kickFunctions: KickFunction[] = [];
-
-		// TODO: don't use the hardcoded function table
-		for(const func of kick34_2functions.split('\n')) {
-			const xxx = func.split('\t');
-			if(xxx.length === 3) {
-				const name = xxx[0];
-				const addr = parseInt(xxx[1], 16);
-				const size = parseInt(xxx[2], 16);
-				kickFunctions.push({ name, addr, size });
-			}
-		}
-
-		kickFunctions.sort((a, b) => a.addr - b.addr);
+		this.functions.sort((a, b) => a.addr - b.addr);
 		let addr = this.base;
 		let asm = '';
 		asm += `\t.section .kick, "ax", @nobits\n`;
-		for(const func of kickFunctions) {
+		for(const func of this.functions) {
 			asm += `\t.nop ${func.addr - addr}\n\t.type ${func.name},function\n\t.globl ${func.name}\n${func.name}:\n\t.size ${func.name}, ${func.size}\n`;
 			addr = func.addr;
 		}
 		asm += `\t.nop ${0x1000000 - addr}\n`; // pad kickstart section
+		fs.writeFileSync(this.path + '.asm', asm);
 		const elfPath = path.join(outDir, `kick${this.getId()}.elf`);
 		const as = childProcess.spawnSync(
 			path.join(binDir, "m68k-amiga-elf-as.exe"), 
@@ -176,6 +195,8 @@ export class Kickstart {
 
 	private parseLibrary(lib: Library) {
 		this.idc += `\t// ${lib.id}\n`;
+		this.idc += `\tMakeStruct(0x${(lib.offset + this.base).toString(16)}, "Resident");\n`;
+		this.idc += `\tMakeName(0x${(lib.offset + this.base).toString(16)}, "${lib.name}");\n`;
 		const vectors: number[] = [];
 		if(this.data[lib.offset + 10] & RTF_AUTOINIT) {
 			const initOffset = this.data.readInt32BE(lib.offset + 22) - this.base;
@@ -229,8 +250,13 @@ export class Kickstart {
 									name = `gv_n${-gvIndex}`;
 							}
 							//console.log(`    funcAddr: ${funcAddr.toString(16)} gvIndex: ${gvIndex} name: ${name}`);
-							if(name)
-								this.idc += `\tMakeName (0x${funcAddr.toString(16)}, "${name}"); // GV ${gvIndex}\n`;
+							if(name) {
+								const funcSize = this.getFunctionSize(funcAddr);
+								//console.log(`  0x${funcAddr.toString(16)}: ${name} GV ${gvIndex} size ${funcSize}`);
+								this.functions.push({ name, addr: funcAddr, size: funcSize });
+								this.idc += `\tMakeName(0x${funcAddr.toString(16)}, "${name}"); // GV ${gvIndex}\n`;
+								this.idc += `\tMakeFunction(0x${funcAddr.toString(16)}, BADADDR);\n`;
+							}
 							tableOffset -= 8;
 						}
 						seglistAddr = nextSeglistAddr;
@@ -252,8 +278,13 @@ export class Kickstart {
 				const fd = new FD(fdPath);
 				for(const func of fd.functions) {
 					const index = func.lvo / 6 - 1;
-					if(lib.version >= func.minVersion && vectors.length > index)
+					if(lib.version >= func.minVersion && vectors.length > index) {
+						const funcSize = this.getFunctionSize(vectors[index]);
+						//console.log(`  0x${vectors[index].toString(16)}: ${func.name} LVO -${func.lvo} size ${funcSize}`);
+						this.functions.push({ name: func.name, addr: vectors[index], size: funcSize });
 						this.idc += `\tMakeName (0x${vectors[index].toString(16)}, "${func.name}"); // LVO -${func.lvo}\n`;
+						this.idc += `\tMakeFunction(0x${vectors[index].toString(16)}, BADADDR);\n`;
+					}
 				}
 			}
 		}
@@ -262,6 +293,47 @@ export class Kickstart {
 		//	console.log(`  ${v.toString(16)}`);
 		//if(!vectors.length)
 		//	console.log('  nopes');
+	}
+
+	public getFunctionSize(startAddress: number): number {
+		const visited: Set<number> = new Set();
+		const pcs: number[] = [];
+		const queue: number[] = [];
+
+		queue.push(startAddress);
+		while(queue.length) {
+			let address = queue.shift();
+			if(visited.has(address))
+				continue;
+			visited.add(address);
+			for(;;) {
+				const insn = this.data.slice(address - this.base, address - this.base + 8);
+				const dis = print_insn_m68k(insn, address);
+				//console.log(`${address.toString(16)}: ${dis.text}`);
+				const insn16 = new Uint16Array(dis.len >> 1);
+				for(let i = 0; i < dis.len; i += 2)
+					insn16[i >>> 1] = (insn[i] << 8) | insn[i + 1];
+				const jump = GetJump(address, insn16); // GetJump() only returns jumps it can resolve (no indirect jumps)
+				address += dis.len;
+				pcs.push(address);
+				if(dis.text === 'rts' || dis.text === 'rtd' || dis.text === 'rte' || dis.text === 'rtm' || dis.text === 'rtr' || dis.text.startsWith('jmp (a') || dis.len === 0)
+					break;
+				if(jump?.type === JumpType.ConditionalBranch) {
+					queue.push(jump.target);
+					queue.push(address);
+					break;
+				} else if(jump?.type === JumpType.Branch) {
+					if(address - dis.len !== startAddress) // ignore functions that only consist of a single branch
+						queue.push(jump.target);
+					break;
+				}
+/*					Jsr,
+					ConditionalJsr*/
+			}
+		}
+		const endAddress = Math.max(...pcs);
+		//console.log(`start: ${startAddress.toString(16)} end: ${endAddress.toString(16)} size: ${(endAddress - startAddress).toString(16)}`);
+		return endAddress - startAddress;
 	}
 }
 
