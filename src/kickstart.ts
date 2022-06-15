@@ -95,9 +95,23 @@ const libraryVectors: { [x: string]: number[] } = {
 	// Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom
 	'exec 37.151 (1.11.91)': [ LvoFlags.short, 0xF81FB0],
 	'expansion 37.50 (28.10.91)': [ LvoFlags.short, 0xF83CAA ],
-	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
+//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
 	'dos 37.45 (21.10.91)': [ LvoFlags.short, 0xF95A40 ],
 	'graphics 37.41 (31.10.91)': [ LvoFlags.long, 0xFB2624 ],
+
+	// Kickstart v3.0 r39.106 (1992)(Commodore)(A1200)[!].rom
+	'exec 39.47 (28.8.92)': [ LvoFlags.short, 0xF82280 ],
+	'expansion 39.7 (7.6.92)': [ LvoFlags.short, 0xF8378E ],
+//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF86740 ], // oops: same version as 2.04, 2.05, but different address
+	'dos 39.23 (8.9.92)': [ LvoFlags.short, 0xF971EC ],
+	'graphics 39.89 (1.9.92)': [ LvoFlags.long, 0xFBCA7C ],
+
+	// Kickstart v3.1 r40.68 (1993)(Commodore)(A1200)[!].rom
+	'exec 40.10 (15.7.93)': [ LvoFlags.short, 0xF8236C ],
+	'expansion 40.2 (9.3.93)': [ LvoFlags.short, 0xF83842 ],
+	'graphics 40.24 (18.5.93)': [ LvoFlags.long, 0xF9D460 ],
+	'dos 40.3 (1.4.93)': [ LvoFlags.short, 0xFA034C ],
+	'mathieeesingbas 40.4 (16.3.93)': [ LvoFlags.short, 0xFC1B9C ], // <- for AFF_68881; also: 0xFC1B78 (when no FPU)
 };
 
 interface KickFunction {
@@ -168,7 +182,6 @@ static Structures(void) {
 	mid = add_struc_member(id,"rt_Init",	0X16,	0x20500400,	0,	4,	0XFFFFFFFFFFFFFFFF,	0,	0x000002);
 	end_type_updating(UTP_STRUCT);
 }`;
-	
 		this.idc += '\nstatic main(void) {\n\tStructures();\n';
 		for(const lib of this.libraries) {
 			this.parseLibrary(lib);
@@ -288,6 +301,7 @@ static Structures(void) {
 		}
 		console.log(`Found library @ ${(lib.offset + this.base).toString(16)}: ${lib.name} V${lib.version} [${lib.id}] flags: ${this.data[lib.offset + 10].toString(16)}; ${vectors.length} LVOs`);
 		if(this.fdPath !== '') {
+			if(lib.name === 'mathieeesingbas.library') return; // until we can disassemble FFP instructions
 			const fdPath = path.join(this.fdPath, lib.name.replace('.library', '_lib.fd'));
 			if(fs.existsSync(fdPath)) {
 				const fd = new FD(fdPath);
@@ -331,7 +345,7 @@ static Structures(void) {
 				const jump = GetJump(address, insn16); // GetJump() only returns jumps it can resolve (no indirect jumps)
 				address += dis.len;
 				pcs.push(address);
-				if(dis.text === 'rts' || dis.text === 'rtd' || dis.text === 'rte' || dis.text === 'rtm' || dis.text === 'rtr' || dis.text.startsWith('jmp (a') || dis.len === 0)
+				if(dis.text === 'rts' || dis.text === 'rtd' || dis.text === 'rte' || dis.text === 'rtm' || dis.text === 'rtr' || dis.text.startsWith('jmp (a') || dis.len <= 0)
 					break;
 				if(jump?.type === JumpType.ConditionalBranch) {
 					queue.push(jump.target);

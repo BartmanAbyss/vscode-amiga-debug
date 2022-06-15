@@ -10,7 +10,7 @@ const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
 const symDir = path.resolve(__dirname, "../../../bin/symbols");
 
 suite("kickstart", () => {
-/*	test("1.2", () => {
+	test("1.2", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
 		kickstart.writeSymbols(binDir, symDir);
@@ -32,16 +32,24 @@ suite("kickstart", () => {
 		kickstart.writeIdc();
 		kickstart.writeSymbols(binDir, symDir);
 	});
-	test("FD", () => {
-		const fd = new FD(path.join(testDataDir, 'fd/graphics_lib.fd'));
-		assert.deepEqual(fd.functions.find((f) => f.lvo === 228), { lvo: 228, name: 'WaitBlit', minVersion: 0 });
-		assert.deepEqual(fd.functions.find((f) => f.lvo === 828), { lvo: 828, name: 'CalcIVG', minVersion: 39 });
-	});
-	
-	*/
 	test("2.05", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
 		kickstart.writeSymbols(binDir, symDir);
+	});
+	test("3.0", () => {
+		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v3.0 r39.106 (1992)(Commodore)(A1200)[!].rom'), path.join(testDataDir, 'fd'));
+		kickstart.writeIdc();
+		kickstart.writeSymbols(binDir, symDir);
+	});
+	test("3.1", () => {
+		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v3.1 r40.68 (1993)(Commodore)(A1200)[!].rom'), path.join(testDataDir, 'fd'));
+		kickstart.writeIdc();
+		kickstart.writeSymbols(binDir, symDir);
+	});
+	test("FD", () => {
+		const fd = new FD(path.join(testDataDir, 'fd/graphics_lib.fd'));
+		assert.deepEqual(fd.functions.find((f) => f.lvo === 228), { lvo: 228, name: 'WaitBlit', minVersion: 0 });
+		assert.deepEqual(fd.functions.find((f) => f.lvo === 828), { lvo: 828, name: 'CalcIVG', minVersion: 39 });
 	});
 });

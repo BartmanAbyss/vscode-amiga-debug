@@ -1167,7 +1167,7 @@ function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 		break;
 
 	default:
-		throw new Error("<internal error>");
+		//throw new Error("<internal error>"); // TODO: bei divu.l dürfen wir hier nicht hinkommen, wieso geht das in der C version?
 	}
 
 	/* bits is never too big.  */
