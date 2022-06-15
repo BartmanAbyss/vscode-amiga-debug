@@ -91,6 +91,13 @@ const libraryVectors: { [x: string]: number[] } = {
 	'graphics 37.35 (23.5.91)': [ LvoFlags.long, 0xFA8E64 ],
 	'layers 37.7 (13.3.91)': [ LvoFlags.short, 0xFC272C ],
 //	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ], // our disassembler doesn't support float instructions
+
+	// Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom
+	'exec 37.151 (1.11.91)': [ LvoFlags.short, 0xF81FB0],
+	'expansion 37.50 (28.10.91)': [ LvoFlags.short, 0xF83CAA ],
+	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
+	'dos 37.45 (21.10.91)': [ LvoFlags.short, 0xF95A40 ],
+	'graphics 37.41 (31.10.91)': [ LvoFlags.long, 0xFB2624 ],
 };
 
 interface KickFunction {

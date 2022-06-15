@@ -27,14 +27,20 @@ suite("kickstart", () => {
 		kickstart.writeIdc();
 		kickstart.writeSymbols(binDir, symDir);
 	});
+	test("2.04", () => {
+		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom'), path.join(testDataDir, 'fd'));
+		kickstart.writeIdc();
+		kickstart.writeSymbols(binDir, symDir);
+	});
 	test("FD", () => {
 		const fd = new FD(path.join(testDataDir, 'fd/graphics_lib.fd'));
 		assert.deepEqual(fd.functions.find((f) => f.lvo === 228), { lvo: 228, name: 'WaitBlit', minVersion: 0 });
 		assert.deepEqual(fd.functions.find((f) => f.lvo === 828), { lvo: 828, name: 'CalcIVG', minVersion: 39 });
 	});
-*/	
-	test("2.04", () => {
-		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom'), path.join(testDataDir, 'fd'));
+	
+	*/
+	test("2.05", () => {
+		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
 		kickstart.writeSymbols(binDir, symDir);
 	});
