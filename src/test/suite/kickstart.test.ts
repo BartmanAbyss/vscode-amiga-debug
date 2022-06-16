@@ -17,6 +17,7 @@ suite("kickstart", () => {
 	});
 	test("1.3", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom'), path.join(testDataDir, 'fd'));
+		//assert.equal(kickstart.getFunctionSize(0xfc5634), 0x1c4); // Draw; overlapping with others
 		assert.equal(kickstart.getFunctionSize(0xfc069e), 4); // RemDevice; only bra
 		assert.equal(kickstart.getFunctionSize(0xff589c), 20); // Open
 		assert.equal(kickstart.getFunctionSize(0xFF67EC), 0x340); // g_rdargs

@@ -73,7 +73,7 @@ enum LvoFlags {
 
 const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	// Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom
-	'87cddb1f499e32758de20145e73031a84bab299e3f6e5c8487e76d02b2ee9d16': {
+	'11f9e62cf299f72184835b7b2a70a16333fc0d88': {
 		'exec 33.192 (8 Oct 1986)': [LvoFlags.short, 0xFC1A40 ],
 		'graphics 33.97 (8 Oct 1986)': [ LvoFlags.long, 0xFCB0A6 ],
 		'layers 33.33 (2 Oct 1986)': [ LvoFlags.short, 0xFE0F38 ],
@@ -81,7 +81,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	},
 
 	// Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom
-	'ee05862d8102a08436ac4056da7d549db31625c7d47b24dfb7b3c9a5c113ca53': {
+	'891e9a547772fe0c6c19b610baf8bc4ea7fcb785': {
 		'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C ],
 		'graphics 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFCB05A ],
 		'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
@@ -90,7 +90,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	},
 
 	// Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom
-	'd0b70e8a1772614b897f92c33cb299bed3fc8e3de488fc12f67f97fc2486eb79': {
+	'c5839f5cb98a7a8947065c3ed2f14f5f42e334a1': {
 		'exec 37.132 (23.5.91)': [ LvoFlags.short, 0xF81F84 ],
 		'expansion 37.44 (23.5.91)': [ LvoFlags.short, 0xF83CA6],
 		'dos 37.44 (22.5.91)': [ LvoFlags.short, 0xF91544],
@@ -100,7 +100,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	},
 
 	// Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom
-	'59e7df327a7a680e4f2f185e17161e3257bf41247911f34ddf6564399645d703': {
+	'87508de834dc7eb47359cede72d2e3c8a2e5d8db': {
 		'exec 37.151 (1.11.91)': [ LvoFlags.short, 0xF81FB0],
 		'expansion 37.50 (28.10.91)': [ LvoFlags.short, 0xF83CAA ],
 		//'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
@@ -109,7 +109,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	},
 
 	// Kickstart v3.0 r39.106 (1992)(Commodore)(A1200)[!].rom
-	'293beea59d7de4caab3e07223d66e844ad5268eb06a04f405b523a0a1543d64c': {
+	'70033828182fffc7ed106e5373a8b89dda76faa5': {
 		'exec 39.47 (28.8.92)': [ LvoFlags.short, 0xF82280 ],
 		'expansion 39.7 (7.6.92)': [ LvoFlags.short, 0xF8378E ],
 		//'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF86740 ],
@@ -118,7 +118,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	},
 
 	// Kickstart v3.1 r40.68 (1993)(Commodore)(A1200)[!].rom
-	'6d43840d4099a74170ea0f0425b6257c3891ebcaa39c4d1840075a9ab22b5707': {
+	'e21545723fe8374e91342617604f1b3d703094f1': {
 		'exec 40.10 (15.7.93)': [ LvoFlags.short, 0xF8236C ],
 		'expansion 40.2 (9.3.93)': [ LvoFlags.short, 0xF83842 ],
 		'graphics 40.24 (18.5.93)': [ LvoFlags.long, 0xF9D460 ],
@@ -143,7 +143,7 @@ export class Kickstart {
 
 	constructor(private kickPath: string, private fdPath = '') {
 		this.data = fs.readFileSync(kickPath);
-		this.hash = crypto.createHash('sha256').update(this.data).digest('hex');
+		this.hash = crypto.createHash('sha1').update(this.data).digest('hex');
 		if(this.data.length === 512*1024)
 			this.base -= 256*1024;
 
@@ -205,6 +205,11 @@ static Structures(void) {
 
 	public writeSymbols(binDir: string, outDir: string) {
 		this.functions.sort((a, b) => a.addr - b.addr);
+		// fix overlapping functions
+		for(let i = 0; i < this.functions.length - 1; i++)
+			if(this.functions[i].addr + this.functions[i].size > this.functions[i+1].addr)
+				this.functions[i].size = this.functions[i+1].addr - this.functions[i].addr;
+
 		let addr = this.base;
 		let asm = '';
 		asm += `\t.section .kick, "ax", @nobits\n`;
@@ -247,7 +252,7 @@ static Structures(void) {
 				for(let v = 0; this.data.readInt32BE(vectorsOffset + v) !== -1; v += 4)
 					vectors.push(this.data.readInt32BE(vectorsOffset + v));
 			}
-		} else if(libraryVectors[this.hash][lib.id]) { // lookup
+		} else if(libraryVectors[this.hash] && libraryVectors[this.hash][lib.id]) { // lookup
 			switch(libraryVectors[this.hash][lib.id][0]) {
 			case LvoFlags.long: {
 				const vectorsOffset = libraryVectors[this.hash][lib.id][1] - this.base;

@@ -3,7 +3,7 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.4.0
-- symbols for Kickstart 1.2, 1.3, 2.04, 2.05, 3.0, 3.1 (GDB only, no FPU support)
+- symbols for Kickstart 1.2, 1.3, 2.04, 2.05, 3.0, 3.1 (no FPU support) working for debugging (e.g. you can set a breakpoint to 'WaitBlit' or 'AllocMem') and profiling
 
 ## 1.3.9
 - fix debugger not working when kickstart symbols not found (broken since 1.3.8)

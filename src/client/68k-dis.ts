@@ -1,6 +1,7 @@
 // ported from binutils-gdb/include/opcode/m68k.h, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 // removed all references to coldfire
 
+// see https://github.com/BartmanAbyss/binutils-gdb/blob/master/opcodes/m68k-dis.c
 // see http://www.xgc-tek.com/manuals/m68k-ada-gs/x1425.html for pseudo opcodes (jbsr, jra, jcc, dbcc, fjcc)
 
 // 68000 programmer's manual: https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf

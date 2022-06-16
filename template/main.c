@@ -112,7 +112,7 @@ void TakeSystem() {
 
 void FreeSystem() { 
 	WaitVbl();
-	WaitBlt();
+	WaitBlit();
 	custom->intena=0x7fff;//disable all interrupts
 	custom->intreq=0x7fff;//Clear any interrupts that were pending
 	custom->dmacon=0x7fff;//Clear all DMA channels
@@ -448,7 +448,7 @@ int main() {
 		int f = frameCounter & 255;
 
 		// clear
-		WaitBlt();
+		WaitBlit();
 		custom->bltcon0 = A_TO_D | DEST;
 		custom->bltcon1 = 0;
 		custom->bltadat = 0;
@@ -463,7 +463,7 @@ int main() {
 			const short y = sinus40[((frameCounter + i) * 2) & 63] / 2;
 			const APTR src = (APTR)bob + 32 / 8 * 10 * 16 * (i % 6);
 
-			WaitBlt();
+			WaitBlit();
 			custom->bltcon0 = 0xca | SRCA | SRCB | SRCC | DEST | ((x & 15) << ASHIFTSHIFT); // A = source, B = mask, C = background, D = destination
 			custom->bltcon1 = ((x & 15) << BSHIFTSHIFT);
 			custom->bltapt = src;
