@@ -432,7 +432,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const kickstart = new Kickstart(args.kickstart);
 			const kickId = kickstart.getId();
 			if(kickId !== '' ) {
-				const symbols = path.join(binPath, `symbols/kick${kickId}.elf`);
+				const symbols = path.join(binPath, `symbols/kick_${kickId}.elf`);
 				if(fs.existsSync(symbols))
 					commands.push(`interpreter-exec console "add-symbol-file ${symbols.replace(/\\/g, '/')} -s .kick 0x${kickstart.getBase().toString(16)}"`);
 			}

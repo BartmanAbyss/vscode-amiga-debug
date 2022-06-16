@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import * as childProcess from 'child_process';
 import { print_insn_m68k } from './client/68k-dis';
 import { GetJump, JumpType } from './client/68k';
@@ -70,48 +71,60 @@ enum LvoFlags {
 	dos = 2, // [1] seglists, [2] gvindices
 }
 
-const libraryVectors: { [x: string]: number[] } = {
+const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	// Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom
-	'exec 33.192 (8 Oct 1986)': [LvoFlags.short, 0xFC1A40 ],
-	'graphics 33.97 (8 Oct 1986)': [ LvoFlags.long, 0xFCB0A6 ],
-	'layers 33.33 (2 Oct 1986)': [ LvoFlags.short, 0xFE0F38 ],
-	'dos 33.124 (11 Sep 1986)': [ LvoFlags.dos, 0xFF421C, 0xFF43E0 ],
+	'87cddb1f499e32758de20145e73031a84bab299e3f6e5c8487e76d02b2ee9d16': {
+		'exec 33.192 (8 Oct 1986)': [LvoFlags.short, 0xFC1A40 ],
+		'graphics 33.97 (8 Oct 1986)': [ LvoFlags.long, 0xFCB0A6 ],
+		'layers 33.33 (2 Oct 1986)': [ LvoFlags.short, 0xFE0F38 ],
+		'dos 33.124 (11 Sep 1986)': [ LvoFlags.dos, 0xFF421C, 0xFF43E0 ],
+	},
 
 	// Kickstart v1.3 r34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV)[!].rom
-	'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C ],
-	'graphics 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFCB05A ],
-	'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
-	'romboot 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFEB114 ],
-	'dos 34.3 (9 Dec 1987)': [ LvoFlags.dos, 0xFF3E24, 0xFF4060 ],
+	'ee05862d8102a08436ac4056da7d549db31625c7d47b24dfb7b3c9a5c113ca53': {
+		'exec 34.2 (28 Oct 1987)': [ LvoFlags.short, 0xFC1A7C ],
+		'graphics 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFCB05A ],
+		'layers 34.1 (18 Aug 1987)': [ LvoFlags.short, 0xFE0B4C ],
+		'romboot 34.1 (18 Aug 1987)': [ LvoFlags.long, 0xFEB114 ],
+		'dos 34.3 (9 Dec 1987)': [ LvoFlags.dos, 0xFF3E24, 0xFF4060 ],
+	},
 
 	// Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom
-	'exec 37.132 (23.5.91)': [ LvoFlags.short, 0xF81F84 ],
-	'expansion 37.44 (23.5.91)': [ LvoFlags.short, 0xF83CA6],
-	'dos 37.44 (22.5.91)': [ LvoFlags.short, 0xF91544],
-	'graphics 37.35 (23.5.91)': [ LvoFlags.long, 0xFA8E64 ],
-	'layers 37.7 (13.3.91)': [ LvoFlags.short, 0xFC272C ],
-//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ], // our disassembler doesn't support float instructions
+	'd0b70e8a1772614b897f92c33cb299bed3fc8e3de488fc12f67f97fc2486eb79': {
+		'exec 37.132 (23.5.91)': [ LvoFlags.short, 0xF81F84 ],
+		'expansion 37.44 (23.5.91)': [ LvoFlags.short, 0xF83CA6],
+		'dos 37.44 (22.5.91)': [ LvoFlags.short, 0xF91544],
+		'graphics 37.35 (23.5.91)': [ LvoFlags.long, 0xFA8E64 ],
+		'layers 37.7 (13.3.91)': [ LvoFlags.short, 0xFC272C ],
+		//'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ], // our disassembler doesn't support float instructions
+	},
 
 	// Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom
-	'exec 37.151 (1.11.91)': [ LvoFlags.short, 0xF81FB0],
-	'expansion 37.50 (28.10.91)': [ LvoFlags.short, 0xF83CAA ],
-//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
-	'dos 37.45 (21.10.91)': [ LvoFlags.short, 0xF95A40 ],
-	'graphics 37.41 (31.10.91)': [ LvoFlags.long, 0xFB2624 ],
+	'59e7df327a7a680e4f2f185e17161e3257bf41247911f34ddf6564399645d703': {
+		'exec 37.151 (1.11.91)': [ LvoFlags.short, 0xF81FB0],
+		'expansion 37.50 (28.10.91)': [ LvoFlags.short, 0xF83CAA ],
+		//'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF848AC ],
+		'dos 37.45 (21.10.91)': [ LvoFlags.short, 0xF95A40 ],
+		'graphics 37.41 (31.10.91)': [ LvoFlags.long, 0xFB2624 ],
+	},
 
 	// Kickstart v3.0 r39.106 (1992)(Commodore)(A1200)[!].rom
-	'exec 39.47 (28.8.92)': [ LvoFlags.short, 0xF82280 ],
-	'expansion 39.7 (7.6.92)': [ LvoFlags.short, 0xF8378E ],
-//	'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF86740 ], // oops: same version as 2.04, 2.05, but different address
-	'dos 39.23 (8.9.92)': [ LvoFlags.short, 0xF971EC ],
-	'graphics 39.89 (1.9.92)': [ LvoFlags.long, 0xFBCA7C ],
+	'293beea59d7de4caab3e07223d66e844ad5268eb06a04f405b523a0a1543d64c': {
+		'exec 39.47 (28.8.92)': [ LvoFlags.short, 0xF82280 ],
+		'expansion 39.7 (7.6.92)': [ LvoFlags.short, 0xF8378E ],
+		//'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xF86740 ],
+		'dos 39.23 (8.9.92)': [ LvoFlags.short, 0xF971EC ],
+		'graphics 39.89 (1.9.92)': [ LvoFlags.long, 0xFBCA7C ],
+	},
 
 	// Kickstart v3.1 r40.68 (1993)(Commodore)(A1200)[!].rom
-	'exec 40.10 (15.7.93)': [ LvoFlags.short, 0xF8236C ],
-	'expansion 40.2 (9.3.93)': [ LvoFlags.short, 0xF83842 ],
-	'graphics 40.24 (18.5.93)': [ LvoFlags.long, 0xF9D460 ],
-	'dos 40.3 (1.4.93)': [ LvoFlags.short, 0xFA034C ],
-	'mathieeesingbas 40.4 (16.3.93)': [ LvoFlags.short, 0xFC1B9C ], // <- for AFF_68881; also: 0xFC1B78 (when no FPU)
+	'6d43840d4099a74170ea0f0425b6257c3891ebcaa39c4d1840075a9ab22b5707': {
+		'exec 40.10 (15.7.93)': [ LvoFlags.short, 0xF8236C ],
+		'expansion 40.2 (9.3.93)': [ LvoFlags.short, 0xF83842 ],
+		'graphics 40.24 (18.5.93)': [ LvoFlags.long, 0xF9D460 ],
+		'dos 40.3 (1.4.93)': [ LvoFlags.short, 0xFA034C ],
+		'mathieeesingbas 40.4 (16.3.93)': [ LvoFlags.short, 0xFC1B9C ], // <- for AFF_68881; also: 0xFC1B78 (when no FPU)
+	},
 };
 
 interface KickFunction {
@@ -122,15 +135,19 @@ interface KickFunction {
 
 export class Kickstart {
 	private data: Buffer;
+	private hash = '';
 	private base = 0xfc0000;
 	private idc = '';
 	private libraries: Library[] = [];
 	private functions: KickFunction[] = [];
 
-	constructor(private path: string, private fdPath = '') {
-		this.data = fs.readFileSync(path);
+	constructor(private kickPath: string, private fdPath = '') {
+		this.data = fs.readFileSync(kickPath);
+		this.hash = crypto.createHash('sha256').update(this.data).digest('hex');
 		if(this.data.length === 512*1024)
 			this.base -= 256*1024;
+
+		console.log(`${path.basename(kickPath)}: ${this.hash}`);
 
 		// scan libraries
 		for(let offset = 0; offset < this.data.byteLength; offset += 2) {
@@ -149,15 +166,7 @@ export class Kickstart {
 		}
 	}
 
-	public getId(): string {
-		const exec = this.libraries.find((lib) => lib.name === 'exec.library');
-		if(exec) {
-			const match = exec.id.match(/([0-9]+\.[0-9]+)/);
-			if(match && match.length >= 2)
-				return match[1];
-		}
-		return '';
-	}
+	public getId = () => this.hash;
 
 	public getBase = () => this.base;
 
@@ -191,7 +200,7 @@ static Structures(void) {
 
 	public writeIdc() {
 		this.parseLibraries();
-		fs.writeFileSync(this.path + '.idc', this.idc);
+		fs.writeFileSync(this.kickPath + '.idc', this.idc);
 	}
 
 	public writeSymbols(binDir: string, outDir: string) {
@@ -200,12 +209,14 @@ static Structures(void) {
 		let asm = '';
 		asm += `\t.section .kick, "ax", @nobits\n`;
 		for(const func of this.functions) {
-			asm += `\t.nop ${func.addr - addr}\n\t.type ${func.name},function\n\t.globl ${func.name}\n${func.name}:\n\t.size ${func.name}, ${func.size}\n`;
+			if(func.addr - addr > 0)
+				asm += `\t.nop ${func.addr - addr}\n`;
+			asm += `\t.type ${func.name},function\n\t.globl ${func.name}\n${func.name}:\n\t.size ${func.name}, ${func.size}\n`;
 			addr = func.addr;
 		}
 		asm += `\t.nop ${0x1000000 - addr}\n`; // pad kickstart section
-		fs.writeFileSync(this.path + '.asm', asm);
-		const elfPath = path.join(outDir, `kick${this.getId()}.elf`);
+		fs.writeFileSync(this.kickPath + '.asm', asm);
+		const elfPath = path.join(outDir, `kick_${this.hash}.elf`);
 		const as = childProcess.spawnSync(
 			path.join(binDir, "m68k-amiga-elf-as.exe"), 
 			[
@@ -236,23 +247,23 @@ static Structures(void) {
 				for(let v = 0; this.data.readInt32BE(vectorsOffset + v) !== -1; v += 4)
 					vectors.push(this.data.readInt32BE(vectorsOffset + v));
 			}
-		} else if(libraryVectors[lib.id]) { // lookup
-			switch(libraryVectors[lib.id][0]) {
+		} else if(libraryVectors[this.hash][lib.id]) { // lookup
+			switch(libraryVectors[this.hash][lib.id][0]) {
 			case LvoFlags.long: {
-				const vectorsOffset = libraryVectors[lib.id][1] - this.base;
+				const vectorsOffset = libraryVectors[this.hash][lib.id][1] - this.base;
 				for(let v = 0; this.data.readInt32BE(vectorsOffset + v) !== -1; v += 4)
 					vectors.push(this.data.readInt32BE(vectorsOffset + v));
 				break;
 			}
 			case LvoFlags.short: {
-				const vectorsOffset = libraryVectors[lib.id][1] - this.base;
+				const vectorsOffset = libraryVectors[this.hash][lib.id][1] - this.base;
 				for(let v = 0; v === 0 || this.data.readInt16BE(vectorsOffset + v) !== -1; v += 2)
 					vectors.push(vectorsOffset + this.base + this.data.readInt16BE(vectorsOffset + v));
 				break;
 			}
 			case LvoFlags.dos: {
-				const seglistsOffset = libraryVectors[lib.id][1] - this.base;
-				const gvIndicesOffset = libraryVectors[lib.id][2] - this.base;
+				const seglistsOffset = libraryVectors[this.hash][lib.id][1] - this.base;
+				const gvIndicesOffset = libraryVectors[this.hash][lib.id][2] - this.base;
 				const gvMap: Map<number, number> = new Map();
 				const numSeglists = this.data.readInt32BE(seglistsOffset);
 				//console.log(`numSeglists: ${numSeglists}`);
