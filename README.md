@@ -259,8 +259,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 ### Kickstart
 * TODO: disassembler needs to understand FPU instructions, exec.library 2.04+ uses some and we need to be able to disassemble to get function sizes
 * TODO: support multiple vector tables per library (for FPU/non-FPU mathieeesingbas)
-* TODO: profiler: use kickstart debug symbols
-* TODO: stack unwinding for kickstart
+* TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
 * TODO: show source blitter-rects
