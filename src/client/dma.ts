@@ -56,15 +56,16 @@ export interface DmaSubtype {
 }
 export interface DmaType {
 	name: string;
-	subtypes: DmaSubtype[];
+	subtypes: { [x: number]: DmaSubtype };
 }
 
 export const NR_DMA_REC_HPOS = 227;
 export const NR_DMA_REC_VPOS = 313;
 
+// WinUAE: include/debug.h
 export namespace DmaEvents {
 	export const BLITIRQ = 1;
-	export const BLITNASTY = 2;
+	export const BLIFINALD = 2;
 	export const BLITSTARTFINISH = 4;
 	export const BPLFETCHUPDATE = 8;
 	export const COPPERWAKE = 16;
@@ -72,7 +73,24 @@ export namespace DmaEvents {
 	export const INTREQ = 64;
 	export const COPPERWANTED = 128;
 	export const NOONEGETS = 256;
+	export const CPUBLITTERSTEAL = 512;
+	export const CPUBLITTERSTOLEN = 1024;
+	export const COPPERSKIP = 2048;
+	export const DDFSTRT = 4096;
+	export const DDFSTOP = 8192;
+	export const DDFSTOP2 = 16384;
 	export const SPECIAL = 32768;
+	export const VB = 0x10000;
+	export const VS = 0x20000;
+	export const LOF = 0x40000;
+	export const LOL = 0x80000;
+	export const HBS = 0x100000;
+	export const HBE = 0x200000;
+	export const HDIWS = 0x400000;
+	export const HDIWE = 0x800000;
+	export const VDIW = 0x1000000;
+	export const HSS = 0x2000000;
+	export const HSE = 0x4000000;
 }
 
 export namespace DmaTypes {
@@ -100,73 +118,82 @@ export namespace DmaSubTypes {
 export const dmaTypes: DmaType[] = [
 	{ // 0
 		name: "-",
-		subtypes: [ { color: 0xff222222 } ]
+		subtypes: { 0: { color: 0xff222222 } }
 	},
 	{ // DMARECORD_REFRESH 1
 		name: 'Refresh',
-		subtypes: [ { color: 0xff444444 } ]
+		subtypes: { 0: { color: 0xff444444 } }
 	},
 	{ // DMARECORD_CPU 2
 		name: 'CPU',
-		subtypes: [
-			{ color: 0xff4253a2, name: 'Code' },
-			{ color: 0xffd698ad, name: 'Data' }
-		]
+		subtypes: {
+			0: { color: 0xff4253a2, name: 'Code' },
+			1: { color: 0xffd698ad, name: 'Data' }
+		}
 	},
 	{ // DMARECORD_COPPER 3
 		name: 'Copper',
-		subtypes: [
-			{ color: 0xff00eeee },
-			{ color: 0xff22aaaa, name: 'Wait' },
-			{ color: 0xff446666, name: 'Special' }
-		]
+		subtypes: {
+			0: { color: 0xff00eeee },
+			1: { color: 0xff22aaaa, name: 'Wait' },
+			2: { color: 0xff446666, name: 'Special' }
+		}
 	},
 	{ // DMARECORD_AUDIO 4
 		name: 'Audio',
-		subtypes: [ 
-			{ color: 0xff0000ff, name: 'Channel 0' },
-			{ color: 0xff0000ee, name: 'Channel 1' },
-			{ color: 0xff0000dd, name: 'Channel 2' },
-			{ color: 0xff0000cc, name: 'Channel 3' },
-		]
+		subtypes: {
+			0: { color: 0xff0000ff, name: 'Channel 0' },
+			1: { color: 0xff0000ee, name: 'Channel 1' },
+			2: { color: 0xff0000dd, name: 'Channel 2' },
+			3: { color: 0xff0000cc, name: 'Channel 3' },
+		}
 	},
 	{ // DMARECORD_BLITTER 5
 		name: 'Blitter',
-		subtypes: [
-			{ color: 0xff888800 },
-			{ color: 0xffff8800, name: 'Fill' },
-			{ color: 0xff00ff00, name: 'Line' }
-		]
+		subtypes: {
+			0x00: { color: 0xff888800, name: 'A-Blit' },
+			0x01: { color: 0xee888800, name: 'B-Blit' },
+			0x02: { color: 0xdd888800, name: 'C-Blit' },
+			0x03: { color: 0xcc888800, name: 'D-Blit' },
+			0x10: { color: 0xffff8800, name: 'A-Fill' },
+			0x11: { color: 0xeeff8800, name: 'B-Fill' },
+			0x12: { color: 0xddff8800, name: 'C-Fill' },
+			0x13: { color: 0xccff8800, name: 'D-Fill' },
+			0x20: { color: 0xff00ff00, name: 'A-Line' },
+			0x21: { color: 0xee00ff00, name: 'B-Line' },
+			0x22: { color: 0xdd00ff00, name: 'C-Line' },
+			0x23: { color: 0xcc00ff00, name: 'D-Line' },
+		}
 	},
 	{ // DMARECORD_BITPLANE 6
 		name: 'Bitplane',
-		subtypes: [ 
-			{ color: 0xffff0000, name: 'Plane 1' },
-			{ color: 0xffee0000, name: 'Plane 2' },
-			{ color: 0xffdd0000, name: 'Plane 3' },
-			{ color: 0xffcc0000, name: 'Plane 4' },
-			{ color: 0xffbb0000, name: 'Plane 5' },
-			{ color: 0xffaa0000, name: 'Plane 6' },
-			{ color: 0xff990000, name: 'Plane 7' },
-			{ color: 0xff880000, name: 'Plane 8' },
-		]
+		subtypes: {
+			0: { color: 0xffff0000, name: 'Plane 1' },
+			1: { color: 0xffee0000, name: 'Plane 2' },
+			2: { color: 0xffdd0000, name: 'Plane 3' },
+			3: { color: 0xffcc0000, name: 'Plane 4' },
+			4: { color: 0xffbb0000, name: 'Plane 5' },
+			5: { color: 0xffaa0000, name: 'Plane 6' },
+			6: { color: 0xff990000, name: 'Plane 7' },
+			7: { color: 0xff880000, name: 'Plane 8' },
+		}
 	},
 	{ // DMARECORD_SPRITE 7
 		name: 'Sprite',
-		subtypes: [ 
-			{ color: 0xffff00ff, name: 'Sprite 0' },
-			{ color: 0xffee00ee, name: 'Sprite 1' },
-			{ color: 0xffdd00dd, name: 'Sprite 2' },
-			{ color: 0xffcc00cc, name: 'Sprite 3' },
-			{ color: 0xffbb00bb, name: 'Sprite 4' },
-			{ color: 0xffaa00aa, name: 'Sprite 5' },
-			{ color: 0xff990099, name: 'Sprite 6' },
-			{ color: 0xff880088, name: 'Sprite 7' },
-		]
+		subtypes: {
+			0: { color: 0xffff00ff, name: 'Sprite 0' },
+			1: { color: 0xffee00ee, name: 'Sprite 1' },
+			2: { color: 0xffdd00dd, name: 'Sprite 2' },
+			3: { color: 0xffcc00cc, name: 'Sprite 3' },
+			4: { color: 0xffbb00bb, name: 'Sprite 4' },
+			5: { color: 0xffaa00aa, name: 'Sprite 5' },
+			6: { color: 0xff990099, name: 'Sprite 6' },
+			7: { color: 0xff880088, name: 'Sprite 7' },
+		}
 	},
 	{ // DMARECORD_DISK 8
 		name: 'Disk',
-		subtypes: [ { color: 0xffffffff } ]
+		subtypes: { 0: { color: 0xffffffff } }
 	},
 ];
 
@@ -341,7 +368,7 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS - 0xdff000) {
-				const first  = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
+				const first = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
 				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
 				const insn = CopperInstruction.parse(first, second);
 				// skip fake instruction after copper jump
@@ -403,23 +430,23 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 			continue;
 		if(c.insn instanceof CopperMove) {
 			switch(c.insn.DA + 0xdff000) {
-			case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
-			case regBPL1MOD: modulos[0] = COERCE16(c.insn.RD); break;
-			case regBPL2MOD: modulos[1] = COERCE16(c.insn.RD); break;
-			case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
-			case regBPL1PTL: planes[0] = (planes[0] & 0xffff0000) |  c.insn.RD; break;
-			case regBPL2PTH: planes[1] = (planes[1] & 0x0000ffff) | (c.insn.RD << 16); break;
-			case regBPL2PTL: planes[1] = (planes[1] & 0xffff0000) |  c.insn.RD; break;
-			case regBPL3PTH: planes[2] = (planes[2] & 0x0000ffff) | (c.insn.RD << 16); break;
-			case regBPL3PTL: planes[2] = (planes[2] & 0xffff0000) |  c.insn.RD; break;
-			case regBPL4PTH: planes[3] = (planes[3] & 0x0000ffff) | (c.insn.RD << 16); break;
-			case regBPL4PTL: planes[3] = (planes[3] & 0xffff0000) |  c.insn.RD; break;
-			case regBPL5PTH: planes[4] = (planes[4] & 0x0000ffff) | (c.insn.RD << 16); break;
-			case regBPL5PTL: planes[4] = (planes[4] & 0xffff0000) |  c.insn.RD; break;
-			case regDDFSTRT: DDFSTRT = c.insn.RD; break;
-			case regDDFSTOP: DDFSTOP = c.insn.RD; break;
-			case regDIWSTRT: DIWSTRT = c.insn.RD; break;
-			case regDIWSTOP: DIWSTOP = c.insn.RD; break;
+				case regBPLCON0: if((c.insn.RD >>> 12) & 7) BPLCON0 = c.insn.RD; break; // ignore switching off all planes
+				case regBPL1MOD: modulos[0] = COERCE16(c.insn.RD); break;
+				case regBPL2MOD: modulos[1] = COERCE16(c.insn.RD); break;
+				case regBPL1PTH: planes[0] = (planes[0] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL1PTL: planes[0] = (planes[0] & 0xffff0000) | c.insn.RD; break;
+				case regBPL2PTH: planes[1] = (planes[1] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL2PTL: planes[1] = (planes[1] & 0xffff0000) | c.insn.RD; break;
+				case regBPL3PTH: planes[2] = (planes[2] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL3PTL: planes[2] = (planes[2] & 0xffff0000) | c.insn.RD; break;
+				case regBPL4PTH: planes[3] = (planes[3] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL4PTL: planes[3] = (planes[3] & 0xffff0000) | c.insn.RD; break;
+				case regBPL5PTH: planes[4] = (planes[4] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL5PTL: planes[4] = (planes[4] & 0xffff0000) | c.insn.RD; break;
+				case regDDFSTRT: DDFSTRT = c.insn.RD; break;
+				case regDDFSTOP: DDFSTOP = c.insn.RD; break;
+				case regDIWSTRT: DIWSTRT = c.insn.RD; break;
+				case regDIWSTOP: DIWSTOP = c.insn.RD; break;
 			}
 		}
 	}
@@ -470,9 +497,9 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 
 			if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
 				switch(dmaRecord.reg & 0xff) {
-				case 1: memoryAfter.writeByte(dmaRecord.addr, dmaRecord.dat); break;
-				case 2: memoryAfter.writeWord(dmaRecord.addr, dmaRecord.dat); break;
-				case 4: memoryAfter.writeLong(dmaRecord.addr, dmaRecord.dat); break;
+					case 1: memoryAfter.writeByte(dmaRecord.addr, dmaRecord.dat); break;
+					case 2: memoryAfter.writeWord(dmaRecord.addr, dmaRecord.dat); break;
+					case 4: memoryAfter.writeLong(dmaRecord.addr, dmaRecord.dat); break;
 				}
 			} else if(dmaRecord.reg === 0) { // Blitter write
 				memoryAfter.writeWord(dmaRecord.addr, dmaRecord.dat);
@@ -498,7 +525,7 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmacon: number, dmaR
 				continue;
 
 			if(dmaRecord.reg === regDMACON) {
-				if (dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & 0x8000)
 					customRegsAfter[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 				else
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
@@ -539,9 +566,9 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 
 // AABBGGRR
 const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
-		   (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
-		   (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
-		0xff000000) >>> 0;// AA;
+	(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
+	(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
+	0xff000000) >>> 0;// AA;
 
 // AABBGGRR <-> AARRGGBB
 const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
