@@ -2,6 +2,8 @@
 # for better annotations add -dA -dP
 # to generate assembler source with LTO, add to LDFLAGS: -save-temps=cwd
 
+SHELL = cmd.exe
+
 forward-to-backward = $(subst /,\,$1)
 
 subdirs := $(wildcard */)

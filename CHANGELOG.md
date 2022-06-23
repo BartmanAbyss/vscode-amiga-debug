@@ -3,8 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
 ## 1.4.1
-- fixed DMA display for blitter (Channel D was missing, Channel B and C incorrectly had Line & Fill attribution)
+- fixed DMA display for blitter (Channel D was missing, Channel B and C incorrectly had Line & Fill attribution) (fixes [#104](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/104))
 - added more DMA events (CPU Blitter Steal, CPU Blitter Stolen, Copper Skip)
+- fix Makefile for users with `git sh` in their path (fixes [#103](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/103))
 
 ## 1.4.0
 - symbols for Kickstart 1.2, 1.3, 2.04, 2.05, 3.0, 3.1 (no FPU support) working for debugging (e.g. you can set a breakpoint to 'WaitBlit' or 'AllocMem') and profiling
