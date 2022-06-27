@@ -377,7 +377,7 @@ class AmigaDebugExtension {
 			const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
 			let config: AmigaConfiguration;
 			try {
-				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
 			} catch(e) { /**/ }
 			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
 				void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
@@ -407,11 +407,11 @@ class AmigaDebugExtension {
 					writeEmitter.fire(`\x1b[31mPress CTRL+C to abort\x1b[0m\r\n\r\n`);
 					//p = cp.exec(cmd);
 					p = cp.spawn(cmd, args);
-					p.stderr.on('data', (data: string) => {
-						writeEmitter.fire(data);
+					p.stderr.on('data', (data: Buffer) => {
+						writeEmitter.fire(data.toString());
 					});
-					p.stdout.on('data', (data: string) => {
-						writeEmitter.fire(data);
+					p.stdout.on('data', (data: Buffer) => {
+						writeEmitter.fire(data.toString());
 					});
 					p.on('exit', (code: number, signal: string) => {
 						if(signal === 'SIGTERM') {
@@ -426,7 +426,7 @@ class AmigaDebugExtension {
 				},
 				close: () => { /**/ },
 				handleInput: (char: string) => {
-					if(char === '\x03')
+					if(char === '\x03') // Ctrl+C
 						p.kill('SIGTERM');
 				}
 			};

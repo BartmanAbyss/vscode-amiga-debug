@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.2
+- fixes missing shrinkler terminal output
+- Shrinkler: fixed progress output (only went to 10% instead of 100%)
+
 ## 1.4.1
 - fixed DMA display for blitter (Channel D was missing, Channel B and C incorrectly had Line & Fill attribution) (fixes [#104](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/104))
 - added more DMA events (CPU Blitter Steal, CPU Blitter Stolen, Copper Skip)
