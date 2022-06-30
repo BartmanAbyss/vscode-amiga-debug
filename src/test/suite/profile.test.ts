@@ -241,7 +241,7 @@ suite("Profiler", () => {
 		test_profile_shrinkler('bobble');
 	});
 
-	test("Savestate: desertdream-dots.profile", () => {
+/*	test("Savestate: desertdream-dots.profile", () => {
 		test_profile_savestate('desertdream-dots.profile');
-	});
+	});*/
 });

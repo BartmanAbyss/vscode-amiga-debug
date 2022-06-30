@@ -1,0 +1,5 @@
+##base _GetFileBase
+##bias 30
+##public
+GETFILE_GetClass()()
+##end

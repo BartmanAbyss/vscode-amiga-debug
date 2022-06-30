@@ -1,0 +1,9 @@
+##base _TimerBase
+##bias 42
+##public
+AddTime(dest,src)(a0/a1)
+SubTime(dest,src)(a0/a1)
+CmpTime(dest,src)(a0/a1)
+ReadEClock(dest)(a0)
+GetSysTime(dest)(a0)
+##end

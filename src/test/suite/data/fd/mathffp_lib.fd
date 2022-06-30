@@ -1,0 +1,17 @@
+##base _MathBase
+##bias 30
+##public
+SPFix(parm)(d0)
+SPFlt(integer)(d0)
+SPCmp(leftParm,rightParm)(d1,d0)
+SPTst(parm)(d1)
+SPAbs(parm)(d0)
+SPNeg(parm)(d0)
+SPAdd(leftParm,rightParm)(d1,d0)
+SPSub(leftParm,rightParm)(d1,d0)
+SPMul(leftParm,rightParm)(d1,d0)
+SPDiv(leftParm,rightParm)(d1,d0)
+*--- functions in V33 or higher (Release 1.2) ---
+SPFloor(parm)(d0)
+SPCeil(parm)(d0)
+##end

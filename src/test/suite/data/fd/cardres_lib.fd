@@ -1,0 +1,21 @@
+##base _CardResource
+##bias 6
+##public
+OwnCard(handle)(a1)
+ReleaseCard(handle,flags)(a1,d0)
+GetCardMap()()
+BeginCardAccess(handle)(a1)
+EndCardAccess(handle)(a1)
+ReadCardStatus()()
+CardResetRemove(handle,flag)(a1,d0)
+CardMiscControl(handle,control_bits)(a1,d1)
+CardAccessSpeed(handle,nanoseconds)(a1,d0)
+CardProgramVoltage(handle,voltage)(a1,d0)
+CardResetCard(handle)(a1)
+CopyTuple(handle,buffer,tuplecode,size)(a1,a0,d1,d0)
+DeviceTuple(tuple_data,storage)(a0/a1)
+IfAmigaXIP(handle)(a2)
+CardForceChange()()
+CardChangeCount()()
+CardInterface()()
+##end

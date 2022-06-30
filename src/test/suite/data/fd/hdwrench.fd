@@ -1,0 +1,30 @@
+##base _HDWBase
+##bias 30
+##public
+HDWOpenDevice(DevName,Unit)(A0,D0)
+HDWCloseDevice(void)()
+RawRead(*bbk,size)(A0,D0)
+RawWrite(*bb)(A0)
+WriteBlock(*bb)(A0)
+ReadRDBs(void)();
+WriteRDBs(void)()
+QueryReady(errorcode)(A0)
+QueryInquiry(inqbuf,errorcode)(A0/A1)
+QueryModeSense(page,msbsize,msbuf,errorcode)(D0/D1,A0/A1)
+QueryFindValid(*ValidIDs,devicename,board,types,wide_scsi,Callback)(A0/A1,D0/D1/D2,A2)
+QueryCapacity(totalblocks,blocksize)(A0/A1)
+ReadMountfile(unit,*filename,controller)(D0,A0/A1)
+ReadRDBStructs(*filename, unit)(A0,D0)
+WriteMountfile(filename,*ldir,unit)(A0/A1,D0)
+WriteRDBStructs(*filename)(A0)
+InMemMountfile(unit,*mfdata,*controller)(D0,A0/A1)
+InMemRDBStructs(*rdbp,sizerdb,unit)(A0,D0/D1)
+OutMemMountfile(*mfp,*sizew,sizeb,unit)(A0/A1,D0/D1)
+OutMemRDBStructs(*rdbp,*sizew,sizeb)(A0/A1,D0)
+FindDiskName(*diskname)(A0)
+FindControllerID(*devname,*selfid)(A0/A1)
+FindLastSector(void)()
+FindDefaults(Optimize,*Return)(D0,A0)
+LowlevelFormat(Callback)(A0)
+VerifyDrive(CallBack)(A0)
+##end

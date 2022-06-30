@@ -1,0 +1,5 @@
+##base _IntegerBase
+##bias 30
+##public
+INTEGER_GetClass()()
+##end

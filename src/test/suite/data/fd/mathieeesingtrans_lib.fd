@@ -1,0 +1,21 @@
+##base _MathIeeeSingTransBase
+##bias 30
+##public
+IEEESPAtan(parm)(d0)
+IEEESPSin(parm)(d0)
+IEEESPCos(parm)(d0)
+IEEESPTan(parm)(d0)
+IEEESPSincos(cosptr,parm)(a0,d0)
+IEEESPSinh(parm)(d0)
+IEEESPCosh(parm)(d0)
+IEEESPTanh(parm)(d0)
+IEEESPExp(parm)(d0)
+IEEESPLog(parm)(d0)
+IEEESPPow(exp,arg)(d1,d0)
+IEEESPSqrt(parm)(d0)
+IEEESPTieee(parm)(d0)
+IEEESPFieee(parm)(d0)
+IEEESPAsin(parm)(d0)
+IEEESPAcos(parm)(d0)
+IEEESPLog10(parm)(d0)
+##end

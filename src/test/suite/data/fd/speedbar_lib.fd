@@ -1,0 +1,9 @@
+##base _SpeedBarBase
+##bias 30
+##public
+SPEEDBAR_GetClass()()
+AllocSpeedButtonNodeA(number,tags)(d0/a0)
+FreeSpeedButtonNode(node)(a0)
+SetSpeedButtonNodeAttrsA(node,tags)(a0/a1)
+GetSpeedButtonNodeAttrsA(node,tags)(a0/a1)
+##end

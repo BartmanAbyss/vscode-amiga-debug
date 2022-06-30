@@ -1,0 +1,5 @@
+##base _GetFontBase
+##bias 30
+##public
+GETFONT_GetClass()()
+##end

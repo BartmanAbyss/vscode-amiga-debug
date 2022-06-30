@@ -285,6 +285,8 @@ export class ProfileFile {
 	public stackLower: number;
 	public stackUpper: number;
 
+	public kickRomSize: number;
+	public kickRom: Uint8Array;
 	public chipMemSize: number;
 	public chipMem: Uint8Array;
 	public bogoMemSize: number;
@@ -310,6 +312,10 @@ export class ProfileFile {
 		this.systemStackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.stackLower = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		this.stackUpper = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+
+		// kickstart
+		this.kickRomSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+		this.kickRom = new Uint8Array(buffer.buffer, bufferOffset, this.kickRomSize); bufferOffset += this.kickRomSize;
 
 		// memory
 		this.chipMemSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
@@ -408,7 +414,7 @@ export class ProfileFile {
 }
 
 export class Profiler {
-	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable) {
+	constructor(private sourceMap: SourceMap, private symbolTable: SymbolTable, private kickstartSymbols?: SymbolTable) {
 	}
 
 	public profileSavestate(profileFile: ProfileFile): string {
@@ -425,15 +431,17 @@ export class Profiler {
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
 		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
-		out[0].$amiga.objdump = this.disassembleSavestate(profileFile, pcTrace);
+		out[0].$amiga.objdump = this.disassemblePcTrace(profileFile, pcTrace);
 		return JSON.stringify(out); //, null, 2);
 	}
 
-	private disassembleSavestate(profileFile: ProfileFile, pcTrace: number[]): string {
+	private disassemblePcTrace(profileFile: ProfileFile, pcTrace: number[], functions?: Map<number, string>): string {
 		pcTrace.sort((a, b) => a - b);
-		let disasm = '00000000 <_start>:\n';
-
-		const functions = new Map<number, number>();
+		let disasm = '\n';
+		if(!functions) {
+			functions = new Map<number, string>();
+			disasm = '00000000 <_start>:\n';
+		}
 
 		const processBranch = (mem: Uint8Array, addr: number, offset: number) => {
 			const mem16 = new Uint16Array(4);
@@ -442,14 +450,14 @@ export class Profiler {
 			}
 			const jump = GetJump(addr, mem16);
 			if(jump?.type === JumpType.Jsr)
-				functions.set(jump.target, jump.target);
+				functions.set(jump.target, `_${jump.target.toString(16).padStart(8, '0')}`);
 		};
 
 		const disasmInsn = (mem: Uint8Array, addr: number, offset: number) => {
 			const insn = print_insn_m68k(mem.slice(offset, Math.min(offset + 16, mem.length)), addr);
 			if(insn.len > 0) {
 				if(functions.has(addr))
-					disasm += `${addr.toString(16).padStart(8, '0')} <_${functions.get(addr).toString(16).padStart(8, '0')}>:\n`;
+					disasm += `${addr.toString(16).padStart(8, '0')} <${functions.get(addr)}>:\n`;
 				disasm += ` ${addr.toString(16)}:\t`;
 				for(let i = 0; i < insn.len; i += 2)
 					disasm += ((mem[offset + i] << 8) | mem[offset + i + 1]).toString(16).padStart(4, '0') + ' ';
@@ -461,12 +469,15 @@ export class Profiler {
 
 		const process = (fn: (mem: Uint8Array, addr: number, offset: number) => void) => {
 			let lastPC = 0xffffffff;
+			const kickBase = profileFile.kickRomSize === 512 * 1024 ? 0xf80000 : 0xfc0000;
 			for(const pc of pcTrace) {
 				if(pc !== lastPC) {
 					if(pc > 0 && pc < profileFile.chipMemSize)
 						fn(profileFile.chipMem, pc, pc - 0);
 					else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
 						fn(profileFile.bogoMem, pc, pc - 0xc00000);
+					else if(pc >= kickBase && pc < 0x1000000)
+						fn(profileFile.kickRom, pc, pc - kickBase);
 					lastPC = pc;
 				}
 			}
@@ -533,10 +544,22 @@ export class Profiler {
 		for (const frame of profileFile.frames)
 			out.push(this.profileTimeFrame(profileFile, frame));
 
+		// disassemble kickstart
+		const kickTrace: number[] = [];
+		for(const frame of out)
+			for(let i = 0; i < frame.$amiga.pcTrace.length; i += 2)
+				if(frame.$amiga.pcTrace[i] >= 0xf80000 && frame.$amiga.pcTrace[i] < 0x1000000)
+					kickTrace.push(frame.$amiga.pcTrace[i]);
+		const kickFunctions = new Map<number, string>();
+		if(this.kickstartSymbols) {
+			for(const f of this.kickstartSymbols.getFunctionSymbols())
+				kickFunctions.set(f.base + f.address, '[Kick]' + f.name);
+		}
+	
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
 		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
-		out[0].$amiga.objdump = disassembly;
+		out[0].$amiga.objdump = disassembly + this.disassemblePcTrace(profileFile, kickTrace, kickFunctions);
 
 		return JSON.stringify(out/*, null, 2*/);
 	}
@@ -564,12 +587,24 @@ export class Profiler {
 
 		let totalCycles = 0;
 		for (const p of frame.profileArray) {
-			if (p < 0xffff0000) {
-				if (lastPC === undefined)
+			if (p < 0xffff0000) { // PC
+				if(lastPC === undefined)
 					lastPC = p;
-				if (p === 0x7fffffff) {
+				if(p === 0x7fffffff) {
 					// IRQ processing
 					callstack.frames.push({ func: '[IRQ]', file: '', line: 0 });
+				} else if(p >= 0xf80000 && p < 0x1000000) {
+					// in Kickstart
+					for(const f of lastCallstack.frames)
+						if(f.file !== '')
+							callstack.frames.push(f);
+					let func = '[Kickstart]';
+					if(this.kickstartSymbols) {
+						const sym = this.kickstartSymbols.getFunctionAtAddress(p, true);
+						if(sym)
+							func = '[Kick]' + sym.name;
+					}
+					callstack.frames.push({ func, file: '', line: 0 });
 				} else {
 					let pc = p;
 					if (callstack.frames.length)
@@ -581,7 +616,7 @@ export class Profiler {
 							callstack.frames[0].func += " (inlined)";
 					}
 				}
-			} else {
+			} else { // #Cycles
 				const cyc = (0xffffffff - p) | 0;
 
 				if (lastPC === undefined)
@@ -589,9 +624,9 @@ export class Profiler {
 				pcTrace.push(lastPC, cyc);
 				lastPC = undefined;
 
-				if (callstack.frames.length === 0) { // not in our code
+				if(callstack.frames.length === 0) { // not in our code
 					callstack.frames.push(...lastCallstack.frames);
-					if (callstack.frames.length === 0 || callstack.frames[callstack.frames.length - 1].func !== '[External]')
+					if(callstack.frames.length === 0 || callstack.frames[callstack.frames.length - 1].func !== '[External]')
 						callstack.frames.push({ func: '[External]', file: '', line: 0 });
 				}
 

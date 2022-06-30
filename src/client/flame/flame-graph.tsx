@@ -140,8 +140,8 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 			if(dmaRecord.type === undefined && dmaRecord.evt === undefined)
 				continue;
 			const dmaType = dmaRecord.type || 0;
-			const dmaSubtype = (dmaTypes[dmaType].subtypes.length === 1) ? 0 : (dmaRecord.extra || 0);
-			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
+			const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
+			if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
 				continue;
 
 			if(dmaRecord.reg === regDMACON) {
@@ -1091,8 +1091,8 @@ const Tooltip: FunctionComponent<{
 		if(amiga.dmaRecord.evt) {
 			const events: string[] = [];
 
-			if(amiga.dmaRecord.evt & DmaEvents.BLITNASTY)
-				events.push("Blitter Nasty");
+			if(amiga.dmaRecord.evt & DmaEvents.BLIFINALD)
+				events.push("Blitter Final Data");
 			if(amiga.dmaRecord.evt & DmaEvents.BLITSTARTFINISH)
 				events.push("Blitter Start/Finish");
 			if(amiga.dmaRecord.evt & DmaEvents.BLITIRQ)
@@ -1105,6 +1105,12 @@ const Tooltip: FunctionComponent<{
 				events.push("Copper can't read");
 			else if(amiga.dmaRecord.evt & DmaEvents.COPPERWANTED)
 				events.push("Copper can't read");
+			if(amiga.dmaRecord.evt & DmaEvents.CPUBLITTERSTEAL)
+				events.push("CPU Blitter Steal");
+			if(amiga.dmaRecord.evt & DmaEvents.CPUBLITTERSTOLEN)
+				events.push("CPU Blitter Stolen");
+			if(amiga.dmaRecord.evt & DmaEvents.COPPERSKIP)
+				events.push("Copper Skip");
 			if(amiga.dmaRecord.evt & DmaEvents.CPUIRQ)
 				events.push("CPU IRQ");
 			if(amiga.dmaRecord.evt & DmaEvents.INTREQ)

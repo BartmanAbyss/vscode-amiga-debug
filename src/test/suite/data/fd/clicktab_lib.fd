@@ -1,0 +1,9 @@
+##base _ClickTabBase
+##bias 30
+##public
+CLICKTAB_GetClass()()
+AllocClickTabNodeA(tags)(a0)
+FreeClickTabNode(node)(a0)
+SetClickTabNodeAttrsA(node,tags)(a0/a1)
+GetClickTabNodeAttrsA(node,tags)(a0/a1)
+##end

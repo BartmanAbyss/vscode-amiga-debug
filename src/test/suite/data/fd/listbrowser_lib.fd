@@ -1,0 +1,21 @@
+##base _ListBrowserBase
+##bias 30
+##public
+LISTBROWSER_GetClass()()
+AllocListBrowserNodeA(columns,tags)(d0/a0)
+FreeListBrowserNode(node)(a0)
+SetListBrowserNodeAttrsA(node,tags)(a0/a1)
+GetListBrowserNodeAttrsA(node,tags)(a0/a1)
+ListBrowserSelectAll(list)(a0)
+ShowListBrowserNodeChildren(node,depth)(a0,d0)
+HideListBrowserNodeChildren(node)(a0)
+ShowAllListBrowserChildren(list)(a0)
+HideAllListBrowserChildren(list)(a0)
+FreeListBrowserList(list)(a0)
+* Functions in V45
+AllocLBColumnInfoA(columns,tags)(d0/a0)
+SetLBColumnInfoAttrsA(columninfo,tags)(a1,a0)
+GetLBColumnInfoAttrsA(columninfo,tags)(a1,a0)
+FreeLBColumnInfo(columninfo)(a0)
+ListBrowserClearAll(list)(a0)
+##end

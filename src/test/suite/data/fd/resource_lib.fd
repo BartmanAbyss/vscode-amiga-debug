@@ -1,0 +1,12 @@
+##base _ResourceBase
+##bias 30
+##public
+RL_OpenResource(resource,screen,catalog)(a0/a1/a2)
+RL_CloseResource(resfile)(a0)
+RL_NewObjectA(resfile,resid,tags)(a0,d0/a1)
+RL_DisposeObject(resfile,obj)(a0/a1)
+RL_NewGroupA(resfile,id,taglist)(a0,d0/a1)
+RL_DisposeGroup(resfile,obj)(a0/a1)
+RL_GetObjectArray(resfile,obj,id)(a0/a1,d0)
+RL_SetResourceScreen(resfile,screen)(a0/a1)
+##end

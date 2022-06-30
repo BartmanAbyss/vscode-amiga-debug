@@ -1,0 +1,7 @@
+##base _VirtualBase
+##bias 30
+##public
+VIRTUAL_GetClass()()
+RefreshVirtualGadget(gadget,obj,window,requester)(a0/a1/a2/a3)
+RethinkVirtualSize(virt_obj,rootlayout,font,screen,layoutlimits)(a0/a1/a2/a3,d0)
+##end

@@ -7,6 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 import { ContinuedEvent, Event, Handles, InitializedEvent, Logger, logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Breakpoint, MIError, Variable, VariableObject, Watchpoint } from './backend/backend';
@@ -15,6 +16,7 @@ import { MI2 } from './backend/mi2';
 import { MINode } from './backend/mi_parse';
 import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from './backend/profile';
 import { SymbolTable } from './backend/symbols';
+import { Kickstart } from './kickstart';
 import { DisassemblyInstruction, Section, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
 
@@ -434,6 +436,16 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			'interpreter-exec console "target remote localhost:2345"',
 		];
 
+		if(args.kickstart !== undefined) {
+			const kickstart = new Kickstart(args.kickstart);
+			const kickId = kickstart.getId();
+			if(kickId !== '' ) {
+				const symbols = path.join(binPath, `symbols/kick_${kickId}.elf`);
+				if(fs.existsSync(symbols))
+					commands.push(`interpreter-exec console "add-symbol-file ${symbols.replace(/\\/g, '/')} -s .kick 0x${kickstart.getBase().toString(16)}"`);
+			}
+		}
+
 		// launch GDB and connect to WinUAE
 		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
@@ -702,15 +714,24 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				progress.report({ message: 'Reading profile...'});
 
 				// read profile file
-				const profileArchive = new ProfileFile(tmp);
+				const profileFile = new ProfileFile(tmp);
 				if(!DEBUG)
 					fs.unlinkSync(tmp);
 
 				// resolve and generate output
+				const kickId = crypto.createHash('sha1').update(profileFile.kickRom).digest('hex');
+				const kickSymPath = path.join(binPath, `symbols/kick_${kickId}.elf`);
+				let kickSymTable: SymbolTable = null;
+				if(fs.existsSync(kickSymPath)) {
+					const kickBase = profileFile.kickRomSize === 512 * 1024 ? 0xf80000 : 0xfc0000;
+					kickSymTable = new SymbolTable(objdumpPath, kickSymPath);
+					kickSymTable.relocate([ { name: '.kick', address: kickBase, size: profileFile.kickRomSize } ]);
+				}
 				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
-				const profiler = new Profiler(sourceMap, this.symbolTable);
+				const profiler = new Profiler(sourceMap, this.symbolTable, kickSymTable);
+	
 				progress.report({ message: 'Writing profile...'});
-				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileArchive, Disassemble(objdumpPath, this.args.program + ".elf")));
+				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile, Disassemble(objdumpPath, this.args.program + ".elf")));
 
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);

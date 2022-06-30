@@ -1,0 +1,11 @@
+##base _ColorWheelBase
+##bias 30
+##public
+*--- functions in V39 or higher (Release 3) ---
+##public
+*
+* Public entries
+*
+ConvertHSBToRGB(hsb,rgb)(a0/a1)
+ConvertRGBToHSB(rgb,hsb)(a0/a1)
+##end

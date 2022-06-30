@@ -1,0 +1,5 @@
+##base _GlyphBase
+##bias 30
+##public
+GLYPH_GetClass()()
+##end

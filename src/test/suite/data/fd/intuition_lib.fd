@@ -1,0 +1,172 @@
+##base _IntuitionBase
+##bias 30
+##public
+* Public functions OpenIntuition() and Intuition() are intentionally
+* not documented.
+OpenIntuition()()
+Intuition(iEvent)(a0)
+AddGadget(window,gadget,position)(a0/a1,d0)
+ClearDMRequest(window)(a0)
+ClearMenuStrip(window)(a0)
+ClearPointer(window)(a0)
+CloseScreen(screen)(a0)
+CloseWindow(window)(a0)
+CloseWorkBench()()
+CurrentTime(seconds,micros)(a0/a1)
+DisplayAlert(alertNumber,string,height)(d0/a0,d1)
+DisplayBeep(screen)(a0)
+DoubleClick(sSeconds,sMicros,cSeconds,cMicros)(d0/d1/d2/d3)
+DrawBorder(rp,border,leftOffset,topOffset)(a0/a1,d0/d1)
+DrawImage(rp,image,leftOffset,topOffset)(a0/a1,d0/d1)
+EndRequest(requester,window)(a0/a1)
+GetDefPrefs(preferences,size)(a0,d0)
+GetPrefs(preferences,size)(a0,d0)
+InitRequester(requester)(a0)
+ItemAddress(menuStrip,menuNumber)(a0,d0)
+ModifyIDCMP(window,flags)(a0,d0)
+ModifyProp(gadget,window,requester,flags,horizPot,vertPot,horizBody,vertBody)(a0/a1/a2,d0/d1/d2/d3/d4)
+MoveScreen(screen,dx,dy)(a0,d0/d1)
+MoveWindow(window,dx,dy)(a0,d0/d1)
+OffGadget(gadget,window,requester)(a0/a1/a2)
+OffMenu(window,menuNumber)(a0,d0)
+OnGadget(gadget,window,requester)(a0/a1/a2)
+OnMenu(window,menuNumber)(a0,d0)
+OpenScreen(newScreen)(a0)
+OpenWindow(newWindow)(a0)
+OpenWorkBench()()
+PrintIText(rp,iText,left,top)(a0/a1,d0/d1)
+RefreshGadgets(gadgets,window,requester)(a0/a1/a2)
+RemoveGadget(window,gadget)(a0/a1)
+* The official calling sequence for ReportMouse is given below.
+* Note the register order.  For the complete story, read the ReportMouse
+* autodoc.
+ReportMouse(flag,window)(d0/a0)
+Request(requester,window)(a0/a1)
+ScreenToBack(screen)(a0)
+ScreenToFront(screen)(a0)
+SetDMRequest(window,requester)(a0/a1)
+SetMenuStrip(window,menu)(a0/a1)
+SetPointer(window,pointer,height,width,xOffset,yOffset)(a0/a1,d0/d1/d2/d3)
+SetWindowTitles(window,windowTitle,screenTitle)(a0/a1/a2)
+ShowTitle(screen,showIt)(a0,d0)
+SizeWindow(window,dx,dy)(a0,d0/d1)
+ViewAddress()()
+ViewPortAddress(window)(a0)
+WindowToBack(window)(a0)
+WindowToFront(window)(a0)
+WindowLimits(window,widthMin,heightMin,widthMax,heightMax)(a0,d0/d1/d2/d3)
+*--- start of next generation of names -------------------------------------
+SetPrefs(preferences,size,inform)(a0,d0/d1)
+*--- start of next next generation of names --------------------------------
+IntuiTextLength(iText)(a0)
+WBenchToBack()()
+WBenchToFront()()
+*--- start of next next next generation of names ---------------------------
+AutoRequest(window,body,posText,negText,pFlag,nFlag,width,height)(a0/a1/a2/a3,d0/d1/d2/d3)
+BeginRefresh(window)(a0)
+BuildSysRequest(window,body,posText,negText,flags,width,height)(a0/a1/a2/a3,d0/d1/d2)
+EndRefresh(window,complete)(a0,d0)
+FreeSysRequest(window)(a0)
+* The return codes for MakeScreen(), RemakeDisplay(), and RethinkDisplay()
+* are only valid under V39 and greater.  Do not examine them when running
+* on pre-V39 systems!
+MakeScreen(screen)(a0)
+RemakeDisplay()()
+RethinkDisplay()()
+*--- start of next next next next generation of names ----------------------
+AllocRemember(rememberKey,size,flags)(a0,d0/d1)
+##private
+intuitionPrivate1()()
+##public
+FreeRemember(rememberKey,reallyForget)(a0,d0)
+*--- start of 15 Nov 85 names ------------------------
+LockIBase(dontknow)(d0)
+UnlockIBase(ibLock)(a0)
+*--- functions in V33 or higher (Release 1.2) ---
+GetScreenData(buffer,size,type,screen)(a0,d0/d1/a1)
+RefreshGList(gadgets,window,requester,numGad)(a0/a1/a2,d0)
+AddGList(window,gadget,position,numGad,requester)(a0/a1,d0/d1/a2)
+RemoveGList(remPtr,gadget,numGad)(a0/a1,d0)
+ActivateWindow(window)(a0)
+RefreshWindowFrame(window)(a0)
+ActivateGadget(gadgets,window,requester)(a0/a1/a2)
+NewModifyProp(gadget,window,requester,flags,horizPot,vertPot,horizBody,vertBody,numGad)(a0/a1/a2,d0/d1/d2/d3/d4/d5)
+*--- functions in V36 or higher (Release 2.0) ---
+QueryOverscan(displayID,rect,oScanType)(a0/a1,d0)
+MoveWindowInFrontOf(window,behindWindow)(a0/a1)
+ChangeWindowBox(window,left,top,width,height)(a0,d0/d1/d2/d3)
+SetEditHook(hook)(a0)
+SetMouseQueue(window,queueLength)(a0,d0)
+ZipWindow(window)(a0)
+*--- public screens ---
+LockPubScreen(name)(a0)
+UnlockPubScreen(name,screen)(a0/a1)
+LockPubScreenList()()
+UnlockPubScreenList()()
+NextPubScreen(screen,namebuf)(a0/a1)
+SetDefaultPubScreen(name)(a0)
+SetPubScreenModes(modes)(d0)
+PubScreenStatus(screen,statusFlags)(a0,d0)
+*
+ObtainGIRPort(gInfo)(a0)
+ReleaseGIRPort(rp)(a0)
+GadgetMouse(gadget,gInfo,mousePoint)(a0/a1/a2)
+##private
+intuitionPrivate2()()
+##public
+GetDefaultPubScreen(nameBuffer)(a0)
+EasyRequestArgs(window,easyStruct,idcmpPtr,args)(a0/a1/a2/a3)
+BuildEasyRequestArgs(window,easyStruct,idcmp,args)(a0/a1,d0/a3)
+SysReqHandler(window,idcmpPtr,waitInput)(a0/a1,d0)
+OpenWindowTagList(newWindow,tagList)(a0/a1)
+OpenScreenTagList(newScreen,tagList)(a0/a1)
+*
+*	new Image functions
+DrawImageState(rp,image,leftOffset,topOffset,state,drawInfo)(a0/a1,d0/d1/d2/a2)
+PointInImage(point,image)(d0/a0)
+EraseImage(rp,image,leftOffset,topOffset)(a0/a1,d0/d1)
+*
+NewObjectA(classPtr,classID,tagList)(a0/a1/a2)
+*
+DisposeObject(object)(a0)
+SetAttrsA(object,tagList)(a0/a1)
+*
+GetAttr(attrID,object,storagePtr)(d0/a0/a1)
+*
+* 	special set attribute call for gadgets
+SetGadgetAttrsA(gadget,window,requester,tagList)(a0/a1/a2/a3)
+*
+*	for class implementors only
+NextObject(objectPtrPtr)(a0)
+##private
+intuitionPrivate3()()
+##public
+MakeClass(classID,superClassID,superClassPtr,instanceSize,flags)(a0/a1/a2,d0/d1)
+AddClass(classPtr)(a0)
+*
+*
+GetScreenDrawInfo(screen)(a0)
+FreeScreenDrawInfo(screen,drawInfo)(a0/a1)
+*
+ResetMenuStrip(window,menu)(a0/a1)
+RemoveClass(classPtr)(a0)
+FreeClass(classPtr)(a0)
+##private
+intuitionPrivate4()()
+intuitionPrivate5()()
+*--- (6 function slots reserved here) ---
+##bias 768
+##public
+*--- functions in V39 or higher (Release 3) ---
+AllocScreenBuffer(sc,bm,flags)(a0/a1,d0)
+FreeScreenBuffer(sc,sb)(a0/a1)
+ChangeScreenBuffer(sc,sb)(a0/a1)
+ScreenDepth(screen,flags,reserved)(a0,d0/a1)
+ScreenPosition(screen,flags,x1,y1,x2,y2)(a0,d0/d1/d2/d3/d4)
+ScrollWindowRaster(win,dx,dy,xMin,yMin,xMax,yMax)(a1,d0/d1/d2/d3/d4/d5)
+LendMenus(fromwindow,towindow)(a0/a1)
+DoGadgetMethodA(gad,win,req,message)(a0/a1/a2/a3)
+SetWindowPointerA(win,taglist)(a0/a1)
+TimedDisplayAlert(alertNumber,string,height,time)(d0/a0,d1/a1)
+HelpControl(win,flags)(a0,d0)
+##end

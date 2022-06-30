@@ -1,0 +1,8 @@
+##base _DateBrowserBase
+##bias 30
+##public
+DATEBROWSER_GetClass()()
+JulianWeekDay(day,month,year)(d0/d1/d2)
+JulianMonthDays(month,year)(d0/d1)
+JulianLeapYear(year)(d0)
+##end

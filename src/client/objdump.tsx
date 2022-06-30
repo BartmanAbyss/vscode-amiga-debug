@@ -361,7 +361,7 @@ export const ObjdumpView: FunctionComponent<{
 			? <Fragment>
 				<span>{c.pc.toString(16).padStart(8, ' ')}: </span>
 				<span class={styles.opcode} data={c.opcode} onMouseEnter={onMouseEnterOpcode} onMouseLeave={onMouseLeaveOpcode} onWheel={onWheelOpcode}>{c.opcode}</span>
-				<span>{' '.repeat(7 - c.opcode.length)} {c.rest}</span>
+				<span>{' '.repeat(Math.max(0, 7 - c.opcode.length))} {c.rest}</span>
 			</Fragment> 
 			: c.text);
 

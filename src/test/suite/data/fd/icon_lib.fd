@@ -1,0 +1,43 @@
+##base _IconBase
+##bias 30
+##private
+iconPrivate1()()
+iconPrivate2()()
+iconPrivate3()()
+iconPrivate4()()
+##public
+FreeFreeList(freelist)(a0)
+##private
+iconPrivate5()()
+iconPrivate6()()
+##public
+AddFreeList(freelist,mem,size)(a0/a1/a2)
+GetDiskObject(name)(a0)
+PutDiskObject(name,diskobj)(a0/a1)
+FreeDiskObject(diskobj)(a0)
+FindToolType(toolTypeArray,typeName)(a0/a1)
+MatchToolValue(typeString,value)(a0/a1)
+BumpRevision(newname,oldname)(a0/a1)
+##private
+iconPrivate7()()
+##public
+*--- functions in V36 or higher (Release 2.0) ---
+GetDefDiskObject(type)(d0)
+PutDefDiskObject(diskObject)(a0)
+GetDiskObjectNew(name)(a0)
+*--- functions in V37 or higher (Release 2.04) ---
+DeleteDiskObject(name)(a0)
+*--- functions in V44 or higher (Release 3.5) ---
+##private
+iconPrivate8()()
+##public
+DupDiskObjectA(diskObject,tags)(a0/a1)
+IconControlA(icon,tags)(a0/a1)
+DrawIconStateA(rp,icon,label,leftOffset,topOffset,state,tags)(a0/a1/a2,d0/d1/d2/a3)
+GetIconRectangleA(rp,icon,label,rect,tags)(a0/a1/a2/a3/a4)
+NewDiskObject(type)(d0)
+GetIconTagList(name,tags)(a0/a1)
+PutIconTagList(name,icon,tags)(a0/a1/a2)
+LayoutIconA(icon,screen,tags)(a0/a1/a2)
+ChangeToSelectedIconColor(cr)(a0)
+##end

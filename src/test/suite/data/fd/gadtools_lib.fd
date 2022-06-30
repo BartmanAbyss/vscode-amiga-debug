@@ -1,0 +1,52 @@
+##base _GadToolsBase
+##bias 30
+##public
+*
+*--- functions in V36 or higher (Release 2.0) ---
+*
+* Gadget Functions
+*
+CreateGadgetA(kind,gad,ng,taglist)(d0/a0/a1/a2)
+FreeGadgets(gad)(a0)
+GT_SetGadgetAttrsA(gad,win,req,taglist)(a0/a1/a2/a3)
+*
+* Menu functions
+*
+CreateMenusA(newmenu,taglist)(a0/a1)
+FreeMenus(menu)(a0)
+LayoutMenuItemsA(firstitem,vi,taglist)(a0/a1/a2)
+LayoutMenusA(firstmenu,vi,taglist)(a0/a1/a2)
+*
+* Misc Event-Handling Functions
+*
+GT_GetIMsg(iport)(a0)
+GT_ReplyIMsg(imsg)(a1)
+GT_RefreshWindow(win,req)(a0/a1)
+GT_BeginRefresh(win)(a0)
+GT_EndRefresh(win,complete)(a0,d0)
+GT_FilterIMsg(imsg)(a1)
+GT_PostFilterIMsg(imsg)(a1)
+CreateContext(glistptr)(a0)
+*
+* Rendering Functions
+*
+DrawBevelBoxA(rport,left,top,width,height,taglist)(a0,d0/d1/d2/d3/a1)
+*
+* Visuals Functions
+*
+GetVisualInfoA(screen,taglist)(a0/a1)
+FreeVisualInfo(vi)(a0)
+##private
+gadtoolsPrivate1()()
+gadtoolsPrivate2()()
+gadtoolsPrivate3()()
+gadtoolsPrivate4()()
+gadtoolsPrivate5()()
+gadtoolsPrivate6()()
+##public
+*
+*--- functions in V39 or higher (Release 3) ---
+*
+GT_GetGadgetAttrsA(gad,win,req,taglist)(a0/a1/a2/a3)
+*
+##end

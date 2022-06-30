@@ -1,0 +1,9 @@
+##base _RadioButtonBase
+##bias 30
+##public
+RADIOBUTTON_GetClass()()
+AllocRadioButtonNodeA(columns,tags)(d0/a0)
+FreeRadioButtonNode(node)(a0)
+SetRadioButtonNodeAttrsA(node,tags)(a0/a1)
+GetRadioButtonNodeAttrsA(node,tags)(a0/a1)
+##end

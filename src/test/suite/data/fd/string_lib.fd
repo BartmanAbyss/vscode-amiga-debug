@@ -1,0 +1,5 @@
+##base _StringBase
+##bias 30
+##public
+STRING_GetClass()()
+##end

@@ -1,0 +1,8 @@
+##base _RamdriveDevice
+##bias 42
+##public
+*--- functions in V34 or higher (Release 1.3) ---
+KillRAD0()()
+*--- functions in V36 or higher (Release 2.0) ---
+KillRAD(unit)(d0)
+##end

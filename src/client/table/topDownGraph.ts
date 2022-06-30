@@ -117,7 +117,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 	parent.childrenSize++;
 	parent.children[dmaRootLoc.id] = dmaRoot;
 
-	const dmaTimes: number[] = new Array(0x100).fill(0);
+	const dmaTimes: number[] = new Array<number>(0x300).fill(0);
 	let i = 0;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
@@ -125,8 +125,8 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			if(dmaRecord.type === undefined)
 				continue;
 			const dmaType = dmaRecord.type;
-			const dmaSubtype = (dmaTypes[dmaType].subtypes.length === 1) ? 0 : (dmaRecord.extra || 0);
-			if(dmaType >= dmaTypes.length || dmaSubtype >= dmaTypes[dmaType].subtypes.length)
+			const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
+			if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
 				continue;
 
 			dmaTimes[(dmaSubtype << 4) | dmaType] += (512 / model.amiga.cpuCycleUnit) | 0;
@@ -136,7 +136,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 	for(let dmaTypeId = 1; dmaTypeId < dmaTypes.length; dmaTypeId++) {
 		const dmaType = dmaTypes[dmaTypeId];
 		let dmaTime = 0;
-		for(let dmaSubtypeId = 0; dmaSubtypeId < dmaType.subtypes.length; dmaSubtypeId++) {
+		for(let dmaSubtypeId = 0; dmaSubtypeId < 0x30; dmaSubtypeId++) {
 			dmaTime += dmaTimes[(dmaSubtypeId << 4) | dmaTypeId];
 		}
 
@@ -144,7 +144,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			continue;
 
 		let dmaParent = dmaRoot;
-		if(dmaType.subtypes.length > 1) {
+		if(Object.keys(dmaType.subtypes).length > 1) {
 			const dmaParentLoc: ILocation = {
 				selfTime: 0,
 				aggregateTime: 0,
@@ -166,7 +166,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			dmaRoot.children[dmaParentLoc.id] = dmaParent;
 		}
 
-		for(let dmaSubtypeId = 0; dmaSubtypeId < dmaType.subtypes.length; dmaSubtypeId++) {
+		for(let dmaSubtypeId = 0; dmaSubtypeId < 0x30; dmaSubtypeId++) {
 			const time = dmaTimes[(dmaSubtypeId << 4) | dmaTypeId];
 			if(time === 0)
 				continue;

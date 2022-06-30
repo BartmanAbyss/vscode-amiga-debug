@@ -1,0 +1,208 @@
+##base _DOSBase
+##bias 30
+##public
+Open(name,accessMode)(d1/d2)
+Close(file)(d1)
+Read(file,buffer,length)(d1/d2/d3)
+Write(file,buffer,length)(d1/d2/d3)
+Input()()
+Output()()
+Seek(file,position,offset)(d1/d2/d3)
+DeleteFile(name)(d1)
+Rename(oldName,newName)(d1/d2)
+Lock(name,type)(d1/d2)
+UnLock(lock)(d1)
+DupLock(lock)(d1)
+Examine(lock,fileInfoBlock)(d1/d2)
+ExNext(lock,fileInfoBlock)(d1/d2)
+Info(lock,parameterBlock)(d1/d2)
+CreateDir(name)(d1)
+CurrentDir(lock)(d1)
+IoErr()()
+CreateProc(name,pri,segList,stackSize)(d1/d2/d3/d4)
+Exit(returnCode)(d1)
+LoadSeg(name)(d1)
+UnLoadSeg(seglist)(d1)
+##private
+dosPrivate1()()
+dosPrivate2()()
+##public
+DeviceProc(name)(d1)
+SetComment(name,comment)(d1/d2)
+SetProtection(name,protect)(d1/d2)
+DateStamp(date)(d1)
+Delay(timeout)(d1)
+WaitForChar(file,timeout)(d1/d2)
+ParentDir(lock)(d1)
+IsInteractive(file)(d1)
+Execute(string,file,file2)(d1/d2/d3)
+*--- functions in V36 or higher (Release 2.0) ---
+*	DOS Object creation/deletion
+AllocDosObject(type,tags)(d1/d2)
+FreeDosObject(type,ptr)(d1/d2)
+*	Packet Level routines
+DoPkt(port,action,arg1,arg2,arg3,arg4,arg5)(d1/d2/d3/d4/d5/d6/d7)
+SendPkt(dp,port,replyport)(d1/d2/d3)
+WaitPkt()()
+ReplyPkt(dp,res1,res2)(d1/d2/d3)
+AbortPkt(port,pkt)(d1/d2)
+*	Record Locking
+LockRecord(fh,offset,length,mode,timeout)(d1/d2/d3/d4/d5)
+LockRecords(recArray,timeout)(d1/d2)
+UnLockRecord(fh,offset,length)(d1/d2/d3)
+UnLockRecords(recArray)(d1)
+*	Buffered File I/O
+SelectInput(fh)(d1)
+SelectOutput(fh)(d1)
+FGetC(fh)(d1)
+FPutC(fh,ch)(d1/d2)
+UnGetC(fh,character)(d1/d2)
+FRead(fh,block,blocklen,number)(d1/d2/d3/d4)
+FWrite(fh,block,blocklen,number)(d1/d2/d3/d4)
+FGets(fh,buf,buflen)(d1/d2/d3)
+FPuts(fh,str)(d1/d2)
+VFWritef(fh,format,argarray)(d1/d2/d3)
+VFPrintf(fh,format,argarray)(d1/d2/d3)
+Flush(fh)(d1)
+SetVBuf(fh,buff,type,size)(d1/d2/d3/d4)
+*	DOS Object Management
+DupLockFromFH(fh)(d1)
+OpenFromLock(lock)(d1)
+ParentOfFH(fh)(d1)
+ExamineFH(fh,fib)(d1/d2)
+SetFileDate(name,date)(d1/d2)
+NameFromLock(lock,buffer,len)(d1/d2/d3)
+NameFromFH(fh,buffer,len)(d1/d2/d3)
+SplitName(name,separator,buf,oldpos,size)(d1/d2/d3/d4/d5)
+SameLock(lock1,lock2)(d1/d2)
+SetMode(fh,mode)(d1/d2)
+ExAll(lock,buffer,size,data,control)(d1/d2/d3/d4/d5)
+ReadLink(port,lock,path,buffer,size)(d1/d2/d3/d4/d5)
+MakeLink(name,dest,soft)(d1/d2/d3)
+ChangeMode(type,fh,newmode)(d1/d2/d3)
+SetFileSize(fh,pos,mode)(d1/d2/d3)
+*	Error Handling
+SetIoErr(result)(d1)
+Fault(code,header,buffer,len)(d1/d2/d3/d4)
+PrintFault(code,header)(d1/d2)
+ErrorReport(code,type,arg1,device)(d1/d2/d3/d4)
+*--- (1 function slot reserved here) ---
+##bias 492
+*	Process Management
+Cli()()
+CreateNewProc(tags)(d1)
+RunCommand(seg,stack,paramptr,paramlen)(d1/d2/d3/d4)
+GetConsoleTask()()
+SetConsoleTask(task)(d1)
+GetFileSysTask()()
+SetFileSysTask(task)(d1)
+GetArgStr()()
+SetArgStr(string)(d1)
+FindCliProc(num)(d1)
+MaxCli()()
+SetCurrentDirName(name)(d1)
+GetCurrentDirName(buf,len)(d1/d2)
+SetProgramName(name)(d1)
+GetProgramName(buf,len)(d1/d2)
+SetPrompt(name)(d1)
+GetPrompt(buf,len)(d1/d2)
+SetProgramDir(lock)(d1)
+GetProgramDir()()
+*	Device List Management
+SystemTagList(command,tags)(d1/d2)
+AssignLock(name,lock)(d1/d2)
+AssignLate(name,path)(d1/d2)
+AssignPath(name,path)(d1/d2)
+AssignAdd(name,lock)(d1/d2)
+RemAssignList(name,lock)(d1/d2)
+GetDeviceProc(name,dp)(d1/d2)
+FreeDeviceProc(dp)(d1)
+LockDosList(flags)(d1)
+UnLockDosList(flags)(d1)
+AttemptLockDosList(flags)(d1)
+RemDosEntry(dlist)(d1)
+AddDosEntry(dlist)(d1)
+FindDosEntry(dlist,name,flags)(d1/d2/d3)
+NextDosEntry(dlist,flags)(d1/d2)
+MakeDosEntry(name,type)(d1/d2)
+FreeDosEntry(dlist)(d1)
+IsFileSystem(name)(d1)
+*	Handler Interface
+Format(filesystem,volumename,dostype)(d1/d2/d3)
+Relabel(drive,newname)(d1/d2)
+Inhibit(name,onoff)(d1/d2)
+AddBuffers(name,number)(d1/d2)
+*	Date, Time Routines
+CompareDates(date1,date2)(d1/d2)
+DateToStr(datetime)(d1)
+StrToDate(datetime)(d1)
+*	Image Management
+InternalLoadSeg(fh,table,funcarray,stack)(d0/a0/a1/a2)
+InternalUnLoadSeg(seglist,freefunc)(d1/a1)
+NewLoadSeg(file,tags)(d1/d2)
+AddSegment(name,seg,system)(d1/d2/d3)
+FindSegment(name,seg,system)(d1/d2/d3)
+RemSegment(seg)(d1)
+*	Command Support
+CheckSignal(mask)(d1)
+ReadArgs(arg_template,array,args)(d1/d2/d3)
+FindArg(keyword,arg_template)(d1/d2)
+ReadItem(name,maxchars,cSource)(d1/d2/d3)
+StrToLong(string,value)(d1/d2)
+MatchFirst(pat,anchor)(d1/d2)
+MatchNext(anchor)(d1)
+MatchEnd(anchor)(d1)
+ParsePattern(pat,buf,buflen)(d1/d2/d3)
+MatchPattern(pat,str)(d1/d2)
+##private
+dosPrivate3()()
+##public
+FreeArgs(args)(d1)
+*--- (1 function slot reserved here) ---
+##bias 870
+FilePart(path)(d1)
+PathPart(path)(d1)
+AddPart(dirname,filename,size)(d1/d2/d3)
+*	Notification
+StartNotify(notify)(d1)
+EndNotify(notify)(d1)
+*	Environment Variable functions
+SetVar(name,buffer,size,flags)(d1/d2/d3/d4)
+GetVar(name,buffer,size,flags)(d1/d2/d3/d4)
+DeleteVar(name,flags)(d1/d2)
+FindVar(name,type)(d1/d2)
+##private
+dosPrivate4()()
+##public
+CliInitNewcli(dp)(a0)
+CliInitRun(dp)(a0)
+WriteChars(buf,buflen)(d1/d2)
+PutStr(str)(d1)
+VPrintf(format,argarray)(d1/d2)
+*--- (1 function slot reserved here) ---
+##bias 966
+* these were unimplemented until dos 36.147
+ParsePatternNoCase(pat,buf,buflen)(d1/d2/d3)
+MatchPatternNoCase(pat,str)(d1/d2)
+##private
+dosPrivate5()()
+##public
+* this was added for V37 dos, returned 0 before then.
+SameDevice(lock1,lock2)(d1/d2)
+*
+* NOTE: the following entries did NOT exist before ks 36.303 (2.02)
+* If you are going to use them, open dos.library with version 37
+*
+* These calls were added for V39 dos:
+ExAllEnd(lock,buffer,size,data,control)(d1/d2/d3/d4/d5)
+SetOwner(name,owner_info)(d1/d2)
+##private
+*--- (2 function slots reserved here) ---
+##bias 1014
+*--- (2 function slots reserved here) ---
+##bias 1026
+*--- (2 function slots reserved here) ---
+##bias 1038
+*--- (2 function slots reserved here) ---
+##bias 1050
+##end

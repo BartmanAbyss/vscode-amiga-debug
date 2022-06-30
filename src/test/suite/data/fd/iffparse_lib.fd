@@ -1,0 +1,77 @@
+##base _IFFParseBase
+##bias 30
+##public
+*--- functions in V36 or higher (Release 2.0) ---
+*
+* Basic functions
+*
+AllocIFF()()
+OpenIFF(iff,rwMode)(a0,d0)
+ParseIFF(iff,control)(a0,d0)
+CloseIFF(iff)(a0)
+FreeIFF(iff)(a0)
+*
+* Read/Write functions
+*
+ReadChunkBytes(iff,buf,numBytes)(a0/a1,d0)
+WriteChunkBytes(iff,buf,numBytes)(a0/a1,d0)
+ReadChunkRecords(iff,buf,bytesPerRecord,numRecords)(a0/a1,d0/d1)
+WriteChunkRecords(iff,buf,bytesPerRecord,numRecords)(a0/a1,d0/d1)
+*
+* Context entry/exit
+*
+PushChunk(iff,type,id,size)(a0,d0/d1/d2)
+PopChunk(iff)(a0)
+*--- (1 function slot reserved here) ---
+##bias 102
+*
+* Low-level handler installation
+*
+EntryHandler(iff,type,id,position,handler,object)(a0,d0/d1/d2/a1/a2)
+ExitHandler(iff,type,id,position,handler,object)(a0,d0/d1/d2/a1/a2)
+*
+* Built-in chunk/property handlers
+*
+PropChunk(iff,type,id)(a0,d0/d1)
+PropChunks(iff,propArray,numPairs)(a0/a1,d0)
+StopChunk(iff,type,id)(a0,d0/d1)
+StopChunks(iff,propArray,numPairs)(a0/a1,d0)
+CollectionChunk(iff,type,id)(a0,d0/d1)
+CollectionChunks(iff,propArray,numPairs)(a0/a1,d0)
+StopOnExit(iff,type,id)(a0,d0/d1)
+*
+* Context utilities
+*
+FindProp(iff,type,id)(a0,d0/d1)
+FindCollection(iff,type,id)(a0,d0/d1)
+FindPropContext(iff)(a0)
+CurrentChunk(iff)(a0)
+ParentChunk(contextNode)(a0)
+*
+* LocalContextItem support functions
+*
+AllocLocalItem(type,id,ident,dataSize)(d0/d1/d2/d3)
+LocalItemData(localItem)(a0)
+SetLocalItemPurge(localItem,purgeHook)(a0/a1)
+FreeLocalItem(localItem)(a0)
+FindLocalItem(iff,type,id,ident)(a0,d0/d1/d2)
+StoreLocalItem(iff,localItem,position)(a0/a1,d0)
+StoreItemInContext(iff,localItem,contextNode)(a0/a1/a2)
+*
+* IFFHandle initialization
+*
+InitIFF(iff,flags,streamHook)(a0,d0/a1)
+InitIFFasDOS(iff)(a0)
+InitIFFasClip(iff)(a0)
+*
+* Internal clipboard support
+*
+OpenClipboard(unitNumber)(d0)
+CloseClipboard(clipHandle)(a0)
+*
+* Miscellaneous
+*
+GoodID(id)(d0)
+GoodType(type)(d0)
+IDtoStr(id,buf)(d0/a0)
+##end

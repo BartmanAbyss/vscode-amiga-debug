@@ -3,6 +3,7 @@
 out/**
 src/**
 .gitignore
+.eslintignore
 **/tsconfig*.json
 **/tslint*.json
 **/webpack*.js

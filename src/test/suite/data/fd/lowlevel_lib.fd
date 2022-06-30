@@ -1,0 +1,54 @@
+##base _LowLevelBase
+##bias 30
+##public
+*--- functions in V40 or higher (Release 3.1) ---
+*
+* CONTROLLER HANDLING
+*
+ReadJoyPort(port)(d0)
+*
+* LANGUAGE HANDLING
+*
+GetLanguageSelection()()
+##private
+lowlevelPrivate1()()
+##public
+*
+* KEYBOARD HANDLING
+*
+GetKey()()
+QueryKeys(queryArray,arraySize)(a0,d1)
+AddKBInt(intRoutine,intData)(a0/a1)
+RemKBInt(intHandle)(a1)
+*
+* SYSTEM HANDLING
+*
+SystemControlA(tagList)(a1)
+*
+* TIMER HANDLING
+*
+AddTimerInt(intRoutine,intData)(a0/a1)
+RemTimerInt(intHandle)(a1)
+StopTimerInt(intHandle)(a1)
+StartTimerInt(intHandle,timeInterval,continuous)(a1,d0/d1)
+ElapsedTime(context)(a0)
+*
+* VBLANK HANDLING
+*
+AddVBlankInt(intRoutine,intData)(a0/a1)
+RemVBlankInt(intHandle)(a1)
+##private
+lowlevelPrivate2()()
+lowlevelPrivate3()()
+##public
+*
+* MORE CONTROLLER HANDLING
+*
+SetJoyPortAttrsA(portNumber,tagList)(d0/a1)
+##private
+lowlevelPrivate4()()
+lowlevelPrivate5()()
+lowlevelPrivate6()()
+lowlevelPrivate7()()
+lowlevelPrivate8()()
+##end

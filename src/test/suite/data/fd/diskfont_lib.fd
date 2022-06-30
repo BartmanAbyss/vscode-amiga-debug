@@ -1,0 +1,14 @@
+##base _DiskfontBase
+##bias 30
+##public
+OpenDiskFont(textAttr)(a0)
+AvailFonts(buffer,bufBytes,flags)(a0,d0/d1)
+*--- functions in V34 or higher (Release 1.3) ---
+NewFontContents(fontsLock,fontName)(a0/a1)
+DisposeFontContents(fontContentsHeader)(a1)
+*--- functions in V36 or higher (Release 2.0) ---
+NewScaledDiskFont(sourceFont,destTextAttr)(a0/a1)
+*--- functions in V45 or higher (Release 3.9) ---
+GetDiskFontCtrl(tagid)(d0)
+SetDiskFontCtrlA(taglist)(a0)
+##end

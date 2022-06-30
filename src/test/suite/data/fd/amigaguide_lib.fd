@@ -1,0 +1,47 @@
+##base _AmigaGuideBase
+##bias 30
+##public
+*--- functions in V40 or higher (Release 3.1) ---
+##private
+amigaguidePrivate1()()
+##public
+*
+* Public entries
+*
+LockAmigaGuideBase(handle)(a0)
+UnlockAmigaGuideBase(key)(d0)
+##private
+amigaguidePrivate2()()
+##public
+OpenAmigaGuideA(nag,tags)(a0/a1)
+OpenAmigaGuideAsyncA(nag,attrs)(a0,d0)
+CloseAmigaGuide(cl)(a0)
+AmigaGuideSignal(cl)(a0)
+GetAmigaGuideMsg(cl)(a0)
+ReplyAmigaGuideMsg(amsg)(a0)
+SetAmigaGuideContextA(cl,id,attrs)(a0,d0/d1)
+SendAmigaGuideContextA(cl,attrs)(a0,d0)
+SendAmigaGuideCmdA(cl,cmd,attrs)(a0,d0/d1)
+SetAmigaGuideAttrsA(cl,attrs)(a0/a1)
+GetAmigaGuideAttr(tag,cl,storage)(d0/a0/a1)
+##private
+amigaguidePrivate3()()
+##public
+LoadXRef(lock,name)(a0/a1)
+ExpungeXRef()()
+AddAmigaGuideHostA(h,name,attrs)(a0,d0/a1)
+RemoveAmigaGuideHostA(hh,attrs)(a0/a1)
+##private
+amigaguidePrivate4()()
+amigaguidePrivate5()()
+amigaguidePrivate6()()
+amigaguidePrivate7()()
+amigaguidePrivate8()()
+amigaguidePrivate9()()
+amigaguidePrivate10()()
+amigaguidePrivate11()()
+amigaguidePrivate12()()
+amigaguidePrivate13()()
+##public
+GetAmigaGuideString(id)(d0)
+##end
