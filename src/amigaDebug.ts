@@ -369,10 +369,17 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
+			let startupSequence = '';
 			if(args.endcli)
-				fs.writeFileSync(ssPath, `cd dh1:\nrun >nil: <nil: ${config.get('debugging_trigger')} >nil: <nil:\nendcli >nil:\n`);
+				startupSequence += `cd dh1:\nrun >nil: <nil: ${config.get('debugging_trigger')} >nil: <nil:\nendcli >nil:\n`;
 			else
-				fs.writeFileSync(ssPath, 'cd dh1:\n' + config.get('debugging_trigger'));
+				startupSequence += `cd dh1:\n${config.get('debugging_trigger')}\n`;
+
+			// memory leak check
+			startupSequence = 'avail\n' + startupSequence + 'avail\n';
+
+			// write startup-sequence
+			fs.writeFileSync(ssPath, startupSequence);
 		} catch (err) {
 			this.sendErrorResponse(response, 103, `Failed to rewrite startup sequence at ${ssPath}. ${(err as Error).toString()}`);
 			return;
