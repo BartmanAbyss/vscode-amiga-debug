@@ -262,6 +262,8 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
+* blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
+* TODO: show blitter cycle duration (not only start, end cycle), show minterm
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
