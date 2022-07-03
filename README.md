@@ -263,6 +263,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Gfx Debugger
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
+* resource viewer for copper bitplanes doesn't take into account scrolling in DDFSTART (see uc12 intro); high-res also doesn't work (see Workbench)
 * TODO: show blitter cycle duration (not only start, end cycle), show minterm
 * TODO: show source blitter-rects
 * TODO: show 2 resources
