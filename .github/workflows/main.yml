@@ -98,11 +98,11 @@ jobs:
           sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
           mv gcc/Makefile.tmp gcc/Makefile
           gcc/gcc-cross.exe -dumpspecs >gcc/specs
+          make all-gcc --jobs 4
 
       - name: Install GCC
         run: |
           cd build-gcc-12.1.0
-          make all-gcc --jobs 4
           make install-gcc
 
       # Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
