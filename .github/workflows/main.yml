@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: ["github-actions"]
+  pull_request:
+    branches: ["github-actions"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      # MinGW
+
+      - name: Install packages and set up MinGW
+        run: |
+          sudo apt install build-essential flex bison expect dejagnu texinfo mingw-w64
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+
+      # Binutils+GDB
+
+      - name: Clone Binutils+GDB
+        run: git clone --depth=1 https://github.com/BartmanAbyss/binutils-gdb.git
+
+      - name: Download Binutils+GDB prerequisites
+        run: |
+          cd binutils-gdb
+          bash ./contrib/download_prerequisites
+
+      - name: Configure Binutils+GDB
+        run: |
+          mkdir build-binutils-gdb
+          cd build-binutils-gdb
+          LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=$GITHUB_WORKSPACE/output --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
+
+      - name: Build Binutils+GDB
+        run: |
+          cd build-binutils-gdb
+          make --jobs 4
+
+      - name: Install Binutils+GDB
+        run: |
+          cd build-binutils-gdb
+          make install
+
+      # Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
+
+      - name: Cleaning up
+        run: |
+          rm -r output/include
+          rm -r output/share
+          find output -name *.exe | xargs strip
+
+      # Publish output
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: output/
