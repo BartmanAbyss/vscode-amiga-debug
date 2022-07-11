@@ -46,6 +46,65 @@ jobs:
           cd build-binutils-gdb
           make install
 
+      # GCC
+
+      - name: Download GCC
+        run: |
+          wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.1.0/gcc-12.1.0.tar.xz
+          tar -xf gcc-12.1.0.tar.xz
+
+      - name: Patch GCC
+        run: |
+          cd gcc-12.1.0
+          patch -p1 < ../bin/gcc-barto.patch
+
+      - name: Download GCC prerequisites
+        run: |
+          cd gcc-12.1.0
+          bash ./contrib/download_prerequisites
+
+      - name: Configure GCC
+        run: |
+          mkdir -p build-gcc-12.1.0
+          cd build-gcc-12.1.0
+          LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.1.0/configure \
+            --target=m68k-amiga-elf \
+            --disable-nls \
+            --enable-languages=c,c++ \
+            --enable-lto \
+            --prefix=$GITHUB_WORKSPACE/output \
+            --disable-libssp \
+            --disable-gcov \
+            --disable-multilib \
+            --disable-threads \
+            --with-cpu=68000 \
+            --disable-libsanitizer \
+            --disable-libada \
+            --disable-libgomp \
+            --disable-libvtv \
+            --disable-nls \
+            --disable-clocale \
+            --host=x86_64-w64-mingw32 \
+            --enable-static
+
+      - name: Build GCC
+        run: |
+          cd build-gcc-12.1.0
+          make all-gcc --jobs 4
+
+      - name: Build GCC again after changing Makefile
+        run: |
+          cd build-gcc-12.1.0
+          sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
+          mv gcc/Makefile.tmp gcc/Makefile
+          gcc/gcc-cross.exe -dumpspecs >gcc/specs
+
+      - name: Install GCC
+        run: |
+          cd build-gcc-12.1.0
+          make all-gcc --jobs 4
+          make install-gcc
+
       # Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
 
       - name: Cleaning up
