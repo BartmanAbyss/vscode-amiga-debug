@@ -8,13 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  Windows:
-    runs-on: windows-2022
-
-    defaults:
-      run:
-        shell: wslbash.exe
-
+  build:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
