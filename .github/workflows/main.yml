@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir build-binutils-gdb
           cd build-binutils-gdb
-          LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=$GITHUB_WORKSPACE/output --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64
+          LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=$GITHUB_WORKSPACE/output --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc
 
       - name: Build Binutils+GDB
         run: |
@@ -82,7 +82,6 @@ jobs:
             --disable-libvtv \
             --disable-nls \
             --disable-clocale \
-            --host=x86_64 \
             --enable-static
 
       - name: Skip GCC selftest
