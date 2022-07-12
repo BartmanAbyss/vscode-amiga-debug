@@ -84,12 +84,6 @@ jobs:
             --disable-clocale \
             --enable-static
 
-      - name: Skip GCC selftest
-        run: |
-          cd build-gcc-12.1.0
-          sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
-          mv gcc/Makefile.tmp gcc/Makefile
-
       - name: Build GCC
         run: |
           cd build-gcc-12.1.0
