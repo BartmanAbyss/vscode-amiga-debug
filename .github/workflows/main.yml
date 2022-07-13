@@ -103,6 +103,7 @@ jobs:
         run: |
           rm -r output/include
           rm -r output/share
+          find output/bin -type f -and -not -name m68k-amiga-elf-gdb-add-index | xargs strip
 
       # Publish output
 
