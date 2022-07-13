@@ -100,7 +100,6 @@ jobs:
         run: |
           rm -r output/include
           rm -r output/share
-          find output/bin -name "*" | xargs strip
 
       # Publish output
 
