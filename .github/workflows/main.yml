@@ -100,7 +100,7 @@ jobs:
         run: |
           rm -r output/include
           rm -r output/share
-          find output -name *.exe | xargs strip
+          find output -name * | xargs strip
 
       # Publish output
 
