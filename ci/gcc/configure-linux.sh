@@ -6,20 +6,19 @@ set -x
 mkdir -p build-gcc
 cd build-gcc
 LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
-    --target=m68k-amiga-elf \
-    --disable-nls \
-    --enable-languages=c,c++ \
-    --enable-lto \
-    --prefix=$GITHUB_WORKSPACE/output \
-    --disable-libssp \
+    --disable-clocale \
     --disable-gcov \
-    --disable-multilib \
-    --disable-threads \
-    --with-cpu=68000 \
-    --disable-libsanitizer \
     --disable-libada \
     --disable-libgomp \
+    --disable-libsanitizer \
+    --disable-libssp \
     --disable-libvtv \
+    --disable-multilib \
     --disable-nls \
-    --disable-clocale \
-    --enable-static
+    --disable-threads \
+    --enable-languages=c,c++ \
+    --enable-lto \
+    --enable-static \
+    --prefix=$GITHUB_WORKSPACE/output \
+    --target=m68k-amiga-elf \
+    --with-cpu=68000
