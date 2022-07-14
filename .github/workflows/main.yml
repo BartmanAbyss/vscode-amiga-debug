@@ -10,103 +10,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: /usr/bin/bash -e -u -x {0}
     steps:
       - uses: actions/checkout@v3
-
-      # Install packages
-
-      - name: Install packages
-        run: sudo apt install build-essential flex bison expect dejagnu texinfo
-
-      # Binutils+GDB
-
-      - name: Clone Binutils+GDB
-        run: git clone --depth=1 https://github.com/BartmanAbyss/binutils-gdb.git
-
-      - name: Download Binutils+GDB prerequisites
-        run: |
-          cd binutils-gdb
-          bash ./contrib/download_prerequisites
-
-      - name: Configure Binutils+GDB
-        run: |
-          mkdir build-binutils-gdb
-          cd build-binutils-gdb
-          LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=$GITHUB_WORKSPACE/output --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc
-
-      - name: Build Binutils+GDB
-        run: |
-          cd build-binutils-gdb
-          make --jobs 4
-
-      - name: Install Binutils+GDB
-        run: |
-          cd build-binutils-gdb
-          make install
-
-      # GCC
-
-      - name: Download GCC
-        run: |
-          wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.1.0/gcc-12.1.0.tar.xz
-          tar -xf gcc-12.1.0.tar.xz
-
-      - name: Patch GCC
-        run: |
-          cd gcc-12.1.0
-          patch -p1 < ../bin/gcc-barto.patch
-
-      - name: Download GCC prerequisites
-        run: |
-          cd gcc-12.1.0
-          bash ./contrib/download_prerequisites
-
-      - name: Configure GCC
-        run: |
-          mkdir -p build-gcc-12.1.0
-          cd build-gcc-12.1.0
-          LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.1.0/configure \
-            --target=m68k-amiga-elf \
-            --disable-nls \
-            --enable-languages=c,c++ \
-            --enable-lto \
-            --prefix=$GITHUB_WORKSPACE/output \
-            --disable-libssp \
-            --disable-gcov \
-            --disable-multilib \
-            --disable-threads \
-            --with-cpu=68000 \
-            --disable-libsanitizer \
-            --disable-libada \
-            --disable-libgomp \
-            --disable-libvtv \
-            --disable-nls \
-            --disable-clocale \
-            --enable-static
-
-      - name: Build GCC
-        run: |
-          cd build-gcc-12.1.0
-          make all-gcc --jobs 4
-
-      - name: Install GCC
-        run: |
-          cd build-gcc-12.1.0
-          make install-gcc
-
-      # Cleaning up unnecessary files and stripping EXE files of debug information to reduce size
-
-      - name: Cleaning up
-        run: |
-          rm -r output/include
-          rm -r output/share
-          find output/bin -type f -and -not -name m68k-amiga-elf-gdb-add-index | xargs strip
-
-      # Publish output
-
+      - run: ci/install-packages-linux.sh
+      - run: ci/binutils-gdb/clone.sh
+      - run: ci/binutils-gdb/download-prerequisites.sh
+      - run: ci/binutils-gdb/configure-linux.sh
+      - run: ci/binutils-gdb/build-linux.sh
+      - run: ci/binutils-gdb/install.sh
+      - run: ci/gcc/download.sh
+      - run: ci/gcc/patch.sh
+      - run: ci/gcc/download-prerequisites.sh
+      - run: ci/gcc/configure-linux.sh
+      - run: ci/gcc/build-linux.sh
+      - run: ci/gcc/install.sh
+      - run: ci/clean-up-linux.sh
       - uses: actions/upload-artifact@v3
         with:
           name: output
