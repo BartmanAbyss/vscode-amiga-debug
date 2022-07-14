@@ -1,11 +1,6 @@
 name: CI
 
-on:
-  push:
-    branches: ["github-actions-linux"]
-  pull_request:
-    branches: ["github-actions-linux"]
-  workflow_dispatch:
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
