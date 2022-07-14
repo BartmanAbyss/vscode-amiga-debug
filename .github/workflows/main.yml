@@ -3,7 +3,7 @@ name: CI
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build:
+  binutils-gdb-gcc-linux:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -22,5 +22,5 @@ jobs:
       - run: ci/clean-up-linux.sh
       - uses: actions/upload-artifact@v3
         with:
-          name: linux
+          name: binutils-gdb-gcc-linux
           path: output/
