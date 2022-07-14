@@ -3,9 +3,9 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-mkdir -p build-gcc-12.1.0
-cd build-gcc-12.1.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.1.0/configure \
+mkdir -p build-gcc
+cd build-gcc
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
     --target=m68k-amiga-elf \
     --disable-nls \
     --enable-languages=c,c++ \
