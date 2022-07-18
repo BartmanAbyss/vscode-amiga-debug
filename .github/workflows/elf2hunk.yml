@@ -1,0 +1,15 @@
+name: elf2hunk
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ci/elf2hunk/clone.sh
+      - run: ci/elf2hunk/build.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: elf2hunk-linux
+          path: elf2hunk/elf2hunk

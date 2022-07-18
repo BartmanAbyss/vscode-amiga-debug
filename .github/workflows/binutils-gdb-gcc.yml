@@ -1,9 +1,9 @@
-name: CI
+name: Binutils, GDB, and GCC
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  binutils-gdb-gcc-linux:
+  linux:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -24,14 +24,3 @@ jobs:
         with:
           name: binutils-gdb-gcc-linux
           path: output/
-
-  elf2hunk-linux:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - run: ci/elf2hunk/clone.sh
-      - run: ci/elf2hunk/build.sh
-      - uses: actions/upload-artifact@v3
-        with:
-          name: elf2hunk-linux
-          path: elf2hunk/elf2hunk
