@@ -1,3 +1,6 @@
+[![Binutils, GDB, and GCC](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml/badge.svg?branch=master&event=schedule)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml)
+[![elf2hunk](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml/badge.svg?branch=master&event=schedule)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml)
+
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
