@@ -1,5 +1,5 @@
-[![Binutils, GDB, and GCC](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml/badge.svg?branch=master&event=schedule)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml)
-[![elf2hunk](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml/badge.svg?branch=master&event=schedule)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml)
+[![Binutils, GDB, and GCC](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml)
+[![elf2hunk](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml)
 
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
