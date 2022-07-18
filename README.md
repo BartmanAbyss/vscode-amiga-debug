@@ -229,6 +229,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
   - `desertdream-dots.uss`: ok
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
+  - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
 
 ### Assembly
 * TODO: parser needs to check for comments
