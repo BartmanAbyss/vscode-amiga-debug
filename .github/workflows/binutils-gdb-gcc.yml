@@ -1,4 +1,4 @@
-name: Binutils, GDB, and GCC
+name: binutils-gdb-gcc
 
 on:
   push:
