@@ -5,8 +5,6 @@ on:
     paths:
       - "bin/gcc-barto.patch"
       - "ci/**"
-    paths-ignore:
-      - "ci/elf2hunk/**"
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
