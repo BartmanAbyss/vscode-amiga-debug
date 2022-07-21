@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import { UssFile } from '../../backend/savestate';
 
-const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
+const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data/uss");
 
 suite("savestate", () => {
 	test("bobble33-bug.uss", () => {

@@ -1,3 +1,6 @@
+[![Binutils, GDB, and GCC](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml)
+[![elf2hunk](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml)
+
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
@@ -227,7 +230,9 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: kill winuae/gdb when quitting vscode
 * (internal) status of tested savestates: `c:\amiga_state`
   - `desertdream-dots.uss`: ok
+  - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
+  - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
 
 ### Assembly
 * TODO: parser needs to check for comments

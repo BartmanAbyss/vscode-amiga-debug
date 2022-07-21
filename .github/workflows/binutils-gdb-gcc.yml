@@ -1,0 +1,33 @@
+name: binutils-gdb-gcc
+
+on:
+  push:
+    paths:
+      - "bin/gcc-barto.patch"
+      - "ci/**"
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ci/install-packages-linux.sh
+      - run: ci/binutils-gdb/clone.sh
+      - run: ci/binutils-gdb/download-prerequisites.sh
+      - run: ci/binutils-gdb/configure-linux.sh
+      - run: ci/binutils-gdb/build-linux.sh
+      - run: ci/binutils-gdb/install.sh
+      - run: ci/gcc/download.sh
+      - run: ci/gcc/patch.sh
+      - run: ci/gcc/download-prerequisites.sh
+      - run: ci/gcc/configure-linux.sh
+      - run: ci/gcc/build-linux.sh
+      - run: ci/gcc/install.sh
+      - run: ci/clean-up-linux.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: binutils-gdb-gcc-linux
+          path: output/
