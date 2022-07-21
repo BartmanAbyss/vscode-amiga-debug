@@ -684,7 +684,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const date = new Date();
 				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
-
 				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
 
 				// write unwind table for WinUAE

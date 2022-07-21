@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.3
+- savestate profiler: enable "cycle exact" before launching .uss file
+
 ## 1.4.2
 - fixes missing shrinkler terminal output
 - Shrinkler: fixed progress output (only went to 10% instead of 100%)

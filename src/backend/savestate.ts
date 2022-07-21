@@ -16,6 +16,11 @@ export interface IUssFile {
 	fram: number[];
 }
 
+interface Chunk {
+	name: string;
+	buffer: Buffer;
+}
+
 export class UssFile implements IUssFile {
 	public cpuModel: number;
 	public cpuFlags: number;
@@ -28,11 +33,12 @@ export class UssFile implements IUssFile {
 	public cram: number;
 	public bram: number;
 	public fram: number[] = [];
+	private chunks: Chunk[] = [];
 
 	constructor(public filename: string) {
 		const buffer = fs.readFileSync(filename);
 		let bufferOffset = 0;
-		const readChunk = (): { name: string; buffer: Buffer } => {
+		const readChunk = (): Chunk => {
 			if(bufferOffset + 3 * 4 > buffer.length)
 				return { name: '', buffer: null };
 			// see WinUAE:savestate.cpp@restore_chunk
@@ -43,7 +49,7 @@ export class UssFile implements IUssFile {
 
 			if(flags & 1) {
 				// zuncompress
-				const totalLen = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+				const uncompressedLen = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
 				len -= 4;
 				chunkData = zlib.inflateSync(buffer.slice(bufferOffset, bufferOffset + len));
 				bufferOffset += len;
@@ -61,9 +67,13 @@ export class UssFile implements IUssFile {
 		let chunk = readChunk();
 		if(chunk.name !== 'ASF ')
 			throw new Error(`${filename} is not an AmigaStateFile`);
+		this.chunks.push(chunk);
 		this.readHeader(chunk.buffer);
-		do {
+		while(true) {
 			chunk = readChunk();
+			if(chunk.name === 'END ' || chunk.name === '')
+				return;
+			this.chunks.push(chunk);
 			switch(chunk.name) {
 			case 'CPU ': this.readCpu(chunk.buffer); break;
 			case 'CPUX': this.readCpuExtra(chunk.buffer); break;
@@ -77,7 +87,49 @@ export class UssFile implements IUssFile {
 			case 'ZRAM':
 			case 'ZCRM': this.fram.push(chunk.buffer.length); break;
 			}
-		} while(chunk.name !== 'END ' && chunk.name !== '');
+		}
+	}
+
+	public setCycleExact() {
+		const cpux = this.chunks.find((chunk) => chunk.name === 'CPUX');
+		if(cpux)
+			cpux.buffer.writeUInt32BE(this.cpuExtraFlags | (1 << 0) | (1 << 5), 4);
+	}
+
+	public write(filename: string) {
+		const file = fs.openSync(filename, "w");
+		let pos = 0;
+		
+		for(const chunk of this.chunks) {
+			//console.log(`BytesWritten: ${pos} chunk: ${chunk.name}`);
+			pos += fs.writeSync(file, Buffer.from(chunk.name, 'utf8'));
+			const compressed = zlib.deflateSync(chunk.buffer);
+			let length = compressed.byteLength;
+			if(length < chunk.buffer.byteLength) {
+				const b = Buffer.alloc(3 * 4);
+				b.writeUInt32BE(length + 4 * 4, 0 * 4); // len
+				b.writeUInt32BE(1, 1 * 4); // compressed
+				b.writeUInt32BE(chunk.buffer.length, 2 * 4);
+				pos += fs.writeSync(file, b);
+				pos += fs.writeSync(file, compressed);
+			} else {
+				length = chunk.buffer.length;
+				const b = Buffer.alloc(2 * 4);
+				b.writeUInt32BE(length + 3 * 4, 0 * 4); // len
+				b.writeUInt32BE(0, 1 * 4); // not compressed
+				pos += fs.writeSync(file, b);
+				pos += fs.writeSync(file, chunk.buffer);
+			}
+			// alignment
+			//console.log(`Length: ${length} Pad: ${4 - (length & 3)}`);
+			const p = Buffer.alloc(4 - (length & 3));
+			pos += fs.writeSync(file, p);
+		}
+		pos += fs.writeSync(file, Buffer.from('END ', 'utf8'));
+		const b = Buffer.alloc(1 * 4);
+		b.writeUInt32BE(8, 0 * 4); // len
+		pos += fs.writeSync(file, b);
+		fs.closeSync(file);
 	}
 
 	private readHeader(buffer: Buffer) {
@@ -109,6 +161,13 @@ export class UssFile implements IUssFile {
 		let bufferOffset = 4;
 		this.cpuExtraFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
 		//console.log(`  CPU extra flags: $${this.cpuExtraFlags.toString(16)}`);
+		// bit 0: cpu_cycle_exact
+		// bit 1: cpu_compatible
+		// bit 2: m68k_speed < 0
+		// bit 3: cachesize > 0
+		// bit 4: m68k_speed > 0
+		// bit 5: cpu_memory_cycle_exact
+		// bit 24-31: if(m68k_speed > 0) currprefs.m68k_speed / CYCLE_UNIT
 		// don't care about other stuff (060_revision, fpu_revision)
 	}
 

@@ -15,13 +15,15 @@ class SavestateDocument implements vscode.CustomDocument {
 
 	public load() {
 		try {
-			const ussFile = new UssFile(this.ussPath);
-			this.content = JSON.stringify(ussFile);
+			this.ussFile = new UssFile(this.ussPath);
+			this.content = JSON.stringify(this.ussFile);
 		} catch(err) {
+			this.ussFile = null;
 			this.content = `Error: ${(err as Error).message}`;
 		}
 	}
 
+	private ussFile: UssFile;
 	public ussPath: string;
 	public content: string;
 
@@ -50,7 +52,15 @@ class SavestateDocument implements vscode.CustomDocument {
 		config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
 		config.set('debugging_features', 'gdbserver');
 		config.set('debugging_trigger', '');
-		config.set('statefile', this.ussPath);
+		if(this.ussFile) {
+			// save temp copy of state file with setCycleExact
+			const tmp = path.join(os.tmpdir(), `amiga-profile.uss`);
+			this.ussFile.setCycleExact();
+			this.ussFile.write(tmp);
+			config.set('statefile', tmp);
+		} else {
+			config.set('statefile', this.ussPath);
+		}
 
 		// copy from amigaDebug.cpp
 		const stringifyCfg = (cfg: Map<string, string>) => {
@@ -63,7 +73,7 @@ class SavestateDocument implements vscode.CustomDocument {
 
 		try {
 			fs.writeFileSync(configPath, stringifyCfg(config));
-		} catch (e) {
+		} catch(e) {
 			void vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
 			return;
 		}
@@ -128,16 +138,16 @@ class SavestateDocument implements vscode.CustomDocument {
 				// path to profile file
 				const tmpQuoted = tmp.replace(/\\/g, '\\\\');
 				await this.miDebugger.sendUserInput(`monitor profile ${frames} "" "${tmpQuoted}"`);
-		
+
 				// read profile file
 				const profileArchive = new ProfileFile(tmp);
 				fs.unlinkSync(tmp); // !DEBUG
-		
+
 				// generate output
 				const profiler = new Profiler(null, null);
 				//progress.report({ message: 'Writing profile...'});
 				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileSavestate(profileArchive));
-		
+
 				// open output
 				void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 				void this.miDebugger.continue(this.currentThreadId);
@@ -172,7 +182,7 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 	}
 
 	private updateWebview(document: SavestateDocument, webview: vscode.Webview) {
-		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
+		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), {
 			SAVESTATE: document.content
 		});
 		webview.html = html;
@@ -182,22 +192,22 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(path.join(this.context.extensionPath, 'dist')) ]
+			localResourceRoots: [vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(path.join(this.context.extensionPath, 'dist'))]
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
-			switch (message.type) {
-			case 'savestateStart':
-				void document.start(() => { void webviewPanel.webview.postMessage({ type: 'status', body: { running: true }}); });
-				break;
-			case 'savestateStop':
-				document.stop();
-				void webviewPanel.webview.postMessage({ type: 'status', body: { running: false }});
-				break;
-			case 'savestateProfile':
-				void document.profile(message.frames);
-				break;
+			switch(message.type) {
+				case 'savestateStart':
+					void document.start(() => { void webviewPanel.webview.postMessage({ type: 'status', body: { running: true } }); });
+					break;
+				case 'savestateStop':
+					document.stop();
+					void webviewPanel.webview.postMessage({ type: 'status', body: { running: false } });
+					break;
+				case 'savestateProfile':
+					void document.profile(message.frames);
+					break;
 			}
 		});
 	}

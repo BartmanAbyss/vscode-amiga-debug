@@ -147,7 +147,7 @@ export class Kickstart {
 		if(this.data.length === 512*1024)
 			this.base -= 256*1024;
 
-		console.log(`${path.basename(kickPath)}: ${this.hash}`);
+		//console.log(`${path.basename(kickPath)}: ${this.hash}`);
 
 		// scan libraries
 		for(let offset = 0; offset < this.data.byteLength; offset += 2) {
@@ -315,7 +315,7 @@ static Structures(void) {
 			}
 			} // switch
 		}
-		console.log(`Found library @ ${(lib.offset + this.base).toString(16)}: ${lib.name} V${lib.version} [${lib.id}] flags: ${this.data[lib.offset + 10].toString(16)}; ${vectors.length} LVOs`);
+		//console.log(`Found library @ ${(lib.offset + this.base).toString(16)}: ${lib.name} V${lib.version} [${lib.id}] flags: ${this.data[lib.offset + 10].toString(16)}; ${vectors.length} LVOs`);
 		if(this.fdPath !== '') {
 			if(lib.name === 'mathieeesingbas.library') return; // until we can disassemble FFP instructions
 			const fdPath = path.join(this.fdPath, lib.name.replace('.library', '_lib.fd'));
