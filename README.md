@@ -262,6 +262,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
+* multiframe profiler, copperlist and copper-timings seem off
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
 * resource viewer for copper bitplanes doesn't take into account scrolling in DDFSTART (see uc12 intro); high-res also doesn't work (see Workbench)
 * TODO: show blitter cycle duration (not only start, end cycle), show minterm
