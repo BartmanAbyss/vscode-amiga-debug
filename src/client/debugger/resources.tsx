@@ -290,7 +290,7 @@ export const Screen: FunctionComponent<{
 		zoomDiv.current.style.display = 'none';
 	}, [useZoom, zoomDiv.current]);
 
-	return (
+	return <Fragment>
 		<div class={styles.screen}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} />
 			{overlay === 'overdraw' && <canvas class={styles.overdraw_canvas} ref={overdrawCanvas} width={canvasWidth} height={canvasHeight} />}
@@ -300,21 +300,21 @@ export const Screen: FunctionComponent<{
 			)}
 			{useZoom && <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
-				{zoomInfo.color !== undefined && (<div>
+				{zoomInfo.color !== undefined && <div>
 					<dl>
 						<dt>Pos</dt>
 						<dd>X:{zoomInfo.x} Y:{zoomInfo.y}</dd>
 						<dt>Color</dt>
 						<dd>{zoomInfo.color} ${zoomInfo.color.toString(16).padStart(2, '0')} %{zoomInfo.color.toString(2).padStart(screen.planes.length, '0')}</dd>
-						{mask !== undefined && zoomInfo.mask !== undefined && (<Fragment>
+						{mask !== undefined && zoomInfo.mask !== undefined && <Fragment>
 							<dt>Mask</dt>
 							<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(mask.planes.length, '0')}</dd>
-						</Fragment>)}
+						</Fragment>}
 					</dl>
-				</div>)}
+				</div>}
 			</div>}
 		</div>
-	);
+	</Fragment>;
 };
 
 interface GfxResourceWithPayload {
@@ -517,7 +517,7 @@ export const GfxResourcesView: FunctionComponent<{
 				<option value="overdraw">Overdraw</option>
 			</select>
 		</div>
-		<div style={{overflow: 'auto'}}>
+		<div style={{/*overflow: 'auto'*/}}>
 			<Screen frame={frame} time={time} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
 		</div>
 	</Fragment>);
