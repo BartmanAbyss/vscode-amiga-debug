@@ -65,7 +65,7 @@ export const CopperView: FunctionComponent<{
 		setHovered({ index: -1, x: -1, y: -1, justify: '' });
 	}, []);
 	const onWheel = useCallback((evt: WheelEvent) => {
-		evt.preventDefault();
+		evt.preventDefault(); // <- doesn't work
 		// dunno how to make smooth scrolling that works when wheeling repeatedly
 		tooltipRef.current.scrollTop += evt.deltaY;
 	}, [tooltipRef.current]);
