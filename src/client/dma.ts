@@ -406,6 +406,8 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let DDFSTOP = 0;
 	let DIWSTRT = 0;
 	let DIWSTOP = 0;
+	let DIWHIGH = 0;
+	let useDIWHIGH = false;
 
 	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0");
 	const regBPL1MOD = CustomRegisters.getCustomAddress("BPL1MOD");
@@ -424,6 +426,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regDDFSTOP = CustomRegisters.getCustomAddress("DDFSTOP");
 	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
 	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
+	const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
 
 	for(const c of copper) {
 		if(c.vpos >= 200) // ignore bottom-of-screen HUD
@@ -447,17 +450,59 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 				case regDDFSTOP: DDFSTOP = c.insn.RD; break;
 				case regDIWSTRT: DIWSTRT = c.insn.RD; break;
 				case regDIWSTOP: DIWSTOP = c.insn.RD; break;
+				case regDIWHIGH: DIWHIGH = c.insn.RD; useDIWHIGH = true; break;
 			}
 		}
 	}
 
+// workbench 1.3 (A500)
+//	DDF: 3c d0 DDF: 581 40c1
+//	   fetchWidth: 624 displayWidth: 640
+//	   modulos: 0  0
+//	=> modulos: -1  -1
+
+// workbench 2.0 (A500+, interlace)
+// 	DDF: 38 d8 DDF: 2c81 2cc1
+//    fetchWidth: 672 displayWidth: 640
+//    modulos: 76  76
+// => modulos: 78  78
+
+// workbench 2.0 (690 px overscan)
+// 	DDF: 30 d8 DDF: 2c6e 2cc7
+//    fetchWidth: 704 displayWidth: 690
+//    modulos: 88  88
+// => modulos: 88  88	
+
+	let displayStart = (DIWSTRT & 0xff) << 2;
+	let displayStop = ((DIWSTOP & 0xff) + 256) << 2;
+	if(useDIWHIGH) {
+		displayStart |= (DIWHIGH >> 3) & 0b11;
+		displayStart |= (DIWHIGH & 0b111) << 8;
+		displayStop |= (DIWHIGH >> 11) & 0b11;
+		displayStop &= ~(1 << 10);
+		displayStop |= (DIWHIGH >> 13) << 10;
+	}
+
 	const hires = (BPLCON0 & 0x8000) ? true : false;
-	const width = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
-	const height = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
+	const fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
+	let displayWidth = displayStop - displayStart;
+	// no support for superhires
+	if(hires)
+		displayWidth >>>= 1;
+	else
+		displayWidth >>>= 2;
+	const displayHeight = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
+	// adjust for extra fetched data for scrolling
+	console.log(`DDF: ${DDFSTRT.toString(16)} ${DDFSTOP.toString(16)} DIW: ${DIWSTRT.toString(16)} ${DIWSTOP.toString(16)} ${DIWHIGH.toString(16)}`);
+	console.log(`   fetchWidth: ${fetchWidth} displayStart: ${displayStart} displayStop: ${displayStop} displayWidth: ${displayWidth}`);
+	console.log(`   modulos: ${modulos[0]}  ${modulos[1]}`);
+	modulos[0] += (fetchWidth - displayWidth) >> 4;
+	modulos[1] += (fetchWidth - displayWidth) >> 4;
+	console.log(`=> modulos: ${modulos[0]}  ${modulos[1]}`);
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
-	return { width, height, planes, modulos, hires };
+	return { width: displayWidth, height: displayHeight, planes, modulos, hires };
 }
 
 export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
