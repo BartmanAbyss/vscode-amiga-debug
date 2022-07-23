@@ -276,3 +276,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
 * copper, customregs: wheel over regname doesn't prevent scrolling
+* Denise: blitrects, overdraw, playfields, sprites, more tooltip info, toggle bitmaps/sprites

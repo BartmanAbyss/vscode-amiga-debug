@@ -166,14 +166,14 @@ export class CustomRegisters {
 		{ name: "BPL2MOD", adr: 0xdff10A, rw: 2 }, /* Bit plane modulo (even planes or inactive- fetch lines if bitplane scan-doubling is enabled */
 		{ name: "BPLCON4", adr: 0xdff10C, rw: 2 | 8 }, /* Bit plane control reg (bitplane and sprite masks) */
 		{ name: "CLXCON2", adr: 0xdff10e, rw: 2 | 8 }, /* Extended collision control reg */
-		{ name: "BPL1DAT", adr: 0xdff110, rw: 2 }, /* Bit plane 1 data (parallel to serial con- vert) */
-		{ name: "BPL2DAT", adr: 0xdff112, rw: 2 }, /* Bit plane 2 data (parallel to serial con- vert) */
-		{ name: "BPL3DAT", adr: 0xdff114, rw: 2 }, /* Bit plane 3 data (parallel to serial con- vert) */
-		{ name: "BPL4DAT", adr: 0xdff116, rw: 2 }, /* Bit plane 4 data (parallel to serial con- vert) */
-		{ name: "BPL5DAT", adr: 0xdff118, rw: 2 }, /* Bit plane 5 data (parallel to serial con- vert) */
-		{ name: "BPL6DAT", adr: 0xdff11a, rw: 2 }, /* Bit plane 6 data (parallel to serial con- vert) */
-		{ name: "BPL7DAT", adr: 0xdff11c, rw: 2 | 8 }, /* Bit plane 7 data (parallel to serial con- vert) */
-		{ name: "BPL8DAT", adr: 0xdff11e, rw: 2 | 8 }, /* Bit plane 8 data (parallel to serial con- vert) */
+		{ name: "BPL1DAT", adr: 0xdff110, rw: 2 }, /* Bit plane 1 data (parallel to serial convert) */
+		{ name: "BPL2DAT", adr: 0xdff112, rw: 2 }, /* Bit plane 2 data (parallel to serial convert) */
+		{ name: "BPL3DAT", adr: 0xdff114, rw: 2 }, /* Bit plane 3 data (parallel to serial convert) */
+		{ name: "BPL4DAT", adr: 0xdff116, rw: 2 }, /* Bit plane 4 data (parallel to serial convert) */
+		{ name: "BPL5DAT", adr: 0xdff118, rw: 2 }, /* Bit plane 5 data (parallel to serial convert) */
+		{ name: "BPL6DAT", adr: 0xdff11a, rw: 2 }, /* Bit plane 6 data (parallel to serial convert) */
+		{ name: "BPL7DAT", adr: 0xdff11c, rw: 2 | 8 }, /* Bit plane 7 data (parallel to serial convert) */
+		{ name: "BPL8DAT", adr: 0xdff11e, rw: 2 | 8 }, /* Bit plane 8 data (parallel to serial convert) */
 		{ name: "SPR0PTH", adr: 0xdff120, rw: 2, special: 1 }, /* Sprite 0 pointer (high 5 bits) */
 		{ name: "SPR0PTL", adr: 0xdff122, rw: 2, special: 2 }, /* Sprite 0 pointer (low 15 bits) */
 		{ name: "SPR1PTH", adr: 0xdff124, rw: 2, special: 1 }, /* Sprite 1 pointer (high 5 bits) */

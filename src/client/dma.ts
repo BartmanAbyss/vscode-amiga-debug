@@ -457,15 +457,17 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 
 // workbench 1.3 (A500)
 //	DDF: 3c d0 DDF: 581 40c1
-//	   fetchWidth: 624 displayWidth: 640
+//	   fetchWidth: 640 displayWidth: 640
 //	   modulos: 0  0
-//	=> modulos: -1  -1
+//	=> modulos: 0  0
 
 // workbench 2.0 (A500+, interlace)
 // 	DDF: 38 d8 DDF: 2c81 2cc1
 //    fetchWidth: 672 displayWidth: 640
 //    modulos: 76  76
 // => modulos: 78  78
+// 44,63: 2cc6e
+// 45,61: 2cd0e +160
 
 // workbench 2.0 (690 px overscan)
 // 	DDF: 30 d8 DDF: 2c6e 2cc7
@@ -484,7 +486,9 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	}
 
 	const hires = (BPLCON0 & 0x8000) ? true : false;
-	const fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
+	//let fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
+	//if(hires)
+	const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
 	let displayWidth = displayStop - displayStart;
 	// no support for superhires
 	if(hires)
@@ -492,17 +496,21 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	else
 		displayWidth >>>= 2;
 	const displayHeight = ((DIWSTOP >>> 8) + 256 - (DIWSTRT >>> 8));
-	// adjust for extra fetched data for scrolling
 	console.log(`DDF: ${DDFSTRT.toString(16)} ${DDFSTOP.toString(16)} DIW: ${DIWSTRT.toString(16)} ${DIWSTOP.toString(16)} ${DIWHIGH.toString(16)}`);
 	console.log(`   fetchWidth: ${fetchWidth} displayStart: ${displayStart} displayStop: ${displayStop} displayWidth: ${displayWidth}`);
 	console.log(`   modulos: ${modulos[0]}  ${modulos[1]}`);
-	modulos[0] += (fetchWidth - displayWidth) >> 4;
-	modulos[1] += (fetchWidth - displayWidth) >> 4;
+	// adjust for extra fetched data for scrolling
+/*	if(fetchWidth > 384) {
+		modulos[0] += (384 - fetchWidth) >> 4;
+		modulos[1] += (384 - fetchWidth) >> 4;
+	}*/
+	//modulos[0] += (fetchWidth - displayWidth) >> 4;
+	//modulos[1] += (fetchWidth - displayWidth) >> 4;
 	console.log(`=> modulos: ${modulos[0]}  ${modulos[1]}`);
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
-	return { width: displayWidth, height: displayHeight, planes, modulos, hires };
+	return { width: fetchWidth, height: displayHeight, planes, modulos, hires };
 }
 
 export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
@@ -610,10 +618,10 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 }
 
 // AABBGGRR
-const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
+export const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
 	(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
 	(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
-	0xff000000) >>> 0;// AA;
+	0xff000000) >>> 0; // AA;
 
 // AABBGGRR <-> AARRGGBB
 const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;

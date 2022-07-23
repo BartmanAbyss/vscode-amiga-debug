@@ -6,8 +6,8 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { CustomRegisters } from '../customRegisters';
-import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss } from '../dma';
+import { CustomReadWrite, CustomRegisters } from '../customRegisters';
+import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss, GetAmigaColor } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -21,6 +21,10 @@ function hsl2rgb(h: number, s: number, l: number) {
 	const f = (n: number, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
 	return [f(0), f(8), f(4)];
 }
+
+// measured in resource viewer
+const displayLeft = 92;
+const displayTop = 28;
 
 export const Screen: FunctionComponent<{
 	screen: IScreen;
@@ -88,60 +92,173 @@ export const Screen: FunctionComponent<{
 				}
 			}
 		};
-		const planes = [...screen.planes];
-		const maskPlanes = [...mask?.planes ?? []];
-		for (let y = 0; y < screen.height; y++) {
-			let prevColor = 0xff000000; // 0xAABBGGRR
-			for (let x = 0; x < screen.width / 16; x++) {
-				for (let i = 0; i < 16; i++) {
-					let pixel = 0;
-					let pixelMask = 0xffff;
-					for (let p = 0; p < planes.length; p++) {
-						const addr = planes[p] + x * 2;
-						const raw = memory.readWord(addr);
-						if ((raw & (1 << (15 - i))))
-							pixel |= 1 << p;
-					}
-					if (mask) {
-						for (let p = 0; p < maskPlanes.length; p++) {
-							const addr = maskPlanes[p] + x * 2;
+		if(screen.planes.length) {
+			const planes = [...screen.planes];
+			const maskPlanes = [...mask?.planes ?? []];
+			for (let y = 0; y < screen.height; y++) {
+				let prevColor = 0xff000000; // 0xAABBGGRR
+				for (let x = 0; x < screen.width / 16; x++) {
+					for (let i = 0; i < 16; i++) {
+						let pixel = 0;
+						let pixelMask = 0xffff;
+						for (let p = 0; p < planes.length; p++) {
+							const addr = planes[p] + x * 2;
 							const raw = memory.readWord(addr);
 							if ((raw & (1 << (15 - i))))
-								pixelMask |= 1 << p;
+								pixel |= 1 << p;
 						}
-						pixel &= pixelMask;
-						putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
-					} else {
-						if(flags & GfxResourceFlags.bitmap_ham) {
-							let color = palette[0]; // 0xAABBGGRR
-							switch(pixel >> 4) {
-							case 0: // set
-								color = palette[pixel & 0xf];
-								break;
-							case 1: // modify blue
-								color = (prevColor & ~0xff0000) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 16);
-								break;
-							case 3: // modify green
-								color = (prevColor & ~0x00ff00) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 8);
-								break;
-							case 2: // modify red
-								color = (prevColor & ~0x0000ff) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 0);
-								break;
+						if (mask) {
+							for (let p = 0; p < maskPlanes.length; p++) {
+								const addr = maskPlanes[p] + x * 2;
+								const raw = memory.readWord(addr);
+								if ((raw & (1 << (15 - i))))
+									pixelMask |= 1 << p;
 							}
-							putPixel(x * 16 + i, y, color);
-							prevColor = color;
+							pixel &= pixelMask;
+							putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
 						} else {
-							putPixel(x * 16 + i, y, palette[pixel]);
+							if(flags & GfxResourceFlags.bitmap_ham) {
+								let color = palette[0]; // 0xAABBGGRR
+								switch(pixel >> 4) {
+								case 0: // set
+									color = palette[pixel & 0xf];
+									break;
+								case 1: // modify blue
+									color = (prevColor & ~0xff0000) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 16);
+									break;
+								case 3: // modify green
+									color = (prevColor & ~0x00ff00) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 8);
+									break;
+								case 2: // modify red
+									color = (prevColor & ~0x0000ff) | ((((pixel & 0xf) << 4) | (pixel & 0xf)) << 0);
+									break;
+								}
+								putPixel(x * 16 + i, y, color);
+								prevColor = color;
+							} else {
+								putPixel(x * 16 + i, y, palette[pixel]);
+							}
 						}
 					}
 				}
+				for (let p = 0; p < planes.length; p++) {
+					planes[p] += screen.width / 8 + screen.modulos[p & 1];
+				}
+				if (mask) {
+					for (let p = 0; p < maskPlanes.length; p++) {
+						maskPlanes[p] += mask.width / 8 + mask.modulos[p & 1];
+					}
+				}
 			}
-			for (let p = 0; p < planes.length; p++) {
-				planes[p] += screen.width / 8 + screen.modulos[p & 1];
-			}
-			if (mask) {
-				for (let p = 0; p < maskPlanes.length; p++) {
-					maskPlanes[p] += mask.width / 8 + mask.modulos[p & 1];
+		} else {
+			// video emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
+			let shifter = [0, 0, 0, 0, 0];
+			let scroller = [0, 0, 0, 0, 0];
+			const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+			const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
+			const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
+			const regBPL1DAT = CustomRegisters.getCustomAddress("BPL1DAT") - 0xdff000;
+			const regBPL2DAT = CustomRegisters.getCustomAddress("BPL2DAT") - 0xdff000;
+			const regBPL3DAT = CustomRegisters.getCustomAddress("BPL3DAT") - 0xdff000;
+			const regBPL4DAT = CustomRegisters.getCustomAddress("BPL4DAT") - 0xdff000;
+			const regBPL5DAT = CustomRegisters.getCustomAddress("BPL5DAT") - 0xdff000;
+			const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
+			const regSTRHOR = CustomRegisters.getCustomAddress("STRHOR") - 0xdff000; // line 24-311
+			const regSTRLONG = CustomRegisters.getCustomAddress("STRLONG") - 0xdff000; // probably only interlace
+			const regSTREQU = CustomRegisters.getCustomAddress("STREQU") - 0xdff000; // line 0-7
+			const regSTRVBL = CustomRegisters.getCustomAddress("STRVBL") - 0xdff000; // line 8-23, 312
+			const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT") - 0xdff000;
+			const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP") - 0xdff000;
+			const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
+			const customRegs = MODELS[frame].amiga.customRegs.slice(); // initial copy
+			customRegs[regDMACON >>> 1] = MODELS[frame].amiga.dmacon;
+		
+			let vpos = -1;
+			let hpos = 0;
+			let hdiwstrt = 0, hdiwstop = 0;
+			let scroll = [0, 0];
+			let window = false;
+			for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
+				for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++) {
+					const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
+					if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
+						if(dmaRecord.reg === regDMACON) {
+							if(dmaRecord.dat & 0x8000)
+								customRegs[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
+							else
+								customRegs[regDMACON >>> 1] &= ~dmaRecord.dat;
+						} else if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write) {
+							customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
+						}
+					}
+					// vpos, hpos - https://www.techtravels.org/2012/04/progress-on-amiga-vsc-made-this-weekend-vsync-problem-persists/ 
+					// HPOS counter in Denise counts from 2 to 456, it uses clock CDAC#, when STRLONG is received, it stops counting during two CDAC# cycles.
+					// HBLANK occurs between HPOS = 19 and HPOS = 97. HSYNC occurs between HPOS = 32 and HPOS = 65.
+					if(dmaRecord.reg === regSTRHOR || dmaRecord.reg === regSTRVBL || dmaRecord.reg === regSTREQU) {
+						hpos = 2;
+						vpos++;
+						window = false; // safety
+					}
+
+					// bpldat
+					if(dmaRecord.reg === regBPL1DAT) {
+						shifter = [customRegs[regBPL1DAT >>> 1], customRegs[regBPL2DAT >>> 1], customRegs[regBPL3DAT >>> 1], customRegs[regBPL4DAT >>> 1], customRegs[regBPL5DAT >>> 1]];
+						//if(cycleY === 100) console.log(` **** load scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
+					}
+
+					// hdiwstrt
+					if(dmaRecord.reg === regDIWSTRT)
+						hdiwstrt = dmaRecord.dat & 0xff;
+					if(dmaRecord.reg === regDIWSTOP)
+						hdiwstop = (dmaRecord.dat & 0xff) | 0x100;
+					if(dmaRecord.reg === regDIWHIGH) {
+						hdiwstrt = (hdiwstrt & 0xff) | (dmaRecord.dat >>> 5) << 8;
+						hdiwstop = (hdiwstop & 0xff) | (dmaRecord.dat >>> 13) << 8;
+					}
+
+					if(dmaRecord.reg === regBPLCON1)
+						scroll = [dmaRecord.dat & 0xf, (dmaRecord.dat >>> 4) & 0xf];
+
+					//const displayStart = 0x2c;
+					//const lineStart = 29; // minimig: first visible line on PAL is 26
+					const hires = (customRegs[regBPLCON0 >>> 1] & 0x8000) ? true : false;
+					const numPlanes = (customRegs[regBPLCON0 >>> 1] >>> 12) & 0b111;
+					const scroll_delayed = hires? [scroll[0] << 1, scroll[1] << 1] : scroll;
+
+					for(let q = 0; q < 2; q++) {
+						// window
+						if(hpos === hdiwstrt)
+							window = true;
+						if(hpos - 1 === hdiwstop)
+							window = false;
+
+						if(cycleY === 100) console.log(`hpos:${hpos} cycleX:${cycleX} hdiwstrt:${hdiwstrt} hdiwstop:${hdiwstop} window: ${window} scroll_delayed: ${scroll_delayed[0]} ${scroll_delayed[1]}`);
+
+						for(let i = 0; i < 2; i++) {
+							if(hires || i === 0) {
+								for(let p = 0; p < 5; p++) {
+									scroller[p] = ((scroller[p] << 1) | (shifter[p] >>> 15)) & 0xffff;
+									shifter[p] = (shifter[p] << 1) & 0xffff;
+								}
+								//if(cycleY === 100) console.log(`     shift scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
+							}
+
+							//if(cycleY===100)console.log(`      draw scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')} ***${scroller[1] & (1 << scroll_delayed[0]) ? '1' : '0'}`);
+							let pixel = 0;
+							for(let p = 0; p < numPlanes; p++) {
+								if(scroller[p] & (1 << scroll_delayed[0]))
+									pixel |= 1 << p;
+							}
+
+							if(hpos - 2 >= displayLeft && vpos >= displayTop) {
+								if(window && numPlanes)
+									putPixel((hpos - 2 - displayLeft) * 2 + i,         vpos - displayTop, GetAmigaColor(customRegs[(regCOLOR00 >>> 1) + pixel]));
+								else
+									putPixel((hpos - 2 - displayLeft) * 2 + i,         vpos - displayTop, 0);
+							}
+						}
+						hpos++;
+					}
 				}
 			}
 		}
@@ -442,6 +559,29 @@ export const GfxResourcesView: FunctionComponent<{
 			};
 			bitmaps.unshift({ resource: copperResource, frame, screen: cs.screen });
 		}
+
+		// screen emu
+		const emuResource: GfxResource = {
+			address: 0,
+			size: 0,
+			name: `*Denise*`,
+			type: GfxResourceType.bitmap,
+			flags: 0,
+			bitmap: {
+				width: NR_DMA_REC_HPOS * 4 - displayLeft * 2,
+				height: NR_DMA_REC_VPOS - 1 - displayTop,
+				numPlanes: 0
+			}
+		};
+		const emuScreen: IScreen = {
+			width: emuResource.bitmap.width,
+			height: emuResource.bitmap.height,
+			planes: [],
+			modulos: [],
+			hires: true
+		};
+		bitmaps.unshift({ resource: emuResource, frame, screen: emuScreen });
+
 		return bitmaps;
 	}, [frame]);
 
