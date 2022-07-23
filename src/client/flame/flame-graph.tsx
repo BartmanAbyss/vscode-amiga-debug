@@ -1127,6 +1127,14 @@ const Tooltip: FunctionComponent<{
 		USEB    = 1 << 10,
 		USEC    = 1 <<  9,
 		USED    = 1 <<  8,
+		LF7     = 1 <<  7,
+		LF6     = 1 <<  6,
+		LF5     = 1 <<  5,
+		LF4     = 1 <<  4,
+		LF3     = 1 <<  3,
+		LF2     = 1 <<  2,
+		LF1     = 1 <<  1,
+		LF0     = 1 <<  0,
 	}
 	enum BLTCON1Flags {
 		DOFF    = 1 << 7,
@@ -1137,6 +1145,7 @@ const Tooltip: FunctionComponent<{
 		LINE    = 1 << 0,
 	}
 	const BLTCON: Bit[] = [];
+	const MINTERM: Bit[] = [];
 	if(isBlit) {
 		BLTCON.push({ name: "USEA", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
 		BLTCON.push({ name: "USEB", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
@@ -1149,6 +1158,14 @@ const Tooltip: FunctionComponent<{
 		BLTCON.push({ name: "DESC", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DESC) });
 		// TODO: line mode
 		//BLTCON.push({ name: "LINE", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
+		MINTERM.push({ name: "ABC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) });
+		MINTERM.push({ name: "ABC\u0304",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) });
+		MINTERM.push({ name: "AB\u0304C",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) });
+		MINTERM.push({ name: "AB\u0304C\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) });
+		MINTERM.push({ name: "A\u0304BC",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) });
+		MINTERM.push({ name: "A\u0304BC\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) });
+		MINTERM.push({ name: "A\u0304B\u0304C",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) });
+		MINTERM.push({ name: "A\u0304B\u0304C\u0304", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0) });
 	}
 
 	const file = label?.split(/\\|\//g).pop();
@@ -1199,6 +1216,8 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.time}>{amiga.blit.BLTSIZH * 16}x{amiga.blit.BLTSIZV}px</dd>
 					<dt className={styles.time}>Blitter Control</dt>
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					<dt className={styles.time}>Minterm</dt>
+					<dd className={styles.time}>${(amiga.blit.BLTCON0 & 0xff).toString(16).padStart(2, '0')} {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<Fragment>
 						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
 						<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga)} 
@@ -1215,6 +1234,8 @@ const Tooltip: FunctionComponent<{
 					{amiga.blit.vposEnd && (<Fragment>
 						<dt className={styles.time}>End</dt>
 						<dd className={styles.time}>Line {amiga.blit.vposEnd}, Color Clock {amiga.blit.hposEnd}, DMA Cycle {amiga.blit.cycleEnd}</dd>
+						<dt className={styles.time}>Duration</dt>
+						<dd className={styles.time}>{amiga.blit.cycleEnd - amiga.blit.cycleStart} DMA Cycles ({formatValue(amiga.blit.cycleEnd - amiga.blit.cycleStart, NR_DMA_REC_HPOS * NR_DMA_REC_VPOS, displayUnit)})</dd>
 					</Fragment>)}
 				</Fragment>)}
 				{isFunction && (<Fragment>

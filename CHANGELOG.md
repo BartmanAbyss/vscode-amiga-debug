@@ -5,6 +5,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.4.4
 - custom registers view: tooltip help for registers
 - Denise emulator for resource viewer (WIP)
+- blitter tooltips show blit duration, minterm
 
 ## 1.4.3
 - savestate profiler: enable "cycle exact" before launching .uss file

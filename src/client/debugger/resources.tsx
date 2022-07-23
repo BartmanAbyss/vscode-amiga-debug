@@ -388,7 +388,7 @@ export const Screen: FunctionComponent<{
 			context.drawImage(canvas.current, snapX(evt.offsetX) - srcWidth / 2, snapY(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
 			context.lineWidth = 2;
 			context.strokeStyle = 'rgba(0,0,0,1)';
-			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale, (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale, zoomCanvasScale * canvasScaleX, zoomCanvasScale * canvasScaleY);
+			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale,     (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale,     zoomCanvasScale * canvasScaleX, zoomCanvasScale * canvasScaleY);
 			context.strokeStyle = 'rgba(255,255,255,1)';
 			context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScaleX + 4, zoomCanvasScale * canvasScaleY + 4);
 			const srcX = Math.floor(evt.offsetX / canvasScaleX);
