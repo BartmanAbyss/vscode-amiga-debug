@@ -267,6 +267,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
+* HAM decoder wrong (see Phenomena - Enigma Fractal part)
 * multiframe profiler, copperlist and copper-timings seem off
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
 * resource viewer for copper bitplanes: high-res also doesn't work (see Workbench)
@@ -276,4 +277,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
 * copper, customregs: wheel over regname doesn't prevent scrolling
-* Denise: blitrects, overdraw, playfields, sprites, more tooltip info, toggle bitmaps/sprites
+* Denise: glitches, blitrects, overdraw, playfields, sprites, more tooltip info, toggle bitmaps/sprites

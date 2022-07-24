@@ -4,7 +4,7 @@
 
 import { Fragment, FunctionComponent, h } from 'preact';
 import { createPortal } from 'preact/compat';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { StateUpdater, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
 import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress, DmaCyclesToCpuCycles } from '../dma';
@@ -324,7 +324,7 @@ export const FlameGraph: FunctionComponent<{
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
 	time;
-	setTime;
+	setTime: StateUpdater<number>;
 }> = ({ frame, data, filter, displayUnit, time, setTime }) => {
 	const vscode = VsCodeApi as IVscodeApi<ISerializedState>;
 	const prevState = vscode.getState();

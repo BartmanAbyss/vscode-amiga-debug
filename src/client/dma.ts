@@ -389,16 +389,25 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 	return insns;
 }
 
+export enum ScreenType {
+	normal,
+	copper,
+	denise,
+	screenshot,
+}
+
 export interface IScreen {
+	type: ScreenType;
 	width: number;
 	height: number;
 	planes: number[];
 	modulos: number[]; // always [2]
 	hires: boolean;
+	ham: boolean;
 }
 
 export function GetScreenFromCopper(copper: Copper[]): IScreen {
-	let planes = [0, 0, 0, 0, 0];
+	let planes = [0, 0, 0, 0, 0, 0, 0, 0];
 	const modulos = [0, 0];
 
 	let BPLCON0 = 0;
@@ -422,6 +431,12 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regBPL4PTL = CustomRegisters.getCustomAddress("BPL4PTL");
 	const regBPL5PTH = CustomRegisters.getCustomAddress("BPL5PTH");
 	const regBPL5PTL = CustomRegisters.getCustomAddress("BPL5PTL");
+	const regBPL6PTH = CustomRegisters.getCustomAddress("BPL6PTH");
+	const regBPL6PTL = CustomRegisters.getCustomAddress("BPL6PTL");
+	const regBPL7PTH = CustomRegisters.getCustomAddress("BPL7PTH");
+	const regBPL7PTL = CustomRegisters.getCustomAddress("BPL7PTL");
+	const regBPL8PTH = CustomRegisters.getCustomAddress("BPL8PTH");
+	const regBPL8PTL = CustomRegisters.getCustomAddress("BPL8PTL");
 	const regDDFSTRT = CustomRegisters.getCustomAddress("DDFSTRT");
 	const regDDFSTOP = CustomRegisters.getCustomAddress("DDFSTOP");
 	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
@@ -446,6 +461,12 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 				case regBPL4PTL: planes[3] = (planes[3] & 0xffff0000) | c.insn.RD; break;
 				case regBPL5PTH: planes[4] = (planes[4] & 0x0000ffff) | (c.insn.RD << 16); break;
 				case regBPL5PTL: planes[4] = (planes[4] & 0xffff0000) | c.insn.RD; break;
+				case regBPL6PTH: planes[5] = (planes[5] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL6PTL: planes[5] = (planes[5] & 0xffff0000) | c.insn.RD; break;
+				case regBPL7PTH: planes[6] = (planes[6] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL7PTL: planes[6] = (planes[6] & 0xffff0000) | c.insn.RD; break;
+				case regBPL8PTH: planes[7] = (planes[7] & 0x0000ffff) | (c.insn.RD << 16); break;
+				case regBPL8PTL: planes[7] = (planes[7] & 0xffff0000) | c.insn.RD; break;
 				case regDDFSTRT: DDFSTRT = c.insn.RD; break;
 				case regDDFSTOP: DDFSTOP = c.insn.RD; break;
 				case regDIWSTRT: DIWSTRT = c.insn.RD; break;
@@ -485,7 +506,8 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		displayStop |= (DIWHIGH >> 13) << 10;
 	}
 
-	const hires = (BPLCON0 & 0x8000) ? true : false;
+	const hires = (BPLCON0 & (1 << 15)) ? true : false;
+	const ham = (BPLCON0 & (1 << 11)) ? true : false;
 	//let fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
 	//if(hires)
 	const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
@@ -500,17 +522,17 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	console.log(`   fetchWidth: ${fetchWidth} displayStart: ${displayStart} displayStop: ${displayStop} displayWidth: ${displayWidth}`);
 	console.log(`   modulos: ${modulos[0]}  ${modulos[1]}`);
 	// adjust for extra fetched data for scrolling
-/*	if(fetchWidth > 384) {
+	if(fetchWidth > 384) { // TEST ONLY
 		modulos[0] += (384 - fetchWidth) >> 4;
 		modulos[1] += (384 - fetchWidth) >> 4;
-	}*/
+	}
 	//modulos[0] += (fetchWidth - displayWidth) >> 4;
 	//modulos[1] += (fetchWidth - displayWidth) >> 4;
 	console.log(`=> modulos: ${modulos[0]}  ${modulos[1]}`);
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
-	return { width: fetchWidth, height: displayHeight, planes, modulos, hires };
+	return { type: ScreenType.copper, width: fetchWidth, height: displayHeight, planes, modulos, hires, ham };
 }
 
 export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScreen {
@@ -533,7 +555,7 @@ export function GetScreenFromBlit(blit: Blit, amiga: IAmigaProfileExtra): IScree
 	const modulo = blit.BLTxMOD[channel] + (numPlanes - 1) * (blit.BLTSIZH * 2 + blit.BLTxMOD[channel]);
 	modulos.push(modulo, modulo);
 
-	return { width, height, planes, modulos, hires: false };
+	return { type: ScreenType.normal, width, height, planes, modulos, hires: false, ham: false };
 }
 
 // returs chipMem after DMA requests up to endCycle
@@ -632,7 +654,7 @@ export const GetColorCss = (color: number): string => '#' + (ColorSwap(color) & 
 // 0RGB
 export const GetAmigaColorCss = (color: number): string => '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
 
-const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color & 0xeee) >>> 1);
+export const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color & 0xeee) >>> 1);
 
 // returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {

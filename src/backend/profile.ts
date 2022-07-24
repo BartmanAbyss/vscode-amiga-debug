@@ -271,6 +271,7 @@ export class ProfileFrame {
 	public idleCycles: number;
 	public profileArray: Uint32Array;
 	public screenshot: Uint8Array;
+	public screenshotType: string; // 'jpg', 'png'
 
 	// CPU cycles per frame: 142102 (according to winuae profiler)
 	//   we get 142094 (8 missing), good enough for now?
@@ -406,6 +407,11 @@ export class ProfileFile {
 				frame.profileArray[i] = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			}
 			const screenshotSize = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			const screenshotType = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			if(screenshotType === 0)
+				frame.screenshotType = 'jpg';
+			else
+				frame.screenshotType = 'png';
 			frame.screenshot = new Uint8Array(buffer.buffer, bufferOffset, screenshotSize); bufferOffset += screenshotSize;
 
 			this.frames.push(frame);
@@ -533,8 +539,8 @@ export class Profiler {
 				pcTrace
 			}
 		};
-		if (frame.screenshot)
-			out.$amiga.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
+		if (frame.screenshot.length)
+			out.$amiga.screenshot = 'data:image/' + frame.screenshotType + ';base64,' + Buffer.from(frame.screenshot).toString('base64');
 		return out;
 	}
 
