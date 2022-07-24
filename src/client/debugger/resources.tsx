@@ -243,7 +243,7 @@ export const Screen: FunctionComponent<{
 								// TODO: HAM8
 								switch(bpldata >> 4) {
 								case 0: // set
-									color = 0xff000000 | customRegs[(regCOLOR00 >>> 1) + (bpldata & 0xf)];
+									color = 0xff000000 | GetAmigaColor(customRegs[(regCOLOR00 >>> 1) + (bpldata & 0xf)]);
 									break;
 								case 1: // modify blue
 									color = (prevColor & ~0xff0000) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 16);
@@ -344,7 +344,7 @@ export const Screen: FunctionComponent<{
 			}
 			context.putImageData(imgData, 0, 0);
 		}
-	}, [canvas.current, scale, screen, mask, frame, time]);
+	}, [canvas.current, scale, screen, palette, mask, frame, time]);
 
 	useEffect(() => { // overdraw
 		if(overlay !== 'overdraw')

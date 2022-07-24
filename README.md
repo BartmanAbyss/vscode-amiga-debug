@@ -267,7 +267,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
-* HAM decoder wrong (see Phenomena - Enigma Fractal part)
 * multiframe profiler, copperlist and copper-timings seem off
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
 * resource viewer for copper bitplanes: high-res also doesn't work (see Workbench)
