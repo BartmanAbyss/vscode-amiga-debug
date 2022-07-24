@@ -298,7 +298,7 @@ export class ProfileFile {
 
 	public frames: ProfileFrame[] = [];
 
-	private static sizeofDmaRec = 31;
+	private static sizeofDmaRec = 42;
 	private static sizeofResource = 52;
 
 	constructor(private filename: string) {

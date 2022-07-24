@@ -263,6 +263,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		else
 			config.set('debugging_trigger', ':' + path.basename(args.program) + ".exe");
 
+		// safety
+		config.delete('statefile');
+
 		// Optional override memory config
 		switch(args.chipmem?.toLowerCase()) {
 		case '256k':

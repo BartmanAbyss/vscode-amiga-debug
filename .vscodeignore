@@ -16,6 +16,8 @@ bin/configuration.*
 bin/*.uae
 bin/*.uss
 bin/*.ini
+bin/*.exp
+bin/*.lib
 **/*.dmp
 template/obj8mingw
 template/obj

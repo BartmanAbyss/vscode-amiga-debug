@@ -35,7 +35,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - WinUAE warp-mode control from your Amiga project (speed up precalc during development)
 - WinUAE debug overlay, full control from your Amiga project
 - Frame Profiler: function-level + DMA cycles profiling (A500, A1200 (PAL) only)
-- Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes, copper list, custom registers
+- Graphics Debugger: replay a captured frame cycle by cycle and watch your bitmaps change in real-time; Visualize all blitter operations, bitmap writes, copper list, custom registers (OCS only)
 - Size Profiler: profile the size of your executable by functions, data and references
 - Shrinkler executable cruncher with size profiling: profile the size of your compressed executable (right-click Amiga EXE files in the explorer)
 - Disassembly: Show disassembly of ELF file incl. 68000 cycle count and correlation with source code (right-click Amiga ELF files in the explorer)
@@ -62,9 +62,9 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - `"A3000"`: A3000 (no profiler support); needs Kickstart 2.0 ROM in `"kickstart"`
   - `"A4000"`: 68030, 68882, 2MB Chip, 8MB FAST; needs Kickstart 3.1 ROM in `"kickstart"`
 - Also, you can override the memory configuration using following fields (values are case-insensitive):
-  - `"chipmem"` - allowed values: "256k", "512k", "1m", "1.5m" or "2m"
-  - `"fastmem"` - allowed values: "0", "64k", "128k", "256k", "512k", "1m", "2m", "4m", "8m"
-  - `"slowmem"` - allowed values: "0", "512k", "1m", "1.8m"
+  - `"chipmem"`: allowed values: "256k", "512k", "1m", "1.5m" or "2m"
+  - `"fastmem"`: allowed values: "0", "64k", "128k", "256k", "512k", "1m", "2m", "4m", "8m"
+  - `"slowmem"`: allowed values: "0", "512k", "1m", "1.8m"
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
@@ -207,6 +207,8 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ## Internal Development
 
+WinUAE builds with Visual Studio 2022.
+
 ### Create new GCC patch
 ```bash
 diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
@@ -225,6 +227,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: code lenses: update when display unit changes, when frame changes
 * "npm run serve": all colors in flame-graph are black
 * stack sizes > 1024 cause UnwindTable to fail parsing
+* TODO: new DMArecord fields (CIA)
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
@@ -276,4 +279,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
 * copper, customregs: wheel over regname doesn't prevent scrolling
-* Denise: glitches, blitrects, overdraw, playfields, sprites, more tooltip info, toggle bitmaps/sprites
+* Denise: glitches, blitrects, overdraw, sprites, more tooltip info, toggle bitmaps/sprites, ECS/AGA
