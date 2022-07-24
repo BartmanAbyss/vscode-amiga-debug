@@ -104,7 +104,9 @@ export const Screen: FunctionComponent<{
 		if(screen.type === ScreenType.denise) {
 			// TODO: this is not time dependent, could be faster during scrubbing!
 
-			// video emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
+			// Dual playfield sample: http://www.powerprograms.nl/downloads/download-dplfb.html
+
+			// Denise emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
 			let shifter = [0, 0, 0, 0, 0, 0, 0, 0];
 			let scroller = [0, 0, 0, 0, 0, 0, 0, 0];
 			const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
@@ -127,6 +129,37 @@ export const Screen: FunctionComponent<{
 			const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT") - 0xdff000;
 			const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP") - 0xdff000;
 			const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
+
+			const regSPR0POS = CustomRegisters.getCustomAddress("SPR0POS") - 0xdff000;
+			const regSPR0CTL = CustomRegisters.getCustomAddress("SPR0CTL") - 0xdff000;
+			const regSPR0DATA = CustomRegisters.getCustomAddress("SPR0DATA") - 0xdff000;
+			const regSPR0DATB = CustomRegisters.getCustomAddress("SPR0DATB") - 0xdff000;
+			const spriteStride = CustomRegisters.getCustomAddress("SPR1POS") - CustomRegisters.getCustomAddress("SPR0POS");
+
+			interface Sprite {
+				armed: boolean;
+				hstart: number;
+				attach: boolean;
+				data: number;
+				datb: number;
+				shifta: number;
+				shiftb: number;
+			}
+
+			const createSprite = (): Sprite => {
+				return {
+					armed: false,
+					hstart: 0,
+					attach: false,
+					data: 0,
+					datb: 0,
+					shifta: 0,
+					shiftb: 0
+				};
+			};
+
+			const sprites = [createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite()];
+
 			const customRegs = MODELS[frame].amiga.customRegs.slice(); // initial copy
 			customRegs[regDMACON >>> 1] = MODELS[frame].amiga.dmacon;
 		
@@ -165,6 +198,27 @@ export const Screen: FunctionComponent<{
 						//if(cycleY === 100) console.log(` **** load scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
 					}
 
+					// sprites
+					for(let i = 0; i < 8; i++) {
+						if(dmaRecord.reg === regSPR0CTL + i * spriteStride) {
+							sprites[i].armed = false;
+							sprites[i].hstart = (dmaRecord.dat & 1) | (sprites[i].hstart & ~1);
+							sprites[i].attach = (dmaRecord.dat & (1 << 7)) ? true : false;
+						} else if(dmaRecord.reg === regSPR0POS + i * spriteStride) {
+							sprites[i].hstart = ((dmaRecord.dat & 0xff) << 1) | (sprites[i].hstart & 1);
+						} else if(dmaRecord.reg === regSPR0DATA + i * spriteStride) {
+							sprites[i].armed = true;
+							sprites[i].data = dmaRecord.dat;
+						} else if(dmaRecord.reg === regSPR0DATB + i * spriteStride) {
+							sprites[i].datb = dmaRecord.dat;
+						}
+
+						if(sprites[i].armed && sprites[i].hstart === hpos) {
+							sprites[i].shifta = sprites[i].data;
+							sprites[i].shiftb = sprites[i].datb;
+						}
+					}
+
 					// hdiwstrt
 					if(dmaRecord.reg === regDIWSTRT)
 						hdiwstrt = dmaRecord.dat & 0xff;
@@ -197,8 +251,15 @@ export const Screen: FunctionComponent<{
 
 						//if(cycleY === 100) console.log(`hpos:${hpos} cycleX:${cycleX} hdiwstrt:${hdiwstrt} hdiwstop:${hdiwstop} window: ${window} scroll_delayed: ${scroll_delayed[0]} ${scroll_delayed[1]}`);
 
+						// shift sprites
+						for(let i = 0; i < 8; i++) {
+							sprites[i].shifta = (sprites[i].shifta << 1) & 0xffff;
+							sprites[i].shiftb = (sprites[i].shiftb << 1) & 0xffff;
+						}
+
 						for(let i = 0; i < 2; i++) {
 							if(hires || i === 0) {
+								// shift bitplanes
 								for(let p = 0; p < 8; p++) {
 									scroller[p] = ((scroller[p] << 1) | (shifter[p] >>> 15)) & 0xffff;
 									shifter[p] = (shifter[p] << 1) & 0xffff;
@@ -237,8 +298,15 @@ export const Screen: FunctionComponent<{
 								}
 							}
 
-							let color = palette[0]; // 0xAABBGGRR
+							// TEST - sprites
+							for(let i = 0; i < 8; i++) {
+								const sprdata = ((sprites[i].shiftb & (1 << 15)) >>> 14) || ((sprites[i].shiftb & (1 << 15)) >>> 15);
+								if(sprdata) {
+									bpldata += 16 + sprdata;
+								}
+							}
 
+							let color = palette[0]; // 0xAABBGGRR
 							if(ham) {
 								// TODO: HAM8
 								switch(bpldata >> 4) {
@@ -271,6 +339,33 @@ export const Screen: FunctionComponent<{
 							}
 						}
 						hpos++;
+					}
+				}
+			}
+			context.putImageData(imgData, 0, 0);
+		} else if(screen.type === ScreenType.sprite) {
+			let addr = screen.planes[0];
+			for(let i = 0; i < 256; i++) { // safety limit
+				const pos = memory.readWord(addr); addr += 2;
+				const ctl = memory.readWord(addr); addr += 2;
+				console.log(`pos:${pos.toString(16).padStart(4, '0')} ctl:${ctl.toString(16).padStart(4, '0')}`);
+				if(pos === 0 && ctl === 0)
+					break;
+
+				const vstart = (pos >>> 8) | ((ctl & (1 << 2)) << (8 - 2));
+				const vstop  = (ctl >>> 8) | ((ctl & (1 << 1)) << (8 - 1));
+				const hstart = ((pos & 0xff) << 1) | (ctl & (1 << 0));
+				console.log(`x:${hstart} y:${vstart}-${vstop} h:${vstop-vstart+1}`);
+
+				for(let y = vstart; y <= vstop; y++) { // why <= ??
+					let data = memory.readWord(addr); addr += 2;
+					let datb = memory.readWord(addr); addr += 2;
+					console.log(`  y:${y} a:${data.toString(16).padStart(4, '0')} b:${datb.toString(16).padStart(4, '0')}`);
+					for(let x = 0; x < 16; x++) {
+						const pixel = (data >>> 15 & 0b01) | ((datb >>> 15) << 1);
+						putPixel(hstart + x - displayLeft, y - displayTop, pixel ? palette[16 + pixel] : 0);
+						data = (data << 1) & 0xffff;
+						datb = (datb << 1) & 0xffff;
 					}
 				}
 			}
@@ -349,7 +444,7 @@ export const Screen: FunctionComponent<{
 	useEffect(() => { // overdraw
 		if(overlay !== 'overdraw')
 			return;
-		if(!screen.planes.length) // don't support Denise emu yet
+		if(screen.type === ScreenType.denise || screen.type === ScreenType.copper)
 			return;
 
 		const context = overdrawCanvas.current?.getContext('2d');
@@ -428,8 +523,7 @@ export const Screen: FunctionComponent<{
 
 		if(overlay !== 'blitrects')
 			return blitRects;
-
-		if(!screen.planes.length) // don't support Denise emu yet
+		if(screen.type === ScreenType.denise || screen.type === ScreenType.copper)
 			return;
 
 		const dmaTime = CpuCyclesToDmaCycles(time);
@@ -482,14 +576,14 @@ export const Screen: FunctionComponent<{
 			x: srcX, 
 			y: srcY, 
 		};
-		if(screen.planes.length) { 
-			zoomInfo.color = getPixel(screen, srcX, srcY);
-			zoomInfo.mask = mask ? getPixel(mask, srcX, srcY) : undefined;
-		} else { // Denise emu
+		if(screen.type === ScreenType.denise) {
 			zoomInfo.hpos = (srcX >> 1) + 2 + displayLeft;
 			zoomInfo.vpos = srcY + displayTop;
 			zoomInfo.line = srcY + displayTop;
 			zoomInfo.cck = (srcX >> 2) + (displayLeft >> 1);
+		} else {
+			zoomInfo.color = getPixel(screen, srcX, srcY);
+			zoomInfo.mask = mask ? getPixel(mask, srcX, srcY) : undefined;
 		}
 		setZoomInfo(zoomInfo);
 
@@ -500,7 +594,7 @@ export const Screen: FunctionComponent<{
 	}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom, time]);
 
 	const onMouseDown = useCallback((evt: MouseEvent) => {
-		if(!useZoom || screen.planes.length)
+		if(!useZoom || screen.type !== ScreenType.denise)
 			return;
 		const srcX = Math.floor(evt.offsetX / canvasScaleX);
 		const srcY = Math.floor(evt.offsetY / canvasScaleY);
@@ -679,6 +773,28 @@ export const GfxResourcesView: FunctionComponent<{
 			};
 			bitmaps.unshift({ resource: copperResource, frame, screen: cs.screen });
 		}
+
+		// TEST: sprite 
+		const spriteResource: GfxResource = {
+			address: 0x1782c,
+			size: 0,
+			name: `*Sprite*`,
+			type: GfxResourceType.sprite,
+			flags: 0,
+			sprite: {
+				index: 0
+			}
+		};
+		const spriteScreen: IScreen = {
+			type: ScreenType.sprite, 
+			width: 384,
+			height: 286,
+			planes: [spriteResource.address],
+			modulos: [],
+			hires: false,
+			ham: false
+		};
+		bitmaps.unshift({ resource: spriteResource, frame, screen: spriteScreen });
 
 		// screen emu
 		const emuResource: GfxResource = {

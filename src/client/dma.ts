@@ -394,6 +394,7 @@ export enum ScreenType {
 	copper,
 	denise,
 	screenshot,
+	sprite,
 }
 
 export interface IScreen {

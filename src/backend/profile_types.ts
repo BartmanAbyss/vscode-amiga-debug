@@ -23,7 +23,8 @@ export interface DmaRecord {
 export enum GfxResourceType {
 	bitmap,
 	palette,
-	copperlist
+	copperlist,
+	sprite,
 }
 
 // needs to match gcc8_c_support.h
@@ -46,5 +47,8 @@ export interface GfxResource {
 	};
 	palette?: {
 		numEntries: number;
+	};
+	sprite?: {
+		index: number;
 	};
 }
