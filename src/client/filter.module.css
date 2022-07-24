@@ -37,4 +37,5 @@
   padding-top: 1px;
   padding-bottom: 1px;
   align-self: stretch;
+  color: var(--vscode-button-foreground);
 }

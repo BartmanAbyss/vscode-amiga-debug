@@ -15,6 +15,8 @@ import { createPortal } from 'preact/compat';
 
 import { DropdownComponent, DropdownOptionProps } from '../dropdown';
 import '../dropdown.css';
+import { ToggleButton } from '../toggle-button';
+import { Filter } from '../filter';
 
 // https://stackoverflow.com/a/54014428
 // input: h in [0,360] and s,v in [0,1] - output: r,g,b in [0,1]
@@ -31,7 +33,7 @@ const displayTop = 28;
 export const Screen: FunctionComponent<{
 	screen: IScreen;
 	mask?: IScreen;
-	palette: number[];
+	palette?: number[];
 	flags?: GfxResourceFlags;
 	scale?: number;
 	useZoom?: boolean;
@@ -39,7 +41,8 @@ export const Screen: FunctionComponent<{
 	time: number;
 	setTime?: StateUpdater<number>;
 	overlay?: string;
-}> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, frame, time, setTime, overlay = '' }) => {
+	showSprites?: boolean;
+}> = ({ screen, mask, palette, flags = 0, scale = 2, useZoom = true, frame, time, setTime, overlay = '', showSprites }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const canvasScaleX = screen.hires ? scale / 2 : scale;
 	const canvasScaleY = screen.type === ScreenType.screenshot ? scale / 2 : scale;
@@ -171,6 +174,7 @@ export const Screen: FunctionComponent<{
 			let prevColor = 0xff000000; // HAM
 			for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
 				for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++) {
+					// this is per 2 lores pixels
 					const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 					if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
 						if(dmaRecord.reg === regDMACON) {
@@ -212,11 +216,6 @@ export const Screen: FunctionComponent<{
 						} else if(dmaRecord.reg === regSPR0DATB + i * spriteStride) {
 							sprites[i].datb = dmaRecord.dat;
 						}
-
-						if(sprites[i].armed && sprites[i].hstart === hpos) {
-							sprites[i].shifta = sprites[i].data;
-							sprites[i].shiftb = sprites[i].datb;
-						}
 					}
 
 					// hdiwstrt
@@ -240,8 +239,9 @@ export const Screen: FunctionComponent<{
 					const dualPlayfield = (customRegs[regBPLCON0 >>> 1] & (1 << 10)) ? true : false;
 					const ehb = numPlanes === 6 && !ham && !dualPlayfield;
 					const playfield2Priority = (customRegs[regBPLCON2 >>> 1] & (1 << 6)) ? true : false;
-					const scroll_delayed = hires? [scroll[0] << 1, scroll[1] << 1] : scroll;
+					const scroll2 = hires ? [scroll[0] << 1, scroll[1] << 1] : scroll;
 
+					// per pixel stuff in here!
 					for(let q = 0; q < 2; q++) {
 						// window
 						if(hpos === hdiwstrt)
@@ -253,9 +253,38 @@ export const Screen: FunctionComponent<{
 
 						// shift sprites
 						for(let i = 0; i < 8; i++) {
-							sprites[i].shifta = (sprites[i].shifta << 1) & 0xffff;
-							sprites[i].shiftb = (sprites[i].shiftb << 1) & 0xffff;
+							if(sprites[i].armed && sprites[i].hstart === hpos) {
+								sprites[i].shifta = sprites[i].data;
+								sprites[i].shiftb = sprites[i].datb;
+							} else {
+								sprites[i].shifta = (sprites[i].shifta << 1) & 0xffff;
+								sprites[i].shiftb = (sprites[i].shiftb << 1) & 0xffff;
+							}
 						}
+
+						// sprite data
+						const nsprite = [0, 0, 0, 0, 0, 0, 0, 0];
+						for(let i = 0; i < 8; i++)
+							nsprite[i] = ((sprites[i].shiftb & (1 << 15)) >>> 14) | ((sprites[i].shifta & (1 << 15)) >>> 15);
+						// sprite priority
+						let sprdata = 0;
+						let sprcode = 7;
+						let sprattach = false;
+						for(let i = 0; i < 8; i += 2) {
+							if(nsprite[i] || nsprite[i + 1]) {
+								if(sprites[i].attach || sprites[i + 1].attach) {
+									sprdata = (nsprite[i + 1] << 2) | nsprite[i];
+									sprattach = true;
+								} else if(nsprite[i])
+									sprdata = nsprite[i];
+								else
+									sprdata = nsprite[i + 1];
+								sprcode = (i >> 1) + 1;
+								break;
+							}
+						}
+						const pf1front = sprcode > (customRegs[regBPLCON2 >>> 1] & 0b111) ? true : false;
+						const pf2front = sprcode > ((customRegs[regBPLCON2 >>> 1] >>> 3) & 0b111) ? true : false;
 
 						for(let i = 0; i < 2; i++) {
 							if(hires || i === 0) {
@@ -274,39 +303,57 @@ export const Screen: FunctionComponent<{
 
 							let bpldata = 0;
 							for(let p = 0; p < numPlanes; p++) {
-								if(scroller[p] & (1 << scroll_delayed[p & 1]))
+								if(scroller[p] & (1 << scroll2[p & 1]))
 									bpldata |= 1 << p;
 							}
 
+							let nplayfield = [false, false];
 							if(dualPlayfield) {
 								const playfield1 = (bpldata & 0b01010101) ? true : false;
 								const playfield2 = (bpldata & 0b10101010) ? true : false;
+								const pfdata = [
+									swizzle(bpldata, 6, 3) | swizzle(bpldata, 4, 2) | swizzle(bpldata, 2, 1) | swizzle(bpldata, 0, 0), 
+									swizzle(bpldata, 7, 2) | swizzle(bpldata, 5, 2) | swizzle(bpldata, 3, 1) | swizzle(bpldata, 1, 0)
+								];
+								nplayfield = [pfdata[0] ? true : false, pfdata[1] ? true : false];
 								if(playfield2Priority) {
 									if(playfield2)
-										bpldata = 0b1000                 | swizzle(bpldata, 5, 2) | swizzle(bpldata, 3, 1) | swizzle(bpldata, 1, 0);
+										bpldata = 0b1000 | pfdata[1];
 									else if(playfield1)
-										bpldata = swizzle(bpldata, 6, 3) | swizzle(bpldata, 4, 2) | swizzle(bpldata, 2, 1) | swizzle(bpldata, 0, 0);
+										bpldata = pfdata[0];
 									else
 										bpldata = 0;
 								} else {
 									if(playfield1)
-										bpldata = swizzle(bpldata, 6, 3) | swizzle(bpldata, 4, 2) | swizzle(bpldata, 2, 1) | swizzle(bpldata, 0, 0);
+										bpldata = pfdata[0];
 									else if(playfield2)
-										bpldata = 0b1000                 | swizzle(bpldata, 5, 2) | swizzle(bpldata, 3, 1) | swizzle(bpldata, 1, 0);
+										bpldata = 0b1000 | pfdata[1];
 									else
 										bpldata = 0;
 								}
+							} else {
+								nplayfield = [false, bpldata ? true : false];
 							}
 
-							// TEST - sprites
-							for(let i = 0; i < 8; i++) {
-								const sprdata = ((sprites[i].shiftb & (1 << 15)) >>> 14) || ((sprites[i].shiftb & (1 << 15)) >>> 15);
-								if(sprdata) {
-									bpldata += 16 + sprdata;
-								}
+							// sprite<->playfields priority
+							let sprsel = false;
+							if(sprcode === 7)
+								sprsel = false;
+							else if(pf1front && nplayfield[0])
+								sprsel = false;
+							else if(pf2front && nplayfield[1])
+								sprsel = false;
+							else
+								sprsel = true;
+
+							if(sprsel && showSprites) {
+								if(sprattach)
+									bpldata = 16 + sprdata;
+								else
+									bpldata = 16 + (sprcode - 1) * 4 + sprdata;
 							}
 
-							let color = palette[0]; // 0xAABBGGRR
+							let color = GetAmigaColor(customRegs[(regCOLOR00 >>> 1)]); // 0xAABBGGRR
 							if(ham) {
 								// TODO: HAM8
 								switch(bpldata >> 4) {
@@ -439,7 +486,7 @@ export const Screen: FunctionComponent<{
 			}
 			context.putImageData(imgData, 0, 0);
 		}
-	}, [canvas.current, scale, screen, palette, mask, frame, time]);
+	}, [canvas.current, scale, screen, palette, mask, frame, time, showSprites]);
 
 	useEffect(() => { // overdraw
 		if(overlay !== 'overdraw')
@@ -775,75 +822,27 @@ export const GfxResourcesView: FunctionComponent<{
 		}
 
 		// TEST: sprite 
-		const spriteResource: GfxResource = {
-			address: 0x1782c,
-			size: 0,
-			name: `*Sprite*`,
-			type: GfxResourceType.sprite,
-			flags: 0,
-			sprite: {
-				index: 0
-			}
-		};
-		const spriteScreen: IScreen = {
-			type: ScreenType.sprite, 
-			width: 384,
-			height: 286,
-			planes: [spriteResource.address],
-			modulos: [],
-			hires: false,
-			ham: false
-		};
-		bitmaps.unshift({ resource: spriteResource, frame, screen: spriteScreen });
-
-		// screen emu
-		const emuResource: GfxResource = {
-			address: 0,
-			size: 0,
-			name: `*Denise*`,
-			type: GfxResourceType.bitmap,
-			flags: 0,
-			bitmap: {
-				width: NR_DMA_REC_HPOS * 4 - displayLeft * 2,
-				height: NR_DMA_REC_VPOS - 1 - displayTop,
-				numPlanes: 0
-			}
-		};
-		const emuScreen: IScreen = {
-			type: ScreenType.denise, 
-			width: emuResource.bitmap.width,
-			height: emuResource.bitmap.height,
-			planes: [],
-			modulos: [],
-			hires: true,
-			ham: false
-		};
-		bitmaps.unshift({ resource: emuResource, frame, screen: emuScreen });
-
-		if(PROFILES[frame].$amiga.screenshot?.length > 22) {
-			// screenshot
-			const screenshotResource: GfxResource = {
-				address: 0,
+		if(process.env.NODE_ENV === 'development') {
+			const spriteResource: GfxResource = {
+				address: 0xb164,
 				size: 0,
-				name: `*Screenshot*`,
-				type: GfxResourceType.bitmap,
+				name: `*Sprite*`,
+				type: GfxResourceType.sprite,
 				flags: 0,
-				bitmap: {
-					width: 752, // from WinUAE code
-					height: 574,
-					numPlanes: 0
+				sprite: {
+					index: 0
 				}
 			};
-			const screenshotScreen: IScreen = {
-				type: ScreenType.screenshot, 
-				width: screenshotResource.bitmap.width,
-				height: screenshotResource.bitmap.height,
-				planes: [],
+			const spriteScreen: IScreen = {
+				type: ScreenType.sprite, 
+				width: 384,
+				height: 286,
+				planes: [spriteResource.address],
 				modulos: [],
-				hires: true,
+				hires: false,
 				ham: false
 			};
-			bitmaps.unshift({ resource: screenshotResource, frame, screen: screenshotScreen });
+			bitmaps.unshift({ resource: spriteResource, frame, screen: spriteScreen });
 		}
 
 		return bitmaps;
@@ -906,7 +905,7 @@ export const GfxResourcesView: FunctionComponent<{
 	const [overlay, setOverlay] = useState(state.overlay);
 	const onChangeOverlay = ({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => { const overlay = currentTarget.value; state.overlay = overlay; setOverlay(overlay); };
 
-	return (<Fragment>
+	return <Fragment>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			Bitmap:&nbsp;
 			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
@@ -922,7 +921,50 @@ export const GfxResourcesView: FunctionComponent<{
 			</select>
 		</div>
 		<div style={{/*overflow: 'auto'*/}}>
-			<Screen frame={frame} time={time} setTime={setTime} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
+			<Screen frame={frame} time={time} setTime={setTime} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} showSprites={true} />
+		</div>
+	</Fragment>;
+};
+
+export const DeniseView: FunctionComponent<{
+	frame: number;
+	time: number;
+	setTime?: StateUpdater<number>;
+}> = ({ frame, time, setTime }) => {
+	const screenDenise = useMemo((): IScreen => {
+		return {
+			type: ScreenType.denise, 
+			width: NR_DMA_REC_HPOS * 4 - displayLeft * 2,
+			height: NR_DMA_REC_VPOS - 1 - displayTop,
+			planes: [],
+			modulos: [],
+			hires: true,
+			ham: false
+		};
+	}, []);
+	const screenScreenshot = useMemo((): IScreen => {
+		return {
+			type: ScreenType.screenshot, 
+			width: 752, // from WinUAE code
+			height: 574,
+			planes: [],
+			modulos: [],
+			hires: true,
+			ham: false
+		};
+	}, [frame]);
+
+	const [sprites, setSprites] = useState(true);
+	const [screenshot, setScreenshot] = useState(false);
+
+	return (<Fragment>
+		<Filter value="Placeholder (WIP)" onChange={(value: string) => { return; }} foot={<Fragment>
+			<ToggleButton icon="Sprites" label="Show Sprites" checked={sprites} onChange={setSprites} />
+			{PROFILES[frame].$amiga.screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={screenshot} onChange={setScreenshot} />}
+			</Fragment>}
+		/>
+		<div style={{/*overflow: 'auto'*/}}>
+			<Screen frame={frame} time={time} setTime={setTime} screen={screenshot ? screenScreenshot : screenDenise} showSprites={sprites} />
 		</div>
 	</Fragment>);
 };

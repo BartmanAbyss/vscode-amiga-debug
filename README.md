@@ -279,4 +279,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
 * copper, customregs: wheel over regname doesn't prevent scrolling
-* Denise: glitches, blitrects, overdraw, sprites, more tooltip info, toggle bitmaps/sprites, ECS/AGA
+* Denise: TODO: glitches, blitrects, overdraw, more tooltip info, toggle bitmaps, ECS/AGA
+* Denise: TODO: show time, dma
+* Denise: sprites (turrican2-level1) 2 pixels too far left
