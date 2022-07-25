@@ -392,8 +392,6 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 export enum ScreenType {
 	normal,
 	copper,
-	denise,
-	screenshot,
 	sprite,
 }
 

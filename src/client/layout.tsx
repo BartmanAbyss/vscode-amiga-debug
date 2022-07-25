@@ -165,7 +165,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 						<DeniseView frame={frame} time={time} setTime={setTime} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.resources ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
-						<GfxResourcesView frame={frame} time={time} setTime={setTime} />
+						<GfxResourcesView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<BlitterList frame={frame} time={time} />

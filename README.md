@@ -281,4 +281,5 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * copper, customregs: wheel over regname doesn't prevent scrolling
 * Denise: TODO: glitches, blitrects, overdraw, more tooltip info, toggle bitmaps, ECS/AGA
 * Denise: TODO: show time, dma
-* Denise: sprites (turrican2-level1) 2 pixels too far left
+* Denise: turrican2-level1.uss: sprites 2 pixels too far left
+* Denise: turrican2-intro.uss: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
