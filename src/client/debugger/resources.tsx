@@ -1,5 +1,5 @@
 import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
-import { StateUpdater, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { Ref, StateUpdater, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './resources.module.css';
 
@@ -30,6 +30,105 @@ function hsl2rgb(h: number, s: number, l: number) {
 const displayLeft = 92;
 const displayTop = 28;
 
+interface ZoomInfo {
+	x?: number;
+	y?: number;
+	color?: number;
+	mask?: number;
+	// denise
+	hpos?: number;
+	vpos?: number;
+	// agnus
+	line?: number;
+	cck?: number;
+}
+
+const ZoomCanvas: FunctionComponent<{
+	canvas: Ref<HTMLCanvasElement>;
+	scale: number;
+	width: number;
+	height: number;
+	onGetInfo: (x: number, y: number) => ZoomInfo;
+	onClick?: (x: number, y: number) => void;
+}> = ({ canvas, scale, width, height, onGetInfo, onClick }) => {
+	const zoomDiv = useRef<HTMLDivElement>();
+	const zoomCanvas = useRef<HTMLCanvasElement>();
+
+	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
+
+	// install mouse handlers
+	useEffect(() => {
+		if(!canvas.current)
+			return;
+
+		const canvasScaleX = parseInt(canvas.current.getAttribute('data-canvasScaleX'));
+		const canvasScaleY = parseInt(canvas.current.getAttribute('data-canvasScaleY'));
+
+		const onMouseMove = (evt: MouseEvent) => {
+			const snapX = (p: number) => Math.floor(p / canvasScaleX) * canvasScaleX;
+			const snapY = (p: number) => Math.floor(p / canvasScaleY) * canvasScaleY;
+			const context = zoomCanvas.current?.getContext('2d');
+			context.imageSmoothingEnabled = false;
+			context.clearRect(0, 0, width, height);
+			const srcWidth = width / scale;
+			const srcHeight = height / scale;
+			context.drawImage(canvas.current, snapX(evt.offsetX) - srcWidth / 2, snapY(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, width, height);
+			context.lineWidth = 2;
+			context.strokeStyle = 'rgba(0,0,0,1)';
+			context.strokeRect((width - scale * canvasScaleX) / 2 + scale,     (height - scale * canvasScaleY) / 2 + scale,     scale * canvasScaleX, scale * canvasScaleY);
+			context.strokeStyle = 'rgba(255,255,255,1)';
+			context.strokeRect((width - scale * canvasScaleX) / 2 + scale - 2, (height - scale * canvasScaleY) / 2 + scale - 2, scale * canvasScaleX + 4, scale * canvasScaleY + 4);
+			const srcX = Math.floor(evt.offsetX / canvasScaleX);
+			const srcY = Math.floor(evt.offsetY / canvasScaleY);
+			setZoomInfo(onGetInfo(srcX, srcY));
+			// position zoomCanvas
+			zoomDiv.current.style.top = `${snapY(evt.offsetY) + 10}px`;
+			zoomDiv.current.style.left = `${snapX(evt.offsetX) + 10}px`;
+			zoomDiv.current.style.display = 'block';
+		};
+
+		const onMouseDown = (evt: MouseEvent) => {
+			const srcX = Math.floor(evt.offsetX / canvasScaleX);
+			const srcY = Math.floor(evt.offsetY / canvasScaleY);
+			onClick?.(srcX, srcY);
+		};
+	
+		const onMouseLeave = (evt: MouseEvent) => {
+			zoomDiv.current.style.display = 'none';
+		};
+
+		canvas.current.onmousemove = onMouseMove;
+		canvas.current.onmousedown = onMouseDown;
+		canvas.current.onmouseleave = onMouseLeave;
+	}, [canvas, onGetInfo, onClick]);
+
+	return <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
+		<canvas ref={zoomCanvas} width={width} height={height} />
+		{zoomInfo.x !== undefined && <div>
+			<dl>
+				<dt>Pos</dt>
+				<dd>X:{zoomInfo.x} Y:{zoomInfo.y}</dd>
+				{zoomInfo.color !== undefined && <Fragment>
+					<dt>Color</dt>
+					<dd>{zoomInfo.color} ${zoomInfo.color.toString(16).padStart(2, '0')} %{zoomInfo.color.toString(2).padStart(/*screen.planes.length*/8, '0')}</dd>
+					{zoomInfo.mask !== undefined && <Fragment>
+						<dt>Mask</dt>
+						<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(/*mask.planes.length*/8, '0')}</dd>
+					</Fragment>}
+				</Fragment>}
+				{zoomInfo.hpos !== undefined && <Fragment>
+					<dt>Denise</dt>
+					<dd>H:{zoomInfo.hpos} V:{zoomInfo.vpos}</dd>
+				</Fragment>}
+				{zoomInfo.line !== undefined && <Fragment>
+					<dt>Agnus</dt>
+					<dd>Line:{zoomInfo.line} CCK:{zoomInfo.cck}</dd>
+				</Fragment>}
+			</dl>
+		</div>}
+	</div>;
+};
+
 export const Screen: FunctionComponent<{
 	screen: IScreen;
 	mask?: IScreen;
@@ -49,8 +148,6 @@ export const Screen: FunctionComponent<{
 	const canvasWidth = screen.width * canvasScaleX;
 	const canvasHeight = screen.height * canvasScaleY;
 
-	const zoomDiv = useRef<HTMLDivElement>();
-	const zoomCanvas = useRef<HTMLCanvasElement>();
 	const zoomCanvasScale = 8;
 	const zoomCanvasWidth = 144;
 	const zoomCanvasHeight = 144;
@@ -64,20 +161,6 @@ export const Screen: FunctionComponent<{
 		height: number;
 		active: boolean;
 	}
-
-	interface ZoomInfo {
-		x?: number;
-		y?: number;
-		color?: number;
-		mask?: number;
-		// denise
-		hpos?: number;
-		vpos?: number;
-		// agnus
-		line?: number;
-		cck?: number;
-	}
-	const [zoomInfo, setZoomInfo] = useState<ZoomInfo>({});
 
 	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time)), [time, frame]);
 
@@ -111,7 +194,7 @@ export const Screen: FunctionComponent<{
 
 			// Denise emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
 			let shifter = [0, 0, 0, 0, 0, 0, 0, 0];
-			let scroller = [0, 0, 0, 0, 0, 0, 0, 0];
+			const scroller = [0, 0, 0, 0, 0, 0, 0, 0];
 			const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
 			const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
 			const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
@@ -395,19 +478,19 @@ export const Screen: FunctionComponent<{
 			for(let i = 0; i < 256; i++) { // safety limit
 				const pos = memory.readWord(addr); addr += 2;
 				const ctl = memory.readWord(addr); addr += 2;
-				console.log(`pos:${pos.toString(16).padStart(4, '0')} ctl:${ctl.toString(16).padStart(4, '0')}`);
+				//console.log(`pos:${pos.toString(16).padStart(4, '0')} ctl:${ctl.toString(16).padStart(4, '0')}`);
 				if(pos === 0 && ctl === 0)
 					break;
 
 				const vstart = (pos >>> 8) | ((ctl & (1 << 2)) << (8 - 2));
 				const vstop  = (ctl >>> 8) | ((ctl & (1 << 1)) << (8 - 1));
 				const hstart = ((pos & 0xff) << 1) | (ctl & (1 << 0));
-				console.log(`x:${hstart} y:${vstart}-${vstop} h:${vstop-vstart+1}`);
+				//console.log(`x:${hstart} y:${vstart}-${vstop} h:${vstop-vstart+1}`);
 
 				for(let y = vstart; y <= vstop; y++) { // why <= ??
 					let data = memory.readWord(addr); addr += 2;
 					let datb = memory.readWord(addr); addr += 2;
-					console.log(`  y:${y} a:${data.toString(16).padStart(4, '0')} b:${datb.toString(16).padStart(4, '0')}`);
+					//console.log(`  y:${y} a:${data.toString(16).padStart(4, '0')} b:${datb.toString(16).padStart(4, '0')}`);
 					for(let x = 0; x < 16; x++) {
 						const pixel = (data >>> 15 & 0b01) | ((datb >>> 15) << 1);
 						putPixel(hstart + x - displayLeft, y - displayTop, pixel ? palette[16 + pixel] : 0);
@@ -421,7 +504,7 @@ export const Screen: FunctionComponent<{
 			if(PROFILES[frame].$amiga.screenshot) {
 				const img = new Image();
 				img.onload = () => {
-					console.log(`${img.width}x${img.height}`);
+					//console.log(`${img.width}x${img.height}`);
 					context.drawImage(img, 0, 0, img.width * canvasScaleX, img.height * canvasScaleY);
 				};
 				img.src = PROFILES[frame].$amiga.screenshot;
@@ -601,95 +684,42 @@ export const Screen: FunctionComponent<{
 		return blitRects;
 	}, [screen, frame, time, overlay]);
 
-	const onMouseMove = useCallback((evt: MouseEvent) => {
-		if (!useZoom)
-			return;
-		const snapX = (p: number) => Math.floor(p / canvasScaleX) * canvasScaleX;
-		const snapY = (p: number) => Math.floor(p / canvasScaleY) * canvasScaleY;
-		const context = zoomCanvas.current?.getContext('2d');
-		context.imageSmoothingEnabled = false;
-		context.clearRect(0, 0, zoomCanvasWidth, zoomCanvasHeight);
-		const srcWidth = zoomCanvasWidth / zoomCanvasScale;
-		const srcHeight = zoomCanvasHeight / zoomCanvasScale;
-		context.drawImage(canvas.current, snapX(evt.offsetX) - srcWidth / 2, snapY(evt.offsetY) - srcHeight / 2, srcWidth, srcHeight, 0, 0, zoomCanvasWidth, zoomCanvasHeight);
-		context.lineWidth = 2;
-		context.strokeStyle = 'rgba(0,0,0,1)';
-		context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale,     (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale,     zoomCanvasScale * canvasScaleX, zoomCanvasScale * canvasScaleY);
-		context.strokeStyle = 'rgba(255,255,255,1)';
-		context.strokeRect((zoomCanvasWidth - zoomCanvasScale * canvasScaleX) / 2 + zoomCanvasScale - 2, (zoomCanvasHeight - zoomCanvasScale * canvasScaleY) / 2 + zoomCanvasScale - 2, zoomCanvasScale * canvasScaleX + 4, zoomCanvasScale * canvasScaleY + 4);
-		const srcX = Math.floor(evt.offsetX / canvasScaleX);
-		const srcY = Math.floor(evt.offsetY / canvasScaleY);
+	// zoom
+	const zoomCallback = useCallback((x: number, y: number): ZoomInfo => {
 		const zoomInfo: ZoomInfo = { 
-			x: srcX, 
-			y: srcY, 
+			x, 
+			y, 
 		};
 		if(screen.type === ScreenType.denise) {
-			zoomInfo.hpos = (srcX >> 1) + 2 + displayLeft;
-			zoomInfo.vpos = srcY + displayTop;
-			zoomInfo.line = srcY + displayTop;
-			zoomInfo.cck = (srcX >> 2) + (displayLeft >> 1);
+			zoomInfo.hpos = (x >> 1) + 2 + displayLeft;
+			zoomInfo.vpos = y + displayTop;
+			zoomInfo.line = y + displayTop;
+			zoomInfo.cck = (x >> 2) + (displayLeft >> 1);
 		} else {
-			zoomInfo.color = getPixel(screen, srcX, srcY);
-			zoomInfo.mask = mask ? getPixel(mask, srcX, srcY) : undefined;
+			zoomInfo.color = getPixel(screen, x, y);
+			zoomInfo.mask = mask ? getPixel(mask, x, y) : undefined;
 		}
-		setZoomInfo(zoomInfo);
+		return zoomInfo;
+	}, [screen, getPixel]);
 
-		// position zoomCanvas
-		zoomDiv.current.style.top = `${snapY(evt.offsetY) + 10}px`;
-		zoomDiv.current.style.left = `${snapX(evt.offsetX) + 10}px`;
-		zoomDiv.current.style.display = 'block';
-	}, [canvas.current, zoomCanvas.current, scale, screen, mask, useZoom, time]);
-
-	const onMouseDown = useCallback((evt: MouseEvent) => {
-		if(!useZoom || screen.type !== ScreenType.denise)
-			return;
-		const srcX = Math.floor(evt.offsetX / canvasScaleX);
-		const srcY = Math.floor(evt.offsetY / canvasScaleY);
-		const line = srcY + displayTop;
-		const cck = (srcX >> 2) + (displayLeft >> 1);
-		const time = line * NR_DMA_REC_HPOS + cck;
-		setTime(DmaCyclesToCpuCycles(time));
-	}, [scale, screen, useZoom, setTime]);
-
-	const onMouseLeave = useCallback((evt: MouseEvent) => {
-		if (!useZoom)
-			return;
-		zoomDiv.current.style.display = 'none';
-	}, [useZoom, zoomDiv.current]);
+	const zoomClick = useCallback((x: number, y: number) => {
+		if(screen.type === ScreenType.denise) {
+			const line = y + displayTop;
+			const cck = (x >> 2) + (displayLeft >> 1);
+			const time = line * NR_DMA_REC_HPOS + cck;
+			setTime(DmaCyclesToCpuCycles(time));
+		}
+	}, [screen, setTime]);
 
 	return <Fragment>
 		<div class={styles.screen}>
-			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} onMouseDown={onMouseDown} />
+			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{overlay === 'overdraw' && <canvas class={styles.overdraw_canvas} ref={overdrawCanvas} width={canvasWidth} height={canvasHeight} />}
 			{blitRects.map((blitRect) =>
 				<div class={blitRect.active ? styles.blitrect_active : styles.blitrect}
 					style={{ left: blitRect.left * canvasScaleX, top: blitRect.top * canvasScaleY, width: blitRect.width * canvasScaleX, height: blitRect.height * canvasScaleY }} />
 			)}
-			{useZoom && <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
-				<canvas ref={zoomCanvas} width={zoomCanvasWidth} height={zoomCanvasHeight} />
-				{zoomInfo.x !== undefined && <div>
-					<dl>
-						<dt>Pos</dt>
-						<dd>X:{zoomInfo.x} Y:{zoomInfo.y}</dd>
-						{zoomInfo.color !== undefined && <Fragment>
-							<dt>Color</dt>
-							<dd>{zoomInfo.color} ${zoomInfo.color.toString(16).padStart(2, '0')} %{zoomInfo.color.toString(2).padStart(screen.planes.length, '0')}</dd>
-							{mask !== undefined && zoomInfo.mask !== undefined && <Fragment>
-								<dt>Mask</dt>
-								<dd>{zoomInfo.mask} ${zoomInfo.mask.toString(16).padStart(2, '0')} %{zoomInfo.mask.toString(2).padStart(mask.planes.length, '0')}</dd>
-							</Fragment>}
-						</Fragment>}
-						{zoomInfo.hpos !== undefined && <Fragment>
-							<dt>Denise</dt>
-							<dd>H:{zoomInfo.hpos} V:{zoomInfo.vpos}</dd>
-						</Fragment>}
-						{zoomInfo.line !== undefined && <Fragment>
-							<dt>Agnus</dt>
-							<dd>Line:{zoomInfo.line} CCK:{zoomInfo.cck}</dd>
-						</Fragment>}
-					</dl>
-				</div>}
-			</div>}
+			{useZoom && <ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} onGetInfo={zoomCallback} onClick={zoomClick} />}
 		</div>
 	</Fragment>;
 };
