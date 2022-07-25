@@ -381,7 +381,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				startupSequence += `cd dh1:\n${config.get('debugging_trigger')}\n`;
 
 			// memory leak check
-			startupSequence = 'avail\n' + startupSequence + 'avail\n';
+			//startupSequence = 'avail\n' + startupSequence + 'avail\n';
 
 			// write startup-sequence
 			fs.writeFileSync(ssPath, startupSequence);

@@ -9,6 +9,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - Profiler saves screenshots even for single-frame profiles (PNG, better quality)
 - Fix screenshot delay (screenshots were always one frame too old)
 - updated to latest WinUAE. fixes sprite DMA not showing SPRxDATA, SPRxDATB
+- removed `avail` in startup-sequence (commited by mistake)
 
 ## 1.4.3
 - savestate profiler: enable "cycle exact" before launching .uss file
