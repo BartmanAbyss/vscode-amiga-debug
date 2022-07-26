@@ -103,40 +103,6 @@
 	pointer-events: none;	
 }
 
-.zoom {
-	position: absolute;
-	box-shadow: 0 0 1em 0 black;
-	background: var(--vscode-editor-background);
-}
-
-.zoom canvas {
-	background-image: linear-gradient(45deg, var(--stripe1) 25%, var(--stripe2) 25%, var(--stripe2) 50%, var(--stripe1) 50%, var(--stripe1) 75%, var(--stripe2) 75%, var(--stripe2));
-	background-size: 30px 30px;
-}
-
-.zoom div {
-	margin-left: 6px;
-	margin-right: 6px;
-	margin-bottom: 3px;
-}
-
-.zoom dl {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	grid-row-gap: 0.4em;
-}
-  
-.zoom dd {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-  
-.zoom dt {
-	font-weight: bold;
-	margin-right: 0.5em;
-}
-
 @keyframes fade { 
 	0%   { opacity: 1; }
 	50%  { opacity: 0.6; }

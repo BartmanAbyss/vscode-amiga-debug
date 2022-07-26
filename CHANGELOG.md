@@ -4,7 +4,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 
 ## 1.4.4
 - custom registers view: tooltip help for registers
-- Denise emulator for resource viewer (WIP), click in screen to set time
+- Denise emulator ("Screen (Beta)" tab), enable/disable specific bitplanes, sprites, with DMA overlay; click in screen to set time
 - blitter tooltips show blit duration, minterm
 - Profiler saves screenshots even for single-frame profiles (PNG, better quality)
 - Fix screenshot delay (screenshots were always one frame too old)

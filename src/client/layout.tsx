@@ -26,7 +26,8 @@ import { FlameGraph, Constants as FlameConstants } from './flame/flame-graph';
 import { TimeView } from './table/time-view';
 import { createTopDownGraph } from './table/topDownGraph';
 import { buildColumns } from './flame/stacks';
-import { DeniseView, GfxResourcesView } from './debugger/resources';
+import { GfxResourcesView } from './debugger/resources';
+import { DeniseView } from "./debugger/screen";
 import { CustomRegsView } from './debugger/customregs';
 
 import 'pubsub-js';
@@ -151,7 +152,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 					<TabList>
 						<Tab>Profiler</Tab>
 						<Tab>Assembly</Tab>
-						<Tab>Screen</Tab>
+						<Tab>Screen (Beta)</Tab>
 						<Tab>Resources</Tab>
 						<Tab>Blitter</Tab>
 					</TabList>
@@ -161,7 +162,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 					<TabPanel style={leftTab === LeftTab.assembly ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<ObjdumpView frame={frame} time={time} />
 					</TabPanel>
-					<TabPanel style={leftTab === LeftTab.screen ? { overflow: 'hidden' /*, flexGrow: 1, display: 'flex', flexDirection: 'column'*/ } : {}}>
+					<TabPanel style={leftTab === LeftTab.screen ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<DeniseView frame={frame} time={time} setTime={setTime} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.resources ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>

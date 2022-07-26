@@ -62,6 +62,12 @@ export interface DmaType {
 export const NR_DMA_REC_HPOS = 227;
 export const NR_DMA_REC_VPOS = 313;
 
+// measured in resource viewer
+export const displayLeft = 92;
+export const displayTop = 28;
+export const displayWidth = NR_DMA_REC_HPOS * 4 - displayLeft * 2;
+export const displayHeight = NR_DMA_REC_VPOS - 1 - displayTop;
+
 // WinUAE: include/debug.h
 export namespace DmaEvents {
 	export const BLITIRQ = 1;
