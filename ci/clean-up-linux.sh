@@ -6,4 +6,3 @@ set -x
 cd output
 rm -r include
 rm -r share
-find . -type f -exec strip {} \;
