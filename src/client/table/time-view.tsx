@@ -243,7 +243,7 @@ export const TimeView: FunctionComponent<{
 	);
 
 	return (
-		<Fragment>
+		<>
 			<TimeViewHeader sortFn={sortFn} onChangeSort={setSort} displayUnit={displayUnit} shrinkler={data[0].origAggregateTime > 0} />
 			<VirtualList
 				ref={listRef}
@@ -253,7 +253,7 @@ export const TimeView: FunctionComponent<{
 				rowHeight={20}
 				overscanCount={10}
 			/>
-		</Fragment>
+		</>
 	);
 };
 

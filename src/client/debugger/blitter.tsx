@@ -106,13 +106,13 @@ export const BlitterVis: FunctionComponent<{
 	}, [blit, time, frame, canvas[0].current, canvas[1].current, canvas[2].current, canvas[3].current]);
 
 	return (
-		<Fragment>
+		<>
 			L{blit.vposStart.toString().padStart(3, '0')}C{blit.hposStart.toString().padStart(3, '0')}:
 			<span style={{ display: (blit.BLTCON0 & (1 << 11)) ? 'inline' : 'none', paddingLeft: '20px' }}>A <canvas ref={canvas[0]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
 			<span style={{ display: (blit.BLTCON0 & (1 << 10)) ? 'inline' : 'none', paddingLeft: '20px' }}>B <canvas ref={canvas[1]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
 			<span style={{ display: (blit.BLTCON0 & (1 <<  9)) ? 'inline' : 'none', paddingLeft: '20px' }}>C <canvas ref={canvas[2]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
 			<span style={{ display: (blit.BLTCON0 & (1 <<  8)) ? 'inline' : 'none', paddingLeft: '20px' }}>D <canvas ref={canvas[3]} width={canvasWidth} height={canvasHeight} style={{ paddingTop: '2px' }} /></span>
-		</Fragment>
+		</>
 	);
 };
 

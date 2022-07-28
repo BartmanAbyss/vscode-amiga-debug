@@ -52,7 +52,7 @@ export const MemoryView: FunctionComponent<{
 		context.putImageData(imgData, 0, 0);
 	}, [canvas.current, pixels]);
 
-	return <Fragment>
+	return <>
 		<div style={{ flexGrow: 0 }}>
 			<div>Persistence</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setPersistence(parseInt(currentTarget.value))} />
 		</div>
@@ -60,5 +60,5 @@ export const MemoryView: FunctionComponent<{
 		<div style={{ /*overflow: 'auto'*/ }}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} style={{background: '#000'}} />
 		</div>
-	</Fragment>;
+	</>;
 };

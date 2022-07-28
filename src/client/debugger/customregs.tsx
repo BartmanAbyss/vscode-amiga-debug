@@ -107,7 +107,7 @@ export const CustomRegsView: FunctionComponent<{
 		return true;
 	};
 
-	return <Fragment>
+	return <>
 		<div class={styles.container}>
 			{customRegs.map((c, index) => wantCustom(index) ? renderReg(index) : '')}
 		</div>
@@ -117,5 +117,5 @@ export const CustomRegsView: FunctionComponent<{
 					<Markdown>{hovered.markdown}</Markdown>
 				</div>
 			</div>, document.body))}
-	</Fragment>;
+	</>;
 };

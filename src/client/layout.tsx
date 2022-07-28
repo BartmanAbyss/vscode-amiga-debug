@@ -121,8 +121,8 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	}, []);
 
 	return (
-		<Fragment>
-			{PROFILES[0].$amiga && PROFILES.length > 1 && <Fragment>
+		<>
+			{PROFILES[0].$amiga && PROFILES.length > 1 && <>
 				<div class={styles.frames}>
 					{PROFILES.map((PROFILE, fr) => <div class={styles.frame}>
 						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent') }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
@@ -134,15 +134,15 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 				<div class={styles.tooltip} style={{left: 50, top: 100, visibility: 'hidden'}}>
 					<img ref={frameHover} />
 				</div>
-			</Fragment>}
+			</>}
 			<div className={styles.filter}>
 				<div className={styles.f}>
 					<Filter value={text} placeholder="Filter functions or files" onChange={setFilter}
-						foot={<Fragment>
+						foot={<>
 							<ToggleButton icon={CaseSensitive} label="Match Case" checked={caseSensitive} onChange={setCaseSensitive} />
 							<ToggleButton icon={Regex} label="Use Regular Expression" checked={regex} onChange={setRegex} />
 							<UnitSelect value={displayUnit} type={MODELS[0].amiga ? DisplayUnitType.Time : DisplayUnitType.Size} onChange={setDisplayUnit} />
-						</Fragment>}
+						</>}
 					/>
 				</div>
 			</div>
@@ -194,6 +194,6 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 			: <div class={styles.rows}>
 				<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 			</div>}
-		</Fragment>
+		</>
 	);
 };

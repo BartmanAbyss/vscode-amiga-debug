@@ -358,20 +358,20 @@ export const ObjdumpView: FunctionComponent<{
 		const text = (find.internal && findResult.length > 0) 
 		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
 		: (c.opcode 
-			? <Fragment>
+			? <>
 				<span>{c.pc.toString(16).padStart(8, ' ')}: </span>
 				<span class={styles.opcode} data={c.opcode} onMouseEnter={onMouseEnterOpcode} onMouseLeave={onMouseLeaveOpcode} onWheel={onWheelOpcode}>{c.opcode}</span>
 				<span>{' '.repeat(Math.max(0, 7 - c.opcode.length))} {c.rest}</span>
-			</Fragment> 
+			</> 
 			: c.text);
 
 		return (c.pc === undefined
 		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
 		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
-			<div class={styles.duration}>{frame !== -1 ? <Fragment>
+			<div class={styles.duration}>{frame !== -1 ? <>
 					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
-				</Fragment> : ''}
+				</> : ''}
 				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>
 			{text}
@@ -403,11 +403,11 @@ export const ObjdumpView: FunctionComponent<{
 				}
 			}/* else {
 				// debug
-				return <Fragment>
+				return <>
 					<text transform={`translate(${Math.max(15, indent + 2)}, ${((0) * rowHeight + rowMiddle)})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
 					<text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
 					<text transform={`translate(${Math.max(15, indent + 2)}, ${end * rowHeight})`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{jump.level}</text>
-				</Fragment>;
+				</>;
 			}*/
 			return '';
 		})();
@@ -425,7 +425,7 @@ export const ObjdumpView: FunctionComponent<{
 					const y2 = endY < y ? endY + rowHeight - 5 : endY - rowHeight + 5;
 					const d = endY > y ? 1 : -1;
 					const left = 5;
-					return <Fragment>
+					return <>
 						<g transform="translate(0.5,0.5)">
 							<polyline points={`${right},${y} ${left},${y} ${left},${y1-5*d}`} fill="none" />
 							<polyline points={`${left},${y2+5*d} ${left},${endY} ${right - 4},${endY}`} fill="none" />
@@ -436,7 +436,7 @@ export const ObjdumpView: FunctionComponent<{
 							<path d={`M${left-2},${y2+2*d} l2,${2*d} l2,${-2*d}`} fill="none" />
 							<path d={`M${left-2},${y2+0*d} l2,${2*d} l2,${-2*d}`} fill="none" />
 						</g>
-					</Fragment>;
+					</>;
 				}
 			})}
 			<path transform="translate(0,0.5)"  d={`M${right},${endY} l-4,-4 l0,8 z`} stroke="none" />
@@ -635,7 +635,7 @@ export const ObjdumpView: FunctionComponent<{
 		setFind({ text: '', internal: true });
 	}, [findRef]);
 	
-	return <Fragment>
+	return <>
 		<div class={styles.wrapper}>
 			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
 				<input placeholder="Find" onClick={onFindClick} onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
@@ -654,5 +654,5 @@ export const ObjdumpView: FunctionComponent<{
 					<Markdown>{hovered.markdown}</Markdown>
 				</div>
 			</div>, document.body))}
-	</Fragment>;
+	</>;
 };

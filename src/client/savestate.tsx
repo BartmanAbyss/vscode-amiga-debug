@@ -62,7 +62,7 @@ export const SavestateView: FunctionComponent<{}> = (_) => {
 	}, []);
 
 	return (
-		<Fragment>
+		<>
 			<div class={styles.container}>
 			<div>
 				<button class={styles.button} onMouseDown={onClickStart} disabled={running === true} type="button" title="Start" dangerouslySetInnerHTML={{__html: DebugStart}} />
@@ -81,6 +81,6 @@ export const SavestateView: FunctionComponent<{}> = (_) => {
 				</dl>
 			</div>
 			</div>
-		</Fragment>
+		</>
 	);
 };

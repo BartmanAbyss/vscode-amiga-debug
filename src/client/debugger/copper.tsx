@@ -74,10 +74,10 @@ export const CopperView: FunctionComponent<{
 		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
-			{c.insn.instructionType === CopperInstructionType.MOVE ? <Fragment>
+			{c.insn.instructionType === CopperInstructionType.MOVE ? <>
 				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = ${(c.insn as CopperMove).RD.toString(16).padStart(4, '0')}
 				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
-			</Fragment> : c.insn.toString()}
+			</> : c.insn.toString()}
 		</div>)}
 		{hovered.index !== -1 && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>

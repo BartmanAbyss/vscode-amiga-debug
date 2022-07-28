@@ -38,14 +38,14 @@ const ScreenZoomInfo: FunctionComponent<ScreenZoomProps> = (props: ScreenZoomPro
 			<dl>
 				<dt>Pos</dt>
 				<dd>X:{props.x} Y:{props.y}</dd>
-				{color !== undefined && <Fragment>
+				{color !== undefined && <>
 					<dt>Color</dt>
 					<dd>{color} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(props.screen.planes.length, '0')}</dd>
-					{mask !== undefined && <Fragment>
+					{mask !== undefined && <>
 						<dt>Mask</dt>
 						<dd>{mask} ${mask.toString(16).padStart(2, '0')} %{mask.toString(2).padStart(props.mask.planes.length, '0')}</dd>
-					</Fragment>}
-				</Fragment>}
+					</>}
+				</>}
 			</dl>
 		</div>;
 	}
@@ -306,7 +306,7 @@ export const Screen: FunctionComponent<{
 		return blitRects;
 	}, [screen, frame, time, overlay]);
 
-	return <Fragment>
+	return <>
 		<div class={styles.screen}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{overlay === 'overdraw' && <canvas class={styles.overdraw_canvas} ref={overdrawCanvas} width={canvasWidth} height={canvasHeight} />}
@@ -316,7 +316,7 @@ export const Screen: FunctionComponent<{
 			)}
 			{useZoom && <ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} ZoomInfo={ScreenZoomInfo} zoomExtraProps={{ screen, mask, getPixel }} />}
 		</div>
-	</Fragment>;
+	</>;
 };
 
 interface GfxResourceWithPayload {
@@ -340,22 +340,22 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 		setHover({ x: -1, y: -1 });
 	};
 
-	return (<Fragment>
+	return (<>
 		<div class={placeholder ? styles.gfxresource_brief : styles.gfxresource} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
 			<dt>{resource.name}</dt>
 			<dd>
-				{resource.type === GfxResourceType.bitmap && (<Fragment>
+				{resource.type === GfxResourceType.bitmap && (<>
 					{resource.bitmap.width}x{resource.bitmap.height}x{resource.bitmap.numPlanes}
 					&nbsp;
 					{resource.flags & GfxResourceFlags.bitmap_interleaved ? 'I' : ''}
 					{resource.flags & GfxResourceFlags.bitmap_masked ? 'M' : ''}
 					{resource.flags & GfxResourceFlags.bitmap_ham ? 'H' : ''}
-				</Fragment>)}
-				{resource.type === GfxResourceType.palette && (<Fragment>
+				</>)}
+				{resource.type === GfxResourceType.palette && (<>
 					<div class={styles.palette}>
 						{option.palette.slice(0, option.palette.length >>> 1).map((p) => <div style={{ backgroundColor: GetColorCss(p) }} />)}
 					</div>
-				</Fragment>)}
+				</>)}
 			</dd>
 			<dd class={styles.right}>{resource.size ? (resource.size.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'b') : ''}</dd>
 			<dd class={styles.fixed}>{resource.address ? ('$' + resource.address.toString(16).padStart(8, '0')) : ''}</dd>
@@ -363,7 +363,7 @@ const GfxResourceItem: FunctionComponent<DropdownOptionProps<GfxResourceWithPayl
 		{(!placeholder && hover.x >= 0 && resource.type === GfxResourceType.bitmap) && createPortal(<div class={styles.tooltip} style={{ lineHeight: 0, left: hover.x, top: hover.y, bottom: 'initial' }}>
 			<Screen screen={option.screen} palette={GetPaletteFromCustomRegs(new Uint16Array(MODELS[option.frame].amiga.customRegs))} flags={option.resource.flags} scale={1} useZoom={false} time={0} frame={option.frame} />
 		</div>, document.body)}
-	</Fragment>);
+	</>);
 };
 
 // do not move into 'CopperList' otherwise the Dropdown will be recreated on every render
@@ -529,7 +529,7 @@ export const GfxResourcesView: FunctionComponent<{
 	const [overlay, setOverlay] = useState(state.overlay);
 	const onChangeOverlay = ({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => { const overlay = currentTarget.value; state.overlay = overlay; setOverlay(overlay); };
 
-	return <Fragment>
+	return <>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			Bitmap:&nbsp;
 			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
@@ -547,5 +547,5 @@ export const GfxResourcesView: FunctionComponent<{
 		<div style={{/*overflow: 'auto'*/}}>
 			<Screen frame={frame} time={time} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
 		</div>
-	</Fragment>;
+	</>;
 };

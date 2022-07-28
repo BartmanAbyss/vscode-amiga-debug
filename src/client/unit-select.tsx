@@ -25,17 +25,17 @@ export const UnitSelect: FunctionComponent<{
 			value={DisplayUnit[value]}
 			onInput={toggle}
 		>
-			{type === DisplayUnitType.Time && <Fragment>
+			{type === DisplayUnitType.Time && <>
 				<option value={DisplayUnit[DisplayUnit.Microseconds]}>Microseconds</option>
 				<option value={DisplayUnit[DisplayUnit.Cycles]}>Cycles</option>
 				<option value={DisplayUnit[DisplayUnit.Lines]}>Rasterlines</option>
 				<option value={DisplayUnit[DisplayUnit.PercentFrame]}>% of Frame</option>
-			</Fragment>}
-			{type === DisplayUnitType.Size && <Fragment>
+			</>}
+			{type === DisplayUnitType.Size && <>
 				<option value={DisplayUnit[DisplayUnit.Bytes]}>Bytes</option>
 				<option value={DisplayUnit[DisplayUnit.BytesHex]}>Bytes (Hex)</option>
 				<option value={DisplayUnit[DisplayUnit.Percent]}>Percent</option>
-			</Fragment>}
+			</>}
 		</select>
 	);
 };
