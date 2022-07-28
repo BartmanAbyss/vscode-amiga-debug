@@ -1,5 +1,5 @@
-import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
-import { StateUpdater, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { FunctionComponent, JSX } from 'preact';
+import { StateUpdater, useCallback, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './customregs.module.css';
 import * as ChevronLeft from '../icons/chevron-left.svg';

@@ -1,12 +1,10 @@
-import { Fragment, FunctionComponent, JSX, h } from 'preact';
-import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { FunctionComponent, JSX } from 'preact';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
-import styles from './resources.module.css';
 
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
-import { CustomReadWrite, CustomRegisters } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayHeight, displayLeft, displayTop, displayWidth, dmaTypes, CpuCyclesToDmaCycles } from '../dma';
+import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, dmaTypes, CpuCyclesToDmaCycles } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 

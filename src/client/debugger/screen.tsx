@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, JSX, h } from 'preact';
+import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { ToggleButton } from '../toggle-button';
 import { Filter } from '../filter';
@@ -9,7 +9,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { CustomReadWrite, CustomRegisters } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayHeight, displayLeft, displayTop, displayWidth, dmaTypes } from '../dma';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 

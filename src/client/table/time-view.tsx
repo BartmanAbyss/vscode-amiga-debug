@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment, createContext } from 'preact';
+import { FunctionComponent, createContext } from 'preact';
 import styles from './time-view.module.css';
 import {
 	useMemo,

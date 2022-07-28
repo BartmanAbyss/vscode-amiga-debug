@@ -1,11 +1,11 @@
-import { Fragment, FunctionComponent, h, createContext } from 'preact';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { FunctionComponent } from 'preact';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
 import styles from './blitter.module.css';
 
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, Memory, CpuCyclesToDmaCycles, BlitterChannel } from '../dma';
+import { Blit, GetMemoryAfterDma, GetPaletteFromCustomRegs, CpuCyclesToDmaCycles, BlitterChannel } from '../dma';
 
 import 'pubsub-js';
 

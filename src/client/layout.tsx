@@ -1,12 +1,11 @@
-import { h, FunctionComponent, Fragment, JSX } from 'preact';
-import { useState, useMemo, useEffect, useCallback, useRef } from 'preact/hooks';
-import { createPortal } from 'preact/compat';
+import { FunctionComponent, JSX } from 'preact';
+import { useState, useMemo, useCallback, useRef } from 'preact/hooks';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './layout.module.css';
 
-import { IProfileModel, buildModel, GetMemory } from './model';
+import { IProfileModel, buildModel } from './model';
 import { ICpuProfileRaw } from './types';
 declare const MODELS: IProfileModel[];
 declare let PROFILES: ICpuProfileRaw[];

@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h, JSX } from 'preact';
+import { FunctionComponent, JSX } from 'preact';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';

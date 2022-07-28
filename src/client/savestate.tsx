@@ -1,7 +1,6 @@
-import { h, FunctionComponent, Fragment, JSX } from 'preact';
+import { FunctionComponent } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { VsCodeApi } from "./vscodeApi";
-import { Icon } from './icons';
 import * as DebugStart from './icons/debug-start.svg';
 import * as DebugStop from './icons/debug-stop.svg';
 import * as ProfileSingle from './icons/graph.svg';

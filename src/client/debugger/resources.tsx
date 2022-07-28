@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h, JSX, createContext } from 'preact';
+import { FunctionComponent, JSX, createContext } from 'preact';
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './resources.module.css';

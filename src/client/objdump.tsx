@@ -1,4 +1,4 @@
-import { Component, Fragment, FunctionComponent, h, JSX } from 'preact';
+import { Component, FunctionComponent, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
@@ -18,7 +18,7 @@ import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
 import { resolvePath } from './pathResolve';
-import { GetCpuDoc, GetCpuName, NormalizeInsn } from './docs';
+import { GetCpuDoc } from './docs';
 import Markdown from 'markdown-to-jsx';
 
 // messages from webview to vs code

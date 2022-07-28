@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { FunctionComponent, h, Fragment, JSX } from 'preact';
+import { FunctionComponent, JSX } from 'preact';
 import { useCallback } from 'preact/hooks';
 import './styles.css';
 import { DisplayUnit, DisplayUnitType } from './display';
