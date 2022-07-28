@@ -44,7 +44,7 @@ export const CopperView: FunctionComponent<{
 		const now = performance.now();
 		const behavior: ScrollBehavior = (now - containerRef.current['lastUpdate'] > 100) ? 'smooth' : 'auto';
 		containerRef.current['lastUpdate'] = now;
-		containerRef.current.children[Math.max(0, curInsn)].scrollIntoView({ behavior, block: 'center' });
+		containerRef.current.children[Math.max(0, curInsn)].scrollIntoView({ behavior, block: 'nearest' }); // 'block' would be better, but scrolls whole page...
 	}, [curInsn, containerRef.current]);
 
 	const onMouseEnter = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {

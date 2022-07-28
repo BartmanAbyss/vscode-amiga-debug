@@ -761,9 +761,8 @@ export const FlameGraph: FunctionComponent<{
 
 	// Listen for drag events on the window when it's running
 	useEffect(() => {
-		if (!drag) {
+		if(!drag)
 			return;
-		}
 
 		const { dragMode, original, pageXOrigin, xPerPixel, lock } = drag;
 		const onMove = (evt: MouseEvent) => {
@@ -771,7 +770,7 @@ export const FlameGraph: FunctionComponent<{
 				const range = original.maxX - original.minX;
 				let minX: number;
 				let maxX: number;
-				if (!(lock & LockBound.MinX)) {
+				if(!(lock & LockBound.MinX)) {
 					const upper = lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampX.maxX - range;
 					minX = clamp(clampX.minX, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
 					maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampX.maxX, minX + range);
@@ -794,12 +793,10 @@ export const FlameGraph: FunctionComponent<{
 		};
 
 		document.addEventListener('mousemove', onMove);
-		document.addEventListener('mouseleave', onUp);
 		document.addEventListener('mouseup', onUp);
 
 		return () => {
 			document.removeEventListener('mousemove', onMove);
-			document.removeEventListener('mouseleave', onUp);
 			document.removeEventListener('mouseup', onUp);
 		};
 	}, [clampX, drag, canvasSize.width, frame]);

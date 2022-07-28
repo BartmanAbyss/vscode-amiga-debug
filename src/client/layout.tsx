@@ -33,6 +33,7 @@ import { CustomRegsView } from './debugger/customregs';
 import 'pubsub-js';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
 import { ObjdumpView } from './objdump';
+import { MemoryView } from './debugger/memory';
 
 export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	const [frame, setFrame] = useState(0);
@@ -68,10 +69,11 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	enum RightTab {
 		copper,
 		customRegs,
+		memory,
 	}
 
 	const [leftTab, setLeftTab] = useState(process.env.NODE_ENV === 'development' ? LeftTab.screen : LeftTab.profiler/*profiler*//*assembly*/);
-	const [rightTab, setRightTab] = useState(RightTab.copper);
+	const [rightTab, setRightTab] = useState(process.env.NODE_ENV === 'development' ? RightTab.memory : RightTab.copper);
 
 	/*useEffect(() => {
 		const token = PubSub.subscribe('showBlit', () => setLeftTab(LeftTab.blitter));
@@ -176,12 +178,16 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 					<TabList>
 						<Tab>Copper</Tab>
 						<Tab>Custom Registers</Tab>
+						<Tab>Memory</Tab>
 					</TabList>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<CopperView frame={frame} time={time} />
 					</TabPanel>
 					<TabPanel style={{ overflow: 'auto' }}>
 						<CustomRegsView frame={frame} time={time} setTime={setTime} />
+					</TabPanel>
+					<TabPanel style={{ overflow: 'auto' }}>
+						<MemoryView frame={frame} time={time} />
 					</TabPanel>
 				</Tabs>
 			</Split>

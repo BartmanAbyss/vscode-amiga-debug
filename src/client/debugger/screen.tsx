@@ -437,7 +437,7 @@ const DeniseScreen: FunctionComponent<{
 		}
 		console.timeEnd('denise');
 		return [pixelSources, pixels, pixelsRgb, pixelsDma];
-	}, [scale, frame, time, state]);
+	}, [scale, frame/*, time*/, state]);
 
 	useEffect(() => {
 		const context = canvas.current?.getContext('2d');

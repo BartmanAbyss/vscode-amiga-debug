@@ -228,7 +228,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * "npm run serve": all colors in flame-graph are black
 * stack sizes > 1024 cause UnwindTable to fail parsing
 * TODO: new DMArecord fields (CIA)
-* once copperlist scrolls, whole view shifts up a few pixels
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
