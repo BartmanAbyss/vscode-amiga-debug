@@ -1,3 +1,5 @@
+.github/**
+ci/**
 .vscode/**
 .vscode-test/**
 out/**
