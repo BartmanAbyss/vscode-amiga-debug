@@ -374,7 +374,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "webpack --mode=production",
+		"vscode:prepublish": "npm prune && webpack --mode=production",
 		"compile": "webpack --mode=development",
 		"watch": "webpack --watch --mode=development",
 		"pretest": "tsc -p .",
