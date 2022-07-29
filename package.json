@@ -392,7 +392,6 @@
 		"@typescript-eslint/eslint-plugin": "^5.3.1",
 		"@typescript-eslint/parser": "^5.3.1",
 		"clean-webpack-plugin": "^4.0.0",
-		"concurrently": "^6.3.0",
 		"css-loader": "^6.5.1",
 		"devtools-protocol": "^0.0.940865",
 		"eslint": "^8.2.0",
