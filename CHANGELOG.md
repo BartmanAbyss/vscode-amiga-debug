@@ -6,6 +6,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - FIX: scrolling in copperlist no longer shifts whole profiler up
 - FIX: dragging time in profiler flame-graph no longer stops working once reaching the outside of the profiler
 - NEW: memory heatmap
+- CHG: update WinUAE
 
 ## 1.4.4
 - custom registers view: tooltip help for registers
