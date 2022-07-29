@@ -1,7 +1,7 @@
 import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { ToggleButton } from '../toggle-button';
-import { Filter } from '../filter';
+import { Filter, Toolbar } from '../filter';
 import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 import '../styles.css';
 import styles from './resources.module.css';
@@ -526,7 +526,7 @@ export const DeniseView: FunctionComponent<{
 
 	return (<>
 		<div style={{ flexGrow: 0 }}>
-		<Filter value="Placeholder (WIP)" onChange={(value: string) => { return; }} foot={<>
+		<Toolbar>
 			<div>
 				DMA&nbsp;Overlay</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} />
 			</div>
@@ -537,7 +537,7 @@ export const DeniseView: FunctionComponent<{
 			{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
 			<span style={{ width: '1em' }}></span>
 			{PROFILES[frame].$amiga.screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
-		</>} />
+		</Toolbar>
 		</div>
 		<div style={{ /*overflow: 'auto'*/ }}>
 			<DeniseScreen frame={frame} time={time} setTime={setTime} state={state} dmaOpacity={dmaOpacity} />

@@ -55,3 +55,9 @@ export const Filter: FunctionComponent<{
     </div>
   );
 };
+
+export const Toolbar: FunctionComponent<{ }> = ({ children }) => {
+  return <div className={styles.wrapper}>
+    {children}
+  </div>;
+};

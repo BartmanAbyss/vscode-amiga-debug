@@ -1153,8 +1153,7 @@ const Tooltip: FunctionComponent<{
 		BLTCON.push({ name: "IFE",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.IFE) });
 		BLTCON.push({ name: "FCI",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.FCI) });
 		BLTCON.push({ name: "DESC", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DESC) });
-		// TODO: line mode
-		//BLTCON.push({ name: "LINE", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
+		BLTCON.push({ name: "LINE", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
 		MINTERM.push({ name: "ABC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) });
 		MINTERM.push({ name: "ABC\u0304",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) });
 		MINTERM.push({ name: "AB\u0304C",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) });

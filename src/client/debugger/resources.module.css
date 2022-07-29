@@ -68,7 +68,7 @@
 }
 
 .screen {
-	position: relative; /* to allow for 'position: absolute' in .zoom */
+	position: relative; /* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
 }
 
 .screen_canvas {
@@ -116,4 +116,48 @@
 	to {
 		background-position: 60px 30px;
 	}
+}
+
+/* memory.tsx */
+.memory_container {
+	margin: -5px;
+}
+
+.memory_float {
+	float: left;
+	margin: 5px;
+	padding-bottom: 15px;
+}
+
+.memory {
+	position: relative; /* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
+/*	display: flex;
+	flex-direction: row;
+	column-gap: 1em;*/
+}
+
+.memory_canvas {
+	background-color: black;
+	cursor: crosshair;
+}
+
+.memory_legend {
+	position: absolute;
+	border-top: 1px solid white;
+	opacity: 0.3;
+	width: 256px;
+	pointer-events: none;	
+}
+
+.memory_fixed {
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);   
+	white-space: nowrap;
+}
+
+.memory_span {
+	padding-left: 0.25em;
+	padding-right: 0.25em;
+	text-shadow: 1px 1px 0px black;
 }

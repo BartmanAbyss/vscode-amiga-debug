@@ -185,7 +185,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 					<TabPanel style={{ overflow: 'auto' }}>
 						<CustomRegsView frame={frame} time={time} setTime={setTime} />
 					</TabPanel>
-					<TabPanel style={{ overflow: 'auto' }}>
+					<TabPanel style={rightTab === RightTab.memory ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {  overflow: 'auto' }}>
 						<MemoryView frame={frame} time={time} />
 					</TabPanel>
 				</Tabs>

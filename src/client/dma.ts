@@ -13,8 +13,8 @@ export const CpuCyclesToDmaCycles = (cpuCycles: number) => (cpuCycles * PROFILES
 export const DmaCyclesToCpuCycles = (dmaCycles: number) => (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
 
 export class Memory {
-	private chipMemAddr = 0x00000000;
-	private bogoMemAddr = 0x00c00000;
+	public chipMemAddr = 0x00000000;
+	public bogoMemAddr = 0x00c00000;
 
 	constructor(public chipMem: Uint8Array, public bogoMem: Uint8Array) {
 	}
@@ -655,6 +655,7 @@ const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color
 
 // AABBGGRR
 export const GetColorCss = (color: number): string => '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
+export const GetRgbaColorCss = (color: number): string => `rgba(${color & 0xff}, ${(color >>> 8) & 0xff}, ${(color >>> 16) & 0xff}, ${((color >>> 24) & 0xff) / 255})`;
 
 // 0RGB
 export const GetAmigaColorCss = (color: number): string => '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
