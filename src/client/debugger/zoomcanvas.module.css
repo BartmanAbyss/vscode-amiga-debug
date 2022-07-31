@@ -9,7 +9,7 @@
 	background-size: 30px 30px;
 }
 
-.zoom div {
+.zoom > div {
 	margin-left: 6px;
 	margin-right: 6px;
 	margin-bottom: 3px;

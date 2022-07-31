@@ -26,7 +26,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
-import { CustomRegisters } from '../customRegisters';
+import { BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
 import { Screen } from '../debugger/resources';
 import { GetCustomRegDoc } from '../docs';
 
@@ -1032,33 +1032,21 @@ const Tooltip: FunctionComponent<{
 		name: string;
 		enabled: boolean;
 	}
-	enum DmaFlags {
-		AUD0    = 0x0001,
-		AUD1    = 0x0002,
-		AUD2    = 0x0004,
-		AUD3    = 0x0008,
-		DISK    = 0x0010,
-		SPRITE  = 0x0020,
-		BLITTER = 0x0040,
-		COPPER  = 0x0080,
-		RASTER  = 0x0100,
-		MASTER  = 0x0200, 
-	}
 	const dmaChannels: Bit[] = [];
 
 	if(isDma) {
 		if(amiga.dmacon !== undefined) {
-			if(amiga.dmacon & DmaFlags.MASTER) {
+			if(amiga.dmacon & DMACONFlags.DMAEN) {
 				dmaChannels.push({ name: "Master", enabled: true });
-				dmaChannels.push({ name: "Raster", enabled: !!(amiga.dmacon & DmaFlags.RASTER) });
-				dmaChannels.push({ name: "Copper", enabled: !!(amiga.dmacon & DmaFlags.COPPER) });
-				dmaChannels.push({ name: "Blitter", enabled: !!(amiga.dmacon & DmaFlags.BLITTER) });
-				dmaChannels.push({ name: "Sprite", enabled: !!(amiga.dmacon & DmaFlags.SPRITE) });
-				dmaChannels.push({ name: "Disk", enabled: !!(amiga.dmacon & DmaFlags.DISK) });
-				dmaChannels.push({ name: "Aud0", enabled: !!(amiga.dmacon & DmaFlags.AUD0) });
-				dmaChannels.push({ name: "Aud1", enabled: !!(amiga.dmacon & DmaFlags.AUD1) });
-				dmaChannels.push({ name: "Aud2", enabled: !!(amiga.dmacon & DmaFlags.AUD2) });
-				dmaChannels.push({ name: "Aud3", enabled: !!(amiga.dmacon & DmaFlags.AUD3) });
+				dmaChannels.push({ name: "Raster", enabled: !!(amiga.dmacon & DMACONFlags.BPLEN) });
+				dmaChannels.push({ name: "Copper", enabled: !!(amiga.dmacon & DMACONFlags.COPEN) });
+				dmaChannels.push({ name: "Blitter", enabled: !!(amiga.dmacon & DMACONFlags.BLTEN) });
+				dmaChannels.push({ name: "Sprite", enabled: !!(amiga.dmacon & DMACONFlags.SPREN) });
+				dmaChannels.push({ name: "Disk", enabled: !!(amiga.dmacon & DMACONFlags.DSKEN) });
+				dmaChannels.push({ name: "Aud0", enabled: !!(amiga.dmacon & DMACONFlags.AUD0EN) });
+				dmaChannels.push({ name: "Aud1", enabled: !!(amiga.dmacon & DMACONFlags.AUD1EN) });
+				dmaChannels.push({ name: "Aud2", enabled: !!(amiga.dmacon & DMACONFlags.AUD2EN) });
+				dmaChannels.push({ name: "Aud3", enabled: !!(amiga.dmacon & DMACONFlags.AUD3EN) });
 			} else {
 				dmaChannels.push({ name: "Master", enabled: false });
 			}
@@ -1119,28 +1107,6 @@ const Tooltip: FunctionComponent<{
 		}
 	}
 
-	enum BLTCON0Flags {
-		USEA    = 1 << 11,
-		USEB    = 1 << 10,
-		USEC    = 1 <<  9,
-		USED    = 1 <<  8,
-		LF7     = 1 <<  7,
-		LF6     = 1 <<  6,
-		LF5     = 1 <<  5,
-		LF4     = 1 <<  4,
-		LF3     = 1 <<  3,
-		LF2     = 1 <<  2,
-		LF1     = 1 <<  1,
-		LF0     = 1 <<  0,
-	}
-	enum BLTCON1Flags {
-		DOFF    = 1 << 7,
-		EFE     = 1 << 4,
-		IFE     = 1 << 3,
-		FCI     = 1 << 2,
-		DESC    = 1 << 1,
-		LINE    = 1 << 0,
-	}
 	const BLTCON: Bit[] = [];
 	const MINTERM: Bit[] = [];
 	if(isBlit) {

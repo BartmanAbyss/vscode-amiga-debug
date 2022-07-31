@@ -61,10 +61,10 @@ export const MemoryView: FunctionComponent<{
 
 	const [chipPixels, bogoPixels, detailPixels] = useMemo((): [Uint32Array, Uint32Array, Uint32Array] => { // screen (chip, bogo)
 		const chipPixels = new Uint32Array(canvasWidth * chipCanvasHeight);
-		const bogoPixels = new Uint32Array(canvasWidth * bogoCanvasHeight);
+		const bogoPixels = bogoCanvasHeight ? new Uint32Array(canvasWidth * bogoCanvasHeight) : null;
 		const detailPixels = new Uint32Array(detailWidth * detailHeight);
 		chipPixels.fill(0xff000000); // black
-		bogoPixels.fill(0xff000000); // black
+		bogoPixels?.fill(0xff000000); // black
 		detailPixels.fill(0xff000000); // black
 
 		const maxCycle = CpuCyclesToDmaCycles(time);
@@ -112,6 +112,8 @@ export const MemoryView: FunctionComponent<{
 	}, [chipCanvas.current, chipPixels]);
 
 	useEffect(() => { // screen -> canvas (bogo)
+		if(!bogoPixels || !bogoCanvas.current)
+			return;
 		const context = bogoCanvas.current?.getContext('2d');
 		const imgData = context.createImageData(canvasWidth, bogoCanvasHeight);
 		const data = new Uint32Array(imgData.data.buffer);

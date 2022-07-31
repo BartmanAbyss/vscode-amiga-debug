@@ -3,7 +3,7 @@
 	color: var(--vscode-editor-foreground);
 	font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size);
-	font-weight: var(--vscode-editor-font-weight);   
+	font-weight: var(--vscode-editor-font-weight);
 	white-space: pre;
 }
 
@@ -21,7 +21,23 @@
 	border: 1px solid var(--vscode-editorWidget-border);
 	pointer-events: none;
 }
-  
+
+.biton {
+	font-size: 80%;
+	display: inline-block;
+	margin-right: 2px;
+	background-color: var(--vscode-editor-selectionBackground);
+	border: 1px solid var(--vscode-editorHoverWidget-border);
+}
+
+.bitoff {
+	font-size: 80%;
+	display: inline-block;
+	margin-right: 2px;
+	border: 1px solid var(--vscode-editorHoverWidget-border);
+	opacity: 0.6;
+}
+
 .gfxresource_menu {
 	width: initial !important;
 	box-shadow: 0 .25em .5em 0 black;
@@ -30,7 +46,8 @@
 .gfxresource {
 	width: 450px;
 	display: grid;
-	grid-template-columns: auto 100px 70px 80px; /* name, information, size, address */
+	grid-template-columns: auto 100px 70px 80px;
+	/* name, information, size, address */
 	column-gap: 0.3em;
 }
 
@@ -40,13 +57,17 @@
 	grid-template-columns: auto 0 0 0;
 }
 
-.gfxresource dd, .gfxresource_brief dd, .gfxresource dt, .gfxresource_brief dt {
+.gfxresource dd,
+.gfxresource_brief dd,
+.gfxresource dt,
+.gfxresource_brief dt {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.gfxresource dd, .gfxresource_brief dd {
+.gfxresource dd,
+.gfxresource_brief dd {
 	opacity: 0.8;
 }
 
@@ -57,7 +78,7 @@
 	vertical-align: super;
 }
 
-.palette > div {
+.palette>div {
 	width: 5px;
 	height: 6px;
 }
@@ -68,7 +89,8 @@
 }
 
 .screen {
-	position: relative; /* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
+	position: relative;
+	/* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
 }
 
 .screen_canvas {
@@ -82,7 +104,7 @@
 	position: absolute;
 	left: 0;
 	pointer-events: none;
-/*	animation: fade 1s infinite;*/
+	/*	animation: fade 1s infinite;*/
 }
 
 .blitrect {
@@ -91,7 +113,7 @@
 	border: 1px solid black;
 	outline: 1px solid white;
 	opacity: 0.5;
-	pointer-events: none;	
+	pointer-events: none;
 }
 
 .blitrect_active {
@@ -100,19 +122,28 @@
 	border: 2px solid black;
 	outline: 2px solid white;
 	animation: fade 1s infinite;
-	pointer-events: none;	
+	pointer-events: none;
 }
 
-@keyframes fade { 
-	0%   { opacity: 1; }
-	50%  { opacity: 0.6; }
-	100% { opacity: 1; }
+@keyframes fade {
+	0% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.6;
+	}
+
+	100% {
+		opacity: 1;
+	}
 }
 
 @keyframes barberpole {
 	from {
 		background-position: 0 0;
 	}
+
 	to {
 		background-position: 60px 30px;
 	}
@@ -130,8 +161,9 @@
 }
 
 .memory {
-	position: relative; /* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
-/*	display: flex;
+	position: relative;
+	/* to allow for 'position: absolute' in .zoom and .overdraw_canvas */
+	/*	display: flex;
 	flex-direction: row;
 	column-gap: 1em;*/
 }
@@ -146,13 +178,13 @@
 	border-top: 1px solid white;
 	opacity: 0.3;
 	width: 256px;
-	pointer-events: none;	
+	pointer-events: none;
 }
 
 .memory_fixed {
 	font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size);
-	font-weight: var(--vscode-editor-font-weight);   
+	font-weight: var(--vscode-editor-font-weight);
 	white-space: nowrap;
 }
 

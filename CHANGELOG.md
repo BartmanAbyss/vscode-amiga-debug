@@ -4,7 +4,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 
 ## 1.4.6
 - NEW: memory viewer: track CPU data
-- NEW: screen: show time, enable/disable display window, more pixel sources
+- NEW: screen: show time, enable/disable display window, more pixel sources, DMACON, BPLCON
 
 ## 1.4.5
 - FIX: scrolling in copperlist no longer shifts whole profiler up

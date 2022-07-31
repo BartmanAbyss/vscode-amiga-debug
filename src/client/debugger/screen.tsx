@@ -8,8 +8,8 @@ import styles from './resources.module.css';
 
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
-import { CustomReadWrite, CustomRegisters } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles } from '../dma';
+import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags } from '../customRegisters';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -48,9 +48,14 @@ enum PixelSource {
 	outsideWindow,
 }
 
+const swizzle = (src: number, bitFrom: number, bitTo: number): number => {
+	return ((src >>> bitFrom) & 1) << bitTo;
+};
+
 interface DeniseZoomProps extends IZoomProps {
 	pixelSources: Uint8Array;
 	pixels: Uint8Array;
+	frame: number;
 }
 
 const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) => {
@@ -60,6 +65,58 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const line = props.y;
 		const cck = (props.x >> 2);
 		const color = props.pixels?.at(props.y * NR_DMA_REC_HPOS * 4 + props.x);
+
+		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
+		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmacon, MODELS[props.frame].amiga.dmaRecords, dmaTime);
+
+		const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
+		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
+		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
+
+		interface Bit {
+			name: string;
+			enabled: boolean;
+		}
+		// DMACON
+		const dmacon = customRegs[regDMACON >>> 1];
+		const dmaconBits: Bit[] = [];
+		if(dmacon & DMACONFlags.DMAEN) {
+			dmaconBits.push({ name: "Master", enabled: true });
+			dmaconBits.push({ name: "Raster", enabled: !!(dmacon & DMACONFlags.BPLEN) });
+			dmaconBits.push({ name: "Copper", enabled: !!(dmacon & DMACONFlags.COPEN) });
+			dmaconBits.push({ name: "Blitter", enabled: !!(dmacon & DMACONFlags.BLTEN) });
+			dmaconBits.push({ name: "Sprite", enabled: !!(dmacon & DMACONFlags.SPREN) });
+		} else {
+			dmaconBits.push({ name: "Master", enabled: false });
+		}
+
+		// BPLCON0
+		const bplcon0 = customRegs[regBPLCON0 >>> 1];
+		const bplcon0Bits: Bit[] = [];
+		const bpu = swizzle(bplcon0, 12, 0) | swizzle(bplcon0, 13, 1) | swizzle(bplcon0, 14, 2) | swizzle(bplcon0, 4, 3);
+		bplcon0Bits.push({ name: `BPU: ${bpu}`, enabled: bpu > 0 });
+		bplcon0Bits.push({ name: "Hires", enabled: !!(bplcon0 & BPLCON0Flags.HIRES) });
+		bplcon0Bits.push({ name: "HAM", enabled: !!(bplcon0 & BPLCON0Flags.HAM) });
+		bplcon0Bits.push({ name: "DPF", enabled: !!(bplcon0 & BPLCON0Flags.DPF) });
+
+		// BPLCON1
+		const bplcon1 = customRegs[regBPLCON1 >>> 1];
+		const bplcon1Bits: Bit[] = [];
+		const pf1h = bplcon1 & 0xf;
+		const pf2h = (bplcon1 >>> 4) & 0xf;
+		bplcon1Bits.push({ name: `PF2H: ${pf2h}`, enabled: pf2h > 0 });
+		bplcon1Bits.push({ name: `PF1H: ${pf1h}`, enabled: pf1h > 0 });
+
+		// BPLCON2
+		const bplcon2 = customRegs[regBPLCON2 >>> 1];
+		const bplcon2Bits: Bit[] = [];
+		const pf1p = bplcon2 & 0x7;
+		const pf2p = (bplcon2 >>> 3) & 0x7;
+		//bplcon2Bits.push({ name: "KillEHB", enabled: !!(bplcon2 & BPLCON2Flags.KILLEHB) });
+		bplcon2Bits.push({ name: "PF2PRI", enabled: !!(bplcon2 & BPLCON2Flags.PF2PRI) });
+		bplcon1Bits.push({ name: `PF2P: ${pf2p}`, enabled: pf2p > 0 });
+		bplcon1Bits.push({ name: `PF1P: ${pf1p}`, enabled: pf1p > 0 });
 
 		return <div>
 			<dl>
@@ -75,6 +132,14 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				<dd>H:{hpos} V:{vpos}</dd>
 				<dt>Agnus</dt>
 				<dd>Line:{line} CCK:{cck}</dd>
+				<dt>DMACON</dt>
+				<dd>{dmaconBits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+				<dt>BPLCON0</dt>
+				<dd>{bplcon0Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+				<dt>BPLCON1</dt>
+				<dd>{bplcon1Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+				<dt>BPLCON2</dt>
+				<dd>{bplcon2Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 			</dl>
 		</div>;
 	}
@@ -340,9 +405,6 @@ const DeniseScreen: FunctionComponent<{
 						}
 
 						//if(cycleY===100)console.log(`      draw scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')} ***${scroller[1] & (1 << scroll_delayed[0]) ? '1' : '0'}`);
-						const swizzle = (src: number, bitFrom: number, bitTo: number): number => {
-							return ((src >>> bitFrom) & 1) << bitTo;
-						};
 
 						let bpldata = 0;
 						for(let p = 0; p < numPlanes; p++) {
@@ -495,7 +557,7 @@ const DeniseScreen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
-			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels }} onClick={zoomClick} />
+			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels, frame }} onClick={zoomClick} />
 		</div>
 	</>;
 };

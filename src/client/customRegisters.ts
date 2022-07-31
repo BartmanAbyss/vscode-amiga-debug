@@ -4,6 +4,103 @@
  * Routines for labelling amiga internals.
  */
 
+export enum DMACONFlags {
+	SETCLR  = 1 << 15,
+	BBUSY   = 1 << 14,
+	BZERO   = 1 << 13,
+	BLTPRI  = 1 << 10,
+	DMAEN   = 1 <<  9, 
+	BPLEN   = 1 <<  8,
+	COPEN   = 1 <<  7,
+	BLTEN   = 1 <<  6,
+	SPREN   = 1 <<  5,
+	DSKEN   = 1 <<  4,
+	AUD3EN  = 1 <<  3,
+	AUD2EN  = 1 <<  2,
+	AUD1EN  = 1 <<  1,
+	AUD0EN  = 1 <<  0,
+}
+
+export enum BLTCON0Flags {
+	USEA    = 1 << 11,
+	USEB    = 1 << 10,
+	USEC    = 1 <<  9,
+	USED    = 1 <<  8,
+	LF7     = 1 <<  7,
+	LF6     = 1 <<  6,
+	LF5     = 1 <<  5,
+	LF4     = 1 <<  4,
+	LF3     = 1 <<  3,
+	LF2     = 1 <<  2,
+	LF1     = 1 <<  1,
+	LF0     = 1 <<  0,
+}
+
+export enum BLTCON1Flags {
+	DOFF    = 1 << 7,
+	EFE     = 1 << 4,
+	IFE     = 1 << 3,
+	FCI     = 1 << 2,
+	DESC    = 1 << 1,
+	LINE    = 1 << 0,
+}
+
+export enum BPLCON0Flags {
+	HIRES   = 1 << 15,
+	BPU2    = 1 << 14,
+	BPU1    = 1 << 13,
+	BPU0    = 1 << 12,
+	HAM     = 1 << 11,
+	DPF     = 1 << 10,
+	COLOR   = 1 <<  9,
+	GAUD    = 1 <<  8,
+	UHRES   = 1 <<  7,
+	SHRES   = 1 <<  6,
+	BYPASS  = 1 <<  5,
+	BPU3    = 1 <<  4,
+	LPEN    = 1 <<  3,
+	LACE    = 1 <<  2,
+	ERSY    = 1 <<  1,
+	ECSENA  = 1 <<  0,
+}
+
+export enum BPLCON1Flags {
+	PF2H7   = 1 << 11,
+	PF2H6   = 1 << 14,
+	PF2H1   = 1 << 13,
+	PF2H0   = 1 << 12,
+	PF1H7   = 1 << 11,
+	PF1H6   = 1 << 10,
+	PF1H1   = 1 <<  9,
+	PF1H0   = 1 <<  8,
+	PF2H5   = 1 <<  7,
+	PF2H4   = 1 <<  6,
+	PF2H3   = 1 <<  5,
+	PF2H2   = 1 <<  4,
+	PF1H5   = 1 <<  3,
+	PF1H4   = 1 <<  2,
+	PF1H3   = 1 <<  1,
+	PF1H2   = 1 <<  0,
+}
+
+export enum BPLCON2Flags {
+	ZDBSEL2 = 1 << 14,
+	ZDBSEL1 = 1 << 13,
+	ZDBSEL0 = 1 << 12,
+	ZDBPEN  = 1 << 11,
+	ZDCTEN  = 1 << 10,
+	KILLEHB = 1 <<  9,
+	RDRAM   = 1 <<  8,
+	SOGEN   = 1 <<  7,
+	PF2PRI  = 1 <<  6,
+	PF2P2   = 1 <<  5,
+	PF2P1   = 1 <<  4,
+	PF2P0   = 1 <<  3,
+	PF1P2   = 1 <<  2,
+	PF1P1   = 1 <<  1,
+	PF1P0   = 1 <<  0,
+}
+
 export enum CustomReadWrite {
 	read = 1,
 	write = 2,
