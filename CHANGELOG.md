@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.6
+- NEW: memory viewer: track CPU data
+
 ## 1.4.5
 - FIX: scrolling in copperlist no longer shifts whole profiler up
 - FIX: dragging time in profiler flame-graph no longer stops working once reaching the outside of the profiler

@@ -57,6 +57,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	}, [frame]);
 
 	const [time, setTime] = useState(0); // in CPU-cycles (DMA-cycle = CPU-cycle / 2)
+	const [memoryAddr, setMemoryAddr] = useState(0);
 
 	enum LeftTab {
 		profiler,
@@ -186,7 +187,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 						<CustomRegsView frame={frame} time={time} setTime={setTime} />
 					</TabPanel>
 					<TabPanel style={rightTab === RightTab.memory ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {  overflow: 'auto' }}>
-						<MemoryView frame={frame} time={time} />
+						<MemoryView frame={frame} time={time} memoryAddr={memoryAddr} setMemoryAddr={setMemoryAddr} />
 					</TabPanel>
 				</Tabs>
 			</Split>

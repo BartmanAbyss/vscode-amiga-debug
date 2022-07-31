@@ -3,6 +3,11 @@ if (process.env.NODE_ENV === 'development') {
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	require("preact/debug");
 }
+/*
+import "preact-devtools/dist/preact-devtools.css";
+import { attach, createRenderer, renderDevtools } from "preact-devtools";
+import { options } from "preact";
+*/
 import { h, render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
@@ -77,6 +82,12 @@ async function Profiler() {
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
 		render(h(CpuProfileLayout, null), container);
+/*
+		const devtools = document.createElement('div');
+		document.body.appendChild(devtools);
+		const { store, destroy } = attach(options, createRenderer);
+		renderDevtools(store, document.getElementById("devtools"));
+*/		
 	} catch(e) {
 		if(container)
 			container.remove();

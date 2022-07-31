@@ -1065,7 +1065,7 @@ const Tooltip: FunctionComponent<{
 		}
 		if(amiga.dmaRecord.type !== undefined) {
 			dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
-			if(amiga.dmaRecord.reg & 0x1000) {
+			if(amiga.dmaRecord.reg & 0x1000) { // CPU
 				if(amiga.dmaRecord.reg & 0x0100)
 					dmaReg = 'Write';
 				else

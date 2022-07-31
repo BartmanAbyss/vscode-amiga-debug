@@ -1,18 +1,20 @@
 import { FunctionComponent, JSX } from 'preact';
-import { useEffect, useMemo, useRef, useState, useCallback } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState, useCallback, StateUpdater } from 'preact/hooks';
 import { ToggleButton } from '../toggle-button';
 import { Toolbar } from '../filter';
 import '../styles.css';
 import styles from './resources.module.css';
 
 import { IProfileModel } from '../model';
-import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, dmaTypes, CpuCyclesToDmaCycles, GetMemoryAfterDma, GetRgbaColorCss } from '../dma';
+import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, dmaTypes, CpuCyclesToDmaCycles, GetMemoryAfterDma, GetRgbaColorCss, DmaTypes, DmaSubTypes } from '../dma';
 declare const MODELS: IProfileModel[];
 
 export const MemoryView: FunctionComponent<{
 	frame: number;
 	time: number;
-}> = ({ frame, time }) => {
+	memoryAddr: number;
+	setMemoryAddr: StateUpdater<number>;
+}> = ({ frame, time, memoryAddr, setMemoryAddr }) => {
 	const chipCanvas = useRef<HTMLCanvasElement>();
 	const bogoCanvas = useRef<HTMLCanvasElement>();
 
@@ -28,17 +30,34 @@ export const MemoryView: FunctionComponent<{
 	const [persistence, setPersistence] = useState(10000); // in DMA cycles
 	const [showReads, setShowReads] = useState(true);
 	const [showWrites, setShowWrites] = useState(true);
-	const [detailAddr, setDetailAddr] = useState(memInfo.chipMemAddr);
+	const [trackCpuData, setTrackCpuData] = useState(false);
 	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time)), [time, frame]);
 
+	useMemo(() => {
+		if(!trackCpuData)
+			return;
+
+		const dmaRecord = MODELS[frame].amiga.dmaRecords[CpuCyclesToDmaCycles(time)];
+		if(dmaRecord.type === DmaTypes.CPU && dmaRecord.extra === DmaSubTypes.CPU_DATA) { // only CPU data
+			if((dmaRecord.addr >= memInfo.chipMemAddr && dmaRecord.addr < memInfo.chipMemAddr + memInfo.chipMem.length)
+			|| (dmaRecord.addr >= memInfo.bogoMemAddr && dmaRecord.addr < memInfo.bogoMemAddr + memInfo.bogoMem.length)) { // only Chipmem & Bogomem
+				const read = ((dmaRecord.reg & 0x1100) === 0x1100) ? false : true;
+				if((read && showReads) || (!read && showWrites)) { // Only read/write
+					console.log(`setMemoryAddr(${dmaRecord.addr.toString(16)})`);
+					setMemoryAddr(dmaRecord.addr);
+				}
+			}
+		}
+	}, [time, trackCpuData, setMemoryAddr]);
+
 	const detailMem = useMemo((): Uint8Array => {
-		if(detailAddr >= memInfo.chipMemAddr && detailAddr < memInfo.chipMemAddr + memInfo.chipMem.length)
-			return memory.chipMem.slice(detailAddr - memInfo.chipMemAddr, detailAddr - memInfo.chipMemAddr + detailWidth * detailHeight);
-		else if(detailAddr >= memInfo.bogoMemAddr && detailAddr < memInfo.bogoMemAddr + memInfo.bogoMem.length)
-			return memory.bogoMem.slice(detailAddr - memInfo.bogoMemAddr, detailAddr - memInfo.bogoMemAddr + detailWidth * detailHeight);
+		if(memoryAddr >= memInfo.chipMemAddr && memoryAddr < memInfo.chipMemAddr + memInfo.chipMem.length)
+			return memory.chipMem.slice(memoryAddr - memInfo.chipMemAddr, memoryAddr - memInfo.chipMemAddr + detailWidth * detailHeight);
+		else if(memoryAddr >= memInfo.bogoMemAddr && memoryAddr < memInfo.bogoMemAddr + memInfo.bogoMem.length)
+			return memory.bogoMem.slice(memoryAddr - memInfo.bogoMemAddr, memoryAddr - memInfo.bogoMemAddr + detailWidth * detailHeight);
 		else
 			return null;
-	}, [memory, detailAddr]);
+	}, [memory, memoryAddr]);
 
 	const [chipPixels, bogoPixels, detailPixels] = useMemo((): [Uint32Array, Uint32Array, Uint32Array] => { // screen (chip, bogo)
 		const chipPixels = new Uint32Array(canvasWidth * chipCanvasHeight);
@@ -75,14 +94,14 @@ export const MemoryView: FunctionComponent<{
 					chipPixels[(dmaRecord.addr - memInfo.chipMemAddr) >>> 3] = (dmaColor & 0xffffff) | (alpha << 24);
 				else if(dmaRecord.addr >= memInfo.bogoMemAddr && dmaRecord.addr < memInfo.bogoMemAddr + memInfo.bogoMem.length)
 					bogoPixels[(dmaRecord.addr - memInfo.bogoMemAddr) >>> 3] = (dmaColor & 0xffffff) | (alpha << 24);
-				if(dmaRecord.addr >= detailAddr && dmaRecord.addr < detailAddr + detailWidth * detailHeight) {
+				if(dmaRecord.addr >= memoryAddr && dmaRecord.addr < memoryAddr + detailWidth * detailHeight) {
 					for(let i = 0; i < len; i++)
-						detailPixels[dmaRecord.addr - detailAddr + i] = (dmaColor & 0xffffff) | (alpha << 24);
+						detailPixels[dmaRecord.addr - memoryAddr + i] = (dmaColor & 0xffffff) | (alpha << 24);
 				}
 			}
 		}
 		return [chipPixels, bogoPixels, detailPixels];
-	}, [frame, time, persistence, showReads, showWrites, detailAddr]);
+	}, [frame, time, persistence, showReads, showWrites, memoryAddr]);
 
 	useEffect(() => { // screen -> canvas (chip)
 		const context = chipCanvas.current?.getContext('2d');
@@ -102,13 +121,13 @@ export const MemoryView: FunctionComponent<{
 
 	const onClickChip = useCallback((evt: MouseEvent) => {
 		const addr = memInfo.chipMemAddr + evt.offsetY * canvasWidth * 8 + evt.offsetX * 8;
-		setDetailAddr(addr);
+		setMemoryAddr(addr);
 		const onMove = (evt: MouseEvent) => {
 			const rc = chipCanvas.current.getBoundingClientRect();
 			const x = Math.max(0, Math.min(rc.width, evt.clientX - rc.left)) | 0;
 			const y = Math.max(0, Math.min(rc.height, evt.clientY - rc.top)) | 0;
 			const addr = Math.max(memInfo.chipMemAddr, Math.min(memInfo.chipMemAddr + memInfo.chipMem.length - detailHeight * detailWidth, memInfo.chipMemAddr + y * canvasWidth * 8 + x * 8));
-			setDetailAddr(addr);
+			setMemoryAddr(addr & ~1);
 		};
 		const onUp = (evt: MouseEvent) => {
 			document.removeEventListener('mousemove', onMove);
@@ -120,17 +139,17 @@ export const MemoryView: FunctionComponent<{
 			document.removeEventListener('mousemove', onMove);
 			document.removeEventListener('mouseup', onUp);
 		};
-	}, [setDetailAddr, chipCanvas.current, memInfo, canvasWidth]);
+	}, [setMemoryAddr, chipCanvas.current, memInfo, canvasWidth]);
 
 	const onClickBogo = useCallback((evt: MouseEvent) => {
 		const addr = memInfo.bogoMemAddr + evt.offsetY * canvasWidth * 8 + evt.offsetX * 8;
-		setDetailAddr(addr);
+		setMemoryAddr(addr);
 		const onMove = (evt: MouseEvent) => {
 			const rc = bogoCanvas.current.getBoundingClientRect();
 			const x = Math.max(0, Math.min(rc.width, evt.clientX - rc.left)) | 0;
 			const y = Math.max(0, Math.min(rc.height, evt.clientY - rc.top)) | 0;
 			const addr = Math.max(memInfo.bogoMemAddr, Math.min(memInfo.bogoMemAddr + memInfo.bogoMem.length - detailHeight * detailWidth, memInfo.bogoMemAddr + y * canvasWidth * 8 + x * 8));
-			setDetailAddr(addr);
+			setMemoryAddr(addr & ~1);
 		};
 		const onUp = (evt: MouseEvent) => {
 			document.removeEventListener('mousemove', onMove);
@@ -142,7 +161,7 @@ export const MemoryView: FunctionComponent<{
 			document.removeEventListener('mousemove', onMove);
 			document.removeEventListener('mouseup', onUp);
 		};
-	}, [setDetailAddr, bogoCanvas.current, memInfo, canvasWidth]);
+	}, [setMemoryAddr, bogoCanvas.current, memInfo, canvasWidth]);
 
 	return <>
 		<div style={{ flexGrow: 0 }}>
@@ -151,6 +170,7 @@ export const MemoryView: FunctionComponent<{
 				<div><input style={{verticalAlign: 'bottom'}} type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setPersistence(parseInt(currentTarget.value))} /></div>
 				<ToggleButton icon="Reads" label="Show Memory Reads" checked={showReads} onChange={setShowReads} />
 				<ToggleButton icon="Writes" label="Show Memory Writes" checked={showWrites} onChange={setShowWrites} />
+				<ToggleButton icon="Track CPU Data" label="Track CPU Data" checked={trackCpuData} onChange={setTrackCpuData} />
 			</Toolbar>
 		</div>
 		<div class={styles.memory_container}>
@@ -171,7 +191,7 @@ export const MemoryView: FunctionComponent<{
 		</div>
 		<div class={styles.memory_fixed}> {/*memory values*/}
 			{[...Array(detailHeight).keys()].map((i) => <div>
-				{'$' + (detailAddr + i * detailWidth).toString(16).padStart(8, '0') + ': '}
+				{'$' + (memoryAddr + i * detailWidth).toString(16).padStart(8, '0') + ': '}
 				{[...detailMem.slice(i * detailWidth, (i + 1) * detailWidth)].map((v: number, x: number) => 
 					<span class={styles.memory_span} style={{backgroundColor: GetRgbaColorCss(detailPixels[i * detailWidth + x]) }}>{v.toString(16).padStart(2, '0')}
 					</span>
