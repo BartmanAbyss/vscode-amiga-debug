@@ -9,18 +9,20 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { CustomReadWrite, CustomRegisters } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes } from '../dma';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
 interface DeniseState {
 	screenshot: boolean;
+	window: boolean;
 	planes: boolean[];
 	sprites: boolean[];
 }
 
 const DefaultDeniseState: DeniseState = {
 	screenshot: false,
+	window: true,
 	planes: [true, true, true, true, true, true, true, true],
 	sprites: [true, true, true, true, true, true, true, true],
 };
@@ -42,6 +44,8 @@ enum PixelSource {
 	sprite23,
 	sprite45,
 	sprite67,
+	noPlanes,
+	outsideWindow,
 }
 
 interface DeniseZoomProps extends IZoomProps {
@@ -87,6 +91,7 @@ const DeniseScreen: FunctionComponent<{
 }> = ({ scale = 2, frame, time, setTime, state, dmaOpacity }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const dmaCanvas = useRef<HTMLCanvasElement>();
+	const timeCanvas = useRef<HTMLCanvasElement>();
 	const canvasScaleX = scale / 2;
 	const canvasScaleY = scale;
 	const canvasWidth = NR_DMA_REC_HPOS * 4 * canvasScaleX;
@@ -425,10 +430,10 @@ const DeniseScreen: FunctionComponent<{
 						}
 
 						if(hpos - 2 >= displayLeft && vpos >= displayTop) {
-							if(window && numPlanes)
+							if((window || !state.window) && numPlanes)
 								putPixel((hpos - 2) * 2 + i,         vpos, bpldata, color, sprsel ? sprsource : playfieldsource);
 							else
-								putPixel((hpos - 2) * 2 + i,         vpos, bpldata, 0, PixelSource.unknown);
+								putPixel((hpos - 2) * 2 + i,         vpos, bpldata, 0, !window ? PixelSource.outsideWindow : PixelSource.noPlanes);
 						}
 					}
 					hpos++;
@@ -439,7 +444,7 @@ const DeniseScreen: FunctionComponent<{
 		return [pixelSources, pixels, pixelsRgb, pixelsDma];
 	}, [scale, frame/*, time*/, state]);
 
-	useEffect(() => {
+	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
 		if(state.screenshot && PROFILES[frame].$amiga.screenshot) {
 			//width: 752, height: 574, // from WinUAE code
@@ -459,7 +464,7 @@ const DeniseScreen: FunctionComponent<{
 		context.putImageData(imgData, 0, 0);
 	}, [canvas.current, pixelsRgb]);
 
-	useEffect(() => {
+	useEffect(() => { // DMA overlay canvas
 		if(pixelsDma && dmaOpacity > 0) {
 			const context = dmaCanvas.current?.getContext('2d');
 			const imgData = context.createImageData(canvasWidth, canvasHeight);
@@ -468,6 +473,15 @@ const DeniseScreen: FunctionComponent<{
 			context.putImageData(imgData, 0, 0);
 		}
 	}, [dmaCanvas.current, pixelsDma]);
+
+	useEffect(() => { // time overlay canvas
+		const context = timeCanvas.current?.getContext('2d');
+		context.clearRect(0, 0, canvasWidth, canvasHeight);
+		context.fillStyle = 'white';
+		const cyc = CpuCyclesToDmaCycles(time);
+		context.fillRect((cyc % NR_DMA_REC_HPOS) * 4 * canvasScaleX, 0, 1, canvasHeight);
+		context.fillRect(0, ((cyc / NR_DMA_REC_HPOS) |0) * canvasScaleY, canvasWidth, 1);
+	}, [timeCanvas.current, time]);
 
 	const zoomClick = useCallback((x: number, y: number) => {
 		const line = y;
@@ -480,6 +494,7 @@ const DeniseScreen: FunctionComponent<{
 		<div class={styles.screen}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
+			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
 			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels }} onClick={zoomClick} />
 		</div>
 	</>;
@@ -530,6 +545,7 @@ export const DeniseView: FunctionComponent<{
 			<div>
 				DMA&nbsp;Overlay</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} />
 			</div>
+			<ToggleButton icon="Window" label="Show Display Window" checked={state.window} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, window: checked }))} />
 			<ToggleButton icon="Bitplanes" label="Show Bitplanes" checked={state.planes.some((v) => v)} onChange={showAllPlanes} />
 			{state.planes.map((value, index) => <ToggleButton icon={`${index + 1}`} label={`Show Bitplane ${index + 1}`} checked={value} onChange={(checked) => showPlane(index, checked)} />)}
 			<span style={{ width: '1em' }}></span>
