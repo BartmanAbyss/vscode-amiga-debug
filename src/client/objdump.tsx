@@ -1,5 +1,5 @@
 import { Component, FunctionComponent, JSX } from 'preact';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
@@ -112,7 +112,7 @@ export class ObjdumpModel {
 
 		const hits = new Map<number, number>();
 		const cycles = new Map<number, number>();
-		for(let i = 0; i < pcTrace.length; i += 2) {
+		for(let i = 0; i < pcTrace.length; i += 2 + 16) {
 			hits.set(pcTrace[i], (hits.get(pcTrace[i]) || 0) + 1);
 			cycles.set(pcTrace[i], (cycles.get(pcTrace[i]) || 0) + pcTrace[i + 1]);
 		}
@@ -129,7 +129,7 @@ export class ObjdumpModel {
 				this.functions.push({
 					name: funcMatch[2],
 					pc,
-					end: 0x7fffffff
+					end: 0x7fff_ffff
 				});
 			}
 
@@ -200,7 +200,8 @@ class FunctionDropdown extends DropdownComponent<Function> {
 export const ObjdumpView: FunctionComponent<{
 	frame?: number;
 	time?: number;
-}> = ({ frame = -1, time = -1 }) => {
+	setMemoryAddr?: StateUpdater<number>;
+}> = ({ frame = -1, time = -1, setMemoryAddr }) => {
 	const cssVariables = useCssVariables();
 	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
 	const [model, setModel] = useState<ObjdumpModel>(() => {
@@ -269,29 +270,33 @@ export const ObjdumpView: FunctionComponent<{
 		return result;
 	}, [content, find]);
 
-	const [row, pc, func] = useMemo(() => {
-		const row = (() => {
+	const [row, pc, func, regs] = useMemo(() => {
+		const [row, regs] = (() => {
 			if(frame === -1 || findResult.length)
-				return curRow;
+				return [curRow, []];
 			const pcTrace = MODELS[frame].amiga.pcTrace;
 			let t = 0;
 			let pc = 0;
+			let regs: number[];
 			for(let i = 0; i < pcTrace.length; i += 2) {
 				pc = pcTrace[i];
 				t += pcTrace[i + 1];
-				if(t > time)
+				if(t > time) {
+					if(MODELS[frame].amiga.registerTrace)
+						regs = MODELS[frame].amiga.registerTrace.slice((i >> 1) * 16, (i >> 1) * 16 + 16);
 					break;
+				}
 			}
-			return content.findIndex((l) => l.pc === pc);
+			return [content.findIndex((l) => l.pc === pc), regs];
 		})();
-		const pc = (row !== -1 ? content[row].pc : undefined) || 0xffffffff;
+		const pc = (row !== -1 ? content[row].pc : undefined) || 0xffff_ffff;
 		//console.log(pc.toString(16));
 		let func = functions.find((f: Function) => pc >= f.pc && pc < f.end);
-		if(pc === 0x7fffffff)
-			func = { name: '[IRQ]', pc: 0x7fffffff, end: 0x7fffffff };
-		if(pc === 0xffffffff)
-			func = { name: '[External]', pc: 0xffffffff, end: 0xffffffff };
-		return [row, pc, func];
+		if(pc === 0x7fff_ffff)
+			func = { name: '[IRQ]', pc: 0x7fff_ffff, end: 0x7fff_ffff };
+		if(pc === 0xffff_ffff)
+			func = { name: '[External]', pc: 0xffff_ffff, end: 0xffff_ffff };
+		return [row, pc, func, regs];
 	}, [frame, time, content, curRow, findResult.length]);
 
 	const onClickLoc = useCallback((evt: JSX.TargetedMouseEvent<HTMLElement>) => {
@@ -644,6 +649,10 @@ export const ObjdumpView: FunctionComponent<{
 				<button class={styles.button} onMouseDown={onFindNext} disabled={findResult.length === 0} type="button" title="Next match (Enter)" dangerouslySetInnerHTML={{__html: ChevronDown}} />
 				<button class={styles.button} onMouseDown={onFindClose} type="button" title="Close (Escape)" dangerouslySetInnerHTML={{__html: Close}} />
 			</div>
+			{regs?.length && <div class={styles.registers}>
+				<div>{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>D{i}: <a href="#" onClick={() => setMemoryAddr(regs[    i])}>${regs[    i].toString(16).padStart(8, '0')}</a><br/></>)}</div>
+				<div>{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>A{i}: <a href="#" onClick={() => setMemoryAddr(regs[8 + i])}>${regs[8 + i].toString(16).padStart(8, '0')}</a><br/></>)}</div>
+			</div>}
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
 		</div>

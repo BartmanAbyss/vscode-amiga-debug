@@ -57,7 +57,14 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	}, [frame]);
 
 	const [time, setTime] = useState(0); // in CPU-cycles (DMA-cycle = CPU-cycle / 2)
-	const [memoryAddr, setMemoryAddr] = useState(0);
+	const [memoryAddr, setMemoryAddrUnsafe] = useState(0);
+	const setMemoryAddr = useCallback((addr: number) => {
+		const memInfo = MODELS[0].memory;
+		if((addr >= memInfo.chipMemAddr && addr < memInfo.chipMemAddr + memInfo.chipMem.length)
+		|| (addr >= memInfo.bogoMemAddr && addr < memInfo.bogoMemAddr + memInfo.bogoMem.length)) { // only Chipmem & Bogomem
+			setMemoryAddrUnsafe(addr & ~1);
+		}
+	}, [setMemoryAddrUnsafe]);
 
 	enum LeftTab {
 		profiler,
@@ -162,7 +169,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.assembly ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
-						<ObjdumpView frame={frame} time={time} />
+						<ObjdumpView frame={frame} time={time} setMemoryAddr={setMemoryAddr} />
 					</TabPanel>
 					<TabPanel style={leftTab === LeftTab.screen ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<DeniseView frame={frame} time={time} setTime={setTime} />

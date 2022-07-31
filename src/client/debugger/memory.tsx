@@ -39,13 +39,9 @@ export const MemoryView: FunctionComponent<{
 
 		const dmaRecord = MODELS[frame].amiga.dmaRecords[CpuCyclesToDmaCycles(time)];
 		if(dmaRecord.type === DmaTypes.CPU && dmaRecord.extra === DmaSubTypes.CPU_DATA) { // only CPU data
-			if((dmaRecord.addr >= memInfo.chipMemAddr && dmaRecord.addr < memInfo.chipMemAddr + memInfo.chipMem.length)
-			|| (dmaRecord.addr >= memInfo.bogoMemAddr && dmaRecord.addr < memInfo.bogoMemAddr + memInfo.bogoMem.length)) { // only Chipmem & Bogomem
-				const read = ((dmaRecord.reg & 0x1100) === 0x1100) ? false : true;
-				if((read && showReads) || (!read && showWrites)) { // Only read/write
-					console.log(`setMemoryAddr(${dmaRecord.addr.toString(16)})`);
-					setMemoryAddr(dmaRecord.addr);
-				}
+			const read = ((dmaRecord.reg & 0x1100) === 0x1100) ? false : true;
+			if((read && showReads) || (!read && showWrites)) { // Only read/write
+				setMemoryAddr(dmaRecord.addr);
 			}
 		}
 	}, [time, trackCpuData, setMemoryAddr]);
@@ -129,7 +125,7 @@ export const MemoryView: FunctionComponent<{
 			const x = Math.max(0, Math.min(rc.width, evt.clientX - rc.left)) | 0;
 			const y = Math.max(0, Math.min(rc.height, evt.clientY - rc.top)) | 0;
 			const addr = Math.max(memInfo.chipMemAddr, Math.min(memInfo.chipMemAddr + memInfo.chipMem.length - detailHeight * detailWidth, memInfo.chipMemAddr + y * canvasWidth * 8 + x * 8));
-			setMemoryAddr(addr & ~1);
+			setMemoryAddr(addr);
 		};
 		const onUp = (evt: MouseEvent) => {
 			document.removeEventListener('mousemove', onMove);
@@ -151,7 +147,7 @@ export const MemoryView: FunctionComponent<{
 			const x = Math.max(0, Math.min(rc.width, evt.clientX - rc.left)) | 0;
 			const y = Math.max(0, Math.min(rc.height, evt.clientY - rc.top)) | 0;
 			const addr = Math.max(memInfo.bogoMemAddr, Math.min(memInfo.bogoMemAddr + memInfo.bogoMem.length - detailHeight * detailWidth, memInfo.bogoMemAddr + y * canvasWidth * 8 + x * 8));
-			setMemoryAddr(addr & ~1);
+			setMemoryAddr(addr);
 		};
 		const onUp = (evt: MouseEvent) => {
 			document.removeEventListener('mousemove', onMove);

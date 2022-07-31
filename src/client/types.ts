@@ -68,6 +68,7 @@ export interface IAmigaProfileExtra {
 	uniqueCallFrames: CallFrame[];
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 	pcTrace: number[]; // 1 entry: PC relative to .text, number of cycles
+	registerTrace?: number[]; // 1 entry: 16 registers (d0-d7, a0-a7)
 }
 
 // extra information for shrinklerstats to track uncompressed data

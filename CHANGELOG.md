@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.7
+- NEW: show CPU registers in assembly view (fixes [[#78](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/78))
+
 ## 1.4.6
 - NEW: memory viewer: track CPU data
 - NEW: screen: show time, enable/disable display window, more pixel sources, DMACON, BPLCON

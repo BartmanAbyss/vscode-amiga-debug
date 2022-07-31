@@ -539,11 +539,13 @@ const DeniseScreen: FunctionComponent<{
 	useEffect(() => { // time overlay canvas
 		const context = timeCanvas.current?.getContext('2d');
 		context.clearRect(0, 0, canvasWidth, canvasHeight);
-		context.fillStyle = 'white';
-		const cyc = CpuCyclesToDmaCycles(time);
-		context.fillRect((cyc % NR_DMA_REC_HPOS) * 4 * canvasScaleX, 0, 1, canvasHeight);
-		context.fillRect(0, ((cyc / NR_DMA_REC_HPOS) |0) * canvasScaleY, canvasWidth, 1);
-	}, [timeCanvas.current, time]);
+		if(!state.screenshot) {
+			context.fillStyle = 'white';
+			const cyc = CpuCyclesToDmaCycles(time);
+			context.fillRect((cyc % NR_DMA_REC_HPOS) * 4 * canvasScaleX, 0, 1, canvasHeight);
+			context.fillRect(0, ((cyc / NR_DMA_REC_HPOS) |0) * canvasScaleY, canvasWidth, 1);
+		}
+	}, [timeCanvas.current, time, state.screenshot]);
 
 	const zoomClick = useCallback((x: number, y: number) => {
 		const line = y;

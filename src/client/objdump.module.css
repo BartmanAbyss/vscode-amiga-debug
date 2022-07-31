@@ -249,11 +249,36 @@ a:focus {
 	vertical-align: bottom;
 	max-height: 250px;
 	width: 500px;
-
 	box-sizing: border-box;
 	box-shadow: 0 .25em .5em 0 black;
 	padding: 5px;
 	background: var(--vscode-editorWidget-background);
 	border: 1px solid var(--vscode-editorWidget-border);
 	overflow-y: auto;
+}
+
+/* registers */
+.registers {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 220px;
+  max-width: 90%;
+  right: 16px;
+  top: 34px;
+  padding: 4px;
+  box-shadow: 0 .25em .5em 0 black;
+  background: var(--vscode-sideBar-background);
+	color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);   
+  white-space: pre;
+	margin: -5px;
+}
+
+.registers > div {
+	margin: 5px;
+  float: left;
 }

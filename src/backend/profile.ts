@@ -269,7 +269,7 @@ export class ProfileFrame {
 	public gfxResources: GfxResource[] = [];
 	public profileCycles: number;
 	public idleCycles: number;
-	public profileArray: Uint32Array;
+	public profileArray: Uint32Array; // format is: pc [pc...] ~0-cycles 16*register
 	public screenshot: Uint8Array;
 	public screenshotType: string; // 'jpg', 'png'
 
@@ -474,15 +474,15 @@ export class Profiler {
 		};
 
 		const process = (fn: (mem: Uint8Array, addr: number, offset: number) => void) => {
-			let lastPC = 0xffffffff;
-			const kickBase = profileFile.kickRomSize === 512 * 1024 ? 0xf80000 : 0xfc0000;
+			let lastPC = 0xffff_ffff;
+			const kickBase = profileFile.kickRomSize === 512 * 1024 ? 0xf8_0000 : 0xfc_0000;
 			for(const pc of pcTrace) {
 				if(pc !== lastPC) {
 					if(pc > 0 && pc < profileFile.chipMemSize)
 						fn(profileFile.chipMem, pc, pc - 0);
-					else if(pc >= 0xc00000 && pc < 0xc00000 + profileFile.bogoMemSize)
-						fn(profileFile.bogoMem, pc, pc - 0xc00000);
-					else if(pc >= kickBase && pc < 0x1000000)
+					else if(pc >= 0xc0_0000 && pc < 0xc0_0000 + profileFile.bogoMemSize)
+						fn(profileFile.bogoMem, pc, pc - 0xc0_0000);
+					else if(pc >= kickBase && pc < 0x100_0000)
 						fn(profileFile.kickRom, pc, pc - kickBase);
 					lastPC = pc;
 				}
@@ -497,19 +497,24 @@ export class Profiler {
 
 	private profileSavestateFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {
 		const pcTrace: number[] = [];
+		const registerTrace: number[] = [];
 
 		let lastPC: number;
 		let totalCycles = 0;
-		for (const p of frame.profileArray) {
-			if (p < 0xffff0000) {
+		for(let i = 0; i < frame.profileArray.length; i++) {
+			const p = frame.profileArray[i];
+			if (p < 0xffff_0000) {
 				if (lastPC === undefined)
 					lastPC = p;
 			} else {
-				const cyc = (0xffffffff - p) | 0;
+				const cyc = (0xffff_ffff - p) | 0;
 
 				if (lastPC === undefined)
-					lastPC = 0xffffffff;
+					lastPC = 0xffff_ffff;
+				const registers = frame.profileArray.slice(i + 1, i + 1 + 16);
+				i += 16;
 				pcTrace.push(lastPC, cyc);
+				registerTrace.push(...registers);
 				lastPC = undefined;
 				totalCycles += cyc;
 			}
@@ -536,7 +541,8 @@ export class Profiler {
 				stackUpper: profileFile.stackUpper,
 				uniqueCallFrames: [],
 				callFrames: [],
-				pcTrace
+				pcTrace,
+				registerTrace
 			}
 		};
 		if (frame.screenshot.length)
@@ -554,7 +560,7 @@ export class Profiler {
 		const kickTrace: number[] = [];
 		for(const frame of out)
 			for(let i = 0; i < frame.$amiga.pcTrace.length; i += 2)
-				if(frame.$amiga.pcTrace[i] >= 0xf80000 && frame.$amiga.pcTrace[i] < 0x1000000)
+				if(frame.$amiga.pcTrace[i] >= 0xf8_0000 && frame.$amiga.pcTrace[i] < 0x100_0000)
 					kickTrace.push(frame.$amiga.pcTrace[i]);
 		const kickFunctions = new Map<number, string>();
 		if(this.kickstartSymbols) {
@@ -589,17 +595,19 @@ export class Profiler {
 		const callstack: CallFrame = { frames: [] };
 		const lastCallstack: CallFrame = { frames: [] };
 		const pcTrace: number[] = [];
+		const registerTrace: number[] = [];
 		let lastPC: number;
 
 		let totalCycles = 0;
-		for (const p of frame.profileArray) {
-			if (p < 0xffff0000) { // PC
+		for(let i = 0; i < frame.profileArray.length; i++) {
+			const p = frame.profileArray[i];
+			if (p < 0xffff_0000) { // PC
 				if(lastPC === undefined)
 					lastPC = p;
-				if(p === 0x7fffffff) {
+				if(p === 0x7fff_ffff) {
 					// IRQ processing
 					callstack.frames.push({ func: '[IRQ]', file: '', line: 0 });
-				} else if(p >= 0xf80000 && p < 0x1000000) {
+				} else if(p >= 0xf8_0000 && p < 0x100_0000) {
 					// in Kickstart
 					for(const f of lastCallstack.frames)
 						if(f.file !== '')
@@ -623,11 +631,13 @@ export class Profiler {
 					}
 				}
 			} else { // #Cycles
-				const cyc = (0xffffffff - p) | 0;
-
+				const cyc = (0xffff_ffff - p) | 0;
 				if (lastPC === undefined)
-					lastPC = 0xffffffff;
+					lastPC = 0xffff_ffff;
+				const registers = frame.profileArray.slice(i + 1, i + 1 + 16);
+				i += 16;
 				pcTrace.push(lastPC, cyc);
+				registerTrace.push(...registers);
 				lastPC = undefined;
 
 				if(callstack.frames.length === 0) { // not in our code
@@ -673,7 +683,8 @@ export class Profiler {
 				stackUpper: profileFile.stackUpper,
 				uniqueCallFrames: this.sourceMap.uniqueLines,
 				callFrames: this.sourceMap.lines,
-				pcTrace
+				pcTrace,
+				registerTrace
 			}
 		};
 		if (frame.screenshot)
