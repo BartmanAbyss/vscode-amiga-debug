@@ -2,6 +2,11 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.9
+- NEW: fixed template project's `TakeSystem`/`FreeSystem` to be compatible with AROS
+- NEW: Use AROS if no Kickstart ROM is configured
+- CHG: update AROS ROM in WinUAE
+
 ## 1.4.8
 - FIX: fix 2 seconds delay when starting WinUAE
 - NEW: new debug functions `debug_load`, `debug_save` in `gcc8_c_support.h`

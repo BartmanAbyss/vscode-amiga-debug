@@ -225,6 +225,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return;
 			}
 			config.set('kickstart_rom_file', args.kickstart);
+		} else {
+			config.delete('kickstart_rom_file');
 		}
 
 		if(args.cpuboard !== undefined) {
@@ -233,6 +235,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				return;
 			}
 			config.set('cpuboard_rom_file', args.cpuboard);
+		} else {
+			config.delete('cpuboard_rom_file');
 		}
 
 		// nice
@@ -1494,7 +1498,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const rv = node.resultRecords.results[0][1];
 			const pc = parseInt(rv[0][1][1]);
 			//const sr = parseInt(rv[1][1][1]);
-			if(pc >= 0xF80000) {
+			if(pc >= 0xF8_0000) {
 				// in Kickstart
 				await this.miDebugger.sendCommand("break-insert -t *0xffffffff");
 				await this.miDebugger.sendCommand("exec-continue");

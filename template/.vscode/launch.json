@@ -5,6 +5,15 @@
             "type": "amiga",
             "request": "launch",
             "preLaunchTask": "compile",
+            "name": "AROS",
+            "config": "A500",
+            "program": "${workspaceFolder}/a.mingw",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile",
             "name": "Amiga 500",
             "config": "A500",
             "program": "${workspaceFolder}/a.mingw",

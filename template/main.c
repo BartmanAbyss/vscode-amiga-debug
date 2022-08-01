@@ -79,29 +79,32 @@ inline void WaitBlt() {
 }
 
 void TakeSystem() {
-	ActiView=GfxBase->ActiView; //store current view
-	OwnBlitter();
-	WaitBlit();	
-	Disable();
-	
+	Forbid();
 	//Save current interrupts and DMA settings so we can restore them upon exit. 
 	SystemADKCON=custom->adkconr;
 	SystemInts=custom->intenar;
 	SystemDMA=custom->dmaconr;
+	ActiView=GfxBase->ActiView; //store current view
+
+	LoadView(0);
+	WaitTOF();
+	WaitTOF();
+
+	WaitVbl();
+	WaitVbl();
+
+	OwnBlitter();
+	WaitBlit();	
+	Disable();
+	
 	custom->intena=0x7fff;//disable all interrupts
 	custom->intreq=0x7fff;//Clear any interrupts that were pending
 	
-	WaitVbl();
-	WaitVbl();
 	custom->dmacon=0x7fff;//Clear all DMA channels
 
 	//set all colors black
 	for(int a=0;a<32;a++)
 		custom->color[a]=0;
-
-	LoadView(0);
-	WaitTOF();
-	WaitTOF();
 
 	WaitVbl();
 	WaitVbl();
@@ -130,16 +133,19 @@ void FreeSystem() {
 	custom->dmacon=SystemDMA|0x8000;
 	custom->adkcon=SystemADKCON|0x8000;
 
-	LoadView(ActiView);
-	WaitTOF();
-	WaitTOF();
 	WaitBlit();	
 	DisownBlitter();
 	Enable();
+
+	LoadView(ActiView);
+	WaitTOF();
+	WaitTOF();
+
+	Permit();
 }
 
-inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
-inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
+__attribute__((always_inline)) inline short MouseLeft(){return !((*(volatile UBYTE*)0xbfe001)&64);}	
+__attribute__((always_inline)) inline short MouseRight(){return !((*(volatile UWORD*)0xdff016)&(1<<10));}
 
 // DEMO - INCBIN
 volatile short frameCounter = 0;
@@ -229,7 +235,7 @@ void* doynaxdepack(const void* input, void* output) { // returns end of output d
 	}
 #endif //MUSIC
 
-inline USHORT* copSetPlanes(UBYTE bplPtrStart,USHORT* copListEnd,const UBYTE **planes,int numPlanes) {
+__attribute__((always_inline)) inline USHORT* copSetPlanes(UBYTE bplPtrStart,USHORT* copListEnd,const UBYTE **planes,int numPlanes) {
 	for (USHORT i=0;i<numPlanes;i++) {
 		ULONG addr=(ULONG)planes[i];
 		*copListEnd++=offsetof(struct Custom, bplpt[0]) + (i + bplPtrStart) * sizeof(APTR);
@@ -327,7 +333,7 @@ static __attribute__((interrupt)) void interruptHandler() {
 #endif
 
 // set up a 320x256 lowres display
-inline USHORT* screenScanDefault(USHORT* copListEnd) {
+__attribute__((always_inline)) inline USHORT* screenScanDefault(USHORT* copListEnd) {
 	const USHORT x=129;
 	const USHORT width=320;
 	const USHORT height=256;
