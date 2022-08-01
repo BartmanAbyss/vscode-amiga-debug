@@ -12,6 +12,7 @@ bin/configuration.*
 bin/dh0/s/startup-sequence
 bin/*.ini
 bin/winuaebootlog.txt
+bin/debug
 template/obj8mingw
 template/obj
 template/*.elf

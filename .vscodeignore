@@ -20,6 +20,7 @@ bin/*.uss
 bin/*.ini
 bin/*.exp
 bin/*.lib
+bin/debug
 **/*.dmp
 template/obj8mingw
 template/obj

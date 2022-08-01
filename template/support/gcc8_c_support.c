@@ -98,11 +98,11 @@ void warpmode(int on) { // bool
 	UaeConf = (long(*)(long, int, const char*, int, char*, int))0xf0ff60;
 	if(*((UWORD *)UaeConf) == 0x4eb9 || *((UWORD *)UaeConf) == 0xa00e) {
 		char outbuf;
-		UaeConf(82, -1, on ? "warp true" : "warp false", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "cpu_speed max" : "cpu_speed real", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "cpu_cycle_exact false" : "cpu_cycle_exact true", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "cpu_memory_cycle_exact false" : "cpu_memory_cycle_exact true", 0, &outbuf, 1);
 		UaeConf(82, -1, on ? "blitter_cycle_exact false" : "blitter_cycle_exact true", 0, &outbuf, 1);
+		UaeConf(82, -1, on ? "warp true" : "warp false", 0, &outbuf, 1);
 	}
 }
 
@@ -122,6 +122,8 @@ enum barto_cmd {
 	barto_cmd_register_resource,
 	barto_cmd_set_idle,
 	barto_cmd_unregister_resource,
+	barto_cmd_load,
+	barto_cmd_save
 };
 
 enum debug_resource_type {
@@ -223,4 +225,24 @@ void debug_register_copperlist(const void* addr, const char* name, unsigned int 
 
 void debug_unregister(const void* addr) {
 	debug_cmd(barto_cmd_unregister_resource, (unsigned int)addr, 0, 0);
+}
+
+// load/save
+unsigned int debug_load(const void* addr, const char* name) {
+	struct debug_resource resource = {
+		.address = (unsigned int)addr,
+		.size = 0,
+	};
+	my_strncpy(resource.name, name, sizeof(resource.name));
+	debug_cmd(barto_cmd_load, (unsigned int)&resource, 0, 0);
+	return resource.size;
+}
+
+void debug_save(const void* addr, unsigned int size, const char* name) {
+	struct debug_resource resource = {
+		.address = (unsigned int)addr,
+		.size = size,
+	};
+	my_strncpy(resource.name, name, sizeof(resource.name));
+	debug_cmd(barto_cmd_save, (unsigned int)&resource, 0, 0);
 }

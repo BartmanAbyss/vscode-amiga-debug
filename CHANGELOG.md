@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.4.8
+- FIX: fix 2 seconds delay when starting WinUAE
+- NEW: new debug functions `debug_load`, `debug_save` in `gcc8_c_support.h`
+
 ## 1.4.7
 - NEW: show CPU registers in assembly view (fixes [[#78](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/78))
 
