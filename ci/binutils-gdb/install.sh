@@ -4,4 +4,4 @@ IFS=$'\n\t'
 set -x
 
 cd build-binutils-gdb
-make install
+make install-strip
