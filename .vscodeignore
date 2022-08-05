@@ -20,6 +20,7 @@ bin/dh0/runme.exe
 bin/winuae.ini
 bin/winuaebootlog.txt
 ci/**
+gcc-barto.patch
 out/**
 src/**
 template/*.elf
