@@ -3,7 +3,7 @@ name: binutils-gdb-gcc
 on:
   push:
     paths:
-      - "bin/gcc-barto.patch"
+      - "gcc-barto.patch"
       - "ci/**"
   schedule:
     - cron: "0 0 * * *"
