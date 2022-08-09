@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.0
+- FIX: fixed WinUAE-crash in savestate profiler for non-68000 CPUs, and non-bogomem memory configs
+- FIX: savestate controls improved, debug output
+
 ## 1.4.9
 - NEW: fixed template project's `TakeSystem`/`FreeSystem` to be compatible with AROS
 - NEW: Use AROS if no Kickstart ROM is configured
