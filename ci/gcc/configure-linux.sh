@@ -3,9 +3,14 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-mkdir -p build-gcc
+export LDFLAGS="-static -static-libgcc -static-libstdc++"
+export PREFIX="`pwd`/output"
+
+rm -rf build-gcc
+mkdir build-gcc
 cd build-gcc
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
+
+../gcc/configure \
     --disable-clocale \
     --disable-gcov \
     --disable-libada \
@@ -19,6 +24,6 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc/configure \
     --enable-languages=c,c++ \
     --enable-lto \
     --enable-static \
-    --prefix=$GITHUB_WORKSPACE/output \
+    --prefix="$PREFIX" \
     --target=m68k-amiga-elf \
     --with-cpu=68000

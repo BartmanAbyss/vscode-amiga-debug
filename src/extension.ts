@@ -147,7 +147,7 @@ class AmigaDebugExtension {
 			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
 			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true } }),
 			vscode.window.registerCustomEditorProvider('amiga.objdump', this.objdumpEditorProvider, { webviewOptions: { retainContextWhenHidden: true } }),
-			vscode.window.registerCustomEditorProvider('amiga.savestate', new SavestateEditorProvider(context), { webviewOptions: { retainContextWhenHidden: true } }),
+			vscode.window.registerCustomEditorProvider('amiga.savestate', new SavestateEditorProvider(context, this.outputChannel), { webviewOptions: { retainContextWhenHidden: true } }),
 
 			// debugger
 			vscode.debug.onDidReceiveDebugSessionCustomEvent(this.receivedCustomEvent.bind(this)),

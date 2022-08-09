@@ -3,13 +3,18 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
+export LDFLAGS="-static -static-libgcc -static-libstdc++"
+export PREFIX="`pwd`/output"
+
+rm -rf build-binutils-gdb
 mkdir build-binutils-gdb
 cd build-binutils-gdb
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure \
+
+../binutils-gdb/configure \
     --disable-interprocess-agent \
     --disable-libcc \
     --disable-shared \
     --disable-werror \
     --enable-static \
-    --prefix=$GITHUB_WORKSPACE/output \
+    --prefix="$PREFIX" \
     --target=m68k-amiga-elf

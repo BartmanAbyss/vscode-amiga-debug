@@ -8,8 +8,11 @@ import { UssFile } from './backend/savestate';
 import { ProfileFile, Profiler } from './backend/profile';
 import { MI2 } from './backend/mi2';
 
+// global debug switch
+const DEBUG = false;
+
 class SavestateDocument implements vscode.CustomDocument {
-	constructor(public uri: vscode.Uri) {
+	constructor(public uri: vscode.Uri, private outputChannel: vscode.OutputChannel) {
 		this.ussPath = this.uri.fsPath;
 	}
 
@@ -37,7 +40,7 @@ class SavestateDocument implements vscode.CustomDocument {
 	private currentThreadId = 1;
 	private ready = false;
 
-	public async start(onReady: () => void) {
+	public async start(setStatus: (status: string) => void) {
 		if(this.winuae || this.gdb || this.miDebugger)
 			return;
 
@@ -83,6 +86,11 @@ class SavestateDocument implements vscode.CustomDocument {
 
 		// launch WinUAE
 		this.winuae = cp.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+		setStatus('launch');
+		this.winuae.on('exit', (code: number, signal: string) => {
+			this.stop();
+			setStatus('stop');
+		});
 
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
@@ -102,7 +110,10 @@ class SavestateDocument implements vscode.CustomDocument {
 		//miDebugger.on('thread-created', this.threadCreatedEvent.bind(this));
 		//miDebugger.on('thread-exited', this.threadExitedEvent.bind(this));
 		//miDebugger.on('thread-selected', this.threadSelectedEvent.bind(this));
-		this.miDebugger.trace = true; // DEBUG only
+		this.miDebugger.on('msg', (type: string, msg: string) => {
+			this.outputChannel.append(`${type}: ${msg}`);
+		});
+		this.miDebugger.trace = DEBUG;
 
 		this.miDebugger.once('debug-ready', () => {
 			void (async () => {
@@ -110,7 +121,7 @@ class SavestateDocument implements vscode.CustomDocument {
 				await this.miDebugger.sendCommand('exec-continue');
 				this.gdb = this.miDebugger.process;
 				this.ready = true;
-				onReady();
+				setStatus('ready');
 			})();
 		});
 		const commands = [
@@ -157,12 +168,9 @@ class SavestateDocument implements vscode.CustomDocument {
 	}
 
 	public stop() {
-		if(!this.ready)
-			return;
-
 		// disconnect debugger / kill WinUAE
-		this.miDebugger.stop();
-		this.winuae.kill();
+		this.miDebugger?.stop();
+		this.winuae?.kill();
 
 		this.ready = false;
 		this.winuae = undefined;
@@ -172,11 +180,10 @@ class SavestateDocument implements vscode.CustomDocument {
 }
 
 export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvider<SavestateDocument> {
-	constructor(private readonly context: vscode.ExtensionContext) {
-	}
+	constructor(private readonly context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {}
 
 	public openCustomDocument(uri: vscode.Uri, openContext: vscode.CustomDocumentOpenContext, token: vscode.CancellationToken): SavestateDocument {
-		const doc = new SavestateDocument(uri);
+		const doc = new SavestateDocument(uri, this.outputChannel);
 		doc.load();
 		return doc;
 	}
@@ -196,14 +203,16 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
+		const setStatus = (status: string) => { void webviewPanel.webview.postMessage({ type: 'status', status }); };
+
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch(message.type) {
 				case 'savestateStart':
-					void document.start(() => { void webviewPanel.webview.postMessage({ type: 'status', body: { running: true } }); });
+					void document.start(setStatus);
 					break;
 				case 'savestateStop':
 					document.stop();
-					void webviewPanel.webview.postMessage({ type: 'status', body: { running: false } });
+					setStatus('stop');
 					break;
 				case 'savestateProfile':
 					void document.profile(message.frames);

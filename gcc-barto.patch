@@ -1,0 +1,112 @@
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.cc gcc-12.1.0-barto/gcc/config/m68k/m68k.cc
+--- gcc-12.1.0/gcc/config/m68k/m68k.cc	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.cc	2022-05-09 21:06:38.690933500 +0200
+@@ -1279,8 +1279,17 @@
+ 	      addr = gen_rtx_POST_INC (Pmode, stack_pointer_rtx);
+ 	    else
+ 	      addr = plus_constant (Pmode, frame_pointer_rtx, -offset);
+-	    emit_move_insn (gen_rtx_REG (SImode, D0_REG + i),
++	    rtx_insn *insn = emit_move_insn (gen_rtx_REG (SImode, D0_REG + i),
+ 			    gen_frame_mem (SImode, addr));
++		//BARTO-BEGIN
++		if (restore_from_sp) {
++			rtx x = plus_constant (Pmode, stack_pointer_rtx, GET_MODE_SIZE (SImode)); 
++			x = gen_rtx_SET (stack_pointer_rtx, x);
++			add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++			RTX_FRAME_RELATED_P (insn) = 1;
++		}
++		//BARTO-END
++		
+ 	    offset -= GET_MODE_SIZE (SImode);
+ 	  }
+     }
+@@ -1293,12 +1302,18 @@
+ 			 -(current_frame.offset + fsize),
+ 			 current_frame.reg_no, D0_REG,
+ 			 current_frame.reg_mask, false, false);
+-      else if (restore_from_sp)
+-	m68k_emit_movem (stack_pointer_rtx, 0,
++      else if (restore_from_sp) {
++	rtx_insn *insn = m68k_emit_movem (stack_pointer_rtx, 0,
+ 			 current_frame.reg_no, D0_REG,
+ 			 current_frame.reg_mask, false,
+ 			 !TARGET_COLDFIRE);
+-      else
++		//BARTO-BEGIN
++		rtx x = plus_constant (Pmode, stack_pointer_rtx, current_frame.reg_no * GET_MODE_SIZE (SImode)); 
++		x = gen_rtx_SET (stack_pointer_rtx, x);
++		add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++		RTX_FRAME_RELATED_P (insn) = 1;
++		//BARTO-END
++      } else
+ 	m68k_emit_movem (frame_pointer_rtx,
+ 			 -(current_frame.offset + fsize),
+ 			 current_frame.reg_no, D0_REG,
+@@ -1347,10 +1362,17 @@
+   emit_insn (gen_blockage ());
+   if (frame_pointer_needed)
+     emit_insn (gen_unlink (frame_pointer_rtx));
+-  else if (fsize_with_regs)
+-    emit_insn (gen_addsi3 (stack_pointer_rtx,
++  else if (fsize_with_regs) {
++    rtx_insn *insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
+ 			   stack_pointer_rtx,
+ 			   GEN_INT (fsize_with_regs)));
++	//BARTO-BEGIN
++	rtx x = plus_constant (Pmode, stack_pointer_rtx, fsize_with_regs); 
++	x = gen_rtx_SET (stack_pointer_rtx, x);
++	add_reg_note (insn, REG_CFA_ADJUST_CFA, x);
++	RTX_FRAME_RELATED_P (insn) = 1;
++	//BARTO-END
++  }
+ 
+   if (crtl->calls_eh_return)
+     emit_insn (gen_addsi3 (stack_pointer_rtx,
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.h gcc-12.1.0-barto/gcc/config/m68k/m68k.h
+--- gcc-12.1.0/gcc/config/m68k/m68k.h	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.h	2022-05-09 21:16:00.610933500 +0200
+@@ -398,7 +398,7 @@
+ /* Most m68k targets use %a6 as a frame pointer.  The AmigaOS
+    ABI uses %a6 for shared library calls, therefore the frame
+    pointer is shifted to %a5 on this target.  */
+-#define FRAME_POINTER_REGNUM A6_REG
++#define FRAME_POINTER_REGNUM A5_REG
+ 
+ /* Base register for access to arguments of the function.
+  * This isn't a hardware register. It will be eliminated to the
+@@ -733,8 +733,9 @@
+ #define DWARF_FRAME_RETURN_COLUMN 24
+ #define DWARF_ALT_FRAME_RETURN_COLUMN 25
+ 
+-/* Before the prologue, the top of the frame is at 4(%sp).  */
+-#define INCOMING_FRAME_SP_OFFSET 4
++/* Before the prologue, the top of the frame is at 4(%sp), except in interrupt handlers: 6(%sp)  */
++#define DEFAULT_INCOMING_FRAME_SP_OFFSET 4
++#define INCOMING_FRAME_SP_OFFSET (m68k_get_function_kind(current_function_decl) == m68k_fk_interrupt_handler ? 6 : 4)
+ 
+ #define EPILOGUE_USES(REGNO) m68k_epilogue_uses (REGNO)
+ 
+diff -ruN gcc-12.1.0/gcc/config/m68k/m68k.md gcc-12.1.0-barto/gcc/config/m68k/m68k.md
+--- gcc-12.1.0/gcc/config/m68k/m68k.md	2022-05-06 09:30:57.000000000 +0200
++++ gcc-12.1.0-barto/gcc/config/m68k/m68k.md	2022-05-09 21:09:25.180933500 +0200
+@@ -133,7 +133,8 @@
+   [(D0_REG		0)
+    (A0_REG		8)
+    (A1_REG		9)
+-   (PIC_REG		13)
++   (PIC_REG		12)
++   (A5_REG		13)
+    (A6_REG		14)
+    (SP_REG		15)
+    (FP0_REG		16)
+diff -ruN gcc-12.1.0/gcc/tree-scalar-evolution.cc gcc-12.1.0-barto/gcc/tree-scalar-evolution.cc
+--- gcc-12.1.0/gcc/tree-scalar-evolution.cc	2022-05-06 09:30:59.000000000 +0200
++++ gcc-12.1.0-barto/gcc/tree-scalar-evolution.cc	2022-05-09 21:10:36.320933500 +0200
+@@ -3364,6 +3364,7 @@
+       || code == CEIL_DIV_EXPR
+       || code == FLOOR_DIV_EXPR
+       || code == ROUND_DIV_EXPR
++      || code == MULT_EXPR // BARTO
+       || code == TRUNC_MOD_EXPR
+       || code == CEIL_MOD_EXPR
+       || code == FLOOR_MOD_EXPR

@@ -3,7 +3,7 @@ name: binutils-gdb-gcc
 on:
   push:
     paths:
-      - "bin/gcc-barto.patch"
+      - "gcc-barto.patch"
       - "ci/**"
   schedule:
     - cron: "0 0 * * *"
@@ -24,10 +24,34 @@ jobs:
       - run: ci/gcc/patch.sh
       - run: ci/gcc/download-prerequisites.sh
       - run: ci/gcc/configure-linux.sh
-      - run: ci/gcc/build-linux.sh
+      - run: ci/gcc/build.sh
       - run: ci/gcc/install.sh
-      - run: ci/clean-up-linux.sh
+      - run: ci/clean-up.sh
+      - run: ci/archive-linux.sh
       - uses: actions/upload-artifact@v3
         with:
           name: binutils-gdb-gcc-linux
-          path: output/
+          path: binutils-gdb-gcc-linux.tar
+
+  macos:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v3
+      - run: ci/install-packages-macos.sh
+      - run: ci/binutils-gdb/clone.sh
+      - run: ci/binutils-gdb/download-prerequisites.sh
+      - run: ci/binutils-gdb/configure-macos.sh
+      - run: ci/binutils-gdb/build-macos.sh
+      - run: ci/binutils-gdb/install.sh
+      - run: ci/gcc/download.sh
+      - run: ci/gcc/patch.sh
+      - run: ci/gcc/download-prerequisites.sh
+      - run: ci/gcc/configure-macos.sh
+      - run: ci/gcc/build.sh
+      - run: ci/gcc/install.sh
+      - run: ci/clean-up.sh
+      - run: ci/archive-macos.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: binutils-gdb-gcc-macos
+          path: binutils-gdb-gcc-macos.tar

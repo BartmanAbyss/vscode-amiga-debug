@@ -4,4 +4,4 @@ IFS=$'\n\t'
 set -x
 
 cd build-gcc
-make install-gcc
+make install-strip-gcc

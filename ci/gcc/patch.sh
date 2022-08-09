@@ -4,4 +4,4 @@ IFS=$'\n\t'
 set -x
 
 cd gcc
-patch -p1 < ../bin/gcc-barto.patch
+patch -p1 < ../gcc-barto.patch
