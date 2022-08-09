@@ -3,5 +3,4 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-cd gcc
-patch -p1 < ../gcc-barto.patch
+brew install autoconf bash bison gettext wget

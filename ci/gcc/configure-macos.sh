@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-export LDFLAGS="-static -static-libgcc -static-libstdc++"
+export LDFLAGS="-static-libstdc++" # -static is not supported
 export PREFIX="`pwd`/output"
 
 rm -rf build-gcc
