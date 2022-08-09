@@ -1,4 +1,5 @@
 import { FunctionComponent, h, ComponentType } from 'preact';
+import { createPortal } from 'preact/compat';
 import { Ref, useEffect, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './zoomcanvas.module.css';
@@ -13,10 +14,12 @@ export const ZoomCanvas: FunctionComponent<{
 	scale: number;
 	width: number;
 	height: number;
+	infoWidth: number; // used for clipping
+	infoHeight: number;
 	ZoomInfo: ComponentType<IZoomProps>;
 	zoomExtraProps?: any;
 	onClick?: (x: number, y: number) => void;
-}> = ({ canvas, scale, width, height, ZoomInfo, zoomExtraProps, onClick }) => {
+}> = ({ canvas, scale, width, height, infoWidth, infoHeight, ZoomInfo, zoomExtraProps, onClick }) => {
 	const zoomDiv = useRef<HTMLDivElement>();
 	const zoomCanvas = useRef<HTMLCanvasElement>();
 
@@ -48,8 +51,10 @@ export const ZoomCanvas: FunctionComponent<{
 			const y = Math.floor(evt.offsetY / canvasScaleY);
 			setZoomProps({ x, y });
 			// position zoomCanvas
-			zoomDiv.current.style.top = `${snapY(evt.offsetY) + 10}px`;
-			zoomDiv.current.style.left = `${snapX(evt.offsetX) + 10}px`;
+			const top = Math.min(document.body.clientHeight - infoHeight, evt.pageY + 10);
+			const left = Math.min(document.body.clientWidth - infoWidth, evt.pageX + 10);
+			zoomDiv.current.style.top = `${top}px`;
+			zoomDiv.current.style.left = `${left}px`;
 			zoomDiv.current.style.display = 'block';
 		};
 		canvas.current.onmousemove = onMouseMove;
@@ -69,8 +74,8 @@ export const ZoomCanvas: FunctionComponent<{
 		}
 	}, [canvas, setZoomProps, onClick]);
 
-	return <div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
+	return createPortal(<div ref={zoomDiv} class={styles.zoom} style={{ display: 'none' }}>
 		<canvas ref={zoomCanvas} width={width} height={height} />
 		<ZoomInfo x={zoomProps.x} y={zoomProps.y} {...zoomExtraProps} />
-	</div>;
+	</div>, document.body);
 };

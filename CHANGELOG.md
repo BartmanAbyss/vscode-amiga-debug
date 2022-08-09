@@ -5,6 +5,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.5.0
 - FIX: fixed WinUAE-crash in savestate profiler for non-68000 CPUs, and non-bogomem memory configs
 - FIX: savestate controls improved, debug output
+- FIX: screen/resource zoom window now clips to document
 
 ## 1.4.9
 - NEW: fixed template project's `TakeSystem`/`FreeSystem` to be compatible with AROS

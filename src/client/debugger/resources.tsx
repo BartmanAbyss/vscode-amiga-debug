@@ -314,7 +314,7 @@ export const Screen: FunctionComponent<{
 				<div class={blitRect.active ? styles.blitrect_active : styles.blitrect}
 					style={{ left: blitRect.left * canvasScaleX, top: blitRect.top * canvasScaleY, width: blitRect.width * canvasScaleX, height: blitRect.height * canvasScaleY }} />
 			)}
-			{useZoom && <ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} ZoomInfo={ScreenZoomInfo} zoomExtraProps={{ screen, mask, getPixel }} />}
+			{useZoom && <ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={150} infoHeight={190} ZoomInfo={ScreenZoomInfo} zoomExtraProps={{ screen, mask, getPixel }} />}
 		</div>
 	</>;
 };

@@ -2,6 +2,7 @@
 	position: absolute;
 	box-shadow: 0 0 1em 0 black;
 	background: var(--vscode-editor-background);
+	pointer-events: none;
 }
 
 .zoom canvas {
