@@ -392,6 +392,11 @@ int main() {
 	TakeSystem();
 	WaitVbl();
 
+	char* test = (char*)AllocMem(2502, MEMF_ANY);
+	memset(test, 0xcd, 2502);
+	memclr(test + 2, 2502 - 4);
+	FreeMem(test, 2502);
+
 	USHORT* copper1 = (USHORT*)AllocMem(1024, MEMF_CHIP);
 	USHORT* copPtr = copper1;
 
