@@ -71,11 +71,22 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - Testing by [Pink/Abyss](https://soundcloud.com/pink_abyss)
 
 ## Already used in these productions
-- [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
-- [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
-- [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
-- [Tiny Bobble](http://eab.abime.net/showthread.php?t=103546) by Abyss
-- [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
+
+- Demos/Intros
+  - [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
+  - [The Bitmap Rasters](https://www.pouet.net/prod.php?which=91776) by Abyss
+  - [Done](https://www.pouet.net/prod.php?which=91911) by Abyss
+  - [Primer](https://www.pouet.net/prod.php?which=91928) by Architect
+
+- Games
+  - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
+  - [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
+  - [Tiny Bobble](http://eab.abime.net/showthread.php?t=103546) by Abyss
+  - [Tinyus](https://www.pouet.net/prod.php?which=88028) by Abyss
+  - [Wrong Way Driver](https://www.pouet.net/prod.php?which=88705) by Abyss
+
+- Tools
+  - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
