@@ -9,8 +9,49 @@ unsigned long strlen(const char* s) {
 	return t;
 }
 
+void memclr(void* dest, unsigned long len) { // dest: 16bit-aligned, len: multiple of 2
+	__asm volatile (
+		"cmp.l #256, %[len]\n"
+		"blt 2f\n"
+		"add.l %[len], %[dest]\n"
+		"moveq #0, %%d0\n"
+		"moveq #0, %%d1\n"
+		"moveq #0, %%d2\n"
+		"moveq #0, %%d3\n"
+		"1:\n"
+		".rept 256/16\n"
+		"movem.l %%d0-%%d3, -(%[dest])\n"
+		".endr\n"
+		"sub.l #256, %[len]\n"
+		"cmp.l #256, %[len]\n"
+		"bge 1b\n"
+		"2:\n" // <256
+		"cmp.w #64, %[len]\n"
+		"blt 3f\n"
+		".rept 64/16\n"
+		"movem.l %%d0-%%d3, -(%[dest])\n"
+		".endr\n"
+		"sub.w #64, %[len]\n"
+		"bra 2b\n"
+		"3:\n" // <64
+		"lsr.w #2, %[len]\n" // 4
+		"bcc 4f\n" // stray word
+		"clr.w -(%[dest])\n"
+		"4:\n"
+		"moveq #64>>2, %%d0\n"
+		"sub.w %[len], %%d0\n"
+		"add.w %%d0, %%d0\n"
+		"jmp (2, %%d0.w, %%pc)\n"
+		".rept 64/4\n"
+		"clr.l -(%[dest])\n"
+		".endr\n"
+	: [dest]"+a"(dest), [len]"+d"(len)
+	:
+	: "memory", "d0", "d1", "d2", "d3", "cc");
+}
+
 __attribute__((optimize("no-tree-loop-distribute-patterns"))) 
-	void* memset(void *dest, int val, unsigned long len) {
+void* memset(void *dest, int val, unsigned long len) {
 	unsigned char *ptr = (unsigned char *)dest;
 	while(len-- > 0)
 		*ptr++ = val;
