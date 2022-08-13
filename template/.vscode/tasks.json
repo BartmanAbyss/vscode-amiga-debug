@@ -9,6 +9,10 @@
             "command": "${command:amiga.bin-path}\\gnumake.exe",
             "args": [
                 "-j4",
+                "-j4", 
+                "extensionPath=${command:amiga.bin-path}", 
+                "gasFileExt=${command:amiga.fileExtensions.asm-gas}", 
+                "vasmFileExt=${command:amiga.fileExtensions.asm-vasm}"
             ],
             "options": {
                 "cwd": "${workspaceRoot}",

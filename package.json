@@ -114,7 +114,9 @@
 					"Amiga Assembly"
 				],
 				"extensions": [
-					".s"
+					".s",
+					".i",
+					".asm"
 				],
 				"configuration": "./amiga.assembly-language-configuration.json"
 			}
@@ -371,7 +373,21 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.assembly.fileExtensions.asm" : {
+						"type": "string",
+						"enum": [ "VASM", "GAS" ],
+						"enumDescriptions": [ "Associate *.s files to GAS and *.asm files to VASM.", "Associate *.asm files to GAS and *.s files to VASM." ],
+						"default": "VASM",
+						"description": "Assembler to associate the .asm file extension to. The other assembler will be associated to the .s file extension."
+					}
+				}
+			}			
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",
