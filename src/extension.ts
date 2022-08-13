@@ -143,6 +143,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 			vscode.commands.registerCommand('amiga.fileExtensions.asm-gas' , () => utils.getFileExtensionForGAS ()),
 			vscode.commands.registerCommand('amiga.fileExtensions.asm-vasm', () => utils.getFileExtensionForVASM()),
+			vscode.commands.registerCommand('amiga.program', () => utils.getProgramName()),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
@@ -586,7 +587,10 @@ class AmigaDebugConfigurationProvider implements vscode.DebugConfigurationProvid
 				return undefined;	// abort launch
 			});
 		}
-
+		if(!config.program) { // Resolve the program folder.
+			const workspaceFolder  = vscode.workspace.workspaceFolders[0].uri.fsPath;
+			config.program = path.join(workspaceFolder, utils.getProgramName().toString());
+		}
 		if(!config.program) {
 			return vscode.window.showInformationMessage("Cannot find a program to debug").then((_) => {
 				return undefined;	// abort launch

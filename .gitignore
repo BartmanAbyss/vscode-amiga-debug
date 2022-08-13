@@ -17,6 +17,9 @@ template/obj8mingw
 template/obj
 template/*.elf
 template/a.mingw.*
+!template/out/
+template/out/*
+!template/out/DELETE.ME
 template/.vscode/settings.json
 src/test/suite/data/private
 src/test/suite/data/output

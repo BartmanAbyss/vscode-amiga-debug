@@ -38,3 +38,4 @@ export function extractBits(value: number, offset: number, width: number) {
 
 export const getFileExtensionForGAS  = () => vscode.workspace.getConfiguration('amiga.assembly.fileExtensions').get('asm').toString() === "VASM" ? ".s" : ".asm";
 export const getFileExtensionForVASM = () => vscode.workspace.getConfiguration('amiga.assembly.fileExtensions').get('asm').toString() === "VASM" ? ".asm" : ".s";
+export const getProgramName = () : string => vscode.workspace.getConfiguration('amiga').get('program')?.toString() ?? "a.mingw";

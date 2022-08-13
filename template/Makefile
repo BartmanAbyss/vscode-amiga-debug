@@ -7,21 +7,23 @@ SHELL = cmd.exe
 forward-to-backward = $(subst /,\,$1)
 
 subdirs := $(wildcard */)
+code_subdirs:= $(filter-out out/,$(subdirs))
 VPATH = $(subdirs)
-cpp_sources := $(wildcard *.cpp) $(wildcard $(addsuffix *.cpp,$(subdirs)))
+cpp_sources := $(wildcard *.cpp) $(wildcard $(addsuffix *.cpp,$(code_subdirs)))
 cpp_objects := $(addprefix obj/,$(patsubst %.cpp,%.o,$(notdir $(cpp_sources))))
-c_sources := $(wildcard *.c) $(wildcard $(addsuffix *.c,$(subdirs)))
+c_sources := $(wildcard *.c) $(wildcard $(addsuffix *.c,$(code_subdirs)))
 c_objects := $(addprefix obj/,$(patsubst %.c,%.o,$(notdir $(c_sources))))
+s_sources := $(wildcard *$(gasExtension)) $(wildcard $(addsuffix *$(gasExtension), $(code_subdirs)))
 s_sources := support/gcc8_a_support$(gasFileExt) support/depacker_doynax$(gasFileExt)
 s_objects := $(addprefix obj/,$(patsubst %$(gasFileExt),%.o,$(notdir $(s_sources))))
-vasm_sources := $(wildcard *$(vasmFileExt)) $(wildcard $(addsuffix *$(vasmFileExt), $(subdirs)))
+vasm_sources := $(wildcard *$(vasmFileExt)) $(wildcard $(addsuffix *$(vasmFileExt), $(code_subdirs)))
 vasm_objects := $(addprefix obj/, $(patsubst %$(vasmFileExt),%.o,$(notdir $(vasm_sources))))
 objects := $(cpp_objects) $(c_objects) $(s_objects) $(vasm_objects)
 
 # https://stackoverflow.com/questions/4036191/sources-from-subdirectories-in-makefile/4038459
 # http://www.microhowto.info/howto/automatically_generate_makefile_dependencies.html
 
-OUT = a.mingw
+OUT = $(program)
 CC = m68k-amiga-elf-gcc
 VASM = vasmm68k_mot.exe
 

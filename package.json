@@ -18,6 +18,7 @@
 	"activationEvents": [
 		"onDebug",
 		"onCommand:amiga.bin-path",
+		"onCommand:amiga.program",		
 		"onCommand:amiga.initProject",
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
@@ -384,6 +385,11 @@
 						"enumDescriptions": [ "Associate *.s files to GAS and *.asm files to VASM.", "Associate *.asm files to GAS and *.s files to VASM." ],
 						"default": "VASM",
 						"description": "Assembler to associate the .asm file extension to. The other assembler will be associated to the .s file extension."
+					},
+					"amiga.program": {
+						"type": "string",
+						"default": "out\\a.mingw",
+						"description": "Program to launch when not defined in launch.json (relative to the workspace folder)."
 					}
 				}
 			}			

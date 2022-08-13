@@ -12,7 +12,8 @@
                 "-j4", 
                 "extensionPath=${command:amiga.bin-path}", 
                 "gasFileExt=${command:amiga.fileExtensions.asm-gas}", 
-                "vasmFileExt=${command:amiga.fileExtensions.asm-vasm}"
+                "vasmFileExt=${command:amiga.fileExtensions.asm-vasm}",
+                "program=${workspaceFolder}\\${command:amiga.program}" 
             ],
             "options": {
                 "cwd": "${workspaceRoot}",
