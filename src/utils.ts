@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 export function hexFormat(value: number, padding = 8, includePrefix = true): string {
 	let base = value.toString(16);
 	while (base.length < padding) { base = '0' + base; }
@@ -33,3 +35,6 @@ export function extractBits(value: number, offset: number, width: number) {
 	const bvalue = ((value & mask) >>> offset) >>> 0;
 	return bvalue;
 }
+
+export const getFileExtensionForGAS  = () => vscode.workspace.getConfiguration('amiga.assembly.fileExtensions').get('asm').toString() === "VASM" ? ".s" : ".asm";
+export const getFileExtensionForVASM = () => vscode.workspace.getConfiguration('amiga.assembly.fileExtensions').get('asm').toString() === "VASM" ? ".asm" : ".s";

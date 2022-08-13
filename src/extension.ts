@@ -8,6 +8,7 @@ import * as Net from 'net';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as utils from './utils';
 import { CppToolsApi, Version, CustomConfigurationProvider, getCppToolsApi, SourceFileConfigurationItem, WorkspaceBrowseConfiguration, SourceFileConfiguration } from 'vscode-cpptools';
 import { CancellationToken } from 'vscode-jsonrpc';
 
@@ -140,6 +141,8 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
+			vscode.commands.registerCommand('amiga.fileExtensions.asm-gas' , () => utils.getFileExtensionForGAS ()),
+			vscode.commands.registerCommand('amiga.fileExtensions.asm-vasm', () => utils.getFileExtensionForVASM()),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
