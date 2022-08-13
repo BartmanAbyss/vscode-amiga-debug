@@ -18,6 +18,7 @@
 	"activationEvents": [
 		"onDebug",
 		"onCommand:amiga.bin-path",
+		"onCommand:amiga.program",		
 		"onCommand:amiga.initProject",
 		"onCommand:amiga.terminal",
 		"onCommand:amiga.profileSize",
@@ -371,7 +372,19 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.program": {
+						"type": "string",
+						"default": "out\\a.mingw",
+						"description": "Program to launch when not defined in launch.json (relative to the workspace folder)."
+					}
+				}
+			}			
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",

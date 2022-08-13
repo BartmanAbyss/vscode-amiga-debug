@@ -25,7 +25,7 @@ const DEBUG = false;
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	config?: string; // A500 (default), A1200, etc.
-	program: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
+	program?: string; // An absolute path to the "program" to debug. basename only; .elf and .exe will be added respectively to find ELF and Amiga-HUNK file
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
