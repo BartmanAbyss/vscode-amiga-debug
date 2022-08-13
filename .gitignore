@@ -30,3 +30,4 @@ bin/*.lib
 /build-gcc/
 /gcc/
 /output/
+/.vscode/*.log
