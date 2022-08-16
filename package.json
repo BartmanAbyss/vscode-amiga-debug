@@ -371,7 +371,29 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.rom-paths.A500": {
+						"type": "string",
+						"default": "c:/amiga/KICK13.rom",
+						"description": "Path to the Kickstart ROM for A500 models."
+					},
+					"amiga.rom-paths.A1200": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A1200 models."
+					},
+					"amiga.rom-paths.A4000": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A4000 models."
+					}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",
