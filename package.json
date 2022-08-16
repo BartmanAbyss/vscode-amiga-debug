@@ -371,7 +371,19 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.program": {
+						"type": "string",
+						"default": "out\\a.mingw",
+						"description": "Path to the output program (without extension), relative to the workspace."
+					}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",
