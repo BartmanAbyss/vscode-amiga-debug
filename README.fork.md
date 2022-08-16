@@ -9,3 +9,4 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
 ## Additional credits
 
 - Code by [merry/Architect](https://github.com/davidcanadas).
+- Logo by [Ozan/TEK](https://www.pouet.net/user.php?who=99100).
