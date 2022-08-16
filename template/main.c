@@ -72,7 +72,7 @@ void WaitLine(USHORT line) {
 	}
 }
 
-inline void WaitBlt() {
+__attribute__((always_inline)) inline void WaitBlt() {
 	UWORD tst=*(volatile UWORD*)&custom->dmaconr; //for compatiblity a1000
 	(void)tst;
 	while (*(volatile UWORD*)&custom->dmaconr&(1<<14)) {} //blitter busy wait
@@ -246,19 +246,19 @@ __attribute__((always_inline)) inline USHORT* copSetPlanes(UBYTE bplPtrStart,USH
 	return copListEnd;
 }
 
-inline USHORT* copWaitXY(USHORT *copListEnd,USHORT x,USHORT i) {
+__attribute__((always_inline)) inline USHORT* copWaitXY(USHORT *copListEnd,USHORT x,USHORT i) {
 	*copListEnd++=(i<<8)|(x<<1)|1;	//bit 1 means wait. waits for vertical position x<<8, first raster stop position outside the left 
 	*copListEnd++=0xfffe;
 	return copListEnd;
 }
 
-inline USHORT* copWaitY(USHORT* copListEnd,USHORT i) {
+__attribute__((always_inline)) inline USHORT* copWaitY(USHORT* copListEnd,USHORT i) {
 	*copListEnd++=(i<<8)|4|1;	//bit 1 means wait. waits for vertical position x<<8, first raster stop position outside the left 
 	*copListEnd++=0xfffe;
 	return copListEnd;
 }
 
-inline USHORT* copSetColor(USHORT* copListCurrent,USHORT index,USHORT color) {
+__attribute__((always_inline)) inline USHORT* copSetColor(USHORT* copListCurrent,USHORT index,USHORT color) {
 	*copListCurrent++=offsetof(struct Custom, color[index]);
 	*copListCurrent++=color;
 	return copListCurrent;
