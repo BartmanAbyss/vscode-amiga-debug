@@ -4,7 +4,8 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
 
 ## Additional features
 
-* Paths to the Kickstart ROMs can be configured using VSCode settings.
+* Paths to the Kickstart ROMs can be configured from the VSCode settings.
+* Program name can be configured from the VSCode settings.
 
 ## Additional credits
 
