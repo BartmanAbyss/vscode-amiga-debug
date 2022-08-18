@@ -283,3 +283,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * Denise: TODO: show time, dma
 * Denise: turrican2-level1.uss: sprites 2 pixels too far left
 * Denise: turrican2-intro.uss: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
+* Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp
