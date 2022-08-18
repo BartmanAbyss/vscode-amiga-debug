@@ -23,6 +23,7 @@
 		"onCommand:amiga.profileSize",
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
+		"onCommand:amiga.exe2adf",
 		"onCustomEditor:amiga.profile",
 		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
@@ -95,7 +96,12 @@
 				"category": "Amiga",
 				"command": "amiga.terminal",
 				"title": "Open Terminal"
-			}
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.exe2adf",
+				"title": "Amiga: convert EXE to ADF"	
+			}			
 		],
 		"languages": [
 			{
@@ -362,7 +368,12 @@
 					"command": "amiga.shrinkler",
 					"group": "1_amiga",
 					"when": "resourceExtname == '.exe'"
-				}
+				},
+				{
+					"command": "amiga.exe2adf",
+					"group": "1_amiga",
+					"when": "resourceExtname == '.exe'"
+				}				
 			]
 		},
 		"views": {
