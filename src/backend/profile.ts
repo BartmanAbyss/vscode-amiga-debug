@@ -2,13 +2,13 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { SymbolTable } from './symbols';
-import { ICpuProfileRaw } from '../client/types';
-import { SourceLine, CallFrame, DmaRecord, GfxResource, GfxResourceType, GfxResourceFlags } from './profile_types';
-import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
-import { profileCommon } from './profile_common';
-import { print_insn_m68k } from '../client/68k-dis';
 import { GetJump, JumpType } from '../client/68k';
+import { print_insn_m68k } from '../client/68k-dis';
+import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
+import { ICpuProfileRaw } from '../client/types';
+import { profileCommon } from './profile_common';
+import { CallFrame, DmaRecord, GfxResource, GfxResourceFlags, GfxResourceType, SourceLine } from './profile_types';
+import { SymbolTable } from './symbols';
 
 function getCallFrameKey(callFrame: CallFrame): string {
 	let key = "";
@@ -263,7 +263,7 @@ struct barto_debug_resource {
 
 // represents 1 frame worth of profiling data
 export class ProfileFrame {
-	public dmacon: number;
+	public chipsetFlags: number;
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
@@ -298,6 +298,7 @@ export class ProfileFile {
 
 	public frames: ProfileFrame[] = [];
 
+	private static customRegsLen = 256 * 2 + 4 /*chipsetFlags*/ + 4/*RefPtr*/;
 	private static sizeofDmaRec = 42;
 	private static sizeofResource = 52;
 
@@ -331,13 +332,19 @@ export class ProfileFile {
 
 		for (let i = 0; i < numFrames; i++) {
 			const frame = new ProfileFrame();
-			frame.dmacon = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
+			// custom registers
+			const customRegsLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			const customRegsOffset = bufferOffset;
+			frame.chipsetFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+			if (customRegsLen !== ProfileFile.customRegsLen)
+				throw new Error(`customRegsLen mismatch (want ${ProfileFile.customRegsLen}, got ${customRegsLen})`);
 			//frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
 			// maybe unaligned, so read manually
 			frame.customRegs = new Uint16Array(256);
 			for (let i = 0; i < 256; i++) {
-				frame.customRegs[i] = buffer.readUInt16LE(bufferOffset); bufferOffset += 2;
+				frame.customRegs[i] = buffer.readUInt16BE(bufferOffset); bufferOffset += 2;
 			}
+			bufferOffset = customRegsOffset + customRegsLen;
 
 			// DMA
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
@@ -526,7 +533,7 @@ export class Profiler {
 			startTime: 0,
 			endTime: totalCycles,
 			$amiga: {
-				dmacon: frame.dmacon,
+				chipsetFlags: frame.chipsetFlags,
 				baseClock: profileFile.baseClock,
 				cpuCycleUnit: profileFile.cpuCycleUnit,
 				customRegs: Array.from(frame.customRegs),
@@ -668,7 +675,7 @@ export class Profiler {
 		const out: ICpuProfileRaw = {
 			...profileCommon(cycles, locations),
 			$amiga: {
-				dmacon: frame.dmacon,
+				chipsetFlags: frame.chipsetFlags,
 				baseClock: profileFile.baseClock,
 				cpuCycleUnit: profileFile.cpuCycleUnit,
 				customRegs: Array.from(frame.customRegs),
