@@ -21,7 +21,7 @@ objects := $(cpp_objects) $(c_objects) $(s_objects) $(vasm_objects)
 # https://stackoverflow.com/questions/4036191/sources-from-subdirectories-in-makefile/4038459
 # http://www.microhowto.info/howto/automatically_generate_makefile_dependencies.html
 
-OUT = a.mingw
+OUT = $(program)
 CC = m68k-amiga-elf-gcc
 VASM = vasmm68k_mot.exe
 
@@ -38,7 +38,7 @@ $(OUT).exe: $(OUT).elf
 	@elf2hunk $(OUT).elf $(OUT).exe -s
 
 $(OUT).elf: $(objects)
-	$(info Linking a.mingw.elf)
+	$(info Linking $(program).elf)
 	@$(CC) $(CCFLAGS) $(LDFLAGS) $(objects) -o $@
 	@m68k-amiga-elf-objdump --disassemble --no-show-raw-ins --visualize-jumps -S $@ >$(OUT).s 
 

@@ -1,10 +1,10 @@
 {
-	"name": "amiga-debug",
-	"displayName": "Amiga C/C++ Compile, Debug & Profile",
-	"publisher": "BartmanAbyss",
+	"name": "amiga-debug-arch",
+	"displayName": "Amiga C/C++ Compile, Debug & Profile (Architect fork)",
+	"publisher": "davidcanadasmazo",
 	"description": "One-stop VS Code Extension to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE (Windows only)",
 	"repository": {
-		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
+		"url": "https://github.com/davidcanadas/vscode-amiga-debug"
 	},
 	"version": "1.5.0",
 	"license": "GPL-3.0-or-later",
@@ -373,7 +373,34 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.program": {
+						"type": "string",
+						"default": "out\\a.mingw",
+						"description": "Path to the output program (without extension), relative to the workspace."
+          },
+					"amiga.rom-paths.A500": {
+						"type": "string",
+						"default": "c:/amiga/KICK13.rom",
+						"description": "Path to the Kickstart ROM for A500 models."
+					},
+					"amiga.rom-paths.A1200": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A1200 models."
+					},
+					"amiga.rom-paths.A4000": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A4000 models."
+					}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",
@@ -419,8 +446,8 @@
 		"typescript": "^4.4.4",
 		"vscode-debugadapter-testsupport": "^1.40.3",
 		"vscode-test": "^1.3.0",
-		"webpack": "^5.64.0",
-		"webpack-cli": "^4.9.1"
+		"webpack": "^5.74.0",
+		"webpack-cli": "^4.10.0"
 	},
 	"dependencies": {
 		"vscode-cpptools": "^5.0.0",
