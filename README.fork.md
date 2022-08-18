@@ -13,6 +13,8 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
     * The assembly launchage provider has been updated to validate assembly sources against either GAS or VASM depending on the source code file extensions.
     * VASM official site: http://sun.hasenbraten.de/vasm/.
     * Modified VASM: https://github.com/davidcanadas/vasm-m68k-mot-win32.
+* exe2adf support:
+    * Just right-click on the EXE file then select `Amiga: Shrinkle File`.
 
 ## Additional credits
 
@@ -20,3 +22,4 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
 - Architect logo by [Ozan/TEK](https://www.pouet.net/user.php?who=99100).
 
 VASM is Copyright (C) 2002-2022 by Volker Barthelmann.
+exe2adf is Copyright (C) 2015-2022 Bonefish/Reality.
