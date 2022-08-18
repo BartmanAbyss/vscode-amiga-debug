@@ -58,25 +58,55 @@ class SourceContext {
 		const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 			date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 		
-		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o`);
+		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o.tmp`);
 		try {
 			fs.unlinkSync(tmp);
 		} catch(e) {}
-		const as = childProcess.spawnSync(
-			path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe"), 
-			[
+		let cmd : string, cmdParams : string[], spawnParams : object;
+		if (this.fileName.endsWith('.s')) {
+			//	Spawn the GNU Assembler to validate the file.
+			cmd         = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
+			cmdParams   = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
 				'--register-prefix-optional', 
 				'-g', // debug info
 				'-asn', // enable listing to stdout; 's' = symbol table, 'n' = turn off forms
-				'-L' // include local labels
-			], 
-			{
+				'-L', // include local labels
+				'-I', '.', 
+				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
+				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).			
+			];
+			spawnParams = {			
 				input: this.text,
 				maxBuffer: 10*1024*1024 
-			});
-
+			};
+		}
+		else
+		if (this.fileName.endsWith('.asm')) {
+			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
+			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
+			try {
+				fs.unlinkSync(inFile);
+			} catch(e) {}
+			fs.writeFileSync (inFile, this.text);
+			cmd         = path.join(SourceContext.extensionPath, "bin/opt/bin/vasmm68k_mot.exe");
+			cmdParams   = [
+				'-m68000', 
+				'-Felf', 
+				'-opt-fconst', 
+				'-nowarn=62', 
+				'-dwarf=3',
+				'-I', '.', 
+				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
+				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-o', tmp, 
+				inFile
+			];
+			spawnParams = {};
+		}			
+		const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
 		const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
 		const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 
