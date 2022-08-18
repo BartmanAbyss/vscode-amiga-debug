@@ -23,7 +23,7 @@ objects := $(cpp_objects) $(c_objects) $(s_objects) $(vasm_objects)
 
 OUT = a.mingw
 CC = m68k-amiga-elf-gcc
-VASM = vasmm68k_mot.exe
+VASM = vasmm68k_mot_win32.exe
 
 CCFLAGS = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno-volatile-register-var -fomit-frame-pointer -fno-tree-loop-distribution -flto -fwhole-program -fno-exceptions
 CPPFLAGS= $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
