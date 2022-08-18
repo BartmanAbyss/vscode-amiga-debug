@@ -65,7 +65,7 @@ export enum BPLCON0Flags {
 }
 
 export enum BPLCON1Flags {
-	PF2H7   = 1 << 11,
+	PF2H7   = 1 << 15,
 	PF2H6   = 1 << 14,
 	PF2H1   = 1 << 13,
 	PF2H0   = 1 << 12,
@@ -99,6 +99,15 @@ export enum BPLCON2Flags {
 	PF1P2   = 1 <<  2,
 	PF1P1   = 1 <<  1,
 	PF1P0   = 1 <<  0,
+}
+
+export enum FMODEFlags {
+	SSCAN2  = 1 << 15,
+	BSCAN2  = 1 << 14,
+	SPAGEM  = 1 <<  3,
+	SPR32   = 1 <<  2,
+	BPAGEM  = 1 <<  1,
+	BPL32   = 1 <<  0,
 }
 
 export enum CustomReadWrite {

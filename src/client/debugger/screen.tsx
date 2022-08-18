@@ -8,8 +8,8 @@ import styles from './resources.module.css';
 
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
-import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes } from '../dma';
+import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags, FMODEFlags } from '../customRegisters';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes, ChipsetFlags } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -73,6 +73,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
 		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
 		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
+		const regFMODE = CustomRegisters.getCustomAddress("FMODE") - 0xdff000; // ECS
 
 		interface Bit {
 			name: string;
@@ -99,6 +100,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		bplcon0Bits.push({ name: "Hires", enabled: !!(bplcon0 & BPLCON0Flags.HIRES) });
 		bplcon0Bits.push({ name: "HAM", enabled: !!(bplcon0 & BPLCON0Flags.HAM) });
 		bplcon0Bits.push({ name: "DPF", enabled: !!(bplcon0 & BPLCON0Flags.DPF) });
+		bplcon0Bits.push({ name: "ECSENA", enabled: !!(bplcon0 & BPLCON0Flags.ECSENA) });
 
 		// BPLCON1
 		const bplcon1 = customRegs[regBPLCON1 >>> 1];
@@ -115,8 +117,16 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const pf2p = (bplcon2 >>> 3) & 0x7;
 		//bplcon2Bits.push({ name: "KillEHB", enabled: !!(bplcon2 & BPLCON2Flags.KILLEHB) });
 		bplcon2Bits.push({ name: "PF2PRI", enabled: !!(bplcon2 & BPLCON2Flags.PF2PRI) });
-		bplcon1Bits.push({ name: `PF2P: ${pf2p}`, enabled: pf2p > 0 });
-		bplcon1Bits.push({ name: `PF1P: ${pf1p}`, enabled: pf1p > 0 });
+		bplcon2Bits.push({ name: `PF2P: ${pf2p}`, enabled: pf2p > 0 });
+		bplcon2Bits.push({ name: `PF1P: ${pf1p}`, enabled: pf1p > 0 });
+
+		// FMODE
+		const fmode = customRegs[regFMODE >>> 1];
+		const fmodeBits: Bit[] = [];
+		fmodeBits.push({ name: "SPAGEM", enabled: !!(fmode & FMODEFlags.SPAGEM) });
+		fmodeBits.push({ name: "SPR32", enabled: !!(fmode & FMODEFlags.SPR32) });
+		fmodeBits.push({ name: "BPAGEM", enabled: !!(fmode & FMODEFlags.BPAGEM) });
+		fmodeBits.push({ name: "BPL32", enabled: !!(fmode & FMODEFlags.BPL32) });
 
 		return <div>
 			<dl>
@@ -140,6 +150,10 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				<dd>{bplcon1Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				<dt>BPLCON2</dt>
 				<dd>{bplcon2Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+				{(MODELS[0].amiga.chipsetFlags & (ChipsetFlags.AGA | ChipsetFlags.ECSDenise)) !== 0 && <>
+					<dt>FMODE</dt>
+					<dd>{fmodeBits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+				</>}
 			</dl>
 		</div>;
 	}
@@ -197,9 +211,13 @@ const DeniseScreen: FunctionComponent<{
 		console.time('denise');
 
 		// Denise emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
-		let shifter = [0, 0, 0, 0, 0, 0, 0, 0];
-		const scroller = [0, 0, 0, 0, 0, 0, 0, 0];
-		const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+		const bplDat        = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplDatHi      = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplShifter    = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplShifterHi  = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplScroller   = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplScrollerHi = [0, 0, 0, 0, 0, 0, 0, 0];
+		const regDMACON  = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
 		const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
 		const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
 		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
@@ -213,6 +231,7 @@ const DeniseScreen: FunctionComponent<{
 		const regBPL6DAT = CustomRegisters.getCustomAddress("BPL6DAT") - 0xdff000;
 		const regBPL7DAT = CustomRegisters.getCustomAddress("BPL7DAT") - 0xdff000;
 		const regBPL8DAT = CustomRegisters.getCustomAddress("BPL8DAT") - 0xdff000;
+		const bplStride = CustomRegisters.getCustomAddress("BPL2DAT") - CustomRegisters.getCustomAddress("BPL1DAT");
 		const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
 		const regSTRHOR = CustomRegisters.getCustomAddress("STRHOR") - 0xdff000; // line 24-311
 		const regSTRLONG = CustomRegisters.getCustomAddress("STRLONG") - 0xdff000; // probably only interlace
@@ -220,7 +239,8 @@ const DeniseScreen: FunctionComponent<{
 		const regSTRVBL = CustomRegisters.getCustomAddress("STRVBL") - 0xdff000; // line 8-23, 312
 		const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT") - 0xdff000;
 		const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP") - 0xdff000;
-		const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
+		const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH") - 0xdff000; // ECS
+		const regFMODE = CustomRegisters.getCustomAddress("FMODE") - 0xdff000; // ECS
 
 		const regSPR0POS = CustomRegisters.getCustomAddress("SPR0POS") - 0xdff000;
 		const regSPR0CTL = CustomRegisters.getCustomAddress("SPR0CTL") - 0xdff000;
@@ -303,8 +323,35 @@ const DeniseScreen: FunctionComponent<{
 				}
 
 				// bpldat
+				if(dmaRecord.reg >= regBPL1DAT && dmaRecord.reg <= regBPL8DAT) {
+					const i = (dmaRecord.reg - regBPL1DAT) / bplStride;
+					bplDat[i] = dmaRecord.dat;
+					bplDatHi[i] = dmaRecord.datHi;
+				}
+
+				// BPL1DAT triggers serial->parallel conversion
 				if(dmaRecord.reg === regBPL1DAT) {
-					shifter = [customRegs[regBPL1DAT >>> 1], customRegs[regBPL2DAT >>> 1], customRegs[regBPL3DAT >>> 1], customRegs[regBPL4DAT >>> 1], customRegs[regBPL5DAT >>> 1], customRegs[regBPL6DAT >>> 1], customRegs[regBPL7DAT >>> 1], customRegs[regBPL8DAT >>> 1]];
+					switch(customRegs[regFMODE >>> 1] & (FMODEFlags.BPL32 | FMODEFlags.BPAGEM)) {
+					case 0: // 16 bit
+						for(let i = 0; i < 8; i++) {
+							bplShifterHi[i] = (bplDat[i] & 0xffff) << 16;
+							bplShifter[i] = 0;
+						}
+						break;
+					case 1: 
+					case 2: // 32 bit
+						for(let i = 0; i < 8; i++) {
+							bplShifterHi[i] = bplDat[i];
+							bplShifter[i] = 0;
+						}
+						break;
+					case 3: // 64 bit
+						for(let i = 0; i < 8; i++) {
+							bplShifterHi[i] = bplDatHi[i];
+							bplShifter[i] = bplDat[i];
+						}
+						break;
+					}
 					//if(cycleY === 100) console.log(` **** load scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
 				}
 
@@ -402,7 +449,7 @@ const DeniseScreen: FunctionComponent<{
 							break;
 						}
 					}
-					const pf1front = sprcode > (customRegs[regBPLCON2 >>> 1] & 0b111) ? true : false;
+					const pf1front = sprcode > ( customRegs[regBPLCON2 >>> 1]        & 0b111) ? true : false;
 					const pf2front = sprcode > ((customRegs[regBPLCON2 >>> 1] >>> 3) & 0b111) ? true : false;
 
 					// per hires pixel
@@ -410,8 +457,10 @@ const DeniseScreen: FunctionComponent<{
 						if(hires || i === 0) {
 							// shift bitplanes
 							for(let p = 0; p < 8; p++) {
-								scroller[p] = ((scroller[p] << 1) | (shifter[p] >>> 15)) & 0xffff;
-								shifter[p] = (shifter[p] << 1) & 0xffff;
+								bplScrollerHi[p] = (bplScrollerHi[p] << 1) | (bplScroller[p] >>> 31);
+								bplScroller[p] = (bplScroller[p] << 1) | (bplShifterHi[p] >>> 31);
+								bplShifterHi[p] = (bplShifterHi[p] << 1) | (bplShifter[p] >>> 31);
+								bplShifter[p] = bplShifter[p] << 1;
 							}
 							//if(cycleY === 100) console.log(`     shift scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
 						}
@@ -420,7 +469,7 @@ const DeniseScreen: FunctionComponent<{
 
 						let bpldata = 0;
 						for(let p = 0; p < numPlanes; p++) {
-							if((scroller[p] & (1 << scroll2[p & 1])) && state.planes[p])
+							if((bplScroller[p] & (1 << scroll2[p & 1])) && state.planes[p])
 								bpldata |= 1 << p;
 						}
 

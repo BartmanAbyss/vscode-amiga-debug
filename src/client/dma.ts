@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { CustomRegisters, CustomReadWrite, DMACONFlags } from './customRegisters';
+import { CustomRegisters, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './customRegisters';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
@@ -232,6 +232,13 @@ export interface Copper {
 	insn: CopperInstruction;
 }
 
+export enum ChipsetFlags {
+	OCS = 0,
+	ECSAgnus = 1,
+	ECSDenise = 2,
+	AGA = 4
+}
+
 // blits are sorted
 export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
@@ -411,7 +418,7 @@ export interface IScreen {
 	ham: boolean;
 }
 
-export function GetScreenFromCopper(copper: Copper[]): IScreen {
+export function GetScreenFromCopper(copper: Copper[], chipsetFlags: number): IScreen {
 	let planes = [0, 0, 0, 0, 0, 0, 0, 0];
 	const modulos = [0, 0];
 
@@ -422,6 +429,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let DIWSTOP = 0;
 	let DIWHIGH = 0;
 	let useDIWHIGH = false;
+	let FMODE = 0;
 
 	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0");
 	const regBPL1MOD = CustomRegisters.getCustomAddress("BPL1MOD");
@@ -447,6 +455,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
 	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
 	const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
+	const regFMODE = CustomRegisters.getCustomAddress("FMODE"); // ECS
 
 	for(const c of copper) {
 		if(c.vpos >= 200) // ignore bottom-of-screen HUD
@@ -477,29 +486,30 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 				case regDIWSTRT: DIWSTRT = c.insn.RD; break;
 				case regDIWSTOP: DIWSTOP = c.insn.RD; break;
 				case regDIWHIGH: DIWHIGH = c.insn.RD; useDIWHIGH = true; break;
+				case regFMODE: FMODE = c.insn.RD; break;
 			}
 		}
 	}
 
-// workbench 1.3 (A500)
-//	DDF: 3c d0 DDF: 581 40c1
-//	   fetchWidth: 640 displayWidth: 640
-//	   modulos: 0  0
-//	=> modulos: 0  0
+	// workbench 1.3 (A500)
+	//	DDF: 3c d0 DDF: 581 40c1
+	//	   fetchWidth: 640 displayWidth: 640
+	//	   modulos: 0  0
+	//	=> modulos: 0  0
 
-// workbench 2.0 (A500+, interlace)
-// 	DDF: 38 d8 DDF: 2c81 2cc1
-//    fetchWidth: 672 displayWidth: 640
-//    modulos: 76  76
-// => modulos: 78  78
-// 44,63: 2cc6e
-// 45,61: 2cd0e +160
+	// workbench 2.0 (A500+, interlace)
+	// 	DDF: 38 d8 DDF: 2c81 2cc1
+	//    fetchWidth: 672 displayWidth: 640
+	//    modulos: 76  76
+	// => modulos: 78  78
+	// 44,63: 2cc6e
+	// 45,61: 2cd0e +160
 
-// workbench 2.0 (690 px overscan)
-// 	DDF: 30 d8 DDF: 2c6e 2cc7
-//    fetchWidth: 704 displayWidth: 690
-//    modulos: 88  88
-// => modulos: 88  88	
+	// workbench 2.0 (690 px overscan)
+	// 	DDF: 30 d8 DDF: 2c6e 2cc7
+	//    fetchWidth: 704 displayWidth: 690
+	//    modulos: 88  88
+	// => modulos: 88  88	
 
 	let displayStart = (DIWSTRT & 0xff) << 2;
 	let displayStop = ((DIWSTOP & 0xff) + 256) << 2;
@@ -511,11 +521,33 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		displayStop |= (DIWHIGH >> 13) << 10;
 	}
 
-	const hires = (BPLCON0 & (1 << 15)) ? true : false;
-	const ham = (BPLCON0 & (1 << 11)) ? true : false;
+	const hires = (BPLCON0 & BPLCON0Flags.HIRES) ? true : false;
+	const ham = (BPLCON0 & BPLCON0Flags.HAM) ? true : false;
 	//let fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
 	//if(hires)
-	const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
+
+	// https://eab.abime.net/showpost.php?p=1556113&postcount=14
+
+	// validate bits
+	const res = hires ? 1 : 0;
+	FMODE &= FMODEFlags.BPL32 | FMODEFlags.BPAGEM;
+	DDFSTRT &= chipsetFlags ? 0xfe : 0xfc;
+	DDFSTOP &= chipsetFlags ? 0xfe : 0xfc;
+
+	// fetch=log2(fetch_width)-4; fetch_width=16,32,64
+	const fetch = (chipsetFlags & ChipsetFlags.AGA) ? ((FMODE <= 1) ? FMODE : FMODE - 1) : 0;
+	// sub-block (OCS/ECS) and large-block (AGA) stop pad
+	const pad = (fetch > res) ? (8 << (fetch - res)) - 1 : 8 - 1;
+	// OCS/ECS/(AGA) sub-block
+	const sub = (res > fetch) ? res - fetch : 0;
+	// AGA large-block
+	const large = (fetch > res) ? fetch - res : 0;
+	// DMA fetched blocks
+	const blocks = ((DDFSTOP - DDFSTRT + pad) >> (3 + large)) + 1;
+	// 16 pixels per fetch_width per sub-block per block
+	const fetchWidth = blocks << (4 + fetch + sub);
+
+	//const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
 	let displayWidth = displayStop - displayStart;
 	// no support for superhires
 	if(hires)
@@ -526,14 +558,6 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	console.log(`DDF: ${DDFSTRT.toString(16)} ${DDFSTOP.toString(16)} DIW: ${DIWSTRT.toString(16)} ${DIWSTOP.toString(16)} ${DIWHIGH.toString(16)}`);
 	console.log(`   fetchWidth: ${fetchWidth} displayStart: ${displayStart} displayStop: ${displayStop} displayWidth: ${displayWidth}`);
 	console.log(`   modulos: ${modulos[0]}  ${modulos[1]}`);
-	// adjust for extra fetched data for scrolling
-	if(fetchWidth > 384) { // TEST ONLY
-		modulos[0] += (384 - fetchWidth) >> 4;
-		modulos[1] += (384 - fetchWidth) >> 4;
-	}
-	//modulos[0] += (fetchWidth - displayWidth) >> 4;
-	//modulos[1] += (fetchWidth - displayWidth) >> 4;
-	console.log(`=> modulos: ${modulos[0]}  ${modulos[1]}`);
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
@@ -614,7 +638,7 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 				}
 				if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
 					ignoreCopper = 2;
-			} 
+			}
 
 			if(dmaRecord.reg === regDMACON) {
 				if(dmaRecord.dat & DMACONFlags.SETCLR)

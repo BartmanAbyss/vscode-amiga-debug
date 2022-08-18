@@ -1052,7 +1052,13 @@ const Tooltip: FunctionComponent<{
 			}
 		}
 		if(amiga.dmaRecord.type !== undefined) {
-			dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
+			switch(amiga.dmaRecord.size) {
+			case 8:  dmaData = '$' + (amiga.dmaRecord.datHi).toString(16).padStart(8, '0') + '\'' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 4:  dmaData = '$' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 2:
+			default: dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0'); break;
+			}
+			
 			if(amiga.dmaRecord.reg & 0x1000) { // CPU
 				if(amiga.dmaRecord.reg & 0x0100)
 					dmaReg = 'Write';
