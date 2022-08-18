@@ -447,3 +447,16 @@ export class CustomRegisters {
 		return undefined;
 	}
 }
+
+// from 68k-dis.ts; make signed
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
+export const FormatCustomRegData = (regName: string, dat: number) => {
+	let prefix = ' ';
+	if(regName.match(/BPL.MOD/)) {
+		if(dat & 0x8000) {
+			prefix = '-';
+			dat = Math.abs(COERCE16(dat));
+		}
+	}
+	return prefix + '$' + dat.toString(16).padStart(4, '0');
+};

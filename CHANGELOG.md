@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.2
+- FIX: copper: don't crash when hovering over `NO-OP` instruction
+- NEW: display `BPL1MOD`, `BPL2MOD` as signed values
+
 ## 1.5.1
 - FIX: profiler: Custom registers at start of frame 
 - FIX: screen: display window when not set during frame

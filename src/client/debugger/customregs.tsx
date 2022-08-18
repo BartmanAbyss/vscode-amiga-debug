@@ -8,7 +8,7 @@ import * as ChevronRight from '../icons/chevron-right.svg';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { CustomRegisters, CustomReadWrite, CustomSpecial } from '../customRegisters';
+import { CustomRegisters, CustomReadWrite, CustomSpecial, FormatCustomRegData } from '../customRegisters';
 import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles } from '../dma';
 import { GetCustomRegDoc } from '../docs';
 import { createPortal } from 'preact/compat';
@@ -91,7 +91,7 @@ export const CustomRegsView: FunctionComponent<{
 			return (<div class={styles.line}>
 				<div class={styles.reg + ' ' + (customRegs[index] !== prevRegs[index] ? styles.cur : '')}>
 				<span class={styles.help} data={index.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{regName}</span>{regPad} (${(index << 1).toString(16).padStart(3, '0')}):
-					${customRegs[index].toString(16).padStart(4, '0')}
+					{FormatCustomRegData(regName, customRegs[index])}
 					{regName.startsWith('COLOR') ? <span style={{marginLeft: 4, background: `#${customRegs[index].toString(16).padStart(3, '0')}`}}>&nbsp;&nbsp;</span> : ''}
 				</div>			
 				{Nav}
