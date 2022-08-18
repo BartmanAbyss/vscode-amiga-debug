@@ -54,7 +54,7 @@ export interface IAmigaProfileExtra {
 	baseClock?: number;
 	cpuCycleUnit?: number;
 	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
-	dmacon: number;
+	chipsetFlags: number;
 	customRegs: number[];
 	dmaRecords: DmaRecord[];
 	gfxResources: GfxResource[];

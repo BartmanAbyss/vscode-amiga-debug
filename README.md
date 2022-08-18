@@ -71,11 +71,22 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - Testing by [Pink/Abyss](https://soundcloud.com/pink_abyss)
 
 ## Already used in these productions
-- [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
-- [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
-- [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
-- [Tiny Bobble](http://eab.abime.net/showthread.php?t=103546) by Abyss
-- [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
+
+- Demos/Intros
+  - [Coda](http://www.pouet.net/prod.php?which=80998) by Abyss
+  - [The Bitmap Rasters](https://www.pouet.net/prod.php?which=91776) by Abyss
+  - [Done](https://www.pouet.net/prod.php?which=91911) by Abyss
+  - [Primer](https://www.pouet.net/prod.php?which=91928) by Architect
+
+- Games
+  - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
+  - [Tiny Galaga](http://www.pouet.net/prod.php?which=85720) by Abyss
+  - [Tiny Bobble](http://eab.abime.net/showthread.php?t=103546) by Abyss
+  - [Tinyus](https://www.pouet.net/prod.php?which=88028) by Abyss
+  - [Wrong Way Driver](https://www.pouet.net/prod.php?which=88705) by Abyss
+
+- Tools
+  - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
@@ -231,11 +242,12 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
-* (internal) status of tested savestates: `c:\amiga_state`
+* (internal) status of tested savestates
   - `desertdream-dots.uss`: ok
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
+  - `megatyphoondemo.uss`: many assembly lines missing cycle informations
 
 ### Assembly
 * TODO: parser needs to check for comments

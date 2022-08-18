@@ -128,7 +128,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 	const dmaRecords = MODEL.amiga.dmaRecords;
 
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	let dmacon = MODEL.amiga.dmacon;
+	let dmacon = MODEL.amiga.customRegs[regDMACON >>> 1];
 
 	const duration = 7_093_790 / 50;
 	const boxes: IBox[] = [];
@@ -145,7 +145,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 				continue;
 
 			if(dmaRecord.reg === regDMACON) {
-				if (dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					dmacon |= dmaRecord.dat & 0x7FFF;
 				else
 					dmacon &= ~dmaRecord.dat;
