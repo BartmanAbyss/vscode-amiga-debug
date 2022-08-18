@@ -5,6 +5,8 @@
 
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
 
+Read the [Architect fork README file](README.fork.md) to be informed of the new features of this fork.
+
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
 
