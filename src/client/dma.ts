@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { CustomRegisters, CustomReadWrite } from './customRegisters';
+import { CustomRegisters, CustomReadWrite, DMACONFlags } from './customRegisters';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
@@ -366,14 +366,14 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 
 export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[] {
 	const insns: Copper[] = [];
-	const regCOPINS = CustomRegisters.getCustomAddress("COPINS");
+	const regCOPINS = CustomRegisters.getCustomAddress("COPINS") - 0xdff000;
 
 	let i = 0;
 	let lastinsn: CopperInstruction = null;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS - 0xdff000) {
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS) {
 				const first = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
 				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
 				const insn = CopperInstruction.parse(first, second);
@@ -591,21 +591,33 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 }
 
 // returs custom registers after DMA requests up to endCycle
-export function GetCustomRegsAfterDma(customRegs: number[], dmacon: number, dmaRecords: DmaRecord[], endCycle: number): number[] {
+export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-
+	const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
+	const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
 	const customRegsAfter = customRegs.slice(); // initial copy
-	customRegsAfter[regDMACON >>> 1] = dmacon;
 
 	let i = 0;
+	let ignoreCopper = 0;
+
 	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS && i <= endCycle; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg === undefined)
 				continue;
 
+			// fix fake instructions after copper jump
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER) {
+				if(ignoreCopper > 0) {
+					ignoreCopper--;
+					continue;
+				}
+				if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
+					ignoreCopper = 2;
+			} 
+
 			if(dmaRecord.reg === regDMACON) {
-				if(dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					customRegsAfter[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 				else
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
