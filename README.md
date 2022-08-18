@@ -91,6 +91,10 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
+Thanks to all [Contributors on GitHub](https://github.com/BartmanAbyss/vscode-amiga-debug/graphs/contributors)
+
+Thanks to [ross on EAB](https://eab.abime.net/showthread.php?t=111329) for helping with display fetch.
+
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
 Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.

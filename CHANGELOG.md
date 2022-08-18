@@ -5,6 +5,9 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.5.2
 - FIX: copper: don't crash when hovering over `NO-OP` instruction
 - NEW: display `BPL1MOD`, `BPL2MOD` as signed values
+- NEW: screen: support `FMODE` (AGA) for bitplanes
+- NEW: profiler now shows 32 and 64 bit wide DMA transfers
+- NEW: resources: support `FMODE` (AGA)
 
 ## 1.5.1
 - FIX: profiler: Custom registers at start of frame 

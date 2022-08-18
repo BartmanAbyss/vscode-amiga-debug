@@ -263,7 +263,7 @@ struct barto_debug_resource {
 
 // represents 1 frame worth of profiling data
 export class ProfileFrame {
-	public chipsetFlags: number;
+	public chipsetFlags: number; // see dma.ts@ChipsetFlags
 	public customRegs: Uint16Array;
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
@@ -356,7 +356,8 @@ export class ProfileFile {
 			const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
 			for (let i = 0; i < dmaCount; i++) {
 				const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
-				const dat = (dmaBuffer.readUInt32LE(i * dmaLen + 2 + 4) << 32) | dmaBuffer.readUInt32LE(i * dmaLen + 2);
+				const dat = dmaBuffer.readUInt32LE(i * dmaLen + 2);
+				const datHi = dmaBuffer.readUInt32LE(i * dmaLen + 2 + 4);
 				const size = dmaBuffer.readUInt16LE(i * dmaLen + 10);
 				const addr = dmaBuffer.readUInt32LE(i * dmaLen + 12);
 				const evt = dmaBuffer.readUInt32LE(i * dmaLen + 16);
@@ -365,7 +366,7 @@ export class ProfileFile {
 				const intlev = dmaBuffer.readInt8(i * dmaLen + 24);
 
 				if (reg !== 0xffff) {
-					frame.dmaRecords.push({ reg, dat, size, addr, evt, type, extra, intlev });
+					frame.dmaRecords.push({ reg, dat, datHi, size, addr, evt, type, extra, intlev });
 				} else if (evt) {
 					frame.dmaRecords.push({ evt });
 				} else {
