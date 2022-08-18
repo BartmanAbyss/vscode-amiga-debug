@@ -2,6 +2,11 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.1
+- FIX: profiler: Custom registers at start of frame 
+- FIX: screen: display window when not set during frame
+- FIX: DMA: ignore fake copper DMA after COPJMP
+
 ## 1.5.0
 - FIX: fixed WinUAE-crash in savestate profiler for non-68000 CPUs, and non-bogomem memory configs
 - FIX: savestate controls improved, debug output

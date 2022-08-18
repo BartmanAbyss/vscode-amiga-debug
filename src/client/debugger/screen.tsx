@@ -9,7 +9,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma } from '../dma';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -67,7 +67,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const color = props.pixels?.at(props.y * NR_DMA_REC_HPOS * 4 + props.x);
 
 		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
-		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmacon, MODELS[props.frame].amiga.dmaRecords, dmaTime);
+		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 
 		const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
 		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
@@ -200,6 +200,8 @@ const DeniseScreen: FunctionComponent<{
 		let shifter = [0, 0, 0, 0, 0, 0, 0, 0];
 		const scroller = [0, 0, 0, 0, 0, 0, 0, 0];
 		const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+		const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
+		const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
 		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
 		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
 		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
@@ -249,23 +251,33 @@ const DeniseScreen: FunctionComponent<{
 		};
 
 		const sprites = [createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite()];
-
 		const customRegs = MODELS[frame].amiga.customRegs.slice(); // initial copy
-		customRegs[regDMACON >>> 1] = MODELS[frame].amiga.dmacon;
 	
 		let vpos = -1;
 		let hpos = 0;
-		let hdiwstrt = 0, hdiwstop = 0;
+		let hdiwstrt = customRegs[regDIWSTRT >>> 1] & 0xff;
+		let hdiwstop = (customRegs[regDIWSTOP >>> 1] & 0xff) | 0x100;
 		let scroll = [0, 0];
 		let window = false;
 		let prevColor = 0xff000000; // HAM
+		let ignoreCopper = 0;
 		for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
 			for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++) {
 				// this is per 2 lores pixels
 				const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
+				// see dma.ts@GetCustomRegsAfterDma
 				if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
+					// fix fake instructions after copper jump
+					if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER) {
+						if(ignoreCopper > 0) {
+							ignoreCopper--;
+							continue;
+						}
+						if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
+							ignoreCopper = 2;
+					} 
 					if(dmaRecord.reg === regDMACON) {
-						if(dmaRecord.dat & 0x8000)
+						if(dmaRecord.dat & DMACONFlags.SETCLR)
 							customRegs[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 						else
 							customRegs[regDMACON >>> 1] &= ~dmaRecord.dat;

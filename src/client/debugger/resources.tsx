@@ -488,7 +488,7 @@ export const GfxResourcesView: FunctionComponent<{
 		};
 		palettes.push({ resource: copperResource, frame, palette: copperPalette });
 
-		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
+		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),

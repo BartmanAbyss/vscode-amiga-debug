@@ -242,11 +242,12 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
-* (internal) status of tested savestates: `c:\amiga_state`
+* (internal) status of tested savestates
   - `desertdream-dots.uss`: ok
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
+  - `megatyphoondemo.uss`: many assembly lines missing cycle informations
 
 ### Assembly
 * TODO: parser needs to check for comments
