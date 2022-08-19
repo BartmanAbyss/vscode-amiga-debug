@@ -184,7 +184,7 @@ export const MemoryView: FunctionComponent<{
 					{[...Array(memInfo.chipMem.length / 0x10000 + 1).keys()].map((i) => <div class={styles.memory_legend} style={{ top: i * 32 }}>${(memInfo.chipMemAddr + i * 0x10_000).toString(16).padStart(6, '0')}</div>)}
 				</div>
 			</div>}
-			{memInfo.bogoMem.length && <div class={styles.memory_float}>
+			{memInfo.bogoMem.length && <div class={styles.memory_float}> {/*bogomem*/}
 				<div>{memInfo.bogoMem.length >>> 10}kb Slow Mem</div>
 				<div class={styles.memory}>
 					<canvas ref={bogoCanvas} class={styles.memory_canvas} width={canvasWidth} height={bogoCanvasHeight} onMouseDown={onClickBogo} />
