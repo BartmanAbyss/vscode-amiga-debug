@@ -23,6 +23,11 @@
 		"onCommand:amiga.profileSize",
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
+		"onCommand:amiga.externalResources.gradientMaster",
+		"onCommand:amiga.externalResources.imageTool",
+		"onCommand:amiga.externalResources.colorReducer",
+		"onCommand:amiga.externalResources.bltconCheatSheet",
+		"onCommand:amiga.externalResources.amigaHRM",
 		"onCustomEditor:amiga.profile",
 		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
@@ -90,6 +95,31 @@
 				"category": "Amiga",
 				"command": "amiga.shrinkler",
 				"title": "Amiga: Shrinkle File"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.gradientMaster",
+				"title": "Amiga: Open Gradient Master"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.imageTool",
+				"title": "Amiga: Open Image Tool"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.colorReducer",
+				"title": "Amiga: Open Color Reducer"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.bltconCheatSheet",
+				"title": "Amiga: Open BLTCON Cheat Sheet"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.amigaHRM",
+				"title": "Amiga: Open Amiga Hardware Reference Manual"
 			},
 			{
 				"category": "Amiga",
