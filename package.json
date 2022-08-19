@@ -99,27 +99,27 @@
 			{
 				"category": "Amiga",
 				"command": "amiga.externalResources.gradientMaster",
-				"title": "Amiga: Open Gradient Master"
+				"title": "Open Gradient Master"
 			},
 			{
 				"category": "Amiga",
 				"command": "amiga.externalResources.imageTool",
-				"title": "Amiga: Open Image Tool"
+				"title": "Open Image Tool"
 			},
 			{
 				"category": "Amiga",
 				"command": "amiga.externalResources.colorReducer",
-				"title": "Amiga: Open Color Reducer"
+				"title": "Open Color Reducer"
 			},
 			{
 				"category": "Amiga",
 				"command": "amiga.externalResources.bltconCheatSheet",
-				"title": "Amiga: Open BLTCON Cheat Sheet"
+				"title": "Open BLTCON Cheat Sheet"
 			},
 			{
 				"category": "Amiga",
 				"command": "amiga.externalResources.amigaHRM",
-				"title": "Amiga: Open Amiga Hardware Reference Manual"
+				"title": "Open Amiga Hardware Reference Manual"
 			},
 			{
 				"category": "Amiga",
