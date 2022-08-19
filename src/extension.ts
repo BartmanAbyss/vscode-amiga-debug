@@ -146,6 +146,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => launchUrl('http://deadliners.net/ColorReducer', 'Color Reducer')),
 			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => launchUrl('http://deadliners.net/BLTCONCheatSheet', 'BLTCON Cheat Sheet')),
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => launchUrl('http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html', 'Hardware Reference Manual')),
+			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
@@ -370,6 +371,8 @@ class AmigaDebugExtension {
 
 	private shrinklerTerminal: vscode.Terminal;
 	private shrinklerFinished = false;
+	private exe2adfTerminal: vscode.Terminal;
+	private exe2adfFinished = false;
 
 	private async shrinkler(uri: vscode.Uri) {
 		if(uri.scheme !== 'file') {
@@ -450,6 +453,65 @@ class AmigaDebugExtension {
 			this.shrinklerTerminal.show();
 		} catch(error) {
 			void vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
+		}
+	}
+
+	private async exe2adf(uri: vscode.Uri) {
+		if(uri.scheme !== 'file') {
+			void vscode.window.showErrorMessage(`Error during exe2adf: Don't know how to open ${uri.toString()}`);
+			return;
+		}
+		const binPath = path.join(this.extensionPath, 'bin');
+
+		try {
+			const output = uri.fsPath + '.adf';
+			const args = [ '-i', uri.fsPath, '-a', output ];
+			const cmd = `${binPath}\\exe2adf.exe`;
+
+			const writeEmitter = new vscode.EventEmitter<string>();
+			let p: cp.ChildProcess;
+			const pty: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+				open: () => {
+					writeEmitter.fire(`\x1b[1m> Executing ${cmd} ${args.join(' ')} <\x1b[0m\r\n`);
+					writeEmitter.fire(`\x1b[31mPress CTRL+C to abort\x1b[0m\r\n\r\n`);
+					//p = cp.exec(cmd);
+					p = cp.spawn(cmd, args);
+					p.stderr.on('data', (data: Buffer) => {
+						writeEmitter.fire(data.toString());
+					});
+					p.stdout.on('data', (data: Buffer) => {
+						writeEmitter.fire(data.toString());
+					});
+					p.on('exit', (code: number, signal: string) => {
+						if(signal === 'SIGTERM') {
+							writeEmitter.fire('\r\nSuccessfully killed process\r\n');
+							writeEmitter.fire('-----------------------\r\n');
+							writeEmitter.fire('\r\n');
+						}
+						this.exe2adfFinished = true;
+					});
+				},
+				close: () => { /**/ },
+				handleInput: (char: string) => {
+					if(char === '\x03') // Ctrl+C
+						p.kill('SIGTERM');
+				}
+			};
+
+			if(this.exe2adfTerminal && this.exe2adfFinished) {
+				this.exe2adfTerminal.dispose();
+				this.exe2adfTerminal = null;
+				this.exe2adfFinished = false;
+			}
+
+			this.exe2adfTerminal = vscode.window.createTerminal({
+				name: 'Amiga',
+				pty
+			});
+			this.exe2adfTerminal.show();
+		} catch(error) {
+			void vscode.window.showErrorMessage(`Error during exe2adf: ${error.message}`);
 		}
 	}
 
