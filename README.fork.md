@@ -15,6 +15,12 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
     * Modified VASM: https://github.com/davidcanadas/vasm-m68k-mot-win32. Version 1.9.
 * exe2adf support:
     * Just right-click on the EXE file then select `Amiga: Shrinkle File`. Version 0.3e.
+* New commands `Amiga: Open...` to open the following resources in Visual Studio Code:
+    * Deadliner's "The Amiga Gradient Master" tool to assist you creating amazing color gradients for your Copperlists.
+    * Deadliner's "Image Tool" to help you importing and converting between different image formats well suited for the Amiga hardware.
+    * Deadliner's "Color Reducer" tool to reduce the number of colors used by your images using different algorithms.
+    * Deadliner's brand new "BLTCON Cheat Sheet" tool to help you designing Blitter operations.
+    * The Amiga Hardware Reference Manual (HRM) hosted by Elowar.
 
 ## Additional credits
 
