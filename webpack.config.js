@@ -1,11 +1,20 @@
 const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const { transform } = require('ts-transform-react-jsx-source')
 
 module.exports = (env, argv) => {
+	var commonConfig = {
+		plugins: [
+			new ForkTsCheckerWebpackPlugin(),
+		]
+	};
+
 	var extensionConfig = {
+		...commonConfig,
 		target: 'node',
-		entry: { 
+		entry: {
 			extension: './src/extension.ts',
 			debugAdapter: { import: './src/debugAdapter.ts', dependOn: 'extension' }
 		},
@@ -29,7 +38,10 @@ module.exports = (env, argv) => {
 					exclude: /node_modules/,
 					use: [
 						{
-							loader: 'ts-loader'
+							loader: 'ts-loader',
+							options: {
+								transpileOnly: argv.mode === 'production',
+							}
 						}
 					]
 				},
@@ -53,7 +65,8 @@ module.exports = (env, argv) => {
 	};
 
 	var clientConfig = {
-		entry: "./src/client/client.ts",
+		...commonConfig,
+		entry: "./src/client/client.tsx",
 		output: {
 			filename: "client.js",
 		},
@@ -74,7 +87,11 @@ module.exports = (env, argv) => {
 				{
 					test: /\.tsx?$/,
 					loader: "ts-loader",
-					options: { configFile: 'tsconfig.client.json' },
+					options: {
+						configFile: 'tsconfig.client.json',
+						transpileOnly: argv.mode === 'production',
+						getCustomTransformers() { return argv.mode === 'development' ? { before: [transform()], } : {}; },
+					},
 				},
 				{
 					test: /\.css$/,
@@ -113,7 +130,10 @@ module.exports = (env, argv) => {
 					},
 				},
 			})]
-		}
+		},
+		plugins: [
+			//new webpack.debug.ProfilingPlugin()
+		]
 	};
 
 	return [extensionConfig, clientConfig];

@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/davidcanadas/vscode-amiga-debug"
 	},
-	"version": "1.5.2",
+	"version": "1.5.3",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -469,6 +469,7 @@
 		"eslint-plugin-import": "^2.25.3",
 		"eslint-plugin-jsdoc": "^37.0.3",
 		"eslint-plugin-prefer-arrow": "^1.2.3",
+		"fork-ts-checker-webpack-plugin": "^7.2.13",
 		"glob": "^7.1.6",
 		"markdown-to-jsx": "^7.1.7",
 		"mocha": "^9.1.3",
@@ -484,6 +485,7 @@
 		"svg-inline-loader": "^0.8.2",
 		"terser-webpack-plugin": "^5.2.5",
 		"ts-loader": "^9.2.6",
+		"ts-transform-react-jsx-source": "^2.0.3",
 		"typescript": "^4.4.4",
 		"vscode-debugadapter-testsupport": "^1.40.3",
 		"vscode-test": "^1.3.0",

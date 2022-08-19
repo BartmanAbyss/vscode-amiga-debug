@@ -81,7 +81,7 @@ async function Profiler() {
 		container = document.createElement('div');
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
-		render(h(CpuProfileLayout, null), container);
+		render(<CpuProfileLayout />, container);
 /*
 		const devtools = document.createElement('div');
 		document.body.appendChild(devtools);
@@ -105,14 +105,14 @@ function Objdump() {
 	const container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
-	render(h(ObjdumpView, null), container);
+	render(<ObjdumpView />, container);
 }
 
 function Savestate() {
 	const container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
-	render(h(SavestateView, null), container);
+	render(<SavestateView />, container);
 }
 
 function TryProfiler() {

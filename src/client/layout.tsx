@@ -89,7 +89,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 
 	const onClickFrame = useCallback((event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
 		const fr = parseInt(event.currentTarget.attributes.getNamedItem('data').nodeValue);
-		// build models on demand. memory, copper, blits have already been filled by client.ts
+		// build models on demand. memory, copper, blits have already been filled by client.tsx
 		if(!MODELS[fr].nodes)
 			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
 		setFrame(fr);
