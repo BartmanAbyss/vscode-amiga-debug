@@ -1,9 +1,17 @@
 const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = (env, argv) => {
+	var commonConfig = {
+		plugins: [
+			new ForkTsCheckerWebpackPlugin(),
+		]
+	};
+
 	var extensionConfig = {
+		...commonConfig,
 		target: 'node',
 		entry: { 
 			extension: './src/extension.ts',
@@ -29,7 +37,10 @@ module.exports = (env, argv) => {
 					exclude: /node_modules/,
 					use: [
 						{
-							loader: 'ts-loader'
+							loader: 'ts-loader',
+							options: {
+								transpileOnly: argv.mode === 'production',
+							}
 						}
 					]
 				},
@@ -53,6 +64,7 @@ module.exports = (env, argv) => {
 	};
 
 	var clientConfig = {
+		...commonConfig,
 		entry: "./src/client/client.ts",
 		output: {
 			filename: "client.js",
@@ -74,7 +86,10 @@ module.exports = (env, argv) => {
 				{
 					test: /\.tsx?$/,
 					loader: "ts-loader",
-					options: { configFile: 'tsconfig.client.json' },
+					options: { 
+						configFile: 'tsconfig.client.json',
+						transpileOnly: argv.mode === 'production',
+					},
 				},
 				{
 					test: /\.css$/,
@@ -113,7 +128,10 @@ module.exports = (env, argv) => {
 					},
 				},
 			})]
-		}
+		},
+		plugins: [
+			//new webpack.debug.ProfilingPlugin()
+		]
 	};
 
 	return [extensionConfig, clientConfig];

@@ -399,6 +399,7 @@
 		"eslint-plugin-import": "^2.25.3",
 		"eslint-plugin-jsdoc": "^37.0.3",
 		"eslint-plugin-prefer-arrow": "^1.2.3",
+		"fork-ts-checker-webpack-plugin": "^7.2.13",
 		"glob": "^7.1.6",
 		"markdown-to-jsx": "^7.1.7",
 		"mocha": "^9.1.3",
