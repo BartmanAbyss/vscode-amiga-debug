@@ -1,4 +1,4 @@
-if (process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV === 'development') {
 	// Must use require here as import statements are only allowed to exist at the top of a file.
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	require("preact/debug");
@@ -8,13 +8,13 @@ import "preact-devtools/dist/preact-devtools.css";
 import { attach, createRenderer, renderDevtools } from "preact-devtools";
 import { options } from "preact";
 */
-import { h, render } from 'preact';
+import { render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel, createLenses, GetMemory } from './model';
 import { profileShrinkler, Stats } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
-import { ISetCodeLenses, ICpuProfileRaw } from './types';
+import { ISetCodeLenses, ICpuProfileRaw, IErrorMessage } from './types';
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
 import { SavestateView } from './savestate';
@@ -152,6 +152,13 @@ function TrySavestate() {
 
 // MAIN ENTRY POINT
 console.log("client.tsx START: " + new Date().toLocaleString());
+
+window.onerror = (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error) => {
+	VsCodeApi.postMessage<IErrorMessage>({
+		type: 'error',
+		text: 'Amiga Internal Error: ' + ((process.env.NODE_ENV === 'development') ? error.stack : error.message)
+	});
+};
 
 // eslint-disable-next-line no-unused-expressions, @typescript-eslint/no-unused-expressions
 TryProfiler() || TryObjdump() || TrySavestate();

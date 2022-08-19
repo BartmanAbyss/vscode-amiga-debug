@@ -84,6 +84,11 @@ module.exports = (env, argv) => {
 		},
 		module: {
 			rules: [
+				{ // get source maps from node_modules
+					test: /\.js$/,
+					enforce: "pre",
+					use: ["source-map-loader"],
+				},
 				{
 					test: /\.tsx?$/,
 					loader: "ts-loader",

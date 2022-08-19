@@ -101,6 +101,9 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 					selection: new vscode.Range(message.line - 1, 0, message.line, 0)
 				});
 				return;
+			case 'error':
+				void vscode.window.showErrorMessage(message.text, { modal: true });
+				return;
 			}
 		});
 

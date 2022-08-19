@@ -98,6 +98,9 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 			case 'setCodeLenses':
 				this.lenses.registerLenses(this.createLensCollection(message.lenses));
 				return;
+			case 'error':
+				void vscode.window.showErrorMessage(message.text, { modal: true });
+				return;
 			}
 		});
 	}

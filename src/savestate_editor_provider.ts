@@ -217,6 +217,9 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 				case 'savestateProfile':
 					void document.profile(message.frames);
 					break;
+				case 'error':
+					void vscode.window.showErrorMessage(message.text, { modal: true });
+					return;
 			}
 		});
 	}
