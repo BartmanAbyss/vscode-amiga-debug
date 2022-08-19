@@ -8,18 +8,19 @@ import * as ProfileMulti from './icons/settings.svg';
 import styles from './savestate.module.css';
 import './styles.css';
 import { IUssFile } from '../backend/savestate';
+import { ChipsetFlags } from './dma';
 
 declare const SAVESTATE: string;
 
 function chipset(chipsetFlags: number) {
-	if(chipsetFlags === 0)
+	if(chipsetFlags === ChipsetFlags.OCS)
 		return 'OCS';
-	if(chipsetFlags & 4)
+	if(chipsetFlags & ChipsetFlags.AGA)
 		return 'AGA';
 	const f: string[] = [];
-	if(chipsetFlags & 1)
+	if(chipsetFlags & ChipsetFlags.ECSAgnus)
 		f.push('ECS Agnus');
-	if(chipsetFlags & 2)
+	if(chipsetFlags & ChipsetFlags.ECSDenise)
 		f.push('ECS Denise');
 	return f.join(', ');
 }

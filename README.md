@@ -89,6 +89,10 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
+Thanks to all [Contributors on GitHub](https://github.com/BartmanAbyss/vscode-amiga-debug/graphs/contributors)
+
+Thanks to [ross on EAB](https://eab.abime.net/showthread.php?t=111329) for helping with display fetch.
+
 Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
 
 Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
@@ -242,11 +246,12 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Savestate Debugger
 * TODO: kill winuae/gdb when quitting vscode
-* (internal) status of tested savestates: `c:\amiga_state`
+* (internal) status of tested savestates
   - `desertdream-dots.uss`: ok
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
+  - `megatyphoondemo.uss`: many assembly lines missing cycle informations
 
 ### Assembly
 * TODO: parser needs to check for comments
@@ -294,3 +299,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * Denise: TODO: show time, dma
 * Denise: turrican2-level1.uss: sprites 2 pixels too far left
 * Denise: turrican2-intro.uss: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
+* Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp

@@ -128,7 +128,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 	const dmaRecords = MODEL.amiga.dmaRecords;
 
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	let dmacon = MODEL.amiga.dmacon;
+	let dmacon = MODEL.amiga.customRegs[regDMACON >>> 1];
 
 	const duration = 7_093_790 / 50;
 	const boxes: IBox[] = [];
@@ -145,7 +145,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 				continue;
 
 			if(dmaRecord.reg === regDMACON) {
-				if (dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					dmacon |= dmaRecord.dat & 0x7FFF;
 				else
 					dmacon &= ~dmaRecord.dat;
@@ -1052,7 +1052,13 @@ const Tooltip: FunctionComponent<{
 			}
 		}
 		if(amiga.dmaRecord.type !== undefined) {
-			dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
+			switch(amiga.dmaRecord.size) {
+			case 8:  dmaData = '$' + (amiga.dmaRecord.datHi).toString(16).padStart(8, '0') + '\'' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 4:  dmaData = '$' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 2:
+			default: dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0'); break;
+			}
+			
 			if(amiga.dmaRecord.reg & 0x1000) { // CPU
 				if(amiga.dmaRecord.reg & 0x0100)
 					dmaReg = 'Write';

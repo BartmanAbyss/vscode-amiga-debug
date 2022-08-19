@@ -65,7 +65,7 @@ export enum BPLCON0Flags {
 }
 
 export enum BPLCON1Flags {
-	PF2H7   = 1 << 11,
+	PF2H7   = 1 << 15,
 	PF2H6   = 1 << 14,
 	PF2H1   = 1 << 13,
 	PF2H0   = 1 << 12,
@@ -99,6 +99,15 @@ export enum BPLCON2Flags {
 	PF1P2   = 1 <<  2,
 	PF1P1   = 1 <<  1,
 	PF1P0   = 1 <<  0,
+}
+
+export enum FMODEFlags {
+	SSCAN2  = 1 << 15,
+	BSCAN2  = 1 << 14,
+	SPAGEM  = 1 <<  3,
+	SPR32   = 1 <<  2,
+	BPAGEM  = 1 <<  1,
+	BPL32   = 1 <<  0,
 }
 
 export enum CustomReadWrite {
@@ -447,3 +456,16 @@ export class CustomRegisters {
 		return undefined;
 	}
 }
+
+// from 68k-dis.ts; make signed
+const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
+export const FormatCustomRegData = (regName: string, dat: number) => {
+	let prefix = ' ';
+	if(regName.match(/BPL.MOD/)) {
+		if(dat & 0x8000) {
+			prefix = '-';
+			dat = Math.abs(COERCE16(dat));
+		}
+	}
+	return prefix + '$' + dat.toString(16).padStart(4, '0');
+};
