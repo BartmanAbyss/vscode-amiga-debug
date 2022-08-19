@@ -12,9 +12,9 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
     * VASM has been modified to provide valid DWARF section names to make the extension debugger to work.
     * The assembly launchage provider has been updated to validate assembly sources against either GAS or VASM depending on the source code file extensions.
     * VASM official site: http://sun.hasenbraten.de/vasm/.
-    * Modified VASM: https://github.com/davidcanadas/vasm-m68k-mot-win32.
+    * Modified VASM: https://github.com/davidcanadas/vasm-m68k-mot-win32. Version 1.9.
 * exe2adf support:
-    * Just right-click on the EXE file then select `Amiga: Shrinkle File`.
+    * Just right-click on the EXE file then select `Amiga: Shrinkle File`. Version 0.3e.
 
 ## Additional credits
 
