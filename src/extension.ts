@@ -141,10 +141,6 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
-			vscode.commands.registerCommand('amiga.externalResources.gradientMaster', () => launchUrl('http://deadliners.net/gradientmaster', 'Gradient Master')),
-			vscode.commands.registerCommand('amiga.externalResources.imageTool', () => launchUrl('http://deadliners.net/ImageTool', 'Image Tool')),
-			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => launchUrl('http://deadliners.net/ColorReducer', 'Color Reducer')),
-			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => launchUrl('http://deadliners.net/BLTCONCheatSheet', 'BLTCON Cheat Sheet')),
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => launchUrl('http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html', 'Hardware Reference Manual')),
 			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
 
