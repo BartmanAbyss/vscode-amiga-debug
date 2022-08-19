@@ -31,6 +31,7 @@ export const MemoryView: FunctionComponent<{
 	const [showReads, setShowReads] = useState(true);
 	const [showWrites, setShowWrites] = useState(true);
 	const [trackCpuData, setTrackCpuData] = useState(false);
+	const [size, setSize] = useState(1); // 1 = bytes, 2 = words, 4 = longwords
 	const memory = useMemo(() => GetMemoryAfterDma(MODELS[frame].memory, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time)), [time, frame]);
 
 	useMemo(() => {
@@ -169,6 +170,10 @@ export const MemoryView: FunctionComponent<{
 				<ToggleButton icon="Reads" label="Show Memory Reads" checked={showReads} onChange={setShowReads} />
 				<ToggleButton icon="Writes" label="Show Memory Writes" checked={showWrites} onChange={setShowWrites} />
 				<ToggleButton icon="Track CPU Data" label="Track CPU Data" checked={trackCpuData} onChange={setTrackCpuData} />
+				<span style={{ width: '1em' }}></span>
+				<ToggleButton icon=".B" label="Show Bytes" checked={size === 1} onChange={() => setSize(1)} />
+				<ToggleButton icon=".W" label="Show Words" checked={size === 2} onChange={() => setSize(2)} />
+				<ToggleButton icon=".L" label="Show Longwords" checked={size === 4} onChange={() => setSize(4)} />
 			</Toolbar>
 		</div>
 		<div class={styles.memory_container}>
@@ -188,11 +193,10 @@ export const MemoryView: FunctionComponent<{
 			</div>}
 		</div>
 		<div class={styles.memory_fixed}> {/*memory values*/}
-			{[...Array(detailHeight).keys()].map((i) => <div>
+			{[...Array(detailHeight).keys()].map((i) => <div class={styles.memory_line}>
 				{'$' + (memoryAddr + i * detailWidth).toString(16).padStart(8, '0') + ': '}
 				{[...detailMem.slice(i * detailWidth, (i + 1) * detailWidth)].map((v: number, x: number) => 
-					<span class={styles.memory_span} style={{backgroundColor: GetRgbaColorCss(detailPixels[i * detailWidth + x]) }}>{v.toString(16).padStart(2, '0')}
-					</span>
+					<span class={styles[`memory_span_${size}`]} style={{backgroundColor: GetRgbaColorCss(detailPixels[i * detailWidth + x]) }}>{v.toString(16).padStart(2, '0')}</span>
 				)}
 			</div>)}
 		</div>

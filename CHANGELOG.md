@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.3
+- FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)
+- NEW: memory: switch between byte `.B`, word `.W` and longword `.L` display
+
 ## 1.5.2
 - FIX: copper: don't crash when hovering over `NO-OP` instruction
 - NEW: display `BPL1MOD`, `BPL2MOD` as signed values

@@ -112,7 +112,7 @@ export class ObjdumpModel {
 
 		const hits = new Map<number, number>();
 		const cycles = new Map<number, number>();
-		for(let i = 0; i < pcTrace.length; i += 2 + 16) {
+		for(let i = 0; i < pcTrace.length; i += 2) {
 			hits.set(pcTrace[i], (hits.get(pcTrace[i]) || 0) + 1);
 			cycles.set(pcTrace[i], (cycles.get(pcTrace[i]) || 0) + pcTrace[i + 1]);
 		}
