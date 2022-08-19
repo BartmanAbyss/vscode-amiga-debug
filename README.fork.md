@@ -28,4 +28,9 @@ This document is a companion of the original vscode-amiga-debug [README.md](READ
 - Architect logo by [Ozan/TEK](https://www.pouet.net/user.php?who=99100).
 
 VASM is Copyright (C) 2002-2022 by Volker Barthelmann.
+
 exe2adf is Copyright (C) 2015-2022 Bonefish/Reality.
+
+The Amiga Gradient Master, Image Tool, Color Reducer and BLTCON Cheat Sheet are provided by The Deadliners.
+
+The Amiga Hardware Reference Manual (HRM) is intellectual property and/or copyright of their respective owners.
