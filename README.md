@@ -3,7 +3,7 @@
 
 # _amiga-debug_ Visual Studio Code Extension (Windows only)
 
-> **A note from the fork author:**<br/>This is a fork of the awesome [vscode-amiga-debug by Bartman^Abyss](https://marketplace.visualstudio.com/items?itemName=BartmanAbyss.amiga-debug). I would recommend you to use the original extension if you're looking for the good, consistent and stable experience it provides. However, if you like to try (or even use) any of the features available only in this fork (which you can read [here](README.fork.md)) it will be very appreciated, although keep in mind this fork is not aiming for stability.
+> **A note by the author of the fork:**<br/>This is a fork of the awesome [vscode-amiga-debug by Bartman^Abyss](https://marketplace.visualstudio.com/items?itemName=BartmanAbyss.amiga-debug). I would recommend you to use the original extension if you're looking for the good, consistent and stable experience it provides. However, if you like to try (or even use) any of the features available only in this fork (which you can read [here](README.fork.md)) it will be very appreciated, although keep in mind this fork is not aiming for stability.
 
 **One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
 
