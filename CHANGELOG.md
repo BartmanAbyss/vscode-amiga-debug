@@ -9,6 +9,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - FIX: assembly: handle 0-cycle trace instructions
 - FIX: kickstart symbols now include mathieeesingbas.library
 - NEW: disassembler: support FPU (68881/68882/68040/68060)
+- NEW: profiler: blitter-tooltip: show BLT*DAT if DMA for channel is disabled but is used in minterm
+- CHG: `BPL1MOD`, `BPL2MOD` as decimals
 
 ## 1.5.2
 - FIX: copper: don't crash when hovering over `NO-OP` instruction

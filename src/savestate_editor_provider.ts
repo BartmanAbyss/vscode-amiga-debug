@@ -203,7 +203,8 @@ export class SavestateEditorProvider implements vscode.CustomReadonlyEditorProvi
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
-		const setStatus = (status: string) => { void webviewPanel.webview.postMessage({ type: 'status', status }); };
+		webviewPanel.onDidDispose(() => { webviewPanel = undefined; });
+		const setStatus = (status: string) => { void webviewPanel?.webview.postMessage({ type: 'status', status }); };
 
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch(message.type) {
