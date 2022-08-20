@@ -91,7 +91,7 @@ class SourceContext {
 				fs.unlinkSync(inFile);
 			} catch(e) {}
 			fs.writeFileSync (inFile, this.text);
-			cmd         = path.join(SourceContext.extensionPath, "bin/opt/bin/vasmm68k_mot.exe");
+			cmd         = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
 			cmdParams   = [
 				'-m68000', 
 				'-Felf', 
