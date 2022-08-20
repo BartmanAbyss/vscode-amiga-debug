@@ -14,6 +14,10 @@
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
 	"typescript.tsc.autoDetect": "off",
+
+	// test explorer
 	"mochaExplorer.files": "src/test/suite/*.test.ts",
-	"mochaExplorer.require": "ts-node/register"
+	"mochaExplorer.require": "ts-node/register",
+    "testExplorer.hideEmptyLog": false,
+    "testExplorer.useNativeTesting": true,
 }

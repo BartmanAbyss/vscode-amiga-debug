@@ -207,3 +207,21 @@ suite("68k-dis", () => {
 		assert.strictEqual(dis.text, "moveq #1,d1");
 	});
 });
+
+suite("68k-fpu", () => {
+	test("fmove.l d1,fpcr", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0x90, 0x00]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fmove.l d1,fpcr");
+	});
+	test("fmove.l fpcr,d1", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0xb0, 0x00]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fmove.l fpcr,d1");
+	});
+	test("frestore (sp)+", () => {
+		const insn = new Uint8Array([0xF3, 0x5F]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "frestore (sp)+");
+	});
+});

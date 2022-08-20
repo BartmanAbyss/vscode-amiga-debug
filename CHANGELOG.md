@@ -7,6 +7,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - NEW: memory: switch between byte `.B`, word `.W` and longword `.L` display
 - NEW: smooth scrolling for custom register/CPU opcode tooltip windows
 - FIX: assembly: handle 0-cycle trace instructions
+- FIX: kickstart symbols now include mathieeesingbas.library
+- NEW: disassembler: support FPU (68881/68882/68040/68060)
 
 ## 1.5.2
 - FIX: copper: don't crash when hovering over `NO-OP` instruction

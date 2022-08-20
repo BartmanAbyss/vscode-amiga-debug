@@ -280,7 +280,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Kickstart
-* TODO: disassembler needs to understand FPU instructions, exec.library 2.04+ uses some and we need to be able to disassemble to get function sizes
 * TODO: support multiple vector tables per library (for FPU/non-FPU mathieeesingbas)
 * TODO: stack unwinding for kickstart (maybe not necessary)
 

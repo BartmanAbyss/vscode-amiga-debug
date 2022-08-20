@@ -1,9 +1,6 @@
 import { suite, test } from 'mocha';
 import * as assert from 'assert';
 import * as path from 'path';
-import { GetCycles, GetJump, JumpType } from "../../client/68k";
-
-import { print_insn_m68k } from '../../client/68k-dis';
 import { FD, Kickstart } from '../../kickstart';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
