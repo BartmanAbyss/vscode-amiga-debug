@@ -224,4 +224,14 @@ suite("68k-fpu", () => {
 		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "frestore (sp)+");
 	});
+	test("fintrz.s d0,fp0", () => {
+		const insn = new Uint8Array([0xF2, 0x00, 0x44, 0x03]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fintrz.s d0,fp0");
+	});
+	test("fsgldiv.s d1,fp0", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0x44, 0x24]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fsgldiv.s d1,fp0");
+	});
 });
