@@ -5,6 +5,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.5.3
 - FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)
 - NEW: memory: switch between byte `.B`, word `.W` and longword `.L` display
+- NEW: smooth scrolling for custom register/CPU opcode tooltip windows
 - FIX: assembly: handle 0-cycle trace instructions
 
 ## 1.5.2

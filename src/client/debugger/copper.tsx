@@ -12,6 +12,8 @@ import { CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 import { FormatCustomRegData } from '../customRegisters';
+import { useWheelHack } from '../useWheelHack';
+import { Scrollable } from '../scrollable';
 
 export const CopperView: FunctionComponent<{
 	frame: number;
@@ -20,7 +22,7 @@ export const CopperView: FunctionComponent<{
 	const copper = MODELS[frame].copper;
 	const containerRef = useRef<HTMLDivElement>();
 	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
-	const tooltipRef = useRef<HTMLDivElement>();
+	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	// get copper instruction that is executing at 'time'
 	const dmaTime = CpuCyclesToDmaCycles(time);
@@ -68,11 +70,14 @@ export const CopperView: FunctionComponent<{
 	const onMouseLeave = useCallback(() => {
 		setHovered({ markdown: '', x: -1, y: -1, justify: '' });
 	}, []);
+	const preventWheelDefault = useWheelHack(100);	
 	const onWheel = useCallback((evt: WheelEvent) => {
-		evt.preventDefault(); // <- doesn't work
-		// dunno how to make smooth scrolling that works when wheeling repeatedly
-		tooltipRef.current.scrollTop += evt.deltaY;
-	}, [tooltipRef.current]);
+		if(tooltipRef.current) {
+			preventWheelDefault();
+			tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
+			tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
+		}
+	}, [tooltipRef.current, preventWheelDefault]);
 
 	return (<div ref={containerRef} class={styles.container}>
 		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>

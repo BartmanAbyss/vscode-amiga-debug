@@ -312,7 +312,7 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 
 	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
-	const tooltipRef = useRef<HTMLDivElement>();
+	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	const onMouseEnterOpcode = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
@@ -334,8 +334,8 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 	const onWheelOpcode = useCallback((evt: WheelEvent) => {
 		evt.preventDefault();
-		// dunno how to make smooth scrolling that works when wheeling repeatedly
-		tooltipRef.current.scrollTop += evt.deltaY;
+		tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
+		tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
 	}, [tooltipRef.current]);
 
 	const renderRow = useCallback((c: Line, index: number) => {
