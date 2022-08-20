@@ -95,7 +95,7 @@ module.exports = (env, argv) => {
 					options: {
 						configFile: 'tsconfig.client.json',
 						transpileOnly: argv.mode === 'production',
-						getCustomTransformers() { return argv.mode === 'development' ? { before: [transform()], } : {}; },
+						//getCustomTransformers() { return argv.mode === 'development' ? { before: [transform()], } : {}; }, // get preact component stack (doesn't print it anywhere, so disabled for now)
 					},
 				},
 				{
