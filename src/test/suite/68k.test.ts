@@ -1,6 +1,7 @@
+import { suite, test } from 'mocha';
 import * as assert from 'assert';
-import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
+import { GetCycles, GetJump, JumpType } from "../../client/68k";
 import { print_insn_m68k } from '../../client/68k-dis';
 
 suite("68k-cycles", () => {
