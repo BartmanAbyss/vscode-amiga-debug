@@ -15,10 +15,9 @@ bin/winuaebootlog.txt
 bin/debug
 template/obj8mingw
 template/obj
+template/*.elf
+template/a.mingw.*
 template/.vscode/settings.json
-!template/out/
-template/out/*
-!template/out/DELETE.ME
 src/test/suite/data/private
 src/test/suite/data/output
 package.json
