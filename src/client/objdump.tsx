@@ -372,10 +372,10 @@ export const ObjdumpView: FunctionComponent<{
 
 		return (c.pc === undefined
 		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
-		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
+		: <div class={[styles.row, c.traceHits === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
 			<div class={styles.duration}>{frame !== -1 ? <>
-					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
-					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+					{c.traceHits > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+					<span class={styles.dim1}>{c.traceHits > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 				</> : ''}
 				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>
