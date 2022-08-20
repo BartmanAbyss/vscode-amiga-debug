@@ -177,14 +177,14 @@ export const MemoryView: FunctionComponent<{
 			</Toolbar>
 		</div>
 		<div class={styles.memory_container}>
-			{memInfo.chipMem.length && <div class={styles.memory_float}> {/*chipmem*/}
+			{memInfo.chipMem.length > 0 && <div class={styles.memory_float}> {/*chipmem*/}
 				<div>{memInfo.chipMem.length >>> 10}kb Chip Mem</div>
 				<div class={styles.memory}>
 					<canvas ref={chipCanvas} class={styles.memory_canvas} width={canvasWidth} height={chipCanvasHeight} onMouseDown={onClickChip} />
 					{[...Array(memInfo.chipMem.length / 0x10000 + 1).keys()].map((i) => <div class={styles.memory_legend} style={{ top: i * 32 }}>${(memInfo.chipMemAddr + i * 0x10_000).toString(16).padStart(6, '0')}</div>)}
 				</div>
 			</div>}
-			{memInfo.bogoMem.length && <div class={styles.memory_float}> {/*bogomem*/}
+			{memInfo.bogoMem.length > 0 && <div class={styles.memory_float}> {/*bogomem*/}
 				<div>{memInfo.bogoMem.length >>> 10}kb Slow Mem</div>
 				<div class={styles.memory}>
 					<canvas ref={bogoCanvas} class={styles.memory_canvas} width={canvasWidth} height={bogoCanvasHeight} onMouseDown={onClickBogo} />
