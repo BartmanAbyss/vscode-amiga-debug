@@ -137,7 +137,7 @@ This extension contains binaries of:
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
 
 ## Contributing
-For development, just install the latest [node.js](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
+For development, just install the latest [node.js LTS](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
 To build a `.vsix`, `npm install -g vsce` (once), and then `vsce package`.
 
 ## Porting
@@ -240,8 +240,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
-* "npm run serve": all colors in flame-graph are black
-* stack sizes > 1024 cause UnwindTable to fail parsing
+* stack sizes > 1024 cause UnwindTable to fail parsing (https://github.com/BartmanAbyss/vscode-amiga-debug/issues/35)
 * TODO: new DMArecord fields (CIA)
 
 ### Savestate Debugger
@@ -251,6 +250,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
+  - `brianthelion-rotozoom.uss`: some blitrects missing
 
 ### Assembly
 * TODO: parser needs to check for comments
@@ -287,15 +287,12 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 ### Gfx Debugger
 * multiframe profiler, copperlist and copper-timings seem off
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
-* resource viewer for copper bitplanes: high-res also doesn't work (see Workbench)
 * TODO: show blitter cycle duration (not only start, end cycle), show minterm
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
-* copper, customregs: wheel over regname doesn't prevent scrolling
-* Denise: TODO: glitches, blitrects, overdraw, more tooltip info, toggle bitmaps, ECS/AGA
-* Denise: TODO: show time, dma
+* Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites
 * Denise: turrican2-level1.uss: sprites 2 pixels too far left
 * Denise: turrican2-intro.uss: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
 * Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp
