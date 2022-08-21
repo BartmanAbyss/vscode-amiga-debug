@@ -222,6 +222,18 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ## Internal Development
 
+### Debugging
+- `amigaDebug.ts`: set `DEBUG` to `TRUE` to enable GDB/execution traces
+- `profile_editor_provider.ts`: set `DEBUG` to `TRUE` to enable `preact-devtools`
+
+### preact-devtools
+```bash
+git clone https://github.com/preactjs/preact-devtools.git
+npm install
+npm run build:inline
+<copy dist/inline/* to preact-devtools>
+```
+
 WinUAE builds with Visual Studio 2022.
 
 ### Create new GCC patch
