@@ -43,6 +43,12 @@ export enum BLTCON1Flags {
 	FCI     = 1 << 2,
 	DESC    = 1 << 1,
 	LINE    = 1 << 0,
+	// for line mode
+	SIGN    = 1 << 6,
+	SUD     = 1 << 4,
+	SUL     = 1 << 3,
+	AUL     = 1 << 2,
+	SING    = 1 << 1,
 }
 
 export enum BPLCON0Flags {

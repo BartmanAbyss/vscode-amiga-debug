@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.4
+- NEW: profiler: improve blitter tooltip for line mode
+- NEW: profiler: show blitter mode (`Blit`, `Line`, `Fill`) in blitter timeline
+
 ## 1.5.3
 - FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)
 - NEW: memory: switch between byte `.B`, word `.W` and longword `.L` display

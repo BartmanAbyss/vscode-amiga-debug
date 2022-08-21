@@ -4,7 +4,7 @@ import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { LensCollection } from './lens_collection';
 
 // global debug switch for preact-devtools
-const DEBUG = true;
+const DEBUG = false;
 
 const decimalFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 2,
