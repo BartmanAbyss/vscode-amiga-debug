@@ -113,6 +113,8 @@ P61.testmod - Module by Skylord/Sector 7
 
 [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
 
+`blitter_minterm.c` is based on [mini-qmc](https://sourceforge.net/projects/mini-qmc/) by Stefan Moebius.
+
 This extension contains binaries of:
 - modified [GCC 12.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-12.1.0/) (patch included)
   - Copyright (C) 2022 Free Software Foundation, Inc.

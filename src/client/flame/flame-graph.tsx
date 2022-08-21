@@ -1123,17 +1123,11 @@ const Tooltip: FunctionComponent<{
 	let mintermStr = '';
 	if(isBlit) {
 		const minterm = amiga.blit.BLTCON0 & 0xff;
-		mintermStr = minterm.toString(16).padStart(2, '0');
-		if(minterm === BlitOp.CLEAR)
-			mintermStr += ' CLEAR';
-		if(minterm === BlitOp.A_OR_B)
-			mintermStr += ' A_OR_B';
-		else if(minterm === BlitOp.A_OR_C)
-			mintermStr += ' A_OR_C';
-		else if(minterm === BlitOp.A_XOR_C)
-			mintermStr += ' A_XOR_C';
-		else if(minterm === BlitOp.A_TO_D)
-			mintermStr += ' A_TO_D';
+		mintermStr = '$' + minterm.toString(16).padStart(2, '0');
+		if(BlitOp[minterm])
+			//mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '<span style="color: var(--vscode-editor-background); background: var(--vscode-editor-foreground);">').replace(/\]/g, '</span>')}`;
+			mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '').replace(/\]/g, '\u0304')}`;
+			//mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '<span style="box-shadow: inset 0 2px 0 currentColor;">').replace(/\]/g, '</span>')}`;
 	
 		BLTCON.push({ name: "USEA",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
 		BLTCON.push({ name: "USEB",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
@@ -1235,7 +1229,7 @@ const Tooltip: FunctionComponent<{
 					<dt className={styles.time}>Blitter Control</dt>
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt className={styles.time}>Minterm</dt>
-					<dd className={styles.time}>${mintermStr} {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					<dd className={styles.time}><span dangerouslySetInnerHTML={{ __html: mintermStr }} /> {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) !== 0 && <>
 						<span class={styles.eh}>Start</span> {(amiga.blit.BLTCON0 >>> 12).toString()}
 						<span class={styles.eh}>Texture</span> {(amiga.blit.BLTCON1 >>> 12).toString()}
