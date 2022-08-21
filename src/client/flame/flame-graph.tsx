@@ -26,7 +26,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
-import { BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
+import { BlitOp, BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
 import { Screen } from '../debugger/resources';
 import { GetCustomRegDoc } from '../docs';
 
@@ -208,6 +208,7 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 		const fill = blit.BLTCON1 & (BLTCON1Flags.EFE | BLTCON1Flags.IFE);
 		const dmaSubtype = line ? DmaSubTypes.BLITTER_LINE : fill ? DmaSubTypes.BLITTER_FILL : DmaSubTypes.BLITTER;
 		const color = dmaTypes[DmaTypes.BLITTER].subtypes[dmaSubtype].color;
+		const minterm = blit.BLTCON0 & 0xff;
 
 		const x1 = blit.cycleStart * 2 / duration; // * 2: convert from DMA cycles to CPU cycles
 		const x2 = blit.cycleEnd ? (blit.cycleEnd) * 2 / duration : 1;
@@ -221,7 +222,7 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 				channels += '-';
 		}
 
-		const text = `${line ? 'Line' : fill ? 'Fill' : 'Blit'} ${channels} ${blit.BLTSIZH * 16}x${blit.BLTSIZV}px`;
+		const text = `${line ? 'Line' : fill ? 'Fill' : minterm ? 'Blit' : 'Clear'} ${channels} ${blit.BLTSIZH * 16}x${blit.BLTSIZV}px`;
 		boxes.push({
 			column: 0,
 			row: 0,
@@ -1119,7 +1120,21 @@ const Tooltip: FunctionComponent<{
 	const BLTCON: Bit[] = [];
 	const MINTERM: Bit[] = [];
 	const BLTDAT: boolean[] = [false, false, false, false];
+	let mintermStr = '';
 	if(isBlit) {
+		const minterm = amiga.blit.BLTCON0 & 0xff;
+		mintermStr = minterm.toString(16).padStart(2, '0');
+		if(minterm === BlitOp.CLEAR)
+			mintermStr += ' CLEAR';
+		if(minterm === BlitOp.A_OR_B)
+			mintermStr += ' A_OR_B';
+		else if(minterm === BlitOp.A_OR_C)
+			mintermStr += ' A_OR_C';
+		else if(minterm === BlitOp.A_XOR_C)
+			mintermStr += ' A_XOR_C';
+		else if(minterm === BlitOp.A_TO_D)
+			mintermStr += ' A_TO_D';
+	
 		BLTCON.push({ name: "USEA",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
 		BLTCON.push({ name: "USEB",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
 		BLTCON.push({ name: "USEC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEC) });
@@ -1220,7 +1235,7 @@ const Tooltip: FunctionComponent<{
 					<dt className={styles.time}>Blitter Control</dt>
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt className={styles.time}>Minterm</dt>
-					<dd className={styles.time}>${(amiga.blit.BLTCON0 & 0xff).toString(16).padStart(2, '0')} {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					<dd className={styles.time}>${mintermStr} {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					{(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) !== 0 && <>
 						<span class={styles.eh}>Start</span> {(amiga.blit.BLTCON0 >>> 12).toString()}
 						<span class={styles.eh}>Texture</span> {(amiga.blit.BLTCON1 >>> 12).toString()}

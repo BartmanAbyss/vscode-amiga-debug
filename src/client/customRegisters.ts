@@ -137,6 +137,26 @@ export interface CustomData {
 	special?: number;
 }
 
+// from hardware/blit.h
+enum Minterm {
+	ABC    = 0x80,
+	ABNC   = 0x40,
+	ANBC   = 0x20,
+	ANBNC  = 0x10,
+	NABC   = 0x8,
+	NABNC  = 0x4,
+	NANBC  = 0x2,
+	NANBNC = 0x1,
+}
+
+export enum BlitOp {
+	A_OR_B = Minterm.ABC|Minterm.ANBC|Minterm.NABC|Minterm.ABNC|Minterm.ANBNC|Minterm.NABNC,
+	A_OR_C	= Minterm.ABC|Minterm.NABC|Minterm.ABNC |Minterm. ANBC|Minterm.NANBC|Minterm.ANBNC,
+	A_XOR_C = Minterm.NABC|Minterm.ABNC|Minterm. NANBC|Minterm.ANBNC,
+	A_TO_D	= Minterm.ABC|Minterm.ANBC|Minterm.ABNC|Minterm.ANBNC,
+	CLEAR = 0
+}
+
 export class CustomRegisters {
 	/* This table was generated from the list of AGA chip names in
 	* AGA.guide available on aminet. It could well have errors in it. */
