@@ -7,7 +7,7 @@
             "preLaunchTask": "compile",
             "name": "AROS",
             "config": "A500",
-            "program": "${workspaceFolder}/a.mingw",
+            "program": "${workspaceFolder}/${config:amiga.program}",
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
@@ -16,7 +16,7 @@
             "preLaunchTask": "compile",
             "name": "Amiga 500",
             "config": "A500",
-            "program": "${workspaceFolder}/a.mingw",
+            "program": "${workspaceFolder}/${config:amiga.program}",
             "kickstart": "${config:amiga.rom-paths.A500}",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -26,7 +26,7 @@
             "preLaunchTask": "compile",
             "name": "Amiga 1200",
             "config": "A1200",
-            "program": "${workspaceFolder}/a.mingw",
+            "program": "${workspaceFolder}/${config:amiga.program}",
             "kickstart": "${config:amiga.rom-paths.A1200}",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -36,7 +36,7 @@
             "preLaunchTask": "compile",
             "name": "Amiga 4000",
             "config": "A4000",
-            "program": "${workspaceFolder}/a.mingw",
+            "program": "${workspaceFolder}/${config:amiga.program}",
             "kickstart": "${config:amiga.rom-paths.A4000}",
             "internalConsoleOptions": "openOnSessionStart"
         }        

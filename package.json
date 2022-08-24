@@ -406,6 +406,11 @@
 			{
 				"title": "Amiga C/C++ Compile, Debug & Profile",
 				"properties": {
+					"amiga.program": {
+						"type": "string",
+						"default": "out/a",
+						"description": "Path to the output program (without extension), relative to the workspace."
+					},
 					"amiga.rom-paths.A500": {
 						"type": "string",
 						"default": "c:/amiga/KICK13.rom",
