@@ -408,7 +408,7 @@
 				"properties": {
 					"amiga.program": {
 						"type": "string",
-						"default": "out\\a",
+						"default": "out/a",
 						"description": "Path to the output program (without extension), relative to the workspace."
 					}
 					"amiga.rom-paths.A500": {
