@@ -19,7 +19,9 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 0. Install the extension from the Visual Studio Code Marketplace
 1. Create a new empty project folder with `File > Open Folder...`
 2. From the command palette <kbd>Ctrl+Shift+P</kbd> select `Amiga: Init Project`
-3. (optional, but recommended) Open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
+3. (optional, but recommended)
+   - either: open settings <kbd>Ctrl+,</kbd> and under `Extensions` > `Amiga C/C++ Compile, Debug & Profile` point `Rom-paths: A500` to your *Kickstart 1.3* ROM
+   - or: open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
 3. Hit <kbd>F5</kbd> to build and run a minimal sample project
 4. If you prefer C++ instead of C, just rename `main.c` to `main.cpp`
 
