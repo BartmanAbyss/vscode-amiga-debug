@@ -5,7 +5,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms
 - NEW: profiler: show blitter mode (`Blit`, `Line`, `Fill`, `Clear`) in blitter timeline
-- NEW: new commands in the command palette <kbd>Ctrl+Shift+P</kbd>: (PR#124 by merry^Architect)
+- NEW: new commands in the command palette <kbd>Ctrl+Shift+P</kbd>: ([PR#124 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/124))
   - `Open Gradient Master`: opens the Deadliner's The Amiga Gradient Master tool to assist you creating color gradients for Copperlists).
   - `Open Image Tool` opens the Deadliner's Image Tool to assist you converting images to different Amiga formats.
   - `Open Color Reducer` opens the Deadliner's Color Reducer tool to assist you reducing the number of colors in images in a smart manner.
