@@ -62,11 +62,11 @@ class SourceContext {
 		try {
 			fs.unlinkSync(tmp);
 		} catch(e) {}
-		let cmd : string, cmdParams : string[], spawnParams : object;
+		let cmd: string, cmdParams: string[], spawnParams: object;
 		if (this.fileName.endsWith('.s')) {
 			//	Spawn the GNU Assembler to validate the file.
-			cmd         = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
-			cmdParams   = [
+			cmd = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
+			cmdParams = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
 				'--register-prefix-optional', 
@@ -91,8 +91,8 @@ class SourceContext {
 				fs.unlinkSync(inFile);
 			} catch(e) {}
 			fs.writeFileSync (inFile, this.text);
-			cmd         = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
-			cmdParams   = [
+			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
+			cmdParams = [
 				'-m68000', 
 				'-Felf', 
 				'-opt-fconst', 
