@@ -51,6 +51,12 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - WinUAE:
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
+- some nifty coding helpers in the command palette <kbd>Ctrl+Shift+P</kbd>
+  - `Open Gradient Master`: opens the Deadliner's The Amiga Gradient Master tool to assist you creating color gradients for Copperlists).
+  - `Open Image Tool` opens the Deadliner's Image Tool to assist you converting images to different Amiga formats.
+  - `Open Color Reducer` opens the Deadliner's Color Reducer tool to assist you reducing the number of colors in images in a smart manner.
+  - `Open BLTCON Cheat Sheet`: opens the Deadliner's BLTCON Cheat Sheet tool that helps you designing Blitter operations.
+  - `Open Amiga Hardware Reference Manual`: opens the Amiga Hardware Reference Manual TOC hosted at amigadev.elowar.com.
 
 ## Supported Amiga Models
 

@@ -5,6 +5,12 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms
 - NEW: profiler: show blitter mode (`Blit`, `Line`, `Fill`, `Clear`) in blitter timeline
+- NEW: new commands in the command palette <kbd>Ctrl+Shift+P</kbd>: (PR#124 by merry^Architect)
+  - `Open Gradient Master`: opens the Deadliner's The Amiga Gradient Master tool to assist you creating color gradients for Copperlists).
+  - `Open Image Tool` opens the Deadliner's Image Tool to assist you converting images to different Amiga formats.
+  - `Open Color Reducer` opens the Deadliner's Color Reducer tool to assist you reducing the number of colors in images in a smart manner.
+  - `Open BLTCON Cheat Sheet`: opens the Deadliner's BLTCON Cheat Sheet tool that helps you designing Blitter operations.
+  - `Open Amiga Hardware Reference Manual`: opens the Amiga Hardware Reference Manual TOC hosted at amigadev.elowar.com.
 
 ## 1.5.3
 - FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)
