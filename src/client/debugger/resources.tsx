@@ -288,15 +288,18 @@ export const Screen: FunctionComponent<{
 			// get top-left corner of blit
 			const [x, y] = (() => {
 				for (let p = 0; p < screen.planes.length; p++) {
-					const plane = screen.planes[p];
+					let plane = screen.planes[p];
 					const screenLineSize = screen.width / 8 + screen.modulos[p & 1];
-					if (dest >= plane && dest < plane + screen.height * screenLineSize) {
-						const y = Math.floor((dest - plane) / screenLineSize);
-						const x = Math.floor((dest - plane) % screenLineSize) * 8;
-						return [x, y];
+					for(let yy = 0; yy < screen.height; yy++) {
+						// hmm.. this code is not detecting bits that start outside our screen but then intersect the screen
+						if (dest >= plane && dest < plane + screen.width / 8) {
+							const x = (dest - plane) * 8;
+							return [x, yy];
+						}
+						plane += screenLineSize;
 					}
-					return [-1, -1];
 				}
+				return [-1, -1];
 			})();
 			if (x === -1 || y === -1)
 				continue;
@@ -421,7 +424,7 @@ export const GfxResourcesView: FunctionComponent<{
 		const copperScreens: { screen: IScreen; frames: number[] }[] = [];
 		// dupecheck copper screens from all frames
 		for(let i = 0; i < MODELS.length; i++) {
-			const copperScreen = GetScreenFromCopper(MODELS[i].copper);
+			const copperScreen = GetScreenFromCopper(MODELS[i].copper, MODELS[0].amiga.chipsetFlags);
 			const dupe = copperScreens.findIndex((cs) => JSON.stringify(cs.screen) === JSON.stringify(copperScreen));
 			if(dupe === -1)
 				copperScreens.push({ screen: copperScreen, frames: [i + 1] });
@@ -488,7 +491,7 @@ export const GfxResourcesView: FunctionComponent<{
 		};
 		palettes.push({ resource: copperResource, frame, palette: copperPalette });
 
-		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmacon, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
+		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(customRegs));
 		const customRegsResource: GfxResource = {
 			address: CustomRegisters.getCustomAddress("COLOR00"),

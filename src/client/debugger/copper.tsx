@@ -11,6 +11,9 @@ import { CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
+import { FormatCustomRegData } from '../customRegisters';
+import { useWheelHack } from '../useWheelHack';
+import { Scrollable } from '../scrollable';
 
 export const CopperView: FunctionComponent<{
 	frame: number;
@@ -18,8 +21,8 @@ export const CopperView: FunctionComponent<{
 }> = ({ frame, time }) => {
 	const copper = MODELS[frame].copper;
 	const containerRef = useRef<HTMLDivElement>();
-	const [hovered, setHovered] = useState<{ index: number; x: number; y: number; justify: string}>({ index: -1, x: -1, y: -1, justify: '' });
-	const tooltipRef = useRef<HTMLDivElement>();
+	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
+	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	// get copper instruction that is executing at 'time'
 	const dmaTime = CpuCyclesToDmaCycles(time);
@@ -52,37 +55,43 @@ export const CopperView: FunctionComponent<{
 		const h = parseInt(evt.currentTarget.attributes['data'].nodeValue);
 		const rect = evt.currentTarget.getBoundingClientRect();
 		if(copper[h].insn.instructionType === CopperInstructionType.MOVE) {
-			const hov = { 
-				index: h, 
-				x: Math.min(rect.left, window.innerWidth - 530), 
-				y: rect.bottom < window.innerHeight - 260 ? rect.bottom + 10 : rect.top - 260,
-				justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end' 
-			};
-			setHovered(hov);
+			const markdown = GetCustomRegDoc((copper[h].insn as CopperMove).DA);
+			if(markdown) {
+				const hov = { 
+					markdown, 
+					x: Math.min(rect.left, window.innerWidth - 530), 
+					y: rect.bottom < window.innerHeight - 260 ? rect.bottom + 10 : rect.top - 260,
+					justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end' 
+				};
+				setHovered(hov);
+			}
 		}
 	}, [copper]);
 	const onMouseLeave = useCallback(() => {
-		setHovered({ index: -1, x: -1, y: -1, justify: '' });
+		setHovered({ markdown: '', x: -1, y: -1, justify: '' });
 	}, []);
+	const preventWheelDefault = useWheelHack(100);	
 	const onWheel = useCallback((evt: WheelEvent) => {
-		evt.preventDefault(); // <- doesn't work
-		// dunno how to make smooth scrolling that works when wheeling repeatedly
-		tooltipRef.current.scrollTop += evt.deltaY;
-	}, [tooltipRef.current]);
+		if(tooltipRef.current) {
+			preventWheelDefault();
+			tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
+			tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
+		}
+	}, [tooltipRef.current, preventWheelDefault]);
 
 	return (<div ref={containerRef} class={styles.container}>
 		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <>
-				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = ${(c.insn as CopperMove).RD.toString(16).padStart(4, '0')}
+				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = {FormatCustomRegData((c.insn as CopperMove).label, (c.insn as CopperMove).RD)}
 				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
 			</> : c.insn.toString()}
 		</div>)}
-		{hovered.index !== -1 && (createPortal(
+		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
 				<div ref={tooltipRef} class={styles.tooltip}>
-					<Markdown>{GetCustomRegDoc((copper[hovered.index].insn as CopperMove).DA)}</Markdown>
+					<Markdown>{hovered.markdown}</Markdown>
 				</div>
 			</div>, document.body))}
 	</div>);

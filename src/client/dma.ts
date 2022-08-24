@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { CustomRegisters, CustomReadWrite } from './customRegisters';
+import { CustomRegisters, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './customRegisters';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
@@ -221,6 +221,7 @@ export interface Blit {
 	BLTAFWM: number;
 	BLTALWM: number;
 	BLTxPT: number[]; // A-D
+	BLTxDAT: number[]; // A-D
 	BLTxMOD: number[]; // A-D
 }
 
@@ -232,29 +233,42 @@ export interface Copper {
 	insn: CopperInstruction;
 }
 
+export enum ChipsetFlags {
+	OCS = 0,
+	ECSAgnus = 1,
+	ECSDenise = 2,
+	AGA = 4
+}
+
 // blits are sorted
 export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit[] {
-	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
-	const customRegL = (reg: number) => (customRegs[(reg - 0xdff000) >>> 1] << 16) | customRegs[(reg + 2 - 0xdff000) >>> 1];
+	const customReg = (reg: number) => customRegs[reg >>> 1];
+	const customRegL = (reg: number) => (customRegs[reg >>> 1] << 16) | customRegs[(reg + 2) >>> 1];
 	const regBLTxPT = [
-		CustomRegisters.getCustomAddress("BLTAPT"),
-		CustomRegisters.getCustomAddress("BLTBPT"),
-		CustomRegisters.getCustomAddress("BLTCPT"),
-		CustomRegisters.getCustomAddress("BLTDPT")
+		CustomRegisters.getCustomAddress("BLTAPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDPT") - 0xdff000
+	];
+	const regBLTxDAT = [
+		CustomRegisters.getCustomAddress("BLTADAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBDAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCDAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDDAT") - 0xdff000
 	];
 	const regBLTxMOD = [
-		CustomRegisters.getCustomAddress("BLTAMOD"),
-		CustomRegisters.getCustomAddress("BLTBMOD"),
-		CustomRegisters.getCustomAddress("BLTCMOD"),
-		CustomRegisters.getCustomAddress("BLTDMOD")
+		CustomRegisters.getCustomAddress("BLTAMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDMOD") - 0xdff000
 	];
-	const regBLTCON0 = CustomRegisters.getCustomAddress("BLTCON0");
-	const regBLTCON1 = CustomRegisters.getCustomAddress("BLTCON1");
-	const regBLTAFWM = CustomRegisters.getCustomAddress("BLTAFWM");
-	const regBLTALWM = CustomRegisters.getCustomAddress("BLTALWM");
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE");
-	const regBLTSIZV = CustomRegisters.getCustomAddress("BLTSIZV");
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH");
+	const regBLTCON0 = CustomRegisters.getCustomAddress("BLTCON0") - 0xdff000;
+	const regBLTCON1 = CustomRegisters.getCustomAddress("BLTCON1") - 0xdff000;
+	const regBLTAFWM = CustomRegisters.getCustomAddress("BLTAFWM") - 0xdff000;
+	const regBLTALWM = CustomRegisters.getCustomAddress("BLTALWM") - 0xdff000;
+	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
+	const regBLTSIZV = CustomRegisters.getCustomAddress("BLTSIZV") - 0xdff000;
+	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
 	let BlitTrace = "";
 
 	const blits: Blit[] = [];
@@ -266,11 +280,11 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 			if((dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) || (dmaRecord.addr !== undefined && dmaRecord.addr >= 0xdff000 && dmaRecord.addr < 0xdff200)) {
 				const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
 				customRegs[reg >>> 1] = dmaRecord.dat;
-				const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
+				const isBlitStart = (reg === regBLTSIZE) || (reg === regBLTSIZH);
 				if(isBlitStart) {
 					let BLTSIZH = 0;
 					let BLTSIZV = 0;
-					if(reg === regBLTSIZE - 0xdff000) { // OCS
+					if(reg === regBLTSIZE) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
 						BLTSIZV = (dmaRecord.dat >>> 6) & 0x3ff;
 						if(BLTSIZH === 0)
@@ -278,7 +292,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 						if(BLTSIZV === 0)
 							BLTSIZV = 1024;
 					}
-					if(reg === regBLTSIZH - 0xdff000) { // ECS
+					if(reg === regBLTSIZH) { // ECS
 						BLTSIZH = dmaRecord.dat & 0x7ff;
 						BLTSIZV = customReg(regBLTSIZV) & 0x7fff;
 						if(BLTSIZH === 0)
@@ -291,12 +305,14 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					const BLTAFWM = customReg(regBLTAFWM);
 					const BLTALWM = customReg(regBLTALWM);
 					const BLTxPT = [];
+					const BLTxDAT = [];
 					const BLTxMOD = [];
 					let channels = '';
 					const addresses: string[] = [];
 					for(let channel = 0; channel < 4; channel++) {
 						const adr = customRegL(regBLTxPT[channel]) & 0x1ffffe; // ECS=0x1ffffe, OCS=0x7fffe;
 						BLTxPT.push(adr);
+						BLTxDAT.push(customReg(regBLTxDAT[channel]));
 						BLTxMOD.push(COERCE16(customReg(regBLTxMOD[channel])));
 						if(BLTCON0 & (1 << (11 - channel))) {
 							channels += 'ABCD'[channel];
@@ -317,6 +333,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 						BLTAFWM,
 						BLTALWM,
 						BLTxPT,
+						BLTxDAT,
 						BLTxMOD
 					});
 					BlitTrace += `Line ${y.toString().padStart(3, ' ')} Cycle ${x.toString().padStart(3, ' ')}: BLTSIZE = ${(BLTSIZH * 16).toString().padStart(4, ' ')}x${BLTSIZV.toString().padStart(4, ' ')}; ${channels} ${addresses.join(' ')}\n`;
@@ -339,8 +356,8 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 }
 
 export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE");
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH");
+	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
+	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
 
 	let cycles = 0;
 	let i = 0;
@@ -349,7 +366,7 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
-			const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
+			const isBlitStart = reg === regBLTSIZE || reg === regBLTSIZH;
 			if(isBlitStart) {
 				lastStart = i;
 			}
@@ -366,14 +383,14 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 
 export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[] {
 	const insns: Copper[] = [];
-	const regCOPINS = CustomRegisters.getCustomAddress("COPINS");
+	const regCOPINS = CustomRegisters.getCustomAddress("COPINS") - 0xdff000;
 
 	let i = 0;
 	let lastinsn: CopperInstruction = null;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
-			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS - 0xdff000) {
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS) {
 				const first = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
 				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
 				const insn = CopperInstruction.parse(first, second);
@@ -411,7 +428,7 @@ export interface IScreen {
 	ham: boolean;
 }
 
-export function GetScreenFromCopper(copper: Copper[]): IScreen {
+export function GetScreenFromCopper(copper: Copper[], chipsetFlags: number): IScreen {
 	let planes = [0, 0, 0, 0, 0, 0, 0, 0];
 	const modulos = [0, 0];
 
@@ -422,6 +439,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	let DIWSTOP = 0;
 	let DIWHIGH = 0;
 	let useDIWHIGH = false;
+	let FMODE = 0;
 
 	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0");
 	const regBPL1MOD = CustomRegisters.getCustomAddress("BPL1MOD");
@@ -447,6 +465,7 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
 	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
 	const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
+	const regFMODE = CustomRegisters.getCustomAddress("FMODE"); // ECS
 
 	for(const c of copper) {
 		if(c.vpos >= 200) // ignore bottom-of-screen HUD
@@ -477,29 +496,30 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 				case regDIWSTRT: DIWSTRT = c.insn.RD; break;
 				case regDIWSTOP: DIWSTOP = c.insn.RD; break;
 				case regDIWHIGH: DIWHIGH = c.insn.RD; useDIWHIGH = true; break;
+				case regFMODE: FMODE = c.insn.RD; break;
 			}
 		}
 	}
 
-// workbench 1.3 (A500)
-//	DDF: 3c d0 DDF: 581 40c1
-//	   fetchWidth: 640 displayWidth: 640
-//	   modulos: 0  0
-//	=> modulos: 0  0
+	// workbench 1.3 (A500)
+	//	DDF: 3c d0 DDF: 581 40c1
+	//	   fetchWidth: 640 displayWidth: 640
+	//	   modulos: 0  0
+	//	=> modulos: 0  0
 
-// workbench 2.0 (A500+, interlace)
-// 	DDF: 38 d8 DDF: 2c81 2cc1
-//    fetchWidth: 672 displayWidth: 640
-//    modulos: 76  76
-// => modulos: 78  78
-// 44,63: 2cc6e
-// 45,61: 2cd0e +160
+	// workbench 2.0 (A500+, interlace)
+	// 	DDF: 38 d8 DDF: 2c81 2cc1
+	//    fetchWidth: 672 displayWidth: 640
+	//    modulos: 76  76
+	// => modulos: 78  78
+	// 44,63: 2cc6e
+	// 45,61: 2cd0e +160
 
-// workbench 2.0 (690 px overscan)
-// 	DDF: 30 d8 DDF: 2c6e 2cc7
-//    fetchWidth: 704 displayWidth: 690
-//    modulos: 88  88
-// => modulos: 88  88	
+	// workbench 2.0 (690 px overscan)
+	// 	DDF: 30 d8 DDF: 2c6e 2cc7
+	//    fetchWidth: 704 displayWidth: 690
+	//    modulos: 88  88
+	// => modulos: 88  88	
 
 	let displayStart = (DIWSTRT & 0xff) << 2;
 	let displayStop = ((DIWSTOP & 0xff) + 256) << 2;
@@ -511,11 +531,33 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 		displayStop |= (DIWHIGH >> 13) << 10;
 	}
 
-	const hires = (BPLCON0 & (1 << 15)) ? true : false;
-	const ham = (BPLCON0 & (1 << 11)) ? true : false;
+	const hires = (BPLCON0 & BPLCON0Flags.HIRES) ? true : false;
+	const ham = (BPLCON0 & BPLCON0Flags.HAM) ? true : false;
 	//let fetchWidth = hires ? ((((DDFSTOP - DDFSTRT) >>> 2) + 2) << 4) : ((((DDFSTOP - DDFSTRT) >>> 3) + 1) << 4); // hires/lores
 	//if(hires)
-	const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
+
+	// https://eab.abime.net/showpost.php?p=1556113&postcount=14
+
+	// validate bits
+	const res = hires ? 1 : 0;
+	FMODE &= FMODEFlags.BPL32 | FMODEFlags.BPAGEM;
+	DDFSTRT &= chipsetFlags ? 0xfe : 0xfc;
+	DDFSTOP &= chipsetFlags ? 0xfe : 0xfc;
+
+	// fetch=log2(fetch_width)-4; fetch_width=16,32,64
+	const fetch = (chipsetFlags & ChipsetFlags.AGA) ? ((FMODE <= 1) ? FMODE : FMODE - 1) : 0;
+	// sub-block (OCS/ECS) and large-block (AGA) stop pad
+	const pad = (fetch > res) ? (8 << (fetch - res)) - 1 : 8 - 1;
+	// OCS/ECS/(AGA) sub-block
+	const sub = (res > fetch) ? res - fetch : 0;
+	// AGA large-block
+	const large = (fetch > res) ? fetch - res : 0;
+	// DMA fetched blocks
+	const blocks = ((DDFSTOP - DDFSTRT + pad) >> (3 + large)) + 1;
+	// 16 pixels per fetch_width per sub-block per block
+	const fetchWidth = blocks << (4 + fetch + sub);
+
+	//const fetchWidth = (((DDFSTOP & 0xfc) - (DDFSTRT & 0xfc) + 0xc) & 0xf8) << (hires ? 2 : 1);
 	let displayWidth = displayStop - displayStart;
 	// no support for superhires
 	if(hires)
@@ -526,14 +568,6 @@ export function GetScreenFromCopper(copper: Copper[]): IScreen {
 	console.log(`DDF: ${DDFSTRT.toString(16)} ${DDFSTOP.toString(16)} DIW: ${DIWSTRT.toString(16)} ${DIWSTOP.toString(16)} ${DIWHIGH.toString(16)}`);
 	console.log(`   fetchWidth: ${fetchWidth} displayStart: ${displayStart} displayStop: ${displayStop} displayWidth: ${displayWidth}`);
 	console.log(`   modulos: ${modulos[0]}  ${modulos[1]}`);
-	// adjust for extra fetched data for scrolling
-	if(fetchWidth > 384) { // TEST ONLY
-		modulos[0] += (384 - fetchWidth) >> 4;
-		modulos[1] += (384 - fetchWidth) >> 4;
-	}
-	//modulos[0] += (fetchWidth - displayWidth) >> 4;
-	//modulos[1] += (fetchWidth - displayWidth) >> 4;
-	console.log(`=> modulos: ${modulos[0]}  ${modulos[1]}`);
 
 	planes = planes.slice(0, (BPLCON0 >>> 12) & 7);
 
@@ -591,21 +625,33 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 }
 
 // returs custom registers after DMA requests up to endCycle
-export function GetCustomRegsAfterDma(customRegs: number[], dmacon: number, dmaRecords: DmaRecord[], endCycle: number): number[] {
+export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-
+	const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
+	const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
 	const customRegsAfter = customRegs.slice(); // initial copy
-	customRegsAfter[regDMACON >>> 1] = dmacon;
 
 	let i = 0;
+	let ignoreCopper = 0;
+
 	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS && i <= endCycle; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.reg === undefined)
 				continue;
 
+			// fix fake instructions after copper jump
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER) {
+				if(ignoreCopper > 0) {
+					ignoreCopper--;
+					continue;
+				}
+				if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
+					ignoreCopper = 2;
+			}
+
 			if(dmaRecord.reg === regDMACON) {
-				if(dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					customRegsAfter[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 				else
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;

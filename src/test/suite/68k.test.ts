@@ -1,6 +1,7 @@
+import { suite, test } from 'mocha';
 import * as assert from 'assert';
-import { GetCycles, GetJump, JumpType } from "../../client/68k";
 
+import { GetCycles, GetJump, JumpType } from "../../client/68k";
 import { print_insn_m68k } from '../../client/68k-dis';
 
 suite("68k-cycles", () => {
@@ -204,5 +205,33 @@ suite("68k-dis", () => {
 		const insn = new Uint8Array([0x72, 0x01]);
 		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "moveq #1,d1");
+	});
+});
+
+suite("68k-fpu", () => {
+	test("fmove.l d1,fpcr", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0x90, 0x00]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fmove.l d1,fpcr");
+	});
+	test("fmove.l fpcr,d1", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0xb0, 0x00]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fmove.l fpcr,d1");
+	});
+	test("frestore (sp)+", () => {
+		const insn = new Uint8Array([0xF3, 0x5F]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "frestore (sp)+");
+	});
+	test("fintrz.s d0,fp0", () => {
+		const insn = new Uint8Array([0xF2, 0x00, 0x44, 0x03]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fintrz.s d0,fp0");
+	});
+	test("fsgldiv.s d1,fp0", () => {
+		const insn = new Uint8Array([0xF2, 0x01, 0x44, 0x24]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "fsgldiv.s d1,fp0");
 	});
 });

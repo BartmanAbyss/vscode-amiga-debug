@@ -7,7 +7,7 @@ import { createPortal } from 'preact/compat';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { binarySearch } from '../array';
 import { dataName, DisplayUnit, formatValue, getLocationText, scaleValue } from '../display';
-import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress, DmaCyclesToCpuCycles } from '../dma';
+import { dmaTypes, DmaEvents, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, GetScreenFromBlit, DmaTypes, Blit, GetPaletteFromCustomRegs, SymbolizeAddress, DmaCyclesToCpuCycles, BlitterChannel, DmaSubTypes } from '../dma';
 import { compileFilter, IRichFilter } from '../filter';
 import { MiddleOut } from '../middleOutCompression';
 import Markdown from 'markdown-to-jsx';
@@ -26,7 +26,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
-import { BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
+import { BlitOp, BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
 import { Screen } from '../debugger/resources';
 import { GetCustomRegDoc } from '../docs';
 
@@ -128,7 +128,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 	const dmaRecords = MODEL.amiga.dmaRecords;
 
 	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	let dmacon = MODEL.amiga.dmacon;
+	let dmacon = MODEL.amiga.customRegs[regDMACON >>> 1];
 
 	const duration = 7_093_790 / 50;
 	const boxes: IBox[] = [];
@@ -145,7 +145,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 				continue;
 
 			if(dmaRecord.reg === regDMACON) {
-				if (dmaRecord.dat & 0x8000)
+				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					dmacon |= dmaRecord.dat & 0x7FFF;
 				else
 					dmacon &= ~dmaRecord.dat;
@@ -204,7 +204,11 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 	const boxes: IBox[] = [];
 
 	for(const blit of MODEL.blits) {
-		const color = dmaTypes[DmaTypes.BLITTER].subtypes[0].color; // TODO: subtype
+		const line = !!(blit.BLTCON1 & BLTCON1Flags.LINE);
+		const fill = blit.BLTCON1 & (BLTCON1Flags.EFE | BLTCON1Flags.IFE);
+		const dmaSubtype = line ? DmaSubTypes.BLITTER_LINE : fill ? DmaSubTypes.BLITTER_FILL : DmaSubTypes.BLITTER;
+		const color = dmaTypes[DmaTypes.BLITTER].subtypes[dmaSubtype].color;
+		const minterm = blit.BLTCON0 & 0xff;
 
 		const x1 = blit.cycleStart * 2 / duration; // * 2: convert from DMA cycles to CPU cycles
 		const x2 = blit.cycleEnd ? (blit.cycleEnd) * 2 / duration : 1;
@@ -218,7 +222,7 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 				channels += '-';
 		}
 
-		const text = `Blit ${channels} ${blit.BLTSIZH * 16}x${blit.BLTSIZV}px`;
+		const text = `${line ? 'Line' : fill ? 'Fill' : minterm ? 'Blit' : 'Clear'} ${channels} ${blit.BLTSIZH * 16}x${blit.BLTSIZV}px`;
 		boxes.push({
 			column: 0,
 			row: 0,
@@ -1052,7 +1056,13 @@ const Tooltip: FunctionComponent<{
 			}
 		}
 		if(amiga.dmaRecord.type !== undefined) {
-			dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0');
+			switch(amiga.dmaRecord.size) {
+			case 8:  dmaData = '$' + (amiga.dmaRecord.datHi).toString(16).padStart(8, '0') + '\'' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 4:  dmaData = '$' + (amiga.dmaRecord.dat).toString(16).padStart(8, '0'); break;
+			case 2:
+			default: dmaData = '$' + (amiga.dmaRecord.dat & 0xffff).toString(16).padStart(4, '0'); break;
+			}
+			
 			if(amiga.dmaRecord.reg & 0x1000) { // CPU
 				if(amiga.dmaRecord.reg & 0x0100)
 					dmaReg = 'Write';
@@ -1109,25 +1119,72 @@ const Tooltip: FunctionComponent<{
 
 	const BLTCON: Bit[] = [];
 	const MINTERM: Bit[] = [];
+	const BLTDAT: boolean[] = [false, false, false, false];
+	let mintermStr = '';
 	if(isBlit) {
-		BLTCON.push({ name: "USEA", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
-		BLTCON.push({ name: "USEB", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
-		BLTCON.push({ name: "USEC", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEC) });
-		BLTCON.push({ name: "USED", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USED) });
-		BLTCON.push({ name: "DOFF", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DOFF) });
-		BLTCON.push({ name: "EFE",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.EFE) });
-		BLTCON.push({ name: "IFE",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.IFE) });
-		BLTCON.push({ name: "FCI",  enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.FCI) });
-		BLTCON.push({ name: "DESC", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DESC) });
-		BLTCON.push({ name: "LINE", enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
-		MINTERM.push({ name: "ABC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) });
-		MINTERM.push({ name: "ABC\u0304",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) });
-		MINTERM.push({ name: "AB\u0304C",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) });
-		MINTERM.push({ name: "AB\u0304C\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) });
-		MINTERM.push({ name: "A\u0304BC",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) });
-		MINTERM.push({ name: "A\u0304BC\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) });
-		MINTERM.push({ name: "A\u0304B\u0304C",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) });
-		MINTERM.push({ name: "A\u0304B\u0304C\u0304", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0) });
+		const minterm = amiga.blit.BLTCON0 & 0xff;
+		mintermStr = '$' + minterm.toString(16).padStart(2, '0');
+		if(BlitOp[minterm])
+			//mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '<span style="color: var(--vscode-editor-background); background: var(--vscode-editor-foreground);">').replace(/\]/g, '</span>')}`;
+			mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '').replace(/\]/g, '\u0304')}`;
+			//mintermStr += ` ${BlitOp[minterm].replace(/\[/g, '<span style="box-shadow: inset 0 2px 0 currentColor;">').replace(/\]/g, '</span>')}`;
+	
+		BLTCON.push({ name: "USEA",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) });
+		BLTCON.push({ name: "USEB",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) });
+		BLTCON.push({ name: "USEC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USEC) });
+		BLTCON.push({ name: "USED",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.USED) });
+		BLTCON.push({ name: "LINE",                   enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) });
+		if(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) {
+			BLTCON.push({ name: "SIGN",                   enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.SIGN) });
+			let oct = 0;
+			switch(amiga.blit.BLTCON1 & (BLTCON1Flags.SUD | BLTCON1Flags.SUL | BLTCON1Flags.AUL) >> 2) {
+			case 0b110: oct = 0; break;
+			case 0b001: oct = 1; break;
+			case 0b011: oct = 2; break;
+			case 0b111: oct = 3; break;
+			case 0b101: oct = 4; break;
+			case 0b010: oct = 5; break;
+			case 0b000: oct = 6; break;
+			case 0b100: oct = 7; break;
+			}
+			BLTCON.push({ name: `OCT: ${oct}`, enabled: true });
+		} else {
+			BLTCON.push({ name: "DOFF",                   enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DOFF) });
+			BLTCON.push({ name: "EFE",                    enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.EFE) });
+			BLTCON.push({ name: "IFE",                    enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.IFE) });
+			BLTCON.push({ name: "FCI",                    enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.FCI) });
+			BLTCON.push({ name: "DESC",                   enabled: !!(amiga.blit.BLTCON1 & BLTCON1Flags.DESC) });
+		}
+		MINTERM.push({ name: "ABC",                   enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) }); //  A  B  C
+		MINTERM.push({ name: "ABC\u0304",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) }); //  A  B ~C
+		MINTERM.push({ name: "AB\u0304C",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) }); //  A ~B  C
+		MINTERM.push({ name: "AB\u0304C\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) }); //  A ~B ~C
+		MINTERM.push({ name: "A\u0304BC",             enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) }); // ~A  B  C
+		MINTERM.push({ name: "A\u0304BC\u0304",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) }); // ~A  B ~C
+		MINTERM.push({ name: "A\u0304B\u0304C",       enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) }); // ~A ~B  C
+		MINTERM.push({ name: "A\u0304B\u0304C\u0304", enabled: !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0) }); // ~A ~B ~C
+
+		if(!(amiga.blit.BLTCON0 & BLTCON0Flags.USEA) && (
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0)))
+			BLTDAT[BlitterChannel.A] = true;
+
+		if(!(amiga.blit.BLTCON0 & BLTCON0Flags.USEB) && (
+			(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0)))
+			BLTDAT[BlitterChannel.B] = true;
+
+		if(!(amiga.blit.BLTCON0 & BLTCON0Flags.USEC) && (
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF7) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF6) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF5) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF4) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF3) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF2) ||
+			!!(amiga.blit.BLTCON0 & BLTCON0Flags.LF1) !== !!(amiga.blit.BLTCON0 & BLTCON0Flags.LF0)))
+			BLTDAT[BlitterChannel.C] = true;
 	}
 
 	const file = label?.split(/\\|\//g).pop();
@@ -1135,22 +1192,15 @@ const Tooltip: FunctionComponent<{
 	const tooltipTop = canvasRect.top + lowerY + 10;
 	const tooltipWidth = 500;
 	return (<>
-		<div
-			className={styles.tooltip}
-			aria-live="polite"
-			aria-atomic={true}
-			style={{ left: tooltipLeft, top: tooltipTop, bottom: 'initial', width: tooltipWidth + 'px' }}
-		>
+		<div class={styles.tooltip} aria-live="polite" aria-atomic={true} style={{ left: tooltipLeft, top: tooltipTop, bottom: 'initial', width: `${tooltipWidth}px` }}>
 			<dl>
 				{isDma && (<>
 					<dt>DMA Request</dt>
 					<dd className={styles.function}>{location.callFrame.functionName}</dd>
-					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (
-						<>
-							<dt className={styles.time}>Address</dt>
-							<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODELS[frame].amiga)}</dd>
-						</>
-					)}
+					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (<>
+						<dt className={styles.time}>Address</dt>
+						<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODELS[frame].amiga)}</dd>
+					</>)}
 					{dmaReg && (<>
 						<dt className={styles.time}>Register</dt>
 						<dd className={styles.time}>{dmaReg}</dd>
@@ -1179,17 +1229,25 @@ const Tooltip: FunctionComponent<{
 					<dt className={styles.time}>Blitter Control</dt>
 					<dd className={styles.time}>{BLTCON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt className={styles.time}>Minterm</dt>
-					<dd className={styles.time}>${(amiga.blit.BLTCON0 & 0xff).toString(16).padStart(2, '0')} {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
-					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel))).map((channel) => (<>
+					<dd className={styles.time}><span dangerouslySetInnerHTML={{ __html: mintermStr }} /> {MINTERM.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					{(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) !== 0 && <>
+						<span class={styles.eh}>Start</span> {(amiga.blit.BLTCON0 >>> 12).toString()}
+						<span class={styles.eh}>Texture</span> {(amiga.blit.BLTCON1 >>> 12).toString()}
+					</>}
+					{[0, 1, 2, 3].filter((channel) => amiga.blit.BLTCON0 & (1 << (11 - channel)) || BLTDAT[channel]).map((channel) => (<>
 						<dt className={styles.time}>{['Source A', 'Source B', 'Source C', 'Destination'][channel]}</dt>
-						<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga)} 
-						{channel === 0 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</>)}
-						{channel === 1 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</>)}
-						<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>
-						{channel === 0 && (<>
-							<dt className={styles.time}>Masks</dt>
-							<dd><b>FWM</b> %{amiga.blit.BLTAFWM.toString(2).padStart(16, '0')} <span class={styles.eh}>LWM</span> %{amiga.blit.BLTALWM.toString(2).padStart(16, '0')}</dd>
-						</>)}
+						{BLTDAT[channel] ? <>
+							<dd className={styles.time}>%{amiga.blit.BLTxDAT[channel].toString(2).padStart(16, '0')}</dd>
+						</> : <>
+							<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga)} 
+							{!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) && channel === 0 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</>)}
+							{!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) && channel === 1 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</>)}
+							<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>
+							{channel === 0 && (<>
+								<dt className={styles.time}>Masks</dt>
+								<dd><b>FWM</b> %{amiga.blit.BLTAFWM.toString(2).padStart(16, '0')} <span class={styles.eh}>LWM</span> %{amiga.blit.BLTALWM.toString(2).padStart(16, '0')}</dd>
+							</>)}
+						</>}
 					</>))}
 					<dt className={styles.time}>Start</dt>
 					<dd className={styles.time}>Line {amiga.blit.vposStart}, Color Clock {amiga.blit.hposStart}, DMA Cycle {amiga.blit.cycleStart}</dd>

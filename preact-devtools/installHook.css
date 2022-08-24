@@ -1,0 +1,103 @@
+/**
+ * This file will be inlined and therefor cannot access variables
+ * defined in another file.
+ */
+
+.Highlighter-module_root__2IWf3 {
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+		monospace;
+	color: #bebebe;
+	font-size: 0.75rem;
+	text-align: center;
+	position: absolute;
+	pointer-events: none;
+	z-index: 999999;
+}
+
+.Highlighter-module_content__31vgH {
+	background: rgba(136, 194, 232, 0.75);
+	border-color: rgba(5, 150, 45, 0.5);
+	border-style: solid;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex: 1;
+}
+
+.Highlighter-module_border__1zhjb {
+	border-color: rgba(255, 241, 118, 0.75);
+	border-style: solid;
+	display: flex;
+	flex: 1;
+}
+
+.Highlighter-module_margin__3NR2g {
+	border-color: rgba(236, 169, 99, 0.75);
+	border-style: solid;
+	display: flex;
+}
+
+.Highlighter-module_label__1WN1a {
+	color: #fda5e9;
+}
+
+.Highlighter-module_value__TLDi2 {
+	color: #ececec;
+}
+
+.Highlighter-module_footer__2oVNw {
+	display: inline-block;
+	white-space: nowrap;
+	margin: 0.5rem 0 0 0;
+	border-radius: 0.2rem;
+	padding: 0.125rem 0.4rem;
+	background: #101010;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 0.0625rem solid #9a9a9a;
+	font-weight: bold;
+}
+
+.Highlighter-module_fixed__2ebe8 {
+	position: fixed;
+}
+
+.Highlighter-module_fixed__2ebe8.Highlighter-module_fixedLeft__3457P {
+	left: 1.5em;
+	transform: translateX(0);
+}
+
+.Highlighter-module_fixed__2ebe8.Highlighter-module_fixedTop__19NJY {
+	top: 1.5em;
+}
+
+.Highlighter-module_fixed__2ebe8.Highlighter-module_fixedRight__29Rt7 {
+	right: 1.5em;
+}
+
+.Highlighter-module_fixed__2ebe8.Highlighter-module_fixedBottom__CHJaR {
+	bottom: 1.5em;
+}
+
+.Highlighter-module_outerContainer__3UQ3c {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	pointer-events: none;
+}
+
+.CanvasHighlight-module_root__l0I57 {
+	position: fixed;
+	left: 0;
+	top: 0;
+	pointer-events: none;
+	z-index: 10000000;
+	/**
+	 * Canvas renders rectangles in the wrong size if this rule is set.
+	 * See: https://twitter.com/marvinhagemeist/status/1263506164144316416
+	 */
+	max-width: none !important;
+}

@@ -54,7 +54,7 @@ export interface IAmigaProfileExtra {
 	baseClock?: number;
 	cpuCycleUnit?: number;
 	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
-	dmacon: number;
+	chipsetFlags: number;
 	customRegs: number[];
 	dmaRecords: DmaRecord[];
 	gfxResources: GfxResource[];
@@ -108,4 +108,9 @@ export interface ISetCodeLenses {
 	lenses: Lens[];
 }
 
-export type Message = IOpenDocumentMessage | ISetCodeLenses;
+export interface IErrorMessage {
+	type: 'error';
+	text: string;
+}
+
+export type Message = IOpenDocumentMessage | ISetCodeLenses | IErrorMessage;

@@ -3,6 +3,9 @@ import * as vscode from 'vscode';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { LensCollection } from './lens_collection';
 
+// global debug switch for preact-devtools
+const DEBUG = false;
+
 const decimalFormat = new Intl.NumberFormat(undefined, {
 	maximumFractionDigits: 2,
 	minimumFractionDigits: 2,
@@ -16,11 +19,14 @@ import { randomBytes } from 'crypto';
 import { ISourceLocation } from './client/location-mapping';
 import { Lens, LensData } from './client/types';
 
-export const bundlePage = (webview: vscode.Webview, title: string, bundlePath: vscode.Uri, constants: { [key: string]: unknown }) => {
+export const bundlePage = (webview: vscode.Webview, title: string, extensionPath: vscode.Uri, constants: { [key: string]: unknown }) => {
 	const nonce = randomBytes(16).toString('hex');
 	const constantDecls = Object.keys(constants)
 		.map((key) => `let ${key} = ${JSON.stringify(constants[key])};`)
 		.join('\n');
+
+	const debugHead = DEBUG ? `<link rel="stylesheet" href="preact-devtools/installHook.css"><link rel="stylesheet" href="preact-devtools/setup.css">` : '';
+	const debugBody = DEBUG ? `<script type="text/javascript" src="preact-devtools/installHook.js"></script><script type="text/javascript" src="preact-devtools/setup.js"></script>` : '';
 
 	const html = `<!DOCTYPE html>
 <html lang="en">
@@ -29,11 +35,13 @@ export const bundlePage = (webview: vscode.Webview, title: string, bundlePath: v
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-eval'; style-src ${webview.cspSource} 'unsafe-inline';">
 		<title>Custom Editor: ${title}</title>
-		<base href="${webview.asWebviewUri(bundlePath).toString()}/">
+		<base href="${webview.asWebviewUri(extensionPath).toString()}/">
+		${debugHead}
 	</head>
 	<body>
+		${debugBody}
 		<script type="text/javascript" nonce="${nonce}">${constantDecls}</script>
-		<script type="text/javascript" src="client.js"></script>
+		<script type="text/javascript" src="dist/client.js"></script>
 	</body>
 </html>`;
 	return html;
@@ -68,7 +76,7 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 	}
 
 	private updateWebview(document: ProfileDocument, webview: vscode.Webview) {
-		webview.html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
+		webview.html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(this.context.extensionPath), { 
 			PROFILES: [],
 			MODELS: [], 
 			PROFILE_URL: webview.asWebviewUri(document.uri).toString() 
@@ -79,7 +87,7 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(path.join(this.context.extensionPath, 'dist')) ]
+			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(this.context.extensionPath) ]
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
@@ -97,6 +105,9 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 				return;
 			case 'setCodeLenses':
 				this.lenses.registerLenses(this.createLensCollection(message.lenses));
+				return;
+			case 'error':
+				void vscode.window.showErrorMessage(message.text, { modal: true });
 				return;
 			}
 		});
