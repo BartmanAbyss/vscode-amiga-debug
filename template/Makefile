@@ -25,12 +25,13 @@ program = out/a
 OUT = $(call forward-to-backward,$(program))
 CC = m68k-amiga-elf-gcc
 VASM = vasmm68k_mot_win32.exe
+SDKDIR = $(call forward-to-backward,$(abspath $(dir $(shell where $(CC)))..\m68k-amiga-elf\sys-include))
 
 CCFLAGS = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno-volatile-register-var -fomit-frame-pointer -fno-tree-loop-distribution -flto -fwhole-program -fno-exceptions
 CPPFLAGS= $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
-ASFLAGS = -Wa,-g,--register-prefix-optional,-I$(extensionPath)\opt\m68k-amiga-elf\sys-include,-D
+ASFLAGS = -Wa,-g,--register-prefix-optional,-I$(SDKDIR),-D
 LDFLAGS = -Wl,--emit-relocs,-Ttext=0,-Map=$(OUT).map
-VASMFLAGS = -m68000 -Felf -opt-fconst -nowarn=62 -dwarf=3 -I. -I$(extensionPath)\opt\m68k-amiga-elf\sys-include 
+VASMFLAGS = -m68000 -Felf -opt-fconst -nowarn=62 -dwarf=3 -I. -I$(SDKDIR) 
 
 all: $(OUT).exe
 
