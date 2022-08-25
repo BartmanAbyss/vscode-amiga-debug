@@ -288,15 +288,18 @@ export const Screen: FunctionComponent<{
 			// get top-left corner of blit
 			const [x, y] = (() => {
 				for (let p = 0; p < screen.planes.length; p++) {
-					const plane = screen.planes[p];
+					let plane = screen.planes[p];
 					const screenLineSize = screen.width / 8 + screen.modulos[p & 1];
-					if (dest >= plane && dest < plane + screen.height * screenLineSize) {
-						const y = Math.floor((dest - plane) / screenLineSize);
-						const x = Math.floor((dest - plane) % screenLineSize) * 8;
-						return [x, y];
+					for(let yy = 0; yy < screen.height; yy++) {
+						// hmm.. this code is not detecting bits that start outside our screen but then intersect the screen
+						if (dest >= plane && dest < plane + screen.width / 8) {
+							const x = (dest - plane) * 8;
+							return [x, yy];
+						}
+						plane += screenLineSize;
 					}
-					return [-1, -1];
 				}
+				return [-1, -1];
 			})();
 			if (x === -1 || y === -1)
 				continue;

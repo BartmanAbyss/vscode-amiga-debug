@@ -19,7 +19,9 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 0. Install the extension from the Visual Studio Code Marketplace
 1. Create a new empty project folder with `File > Open Folder...`
 2. From the command palette <kbd>Ctrl+Shift+P</kbd> select `Amiga: Init Project`
-3. (optional, but recommended) Open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
+3. (optional, but recommended)
+   - either: open settings <kbd>Ctrl+,</kbd> and under `Extensions` > `Amiga C/C++ Compile, Debug & Profile` point `Rom-paths: A500` to your *Kickstart 1.3* ROM
+   - or: open `.vscode/launch.json` and point `"kickstart"` to your *Kickstart 1.3* ROM
 3. Hit <kbd>F5</kbd> to build and run a minimal sample project
 4. If you prefer C++ instead of C, just rename `main.c` to `main.cpp`
 
@@ -51,6 +53,12 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - WinUAE:
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode
   - all necessary options are already configured for Amiga 500, Kickstart 1.3 (for debugging), if you want to change some things (resolution, window size, etc.) just go into the `Configurations` tab, select `default`, and hit `Save`
+- some nifty coding helpers in the command palette <kbd>Ctrl+Shift+P</kbd>
+  - `Open Gradient Master`: opens the Deadliner's The Amiga Gradient Master tool to assist you creating color gradients for Copperlists).
+  - `Open Image Tool` opens the Deadliner's Image Tool to assist you converting images to different Amiga formats.
+  - `Open Color Reducer` opens the Deadliner's Color Reducer tool to assist you reducing the number of colors in images in a smart manner.
+  - `Open BLTCON Cheat Sheet`: opens the Deadliner's BLTCON Cheat Sheet tool that helps you designing Blitter operations.
+  - `Open Amiga Hardware Reference Manual`: opens the Amiga Hardware Reference Manual TOC hosted at amigadev.elowar.com.
 
 ## Supported Amiga Models
 
@@ -113,6 +121,8 @@ P61.testmod - Module by Skylord/Sector 7
 
 [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
 
+`blitter_minterm.c` is based on [mini-qmc](https://sourceforge.net/projects/mini-qmc/) by Stefan Moebius.
+
 This extension contains binaries of:
 - modified [GCC 12.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-12.1.0/) (patch included)
   - Copyright (C) 2022 Free Software Foundation, Inc.
@@ -137,7 +147,7 @@ This extension contains binaries of:
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
 
 ## Contributing
-For development, just install the latest [node.js](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
+For development, just install the latest [node.js LTS](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
 To build a `.vsix`, `npm install -g vsce` (once), and then `vsce package`.
 
 ## Porting
@@ -222,6 +232,18 @@ find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 
 ## Internal Development
 
+### Debugging
+- `amigaDebug.ts`: set `DEBUG` to `TRUE` to enable GDB/execution traces
+- `profile_editor_provider.ts`: set `DEBUG` to `TRUE` to enable `preact-devtools`
+
+### preact-devtools
+```bash
+git clone https://github.com/preactjs/preact-devtools.git
+npm install
+npm run build:inline
+<copy dist/inline/* to preact-devtools>
+```
+
 WinUAE builds with Visual Studio 2022.
 
 ### Create new GCC patch
@@ -240,8 +262,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
-* "npm run serve": all colors in flame-graph are black
-* stack sizes > 1024 cause UnwindTable to fail parsing
+* stack sizes > 1024 cause UnwindTable to fail parsing (https://github.com/BartmanAbyss/vscode-amiga-debug/issues/35)
 * TODO: new DMArecord fields (CIA)
 
 ### Savestate Debugger
@@ -251,7 +272,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
   - `interference-stars.uss`: overdraw not correct
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
-  - `megatyphoondemo.uss`: many assembly lines missing cycle informations
+  - `brianthelion-rotozoom.uss`: some blitrects missing
 
 ### Assembly
 * TODO: parser needs to check for comments
@@ -281,22 +302,17 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * in disassembly view, skipping subroutines with `Step Over` may not work in inlined functions (limitation of GDB)
 
 ### Kickstart
-* TODO: disassembler needs to understand FPU instructions, exec.library 2.04+ uses some and we need to be able to disassemble to get function sizes
 * TODO: support multiple vector tables per library (for FPU/non-FPU mathieeesingbas)
 * TODO: stack unwinding for kickstart (maybe not necessary)
 
 ### Gfx Debugger
 * multiframe profiler, copperlist and copper-timings seem off
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
-* resource viewer for copper bitplanes: high-res also doesn't work (see Workbench)
-* TODO: show blitter cycle duration (not only start, end cycle), show minterm
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
-* copper, customregs: wheel over regname doesn't prevent scrolling
-* Denise: TODO: glitches, blitrects, overdraw, more tooltip info, toggle bitmaps, ECS/AGA
-* Denise: TODO: show time, dma
-* Denise: turrican2-level1.uss: sprites 2 pixels too far left
-* Denise: turrican2-intro.uss: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
+* Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites
+* Denise: `turrican2-level1.uss`: sprites 2 pixels too far left
+* Denise: `turrican2-intro.uss`: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
 * Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp

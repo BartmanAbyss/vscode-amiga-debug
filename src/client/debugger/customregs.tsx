@@ -13,6 +13,8 @@ import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, Get
 import { GetCustomRegDoc } from '../docs';
 import { createPortal } from 'preact/compat';
 import Markdown from 'markdown-to-jsx';
+import { useWheelHack } from '../useWheelHack';
+import { Scrollable } from '../scrollable';
 
 export const CustomRegsView: FunctionComponent<{
 	frame: number;
@@ -24,7 +26,7 @@ export const CustomRegsView: FunctionComponent<{
 	const customRegs = useMemo(() => GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, dmaTime), [dmaTime, frame]);
 
 	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
-	const tooltipRef = useRef<HTMLDivElement>();
+	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	const onMouseEnter = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
@@ -46,12 +48,14 @@ export const CustomRegsView: FunctionComponent<{
 	const onMouseLeave = useCallback(() => {
 		setHovered({ markdown: '', x: -1, y: -1, justify: '' });
 	}, []);
+	const preventWheelDefault = useWheelHack(100);	
 	const onWheel = useCallback((evt: WheelEvent) => {
-		evt.preventDefault(); // <- doesn't work
-		// dunno how to make smooth scrolling that works when wheeling repeatedly
-		if(tooltipRef.current)
-			tooltipRef.current.scrollTop += evt.deltaY;
-	}, [tooltipRef.current]);
+		if(tooltipRef.current) {
+			preventWheelDefault();
+			tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
+			tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
+		}
+	}, [tooltipRef.current, preventWheelDefault]);
 
 	const renderReg = useCallback((index: number) => {
 		const navPrev = useCallback(() => {

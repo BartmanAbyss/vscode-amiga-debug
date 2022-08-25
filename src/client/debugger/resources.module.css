@@ -188,8 +188,27 @@
 	white-space: nowrap;
 }
 
-.memory_span {
+.memory_line {
+	text-shadow: 1px 1px 0px black;
+}
+
+.memory_span_1 {
 	padding-left: 0.25em;
 	padding-right: 0.25em;
-	text-shadow: 1px 1px 0px black;
+}
+
+.memory_span_2:nth-child(2n+1) {
+	padding-left: 0.5em;
+}
+
+.memory_span_2:nth-child(2n) {
+	padding-right: 0.5em;
+}
+
+.memory_span_4:nth-child(4n+1) {
+	padding-left: 1.0em;
+}
+
+.memory_span_4:nth-child(4n) {
+	padding-right: 1.0em;
 }

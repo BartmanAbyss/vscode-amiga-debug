@@ -75,7 +75,7 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 	}
 
 	private updateWebview(document: ObjdumpDocument, webview: vscode.Webview) {
-		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(path.join(this.context.extensionPath, 'dist')), { 
+		const html = bundlePage(webview, document.uri.fsPath, vscode.Uri.file(this.context.extensionPath), { 
 			OBJDUMP: document.content
 		});
 		webview.html = html;
@@ -87,7 +87,7 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		// Setup initial content for the webview
 		webviewPanel.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(path.join(this.context.extensionPath, 'dist')) ]
+			localResourceRoots: [ vscode.Uri.file(path.dirname(document.uri.fsPath)), vscode.Uri.file(this.context.extensionPath) ]
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
@@ -100,6 +100,9 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 					preview: true,
 					selection: new vscode.Range(message.line - 1, 0, message.line, 0)
 				});
+				return;
+			case 'error':
+				void vscode.window.showErrorMessage(message.text, { modal: true });
 				return;
 			}
 		});

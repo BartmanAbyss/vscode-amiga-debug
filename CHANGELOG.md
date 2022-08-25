@@ -2,6 +2,28 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.4
+- NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms
+- NEW: profiler: show blitter mode (`Blit`, `Line`, `Fill`, `Clear`) in blitter timeline
+- NEW: new commands in the command palette <kbd>Ctrl+Shift+P</kbd>: ([PR#124 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/124))
+  - `Open Gradient Master`: opens the Deadliner's The Amiga Gradient Master tool to assist you creating color gradients for Copperlists).
+  - `Open Image Tool` opens the Deadliner's Image Tool to assist you converting images to different Amiga formats.
+  - `Open Color Reducer` opens the Deadliner's Color Reducer tool to assist you reducing the number of colors in images in a smart manner.
+  - `Open BLTCON Cheat Sheet`: opens the Deadliner's BLTCON Cheat Sheet tool that helps you designing Blitter operations.
+  - `Open Amiga Hardware Reference Manual`: opens the Amiga Hardware Reference Manual TOC hosted at amigadev.elowar.com.
+- NEW: you can set your Kickstart paths in settings <kbd>Ctrl+,</kbd> under `Extensions` > `Amiga C/C++ Compile, Debug & Profile` > `Rom-paths: A500, A1200, A4000` ([PR#117 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/117))
+- NEW: template project's output now in `out/a.elf`, `out/a.exe`. Can be changed in settings `amiga.program` ([PR#119 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/119))
+
+## 1.5.3
+- FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)
+- NEW: memory: switch between byte `.B`, word `.W` and longword `.L` display
+- NEW: smooth scrolling for custom register/CPU opcode tooltip windows
+- FIX: assembly: handle 0-cycle trace instructions
+- FIX: kickstart symbols now include mathieeesingbas.library
+- NEW: disassembler: support FPU (68881/68882/68040/68060)
+- NEW: profiler: blitter-tooltip: show BLT*DAT if DMA for channel is disabled but is used in minterm
+- CHG: `BPL1MOD`, `BPL2MOD` as decimals
+
 ## 1.5.2
 - FIX: copper: don't crash when hovering over `NO-OP` instruction
 - NEW: display `BPL1MOD`, `BPL2MOD` as signed values

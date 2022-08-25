@@ -221,6 +221,7 @@ export interface Blit {
 	BLTAFWM: number;
 	BLTALWM: number;
 	BLTxPT: number[]; // A-D
+	BLTxDAT: number[]; // A-D
 	BLTxMOD: number[]; // A-D
 }
 
@@ -241,27 +242,33 @@ export enum ChipsetFlags {
 
 // blits are sorted
 export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit[] {
-	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
-	const customRegL = (reg: number) => (customRegs[(reg - 0xdff000) >>> 1] << 16) | customRegs[(reg + 2 - 0xdff000) >>> 1];
+	const customReg = (reg: number) => customRegs[reg >>> 1];
+	const customRegL = (reg: number) => (customRegs[reg >>> 1] << 16) | customRegs[(reg + 2) >>> 1];
 	const regBLTxPT = [
-		CustomRegisters.getCustomAddress("BLTAPT"),
-		CustomRegisters.getCustomAddress("BLTBPT"),
-		CustomRegisters.getCustomAddress("BLTCPT"),
-		CustomRegisters.getCustomAddress("BLTDPT")
+		CustomRegisters.getCustomAddress("BLTAPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCPT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDPT") - 0xdff000
+	];
+	const regBLTxDAT = [
+		CustomRegisters.getCustomAddress("BLTADAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBDAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCDAT") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDDAT") - 0xdff000
 	];
 	const regBLTxMOD = [
-		CustomRegisters.getCustomAddress("BLTAMOD"),
-		CustomRegisters.getCustomAddress("BLTBMOD"),
-		CustomRegisters.getCustomAddress("BLTCMOD"),
-		CustomRegisters.getCustomAddress("BLTDMOD")
+		CustomRegisters.getCustomAddress("BLTAMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTBMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTCMOD") - 0xdff000,
+		CustomRegisters.getCustomAddress("BLTDMOD") - 0xdff000
 	];
-	const regBLTCON0 = CustomRegisters.getCustomAddress("BLTCON0");
-	const regBLTCON1 = CustomRegisters.getCustomAddress("BLTCON1");
-	const regBLTAFWM = CustomRegisters.getCustomAddress("BLTAFWM");
-	const regBLTALWM = CustomRegisters.getCustomAddress("BLTALWM");
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE");
-	const regBLTSIZV = CustomRegisters.getCustomAddress("BLTSIZV");
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH");
+	const regBLTCON0 = CustomRegisters.getCustomAddress("BLTCON0") - 0xdff000;
+	const regBLTCON1 = CustomRegisters.getCustomAddress("BLTCON1") - 0xdff000;
+	const regBLTAFWM = CustomRegisters.getCustomAddress("BLTAFWM") - 0xdff000;
+	const regBLTALWM = CustomRegisters.getCustomAddress("BLTALWM") - 0xdff000;
+	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
+	const regBLTSIZV = CustomRegisters.getCustomAddress("BLTSIZV") - 0xdff000;
+	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
 	let BlitTrace = "";
 
 	const blits: Blit[] = [];
@@ -273,11 +280,11 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 			if((dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) || (dmaRecord.addr !== undefined && dmaRecord.addr >= 0xdff000 && dmaRecord.addr < 0xdff200)) {
 				const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
 				customRegs[reg >>> 1] = dmaRecord.dat;
-				const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
+				const isBlitStart = (reg === regBLTSIZE) || (reg === regBLTSIZH);
 				if(isBlitStart) {
 					let BLTSIZH = 0;
 					let BLTSIZV = 0;
-					if(reg === regBLTSIZE - 0xdff000) { // OCS
+					if(reg === regBLTSIZE) { // OCS
 						BLTSIZH = dmaRecord.dat & 0x3f;
 						BLTSIZV = (dmaRecord.dat >>> 6) & 0x3ff;
 						if(BLTSIZH === 0)
@@ -285,7 +292,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 						if(BLTSIZV === 0)
 							BLTSIZV = 1024;
 					}
-					if(reg === regBLTSIZH - 0xdff000) { // ECS
+					if(reg === regBLTSIZH) { // ECS
 						BLTSIZH = dmaRecord.dat & 0x7ff;
 						BLTSIZV = customReg(regBLTSIZV) & 0x7fff;
 						if(BLTSIZH === 0)
@@ -298,12 +305,14 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 					const BLTAFWM = customReg(regBLTAFWM);
 					const BLTALWM = customReg(regBLTALWM);
 					const BLTxPT = [];
+					const BLTxDAT = [];
 					const BLTxMOD = [];
 					let channels = '';
 					const addresses: string[] = [];
 					for(let channel = 0; channel < 4; channel++) {
 						const adr = customRegL(regBLTxPT[channel]) & 0x1ffffe; // ECS=0x1ffffe, OCS=0x7fffe;
 						BLTxPT.push(adr);
+						BLTxDAT.push(customReg(regBLTxDAT[channel]));
 						BLTxMOD.push(COERCE16(customReg(regBLTxMOD[channel])));
 						if(BLTCON0 & (1 << (11 - channel))) {
 							channels += 'ABCD'[channel];
@@ -324,6 +333,7 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 						BLTAFWM,
 						BLTALWM,
 						BLTxPT,
+						BLTxDAT,
 						BLTxMOD
 					});
 					BlitTrace += `Line ${y.toString().padStart(3, ' ')} Cycle ${x.toString().padStart(3, ' ')}: BLTSIZE = ${(BLTSIZH * 16).toString().padStart(4, ' ')}x${BLTSIZV.toString().padStart(4, ' ')}; ${channels} ${addresses.join(' ')}\n`;
@@ -346,8 +356,8 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 }
 
 export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE");
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH");
+	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
+	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
 
 	let cycles = 0;
 	let i = 0;
@@ -356,7 +366,7 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			const reg = (dmaRecord.reg !== undefined && dmaRecord.reg < 0x200) ? dmaRecord.reg : (dmaRecord.addr - 0xdff000);
-			const isBlitStart = (reg === regBLTSIZE - 0xdff000) || (reg === regBLTSIZH - 0xdff000);
+			const isBlitStart = reg === regBLTSIZE || reg === regBLTSIZH;
 			if(isBlitStart) {
 				lastStart = i;
 			}

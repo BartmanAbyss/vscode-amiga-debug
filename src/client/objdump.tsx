@@ -112,7 +112,7 @@ export class ObjdumpModel {
 
 		const hits = new Map<number, number>();
 		const cycles = new Map<number, number>();
-		for(let i = 0; i < pcTrace.length; i += 2 + 16) {
+		for(let i = 0; i < pcTrace.length; i += 2) {
 			hits.set(pcTrace[i], (hits.get(pcTrace[i]) || 0) + 1);
 			cycles.set(pcTrace[i], (cycles.get(pcTrace[i]) || 0) + pcTrace[i + 1]);
 		}
@@ -312,7 +312,7 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 
 	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
-	const tooltipRef = useRef<HTMLDivElement>();
+	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	const onMouseEnterOpcode = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
@@ -334,8 +334,8 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 	const onWheelOpcode = useCallback((evt: WheelEvent) => {
 		evt.preventDefault();
-		// dunno how to make smooth scrolling that works when wheeling repeatedly
-		tooltipRef.current.scrollTop += evt.deltaY;
+		tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
+		tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
 	}, [tooltipRef.current]);
 
 	const renderRow = useCallback((c: Line, index: number) => {
@@ -372,10 +372,10 @@ export const ObjdumpView: FunctionComponent<{
 
 		return (c.pc === undefined
 		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
-		: <div class={[styles.row, c.traceCycles === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
+		: <div class={[styles.row, c.traceHits === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
 			<div class={styles.duration}>{frame !== -1 ? <>
-					{c.traceCycles > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
-					<span class={styles.dim1}>{c.traceCycles > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
+					{c.traceHits > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
+					<span class={styles.dim1}>{c.traceHits > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 				</> : ''}
 				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>

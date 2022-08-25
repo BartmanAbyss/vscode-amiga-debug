@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.5.2",
+	"version": "1.5.4",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -23,6 +23,11 @@
 		"onCommand:amiga.profileSize",
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
+		"onCommand:amiga.externalResources.gradientMaster",
+		"onCommand:amiga.externalResources.imageTool",
+		"onCommand:amiga.externalResources.colorReducer",
+		"onCommand:amiga.externalResources.bltconCheatSheet",
+		"onCommand:amiga.externalResources.amigaHRM",
 		"onCustomEditor:amiga.profile",
 		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
@@ -90,6 +95,31 @@
 				"category": "Amiga",
 				"command": "amiga.shrinkler",
 				"title": "Amiga: Shrinkle File"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.gradientMaster",
+				"title": "Open Gradient Master"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.imageTool",
+				"title": "Open Image Tool"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.colorReducer",
+				"title": "Open Color Reducer"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.bltconCheatSheet",
+				"title": "Open BLTCON Cheat Sheet"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.externalResources.amigaHRM",
+				"title": "Open Amiga Hardware Reference Manual"
 			},
 			{
 				"category": "Amiga",
@@ -373,7 +403,34 @@
 					"when": "debugType == amiga"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Amiga C/C++ Compile, Debug & Profile",
+				"properties": {
+					"amiga.program": {
+						"type": "string",
+						"default": "out/a",
+						"description": "Path to the output program (without extension), relative to the workspace."
+					},
+					"amiga.rom-paths.A500": {
+						"type": "string",
+						"default": "c:/amiga/KICK13.rom",
+						"description": "Path to the Kickstart ROM for A500 models."
+					},
+					"amiga.rom-paths.A1200": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A1200 models."
+					},
+					"amiga.rom-paths.A4000": {
+						"type": "string",
+						"default": "c:/amiga/KICK31.rom",
+						"description": "Path to the Kickstart ROM for A4000 models."
+          			}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode=production",
@@ -401,21 +458,24 @@
 		"eslint-plugin-import": "^2.25.3",
 		"eslint-plugin-jsdoc": "^37.0.3",
 		"eslint-plugin-prefer-arrow": "^1.2.3",
+		"fork-ts-checker-webpack-plugin": "^7.2.13",
 		"glob": "^7.1.6",
 		"markdown-to-jsx": "^7.1.7",
 		"mocha": "^9.1.3",
 		"preact": "^10.10.0",
-		"preact-devtools": "^0.0.1",
 		"preact-virtual-list": "^0.3.1",
 		"pubsub-js": "^1.8.0",
 		"raw-loader": "^4.0.1",
 		"react-highlight-words": "^0.17.0",
 		"react-split": "2.0.7",
 		"react-tabs": "^3.1.1",
+		"source-map-loader": "^4.0.0",
 		"style-loader": "^3.3.1",
 		"svg-inline-loader": "^0.8.2",
 		"terser-webpack-plugin": "^5.2.5",
 		"ts-loader": "^9.2.6",
+		"ts-node": "^10.9.1",
+		"ts-transform-react-jsx-source": "^2.0.3",
 		"typescript": "^4.4.4",
 		"vscode-debugadapter-testsupport": "^1.40.3",
 		"vscode-test": "^1.3.0",
