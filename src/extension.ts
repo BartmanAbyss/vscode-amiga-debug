@@ -102,6 +102,8 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	}
 }
 
+type OnOutputReadyFunction = (output: string) => void;
+
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private outputChannel: vscode.OutputChannel;
@@ -369,44 +371,55 @@ class AmigaDebugExtension {
 		await vscode.commands.executeCommand("workbench.action.moveEditorToLeftGroup");
 	}
 
-	private shrinklerTerminal: vscode.Terminal;
-	private shrinklerFinished = false;
-	private exe2adfTerminal: vscode.Terminal;
-	private exe2adfFinished = false;
-
 	private async shrinkler(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
-			void vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
+		const binPath = path.join(this.extensionPath, 'bin');
+		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+		let config: AmigaConfiguration;
+		try {
+			config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
+		} catch(e) { /**/ }
+		if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
+			void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
 			return;
 		}
+	
+		const items: vscode.QuickPickItem[] = [];
+	
+		// eslint-disable-next-line guard-for-in
+		for(const key in config.shrinkler) {
+			items.push({ label: key, description: config.shrinkler[key] });
+		}
+	
+		const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
+		if(result === undefined)
+			return;
+		const output = uri.fsPath + '.' + result.label + '.shrinkled';
+		const args = [...result.description.split(' '), uri.fsPath, output];
+		const cmd = `${binPath}\\shrinkler.exe`;
+		return this.runExternalCommand(uri, cmd, args, output, () => {
+			void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+		});
+	}
+
+	private async exe2adf(uri: vscode.Uri) {
 		const binPath = path.join(this.extensionPath, 'bin');
+		const output = uri.fsPath + '.adf';
+		const args = [ '-i', uri.fsPath, '-a', output ];
+		const cmd = `${binPath}\\exe2adf.exe`;
+		return this.runExternalCommand(uri, cmd, args, output, null);
+	}
 
+	private externalCommandTerminal: vscode.Terminal;
+	private externalCommandFinished = false;
+
+	private async runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction)
+	{
+		if(uri.scheme !== 'file') {
+			void vscode.window.showErrorMessage(`Error running external command: Don't know how to open ${uri.toString()}`);
+			return;
+		}
 		try {
-			const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
-			const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
-			let config: AmigaConfiguration;
-			try {
-				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
-			} catch(e) { /**/ }
-			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
-				void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
-				return;
-			}
-
-			const items: vscode.QuickPickItem[] = [];
-
-			// eslint-disable-next-line guard-for-in
-			for(const key in config.shrinkler) {
-				items.push({ label: key, description: config.shrinkler[key] });
-			}
-
-			const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
-			if(result === undefined)
-				return;
-			const output = uri.fsPath + '.' + result.label + '.shrinkled';
-			const args = [...result.description.split(' '), uri.fsPath, output];
-			const cmd = `${binPath}\\shrinkler.exe`;
-
 			const writeEmitter = new vscode.EventEmitter<string>();
 			let p: cp.ChildProcess;
 			const pty: vscode.Pseudoterminal = {
@@ -428,9 +441,11 @@ class AmigaDebugExtension {
 							writeEmitter.fire('-----------------------\r\n');
 							writeEmitter.fire('\r\n');
 						} else {
-							void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+							if (null !== onOutputReady) {
+								onOutputReady(output);
+							}
 						}
-						this.shrinklerFinished = true;
+						this.externalCommandFinished = true;
 					});
 				},
 				close: () => { /**/ },
@@ -440,80 +455,21 @@ class AmigaDebugExtension {
 				}
 			};
 
-			if(this.shrinklerTerminal && this.shrinklerFinished) {
-				this.shrinklerTerminal.dispose();
-				this.shrinklerTerminal = null;
-				this.shrinklerFinished = false;
+			if (this.externalCommandTerminal && this.externalCommandFinished) {
+				this.externalCommandTerminal.dispose();
+				this.externalCommandTerminal = null;
+				this.externalCommandFinished = false;
 			}
 
-			this.shrinklerTerminal = vscode.window.createTerminal({
+			this.externalCommandTerminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				pty
 			});
-			this.shrinklerTerminal.show();
+			this.externalCommandTerminal.show();
 		} catch(error) {
-			void vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
+			void vscode.window.showErrorMessage(`Error running external command: ${error.message}`);
 		}
-	}
-
-	private async exe2adf(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
-			void vscode.window.showErrorMessage(`Error during exe2adf: Don't know how to open ${uri.toString()}`);
-			return;
-		}
-		const binPath = path.join(this.extensionPath, 'bin');
-
-		try {
-			const output = uri.fsPath + '.adf';
-			const args = [ '-i', uri.fsPath, '-a', output ];
-			const cmd = `${binPath}\\exe2adf.exe`;
-
-			const writeEmitter = new vscode.EventEmitter<string>();
-			let p: cp.ChildProcess;
-			const pty: vscode.Pseudoterminal = {
-				onDidWrite: writeEmitter.event,
-				open: () => {
-					writeEmitter.fire(`\x1b[1m> Executing ${cmd} ${args.join(' ')} <\x1b[0m\r\n`);
-					writeEmitter.fire(`\x1b[31mPress CTRL+C to abort\x1b[0m\r\n\r\n`);
-					//p = cp.exec(cmd);
-					p = cp.spawn(cmd, args);
-					p.stderr.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
-					});
-					p.stdout.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
-					});
-					p.on('exit', (code: number, signal: string) => {
-						if(signal === 'SIGTERM') {
-							writeEmitter.fire('\r\nSuccessfully killed process\r\n');
-							writeEmitter.fire('-----------------------\r\n');
-							writeEmitter.fire('\r\n');
-						}
-						this.exe2adfFinished = true;
-					});
-				},
-				close: () => { /**/ },
-				handleInput: (char: string) => {
-					if(char === '\x03') // Ctrl+C
-						p.kill('SIGTERM');
-				}
-			};
-
-			if(this.exe2adfTerminal && this.exe2adfFinished) {
-				this.exe2adfTerminal.dispose();
-				this.exe2adfTerminal = null;
-				this.exe2adfFinished = false;
-			}
-
-			this.exe2adfTerminal = vscode.window.createTerminal({
-				name: 'Amiga',
-				pty
-			});
-			this.exe2adfTerminal.show();
-		} catch(error) {
-			void vscode.window.showErrorMessage(`Error during exe2adf: ${error.message}`);
-		}
-	}
+	}	
 
 	private async examineMemory() {
 		function validateValue(address: string) {
