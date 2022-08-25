@@ -102,6 +102,8 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	}
 }
 
+type OnOutputReadyFunction = (output: string) => void;
+
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private outputChannel: vscode.OutputChannel;
@@ -141,6 +143,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
+			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
 			vscode.commands.registerCommand('amiga.externalResources.gradientMaster', () => MinimalBrowser.launchUrl('http://deadliners.net/gradientmaster', 'Amiga Gradient Master')),
 			vscode.commands.registerCommand('amiga.externalResources.imageTool', () => MinimalBrowser.launchUrl('http://deadliners.net/ImageTool', 'Image Tool')),
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => MinimalBrowser.launchUrl('http://deadliners.net/ColorReducer', 'Color Reducer')),
@@ -368,42 +371,55 @@ class AmigaDebugExtension {
 		await vscode.commands.executeCommand("workbench.action.moveEditorToLeftGroup");
 	}
 
-	private shrinklerTerminal: vscode.Terminal;
-	private shrinklerFinished = false;
-
 	private async shrinkler(uri: vscode.Uri) {
-		if(uri.scheme !== 'file') {
-			void vscode.window.showErrorMessage(`Error during shrinkling: Don't know how to open ${uri.toString()}`);
+		const binPath = path.join(this.extensionPath, 'bin');
+		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+		let config: AmigaConfiguration;
+		try {
+			config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
+		} catch(e) { /**/ }
+		if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
+			void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
 			return;
 		}
+	
+		const items: vscode.QuickPickItem[] = [];
+	
+		// eslint-disable-next-line guard-for-in
+		for(const key in config.shrinkler) {
+			items.push({ label: key, description: config.shrinkler[key] });
+		}
+	
+		const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
+		if(result === undefined)
+			return;
+		const output = uri.fsPath + '.' + result.label + '.shrinkled';
+		const args = [...result.description.split(' '), uri.fsPath, output];
+		const cmd = `${binPath}\\shrinkler.exe`;
+		return this.runExternalCommand(uri, cmd, args, output, () => {
+			void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+		});
+	}
+
+	private exe2adf(uri: vscode.Uri) {
 		const binPath = path.join(this.extensionPath, 'bin');
+		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.adf');
+		const args = [ '-i', uri.fsPath, '-a', output ];
+		const cmd = `${binPath}\\exe2adf.exe`;
+		return this.runExternalCommand(uri, cmd, args, output, null);
+	}
 
+	private externalCommandTerminal: vscode.Terminal;
+	private externalCommandFinished = false;
+
+	private runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction)
+	{
+		if(uri.scheme !== 'file') {
+			void vscode.window.showErrorMessage(`Error running external command: Don't know how to open ${uri.toString()}`);
+			return;
+		}
 		try {
-			const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
-			const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
-			let config: AmigaConfiguration;
-			try {
-				config = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as AmigaConfiguration;
-			} catch(e) { /**/ }
-			if(config === undefined || config.shrinkler === undefined || Object.keys(config.shrinkler).length === 0) {
-				void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
-				return;
-			}
-
-			const items: vscode.QuickPickItem[] = [];
-
-			// eslint-disable-next-line guard-for-in
-			for(const key in config.shrinkler) {
-				items.push({ label: key, description: config.shrinkler[key] });
-			}
-
-			const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
-			if(result === undefined)
-				return;
-			const output = uri.fsPath + '.' + result.label + '.shrinkled';
-			const args = [...result.description.split(' '), uri.fsPath, output];
-			const cmd = `${binPath}\\shrinkler.exe`;
-
 			const writeEmitter = new vscode.EventEmitter<string>();
 			let p: cp.ChildProcess;
 			const pty: vscode.Pseudoterminal = {
@@ -425,9 +441,9 @@ class AmigaDebugExtension {
 							writeEmitter.fire('-----------------------\r\n');
 							writeEmitter.fire('\r\n');
 						} else {
-							void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
+							onOutputReady?.(output);
 						}
-						this.shrinklerFinished = true;
+						this.externalCommandFinished = true;
 					});
 				},
 				close: () => { /**/ },
@@ -437,21 +453,21 @@ class AmigaDebugExtension {
 				}
 			};
 
-			if(this.shrinklerTerminal && this.shrinklerFinished) {
-				this.shrinklerTerminal.dispose();
-				this.shrinklerTerminal = null;
-				this.shrinklerFinished = false;
+			if (this.externalCommandTerminal && this.externalCommandFinished) {
+				this.externalCommandTerminal.dispose();
+				this.externalCommandTerminal = null;
+				this.externalCommandFinished = false;
 			}
 
-			this.shrinklerTerminal = vscode.window.createTerminal({
+			this.externalCommandTerminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				pty
 			});
-			this.shrinklerTerminal.show();
+			this.externalCommandTerminal.show();
 		} catch(error) {
-			void vscode.window.showErrorMessage(`Error during shrinkling: ${error.message}`);
+			void vscode.window.showErrorMessage(`Error running external command: ${error.message}`);
 		}
-	}
+	}	
 
 	private async examineMemory() {
 		function validateValue(address: string) {
