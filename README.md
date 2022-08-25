@@ -97,31 +97,19 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [AmigaKlang](http://www.pouet.net/prod.php?which=85351) by Alcatraz & Haujobb
 
 ## Acknowledgements
-Thanks to all [Contributors on GitHub](https://github.com/BartmanAbyss/vscode-amiga-debug/graphs/contributors)
-
-Thanks to [ross on EAB](https://eab.abime.net/showthread.php?t=111329) for helping with display fetch.
-
-Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
-
-Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
-
-Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
-
-Profiler visualizer is based in part on Microsoft's [vscode-js-profile-visualizer](https://github.com/microsoft/vscode-js-profile-visualizer) extension.
-
-Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8+. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
-
-Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
-
-[The Player® 6.1A](https://www.pouet.net/prod.php?which=19922): Copyright © 1992-95 Jarno Paananen.
-
-P61.testmod - Module by Skylord/Sector 7
-
-[depack_doynax.s](https://csdb.dk/release/?id=118678) - Lempel-Ziv decompressor by Johan "Doynax" Forslöf.
-
-[KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
-
-`blitter_minterm.c` is based on [mini-qmc](https://sourceforge.net/projects/mini-qmc/) by Stefan Moebius.
+- Thanks to all [Contributors on GitHub](https://github.com/BartmanAbyss/vscode-amiga-debug/graphs/contributors)
+- Thanks to [ross on EAB](https://eab.abime.net/showthread.php?t=111329) for helping with display fetch.
+- Debugger support is based in part on Marcel Ball's [Cortex-Debug](https://github.com/Marus/cortex-debug) extension.
+- Copper Disassembly, hardware register documentation and 68000 instruction documentation is based in part on prb28's [vscode-amiga-assembly](https://github.com/prb28/vscode-amiga-assembly) extension.
+- Some modifications of GCC are based on work by [Stefan "Bebbo" Franke](https://github.com/bebbo).
+- Profiler visualizer is based in part on Microsoft's [vscode-js-profile-visualizer](https://github.com/microsoft/vscode-js-profile-visualizer) extension.
+- Amiga system-includes (NDK 3.9) copied from an installation of Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc/blob/master/Makefile) and modified to work with GCC 8+. Originally downloaded from http://www.haage-partner.de/download/AmigaOS/NDK39.lha
+- Commodore Amiga Icon by [Icons8](https://iconscout.com/contributors/icons8).
+- [The Player® 6.1A](https://www.pouet.net/prod.php?which=19922): Copyright © 1992-95 Jarno Paananen.
+- P61.testmod - Module by Skylord/Sector 7
+- [depack_doynax.s](https://csdb.dk/release/?id=118678) - Lempel-Ziv decompressor by Johan "Doynax" Forslöf.
+- [KingCon V1.2](http://aminet.net/package/dev/cross/WinUAEDemoToolchain5) - Command Line Image to Big Endian Raw Converter Written by Soren Hannibal/Lemon.
+- `blitter_minterm.c` is based on [mini-qmc](https://sourceforge.net/projects/mini-qmc/) by Stefan Moebius.
 
 This extension contains binaries of:
 - modified [GCC 12.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-12.1.0/) (patch included)
