@@ -131,7 +131,7 @@
 				"category": "Amiga",
 				"command": "amiga.exe2adf",
 				"title": "Amiga: Convert EXE to ADF"
-			}			
+			}
 		],
 		"languages": [
 			{
@@ -401,7 +401,7 @@
 					"command": "amiga.exe2adf",
 					"group": "1_amiga",
 					"when": "resourceExtname == '.exe'"
-				}				
+				}
 			]
 		},
 		"views": {
@@ -436,7 +436,7 @@
 						"type": "string",
 						"default": "c:/amiga/KICK31.rom",
 						"description": "Path to the Kickstart ROM for A4000 models."
-          			}
+					}
 				}
 			}
 		]
@@ -455,7 +455,7 @@
 		"@types/node": "^16.11.7",
 		"@types/pubsub-js": "^1.8.0",
 		"@types/react-highlight-words": "^0.16.1",
-		"@types/react-tabs": "^2.3.1",
+		"@types/react-tabs": "^2.3.4",
 		"@types/vscode": "^1.46",
 		"@typescript-eslint/eslint-plugin": "^5.3.1",
 		"@typescript-eslint/parser": "^5.3.1",
@@ -477,7 +477,7 @@
 		"raw-loader": "^4.0.1",
 		"react-highlight-words": "^0.17.0",
 		"react-split": "2.0.7",
-		"react-tabs": "^3.1.1",
+		"react-tabs": "^4.2.1",
 		"source-map-loader": "^4.0.0",
 		"style-loader": "^3.3.1",
 		"svg-inline-loader": "^0.8.2",

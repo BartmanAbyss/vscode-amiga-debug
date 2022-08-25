@@ -29,7 +29,7 @@ import { GfxResourcesView } from './debugger/resources';
 import { DeniseView } from "./debugger/screen";
 import { CustomRegsView } from './debugger/customregs';
 
-import 'pubsub-js';
+//import 'pubsub-js';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
 import { ObjdumpView } from './objdump';
 import { MemoryView } from './debugger/memory';
