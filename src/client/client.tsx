@@ -1,20 +1,37 @@
-if (process.env.NODE_ENV === 'development') {
+declare const setup: {
+	setupFrontendStore: (ctx: Window) => { store: any; destroy: () => void };
+	renderDevtools: (store: any, container: HTMLElement) => void;
+};
+
+if(process.env.NODE_ENV === 'development') {
 	// Must use require here as import statements are only allowed to exist at the top of a file.
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	require("preact/debug");
+
+	// see profile_editor_provider.ts:DEBUG
+	if(window['__PREACT_DEVTOOLS__']) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		(window as any).process = { env: { NODE_ENV: 'production' } };
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const { store } = setup.setupFrontendStore(window);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		store.theme.$ = 'dark';
+		const devtools = document.createElement('div');
+		devtools.style.maxWidth = '100%';
+		devtools.style.height = '200px';
+		devtools.style.overflow = 'auto';
+		document.body.appendChild(devtools);
+		setup.renderDevtools(store, devtools);
+	}
 }
-/*
-import "preact-devtools/dist/preact-devtools.css";
-import { attach, createRenderer, renderDevtools } from "preact-devtools";
-import { options } from "preact";
-*/
-import { h, render } from 'preact';
+
+import { render } from 'preact';
 import styles from './client.module.css';
 import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel, createLenses, GetMemory } from './model';
 import { profileShrinkler, Stats } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
-import { ISetCodeLenses, ICpuProfileRaw } from './types';
+import { ISetCodeLenses, ICpuProfileRaw, IErrorMessage } from './types';
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
 import { SavestateView } from './savestate';
@@ -27,13 +44,14 @@ declare const SAVESTATE: string;
 declare let PROFILES: ICpuProfileRaw[];
 declare let MODELS: IProfileModel[];
 
+let container: HTMLDivElement = null;
+
 async function Profiler() {
 	document.body.style.overflow = 'hidden';
 	const loader = document.createElement('div');
 	loader.setAttribute('class', styles.spinner);
 
 	document.body.appendChild(loader);
-	let container: HTMLDivElement = null;
 	try {
 		console.time('fetch+json');
 		const response = await fetch(PROFILE_URL);
@@ -81,13 +99,7 @@ async function Profiler() {
 		container = document.createElement('div');
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
-		render(h(CpuProfileLayout, null), container);
-/*
-		const devtools = document.createElement('div');
-		document.body.appendChild(devtools);
-		const { store, destroy } = attach(options, createRenderer);
-		renderDevtools(store, document.getElementById("devtools"));
-*/		
+		render(<CpuProfileLayout />, container);
 	} catch(e) {
 		if(container)
 			container.remove();
@@ -102,17 +114,17 @@ async function Profiler() {
 
 function Objdump() {
 	document.body.style.paddingRight = '0px';
-	const container = document.createElement('div');
+	container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
-	render(h(ObjdumpView, null), container);
+	render(<ObjdumpView />, container);
 }
 
 function Savestate() {
-	const container = document.createElement('div');
+	container = document.createElement('div');
 	container.classList.add(styles.wrapper);
 	document.body.appendChild(container);
-	render(h(SavestateView, null), container);
+	render(<SavestateView />, container);
 }
 
 function TryProfiler() {
@@ -152,6 +164,13 @@ function TrySavestate() {
 
 // MAIN ENTRY POINT
 console.log("client.tsx START: " + new Date().toLocaleString());
+
+window.onerror = (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error) => {
+	VsCodeApi.postMessage<IErrorMessage>({
+		type: 'error',
+		text: 'Amiga Internal Error: ' + ((process.env.NODE_ENV === 'development') ? error.stack : error.message)
+	});
+};
 
 // eslint-disable-next-line no-unused-expressions, @typescript-eslint/no-unused-expressions
 TryProfiler() || TryObjdump() || TrySavestate();

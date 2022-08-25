@@ -108,4 +108,9 @@ export interface ISetCodeLenses {
 	lenses: Lens[];
 }
 
-export type Message = IOpenDocumentMessage | ISetCodeLenses;
+export interface IErrorMessage {
+	type: 'error';
+	text: string;
+}
+
+export type Message = IOpenDocumentMessage | ISetCodeLenses | IErrorMessage;

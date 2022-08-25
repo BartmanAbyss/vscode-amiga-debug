@@ -23,8 +23,9 @@ ci/**
 gcc-barto.patch
 out/**
 src/**
-template/*.elf
 template/.vscode/settings.json
-template/a.mingw.*
 template/obj
 template/obj8mingw
+!template/out/
+template/out/*
+!template/out/DELETE.ME

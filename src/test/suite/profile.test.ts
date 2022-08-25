@@ -1,3 +1,5 @@
+import { suite, test } from 'mocha';
+import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Profiler, SourceMap, UnwindTable, ProfileFrame, ProfileFile, Disassemble } from '../../backend/profile';

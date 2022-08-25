@@ -21,6 +21,7 @@ import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler, ProfileFile } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
 import { SavestateEditorProvider } from './savestate_editor_provider';
+import * as MinimalBrowser from './minimal_browser';
 
 /*
  * Set the following compile time flag to true if the
@@ -141,6 +142,11 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
+			vscode.commands.registerCommand('amiga.externalResources.gradientMaster', () => MinimalBrowser.launchUrl('http://deadliners.net/gradientmaster', 'Amiga Gradient Master')),
+			vscode.commands.registerCommand('amiga.externalResources.imageTool', () => MinimalBrowser.launchUrl('http://deadliners.net/ImageTool', 'Image Tool')),
+			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => MinimalBrowser.launchUrl('http://deadliners.net/ColorReducer', 'Color Reducer')),
+			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => MinimalBrowser.launchUrl('http://deadliners.net/BLTCONCheatSheet', 'BLTCON Cheat Sheet')),
+			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => MinimalBrowser.launchUrl('http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html', 'Amiga Hardware Reference Manual')),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
