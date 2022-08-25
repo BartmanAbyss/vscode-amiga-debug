@@ -402,9 +402,9 @@ class AmigaDebugExtension {
 		});
 	}
 
-	private async exe2adf(uri: vscode.Uri) {
+	private exe2adf(uri: vscode.Uri) {
 		const binPath = path.join(this.extensionPath, 'bin');
-		const output = uri.fsPath + '.adf';
+		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.adf');
 		const args = [ '-i', uri.fsPath, '-a', output ];
 		const cmd = `${binPath}\\exe2adf.exe`;
 		return this.runExternalCommand(uri, cmd, args, output, null);
@@ -413,7 +413,7 @@ class AmigaDebugExtension {
 	private externalCommandTerminal: vscode.Terminal;
 	private externalCommandFinished = false;
 
-	private async runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction)
+	private runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction)
 	{
 		if(uri.scheme !== 'file') {
 			void vscode.window.showErrorMessage(`Error running external command: Don't know how to open ${uri.toString()}`);
@@ -441,9 +441,7 @@ class AmigaDebugExtension {
 							writeEmitter.fire('-----------------------\r\n');
 							writeEmitter.fire('\r\n');
 						} else {
-							if (null !== onOutputReady) {
-								onOutputReady(output);
-							}
+							onOutputReady?.(output);
 						}
 						this.externalCommandFinished = true;
 					});

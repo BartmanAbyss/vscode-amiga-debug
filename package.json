@@ -130,7 +130,7 @@
 			{
 				"category": "Amiga",
 				"command": "amiga.exe2adf",
-				"title": "Amiga: convert EXE to ADF"	
+				"title": "Amiga: Convert EXE to ADF"
 			}			
 		],
 		"languages": [
