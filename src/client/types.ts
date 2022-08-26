@@ -47,6 +47,13 @@ export interface IProfileNode extends Cdp.Profiler.ProfileNode {
 	})[];
 }
 
+export enum Register {
+	D0, D1, D2, D3, D4, D5, D6, D7,
+	A0, A1, A2, A3, A4, A5, A6, A7,
+	SR,
+	_count // end marker
+}
+
 export interface IAmigaProfileExtra {
 	objdump?: string; // disassembly from objdump, only in frame[0]
 	chipMem?: string; // base64 encoded binary data, only in frame[0]
@@ -68,7 +75,7 @@ export interface IAmigaProfileExtra {
 	uniqueCallFrames: CallFrame[];
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 	pcTrace: number[]; // 1 entry: PC relative to .text, number of cycles
-	registerTrace?: number[]; // 1 entry: 16 registers (d0-d7, a0-a7)
+	registerTrace?: number[]; // 1 entry: Register._count registers
 }
 
 // extra information for shrinklerstats to track uncompressed data

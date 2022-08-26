@@ -5,7 +5,7 @@ import * as path from 'path';
 import { GetJump, JumpType } from '../client/68k';
 import { print_insn_m68k } from '../client/68k-dis';
 import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
-import { ICpuProfileRaw } from '../client/types';
+import { ICpuProfileRaw, Register } from '../client/types';
 import { profileCommon } from './profile_common';
 import { CallFrame, DmaRecord, GfxResource, GfxResourceFlags, GfxResourceType, SourceLine } from './profile_types';
 import { SymbolTable } from './symbols';
@@ -519,8 +519,8 @@ export class Profiler {
 
 				if (lastPC === undefined)
 					lastPC = 0xffff_ffff;
-				const registers = frame.profileArray.slice(i + 1, i + 1 + 16);
-				i += 16;
+				const registers = frame.profileArray.slice(i + 1, i + 1 + Register._count);
+				i += Register._count;
 				pcTrace.push(lastPC, cyc);
 				registerTrace.push(...registers);
 				lastPC = undefined;
@@ -642,8 +642,8 @@ export class Profiler {
 				const cyc = (0xffff_ffff - p) | 0;
 				if (lastPC === undefined)
 					lastPC = 0xffff_ffff;
-				const registers = frame.profileArray.slice(i + 1, i + 1 + 16);
-				i += 16;
+				const registers = frame.profileArray.slice(i + 1, i + 1 + Register._count);
+				i += Register._count;
 				pcTrace.push(lastPC, cyc);
 				registerTrace.push(...registers);
 				lastPC = undefined;
