@@ -31,7 +31,7 @@ CCFLAGS = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno
 CPPFLAGS= $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
 ASFLAGS = -Wa,-g,--register-prefix-optional,-I$(SDKDIR),-D
 LDFLAGS = -Wl,--emit-relocs,-Ttext=0,-Map=$(OUT).map
-VASMFLAGS = -m68000 -Felf -opt-fconst -nowarn=62 -dwarf=3 -I. -I$(SDKDIR) 
+VASMFLAGS = -m68000 -Felf -opt-fconst -nowarn=62 -dwarf=3 -x -I. -I$(SDKDIR) 
 
 all: $(OUT).exe
 
