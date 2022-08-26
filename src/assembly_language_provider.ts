@@ -62,7 +62,7 @@ class SourceContext {
 		try {
 			fs.unlinkSync(tmp);
 		} catch(e) {}
-		let cmd: string, cmdParams: string[], spawnParams: object;
+		let cmd: string, cmdParams: string[], spawnParams: object, stderr : string[], errorRegExp : RegExp;
 		if (this.fileName.endsWith('.s')) {
 			//	Spawn the GNU Assembler to validate the file.
 			cmd = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
@@ -82,13 +82,30 @@ class SourceContext {
 				input: this.text,
 				maxBuffer: 10*1024*1024 
 			};
+			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
+			stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			errorRegExp = /{standard input}:([0-9]+): (.*)$/;
+
+			// get labels
+			this.labels.clear();
+			for(const line of stdout) {
+				const match = line.match(/{standard input}:([0-9]+).*:[0-9a-fA-F]+\s+(.*)$/);
+				if(match) {
+					this.labels.set(match[2], parseInt(match[1]) - 1);
+				}
+			}			
 		}
 		else
 		if (this.fileName.endsWith('.asm')) {
 			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
 			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
+			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
 			try {
 				fs.unlinkSync(inFile);
+			} catch(e) {}
+			try {
+				fs.unlinkSync(symTmp);
 			} catch(e) {}
 			fs.writeFileSync (inFile, this.text);
 			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
@@ -98,6 +115,10 @@ class SourceContext {
 				'-opt-fconst', 
 				'-nowarn=62', 
 				'-dwarf=3',
+				'-Llo', // Show only program labels in the sorted symbol listing.
+				'-Lni', // Do not show included source files in the listing file.
+				'-L', symTmp,
+				'-x',
 				'-I', '.', 
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
 				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
@@ -105,24 +126,41 @@ class SourceContext {
 				inFile
 			];
 			spawnParams = {};
-		}			
-		const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
-		const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
-		const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
+			stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			errorRegExp = /in line ([0-9]+)[^"]+"[^"]+":\s*(.*)+/;			
 
-		// get labels
-		this.labels.clear();
-		for(const line of stdout) {
-			const match = line.match(/{standard input}:([0-9]+).*:[0-9a-fA-F]+\s+(.*)$/);
-			if(match) {
-				this.labels.set(match[2], parseInt(match[1]) - 1);
+			// get labels
+			this.labels.clear();
+			let readingSymbols = false;
+			const symbolMap = new Map< string, string >();
+			for(const line of stdout) {
+				if (readingSymbols) {
+					if (line === '')
+						break;
+					const match = line.match(/([^\s]+)\s+([0-9]+:[0-9]+)/);
+					if (match) {
+						symbolMap[match[2]] = match[1];
+					}
+				}
+				else
+				if (line === 'Symbols by name:') {
+					readingSymbols = true;
+				}
 			}
-		}
+			for(const line of stdout) {
+				const match = line.match(/([0-9]+:[0-9]+)\s+[0-9A-fa-f]+\s+([0-9]+):/);
+				if (match) {
+					this.labels.set(symbolMap[match[1]] as string, parseInt(match[2]) - 1);
+				}
+			}
+		}			
 
 		// get error/warning messages
 		const errors: vscode.Diagnostic[] = [];
 		for(const line of stderr) {
-			const match = line.match(/{standard input}:([0-9]+): (.*)$/);
+			const match = line.match(errorRegExp);
 			if(match) {
 				console.log("stderr", match[1], match[2]);
 				errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
