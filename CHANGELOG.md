@@ -13,6 +13,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
   - `Open Amiga Hardware Reference Manual`: opens the Amiga Hardware Reference Manual TOC hosted at amigadev.elowar.com.
 - NEW: you can set your Kickstart paths in settings <kbd>Ctrl+,</kbd> under `Extensions` > `Amiga C/C++ Compile, Debug & Profile` > `Rom-paths: A500, A1200, A4000` ([PR#117 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/117))
 - NEW: template project's output now in `out/a.elf`, `out/a.exe`. Can be changed in settings `amiga.program` ([PR#119 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/119))
+- NEW: new command `Convert EXE to ADF` (right-click Amiga EXE files in the explorer) ([PR#122 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/122))
+- NEW: assembly registers now also show `SR` (status register)
 
 ## 1.5.3
 - FIX: fix missing cycle timings in assembly view (was broken since 1.4.7)

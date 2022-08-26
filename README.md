@@ -141,7 +141,9 @@ This extension contains binaries of:
   - Copyright (C) 1988-2016 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
   - This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-- `cd`, `EndCLI`, `run`, `avail` from Workbench 1.3
+- `cd`, `EndCLI`, `run` from Workbench 1.3
+- unpacked [exe2adf](http://www.exe2adf.com/)
+  - Copyright (c) 2015-2022 Bonefish/Reality. All rights reserved.
 
 ## Caveats
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
