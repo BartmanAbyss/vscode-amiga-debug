@@ -14,11 +14,18 @@
 		"moduleResolution": "node",
 		"rootDir": "src",
 		"strict": false, /* enable all strict type-checking options */
-		"strictBindCallApply": true
+		"strictBindCallApply": true,
+		"skipLibCheck": true,
+		"allowSyntheticDefaultImports": true, // for rc-dock, see https://stackoverflow.com/a/73021533
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
 		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
 		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
+        "baseUrl": ".",		
+        "paths": {
+            "react": ["node_modules/preact/compat/"],
+            "react-dom": ["node_modules/preact/compat/"]
+        }
 	},
 	"exclude": [
 		"node_modules",

@@ -16,7 +16,6 @@ import { Filter, IRichFilter } from './filter';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import './react-tabs.css';
-
 import Split from 'react-split';
 
 import { CopperView } from './debugger/copper';
@@ -33,6 +32,28 @@ import { CustomRegsView } from './debugger/customregs';
 import { dmaTypes, DmaTypes, DmaSubTypes, GetBlitCycles } from './dma';
 import { ObjdumpView } from './objdump';
 import { MemoryView } from './debugger/memory';
+
+/*
+// https://github.com/ticlo/rc-dock/issues/161
+
+import { DockLayout, LayoutData } from 'rc-dock';
+import "rc-dock/dist/rc-dock.css";
+
+const defaultLayout: LayoutData = {
+	dockbox: {
+		mode: 'horizontal',
+		children: [
+			{
+				tabs: [
+					{ id: 'tab1', title: 'tab1', content: <div><div>Hello World</div></div> }
+				]
+			}
+		]
+	}
+};
+
+<DockLayout defaultLayout={layout} style={{position: 'absolute', left: 10, top: 10, right: 10, bottom: 10}}/>
+*/
 
 export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	const [frame, setFrame] = useState(0);
