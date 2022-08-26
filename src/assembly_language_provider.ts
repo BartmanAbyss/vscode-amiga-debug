@@ -268,10 +268,14 @@ class SourceContext {
 
 export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSemanticTokensProvider, vscode.CompletionItemProvider, vscode.HoverProvider {
 	private sourceContexts = new Map<string, SourceContext>();
-	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(AmigaAssemblyLanguageProvider.getLanguageId());
+	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(this.getLanguageId());
 
-	public static getLanguageId() {
+	public static getLanguageIdStatic() {
 		return 'amiga.assembly';
+	}
+
+	public getLanguageId() {
+		return AmigaAssemblyLanguageProvider.getLanguageIdStatic();
 	}
 
 	constructor(extensionPath: string) {
@@ -281,7 +285,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// parse documents that are already open when extension is activated
 		for(const document of vscode.workspace.textDocuments) {
-			if(document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(document.languageId === this.getLanguageId()) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -291,7 +295,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// parse documents when they are opened
 		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
-			if(document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(document.languageId === this.getLanguageId()) {
 				console.log("openTextDocument: initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -301,7 +305,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// reparse documents in the background when they are modified
 		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
-			if(event.contentChanges.length > 0 && event.document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(event.contentChanges.length > 0 && event.document.languageId === this.getLanguageId()) {
 				const fileName = event.document.fileName;
 				this.getSourceContext(event.document.fileName).setText(event.document.getText());
 				if (changeTimers.has(fileName)) {
@@ -389,5 +393,15 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 			builder.push(token.line, token.char, token.length, token.type);
 		});
 		return builder.build();
+	}
+}
+
+export class AmigaMotAssemblyLanguageProvider extends AmigaAssemblyLanguageProvider {
+	public static getLanguageIdStatic() {
+		return 'amiga.assembly.mot';
+	}
+
+	public getLanguageId() {
+		return AmigaMotAssemblyLanguageProvider.getLanguageIdStatic();
 	}
 }

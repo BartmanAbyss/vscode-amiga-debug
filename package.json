@@ -32,6 +32,7 @@
 		"onCustomEditor:amiga.objdump",
 		"onCustomEditor:amiga.savestate",
 		"onLanguage:amiga.assembly",
+		"onLanguage:amiga.assembly.mot",
 		"workspaceContains:.vscode/amiga.json"
 	],
 	"main": "./dist/extension.js",
@@ -144,11 +145,20 @@
 					"Amiga Assembly"
 				],
 				"extensions": [
-					".s",
+					".s"
+				],
+				"configuration": "./amiga.assembly-language-configuration.json"
+			},
+			{
+				"id": "amiga.assembly.mot",
+				"aliases": [
+					"Amiga Assembly (Motorola syntax)"
+				],
+				"extensions": [
 					".i",
 					".asm"
 				],
-				"configuration": "./amiga.assembly-language-configuration.json"
+				"configuration": "./amiga.assembly-mot-language-configuration.json"
 			}
 		],
 		"grammars": [
@@ -161,6 +171,11 @@
 				"language": "amiga.assembly",
 				"scopeName": "source.amiga-assembly",
 				"path": "./syntaxes/amiga-assembly.json"
+			},
+			{
+				"language": "amiga.assembly.mot",
+				"scopeName": "source.amiga-assembly-mot",
+				"path": "./syntaxes/amiga-assembly-mot.json"
 			}
 		],
 		"customEditors": [
@@ -207,6 +222,9 @@
 			},
 			{
 				"language": "amiga.assembly"
+			},
+			{
+				"language": "amiga.assembly.mot"
 			},
 			{
 				"language": "amiga.disassembly"

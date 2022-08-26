@@ -14,7 +14,7 @@ import { CancellationToken } from 'vscode-jsonrpc';
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
-import { AmigaAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
+import { AmigaAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
@@ -107,6 +107,7 @@ class AmigaDebugExtension {
 	private outputChannel: vscode.OutputChannel;
 	private objdumpEditorProvider: ObjdumpEditorProvider;
 	private assemblyLanguageProvider: AmigaAssemblyLanguageProvider;
+	private motAssemblyLanguageProvider: AmigaAssemblyLanguageProvider;
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath = '';
@@ -117,10 +118,11 @@ class AmigaDebugExtension {
 		this.registerProvider = new RegisterTreeProvider();
 		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.assemblyLanguageProvider = new AmigaAssemblyLanguageProvider(context.extensionPath);
+		this.motAssemblyLanguageProvider = new AmigaMotAssemblyLanguageProvider(context.extensionPath);
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		const lenses = new ProfileCodeLensProvider();
-		const assemblyLanguageSelector: vscode.DocumentSelector = { language: AmigaAssemblyLanguageProvider.getLanguageId() };
+		const assemblyLanguageSelector: vscode.DocumentSelector = [ { language: AmigaAssemblyLanguageProvider.getLanguageIdStatic() }, { language: AmigaMotAssemblyLanguageProvider.getLanguageIdStatic() } ];
 
 		context.subscriptions.push(
 			// text editors
@@ -173,6 +175,14 @@ class AmigaDebugExtension {
 			vscode.languages.registerCompletionItemProvider(assemblyLanguageSelector, this.assemblyLanguageProvider),
 			this.assemblyLanguageProvider.diagnosticCollection,
 
+			// assembly language
+			vscode.languages.registerDocumentSemanticTokensProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider.getSemanticTokensLegend()),
+			vscode.languages.registerDocumentSymbolProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),
+			vscode.languages.registerDefinitionProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),
+			vscode.languages.registerHoverProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),
+			vscode.languages.registerCompletionItemProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),
+			this.assemblyLanguageProvider.diagnosticCollection,
+
 			// output channel
 			this.outputChannel
 		);
@@ -191,8 +201,12 @@ class AmigaDebugExtension {
 	}
 
 	private activeEditorChanged(editor: vscode.TextEditor) {
-		if(editor?.document?.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+		if(editor?.document?.languageId === AmigaAssemblyLanguageProvider.getLanguageIdStatic()) {
 			this.assemblyLanguageProvider.getSourceContext(editor.document.fileName).setDecorations(getEditorForDocument(editor.document));
+			return;
+		}
+		if(editor?.document?.languageId === AmigaMotAssemblyLanguageProvider.getLanguageIdStatic()) {
+			this.motAssemblyLanguageProvider.getSourceContext(editor.document.fileName).setDecorations(getEditorForDocument(editor.document));
 			return;
 		}
 		if(editor !== undefined && vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.type === 'amiga') {
