@@ -262,8 +262,6 @@ a:focus {
 .registers {
   position: absolute;
   z-index: 1;
-  display: flex;
-  align-items: center;
   width: 220px;
   max-width: 90%;
   right: 16px;
@@ -279,7 +277,11 @@ a:focus {
 	margin: -5px;
 }
 
-.registers > div {
-	margin: 5px;
-  float: left;
+.sr_on {
+  text-transform: uppercase;
+}
+
+.sr_off {
+  text-transform: lowercase;
+  opacity: 0.5;
 }

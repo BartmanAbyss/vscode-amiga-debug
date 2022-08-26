@@ -12,7 +12,7 @@ import { IProfileModel } from './model';
 import styles from './objdump.module.css';
 import { Scrollable } from "./scrollable";
 import './styles.css';
-import { IOpenDocumentMessage } from './types';
+import { IOpenDocumentMessage, Register } from './types';
 import { useCssVariables } from './useCssVariables';
 import { Absolute, VirtualList } from './virtual_list';
 import { VsCodeApi } from "./vscodeApi";
@@ -283,7 +283,7 @@ export const ObjdumpView: FunctionComponent<{
 				t += pcTrace[i + 1];
 				if(t > time) {
 					if(MODELS[frame].amiga.registerTrace)
-						regs = MODELS[frame].amiga.registerTrace.slice((i >> 1) * 16, (i >> 1) * 16 + 16);
+						regs = MODELS[frame].amiga.registerTrace.slice((i >> 1) * Register._count, ((i >> 1) + 1) * Register._count);
 					break;
 				}
 			}
@@ -650,8 +650,22 @@ export const ObjdumpView: FunctionComponent<{
 				<button class={styles.button} onMouseDown={onFindClose} type="button" title="Close (Escape)" dangerouslySetInnerHTML={{__html: Close}} />
 			</div>
 			{regs?.length && <div class={styles.registers}>
-				<div>{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>D{i}: <a href="#" onClick={() => setMemoryAddr(regs[    i])}>${regs[    i].toString(16).padStart(8, '0')}</a><br/></>)}</div>
-				<div>{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>A{i}: <a href="#" onClick={() => setMemoryAddr(regs[8 + i])}>${regs[8 + i].toString(16).padStart(8, '0')}</a><br/></>)}</div>
+					{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>
+						D{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.D0 + i])}>${regs[Register.D0 + i].toString(16).padStart(8, '0')}</a>&nbsp;
+						A{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.A0 + i])}>${regs[Register.A0 + i].toString(16).padStart(8, '0')}</a>
+					<br/></>)}
+					SR: ${regs[Register.SR].toString(16).padStart(4, '0')}&nbsp;&nbsp;&nbsp;
+					<span class={(regs[Register.SR] & (1 << 15)) ? styles.sr_on : styles.sr_off}>T</span>
+					<span class={(regs[Register.SR] & (1 << 14)) ? styles.sr_on : styles.sr_off}>T</span>
+					<span class={(regs[Register.SR] & (1 << 13)) ? styles.sr_on : styles.sr_off}>S</span>
+					<span class={(regs[Register.SR] & (1 << 12)) ? styles.sr_on : styles.sr_off}>M</span>
+					<span class={styles.sr_off}>-</span>IP{(regs[Register.SR] & 0b111) >>> 8}
+					<span class={styles.sr_off}>---</span>
+					<span class={(regs[Register.SR] & (1 << 4)) ? styles.sr_on : styles.sr_off}>X</span>
+					<span class={(regs[Register.SR] & (1 << 3)) ? styles.sr_on : styles.sr_off}>N</span>
+					<span class={(regs[Register.SR] & (1 << 2)) ? styles.sr_on : styles.sr_off}>Z</span>
+					<span class={(regs[Register.SR] & (1 << 1)) ? styles.sr_on : styles.sr_off}>V</span>
+					<span class={(regs[Register.SR] & (1 << 0)) ? styles.sr_on : styles.sr_off}>C</span>
 			</div>}
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
