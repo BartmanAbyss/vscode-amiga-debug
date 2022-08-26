@@ -178,7 +178,7 @@ class AmigaDebugExtension {
 			vscode.languages.registerCompletionItemProvider(assemblyLanguageSelector, this.assemblyLanguageProvider),
 			this.assemblyLanguageProvider.diagnosticCollection,
 
-			// assembly language
+			// assembly language (VASM)
 			vscode.languages.registerDocumentSemanticTokensProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider.getSemanticTokensLegend()),
 			vscode.languages.registerDocumentSymbolProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),
 			vscode.languages.registerDefinitionProvider(assemblyLanguageSelector, this.motAssemblyLanguageProvider),

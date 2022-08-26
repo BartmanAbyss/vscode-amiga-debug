@@ -96,17 +96,10 @@ class SourceContext {
 				}
 			}			
 		}
-		else
-		if (this.fileName.endsWith('.asm')) {
+		else if (this.fileName.endsWith('.asm')) {
 			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
 			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
 			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
-			try {
-				fs.unlinkSync(inFile);
-			} catch(e) {}
-			try {
-				fs.unlinkSync(symTmp);
-			} catch(e) {}
 			fs.writeFileSync (inFile, this.text);
 			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
 			cmdParams = [
@@ -127,35 +120,44 @@ class SourceContext {
 			];
 			spawnParams = {};
 			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
-			const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
 			stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 			errorRegExp = /in line ([0-9]+)[^"]+"[^"]+":\s*(.*)+/;			
 
-			// get labels
-			this.labels.clear();
-			let readingSymbols = false;
-			const symbolMap = new Map< string, string >();
-			for(const line of stdout) {
-				if (readingSymbols) {
-					if (line === '')
-						break;
-					const match = line.match(/([^\s]+)\s+([0-9]+:[0-9]+)/);
-					if (match) {
-						symbolMap[match[2]] = match[1];
+			try {
+				const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
+
+				// get labels
+				this.labels.clear();
+				let readingSymbols = false;
+				const symbolMap = new Map< string, string >();
+				for(const line of stdout) {
+					if (readingSymbols) {
+						if (line === '')
+							break;
+						const match = line.match(/([^\s]+)\s+([0-9]+:[0-9]+)/);
+						if (match) {
+							symbolMap[match[2]] = match[1];
+						}
+					}
+					else
+					if (line === 'Symbols by name:') {
+						readingSymbols = true;
 					}
 				}
-				else
-				if (line === 'Symbols by name:') {
-					readingSymbols = true;
+				for(const line of stdout) {
+					const match = line.match(/([0-9]+:[0-9]+)\s+[0-9A-fa-f]+\s+([0-9]+):/);
+					if (match) {
+						this.labels.set(symbolMap[match[1]] as string, parseInt(match[2]) - 1);
+					}
 				}
-			}
-			for(const line of stdout) {
-				const match = line.match(/([0-9]+:[0-9]+)\s+[0-9A-fa-f]+\s+([0-9]+):/);
-				if (match) {
-					this.labels.set(symbolMap[match[1]] as string, parseInt(match[2]) - 1);
-				}
-			}
-		}			
+			} catch(e) {}
+			try {
+				fs.unlinkSync(inFile);
+			} catch(e) {}
+			try {
+				fs.unlinkSync(symTmp);
+			} catch(e) {}
+		}
 
 		// get error/warning messages
 		const errors: vscode.Diagnostic[] = [];
