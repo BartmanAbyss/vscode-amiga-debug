@@ -926,7 +926,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fscale.x", size: 4,	opcode: two(0xF000, 0x0026), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fscale.x", size: 4,	opcode: two(0xF000, 0x4826), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	
-	// $ is necessary to prevent the assembler from using PC-relative.If @were used, "label: fseq label" could produce "ftrapeq", size: 2, because "label" became "pc@label".
+	// $ is necessary to prevent the assembler from using PC-relative.If used, "label: fseq label" could produce "ftrapeq", size: 2, because "label" became "pc@label".
 	{ name: "fseq", size: 4,	opcode: two(0xF040, 0x0001), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsf", size: 4,		opcode: two(0xF040, 0x0000), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsge", size: 4,	opcode: two(0xF040, 0x0013), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
@@ -1439,6 +1439,70 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8000), match: two(0xffc0,0xe3fe), args: "f3&st8", arch: m68030|m68851 , type: dis.nonbranch },
 	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8100), match: two(0xffc0,0xe31e), args: "f3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
 	{ name: "ptestw", size: 2,	opcode:one(0xf548),		match: one(0xfff8), args: "as", arch: m68040 , type: dis.nonbranch },
+
+	{ name: "ptrapac.w", size: 6,	opcode: two(0xf07a, 0x0007),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapac.l", size: 6,	opcode: two(0xf07b, 0x0007),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapac", size: 4,	opcode: two(0xf07c, 0x0007),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapas.w", size: 6,	opcode: two(0xf07a, 0x0006),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapas.l", size: 6,	opcode: two(0xf07b, 0x0006),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapas", size: 4,	opcode: two(0xf07c, 0x0006),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+
+	{ name: "ptrapbc.w", size: 6,	opcode: two(0xf07a, 0x0001),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbc.l", size: 6,	opcode: two(0xf07b, 0x0001),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbc", size: 4,	opcode: two(0xf07c, 0x0001),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+
+	{ name: "ptrapbs.w", size: 6,	opcode: two(0xf07a, 0x0000),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbs.l", size: 6,	opcode: two(0xf07b, 0x0000),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbs", size: 4,	opcode: two(0xf07c, 0x0000),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+
+	{ name: "ptrapcc.w", size: 6,	opcode: two(0xf07a, 0x000f),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcc.l", size: 6,	opcode: two(0xf07b, 0x000f),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcc", size: 4,	opcode: two(0xf07c, 0x000f),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+
+	{ name: "ptrapcs.w", size: 6,	opcode: two(0xf07a, 0x000e),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcs.l", size: 6,	opcode: two(0xf07b, 0x000e),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcs", size: 4,	opcode: two(0xf07c, 0x000e),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+
+	{ name: "ptrapgc.w", size: 6,	opcode: two(0xf07a, 0x000d),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgc.l", size: 6,	opcode: two(0xf07b, 0x000d),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgc", size: 4,	opcode: two(0xf07c, 0x000d),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapgs.w", size: 6,	opcode: two(0xf07a, 0x000c),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgs.l", size: 6,	opcode: two(0xf07b, 0x000c),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgs", size: 4,	opcode: two(0xf07c, 0x000c),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapic.w", size: 6,	opcode: two(0xf07a, 0x000b),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapic.l", size: 6,	opcode: two(0xf07b, 0x000b),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapic", size: 4,	opcode: two(0xf07c, 0x000b),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapis.w", size: 6,	opcode: two(0xf07a, 0x000a),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapis.l", size: 6,	opcode: two(0xf07b, 0x000a),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapis", size: 4,	opcode: two(0xf07c, 0x000a),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptraplc.w", size: 6,	opcode: two(0xf07a, 0x0003),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptraplc.l", size: 6,	opcode: two(0xf07b, 0x0003),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptraplc", size: 4,	opcode: two(0xf07c, 0x0003),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapls.w", size: 6,	opcode: two(0xf07a, 0x0002),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapls.l", size: 6,	opcode: two(0xf07b, 0x0002),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapls", size: 4,	opcode: two(0xf07c, 0x0002),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapsc.w", size: 6,	opcode: two(0xf07a, 0x0005),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapsc.l", size: 6,	opcode: two(0xf07b, 0x0005),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapsc", size: 4,	opcode: two(0xf07c, 0x0005),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapss.w", size: 6,	opcode: two(0xf07a, 0x0004),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapss.l", size: 6,	opcode: two(0xf07b, 0x0004),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapss", size: 4,	opcode: two(0xf07c, 0x0004),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapwc.w", size: 6,	opcode: two(0xf07a, 0x0009),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapwc.l", size: 6,	opcode: two(0xf07b, 0x0009),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapwc", size: 4,	opcode: two(0xf07c, 0x0009),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
+	 
+	{ name: "ptrapws.w", size: 6,	opcode: two(0xf07a, 0x0008),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapws.l", size: 6,	opcode: two(0xf07b, 0x0008),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapws", size: 4,	opcode: two(0xf07c, 0x0008),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
 	{ name: "pulse", size: 2,	opcode:one(0o045314),		match: one(0o177777), args: "", arch: m68060 , type: dis.nonbranch },
 
