@@ -23,6 +23,7 @@ ci/**
 gcc-barto.patch
 out/**
 src/**
+preact-devtools/**
 template/.vscode/settings.json
 template/obj
 template/obj8mingw
