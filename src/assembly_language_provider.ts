@@ -133,6 +133,7 @@ class SourceContext {
 			spawnParams = {};
 			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
 			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			const textLines = this.text.replace(/\r/g, '').split('\n');
 			try {
 				const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
 
@@ -157,7 +158,7 @@ class SourceContext {
 				
 				const symRegExp = new RegExp('^\\s*(' + symbolNames.join('|') + ')[:\\s]{1}');
 				let lineCount = 0;
-				for(const line of this.text.replace(/\r/g, '').split('\n'))
+				for(const line of textLines)
 				{
 					const match = line.match(symRegExp);
 					if (match) {
@@ -181,7 +182,7 @@ class SourceContext {
 					const match = line.match(/(undefined symbol <([^>]+)>)/);
 					if (match) {
 						let lineNo = 0;
-						for(const srcLine of this.text.replace(/\r/g, '').split('\n')) { // Error message comes without the corresponding line, search the source code for it.
+						for(const srcLine of textLines) { // Error message comes without the corresponding line, search the source code for it.
 							if (srcLine.match('[\\,\\s(.-]' + match[2] + '[\\,\\s;\\*).-]?')) {
 								errors.push(new vscode.Diagnostic(new vscode.Range(lineNo, 0, lineNo, 10000), match[1]));
 							}
