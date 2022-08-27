@@ -163,24 +163,37 @@ class SourceContext {
 			// get error/warning messages
 			const errors: vscode.Diagnostic[] = [];
 			for(const line of stderr) {
+				if ('' === line)
+					continue;
+
 				const match = line.match(/in line ([0-9]+)[^"]+"[^"]+":\s*(.*)+/);
 				if(match) {
-					console.log("stderr", match[1], match[2]);
 					errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
 				}
 				else {
-					const matchRef = line.match(/from line ([0-9]+)/);
-					if(matchRef) { // Fix back-referencing errors.
-						console.log("backref", matchRef[1]);
-						errors[errors.length - 1].range = new vscode.Range(parseInt(matchRef[1]) - 1, 0, parseInt(matchRef[1]) - 1, 10000);
+					const match = line.match(/(undefined symbol <([^>]+)>)/);
+					if (match) {
+						let lineNo = 0;
+						for(const srcLine of this.text.replace(/\r/g, '').split('\n')) { // Error message comes without the corresponding line, search the source code for it.
+							if (srcLine.match('[\\,\\s(.-]' + match[2] + '[\\,\\s;\\*).-]?')) {
+								errors.push(new vscode.Diagnostic(new vscode.Range(lineNo, 0, lineNo, 10000), match[1]));
+							}
+							++lineNo;
+						}
+					}
+					else {
+						const match = line.match(/from line ([0-9]+)/);
+						if(match) { // Fix back-referencing errors.
+							errors[errors.length - 1].range = new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000);
 
-						//	Remove duplicates (multiple back-references to the same macro store duplicates).
-						const lastError = errors[errors.length - 1];
-						for (let i = errors.length - 2; i >= 0; --i)
-						{
-							if ((errors[i].range.start.line === lastError.range.start.line) && (errors[i].range.end.line === lastError.range.end.line) && (errors[i].message === lastError.message)) {
-								errors.pop();
-								break;
+							//	Remove duplicates (multiple back-references to the same macro store duplicates).
+							const lastError = errors[errors.length - 1];
+							for (let i = errors.length - 2; i >= 0; --i)
+							{
+								if ((errors[i].range.start.line === lastError.range.start.line) && (errors[i].range.end.line === lastError.range.end.line) && (errors[i].message === lastError.message)) {
+									errors.pop();
+									break;
+								}
 							}
 						}
 					}
