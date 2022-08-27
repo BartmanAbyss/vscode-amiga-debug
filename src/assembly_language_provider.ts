@@ -6,6 +6,8 @@ import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCycles } from './client/68k';
 import { GetCpuDoc, GetCpuInsns, GetCpuName } from './client/docs';
+import { stringify } from 'querystring';
+import { arrayBuffer } from 'stream/consumers';
 
 enum TokenTypes {
 	function,
@@ -137,14 +139,14 @@ class SourceContext {
 				// get labels
 				this.labels.clear();
 				let readingSymbols = false;
-				const symbolMap = new Map< string, string >();
+				const symbolNames : string[] = [];
 				for(const line of stdout) {
 					if (readingSymbols) {
 						if (line === '')
 							break;
 						const match = line.match(/([^\s]+)\s+([0-9]+:[0-9]+)/);
 						if (match) {
-							symbolMap[match[2]] = match[1];
+							symbolNames.push(match[1]);
 						}
 					}
 					else
@@ -152,11 +154,16 @@ class SourceContext {
 						readingSymbols = true;
 					}
 				}
-				for(const line of stdout) {
-					const match = line.match(/([0-9]+:[0-9]+)\s+[0-9A-fa-f]+\s+([0-9]+):/);
+				
+				const symRegExp = new RegExp('^\\s*(' + symbolNames.join('|') + ')[:\\s]{1}');
+				let lineCount = 0;
+				for(const line of this.text.replace(/\r/g, '').split('\n'))
+				{
+					const match = line.match(symRegExp);
 					if (match) {
-						this.labels.set(symbolMap[match[1]] as string, parseInt(match[2]) - 1);
+						this.labels.set(match[1], lineCount);
 					}
+					++lineCount;
 				}
 			} catch(e) {}
 
