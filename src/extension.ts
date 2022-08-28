@@ -151,6 +151,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => MinimalBrowser.launchUrl('http://deadliners.net/ColorReducer', 'Color Reducer')),
 			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => MinimalBrowser.launchUrl('http://deadliners.net/BLTCONCheatSheet', 'BLTCON Cheat Sheet')),
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => MinimalBrowser.launchUrl('http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html', 'Amiga Hardware Reference Manual')),
+			vscode.commands.registerCommand('amiga.programFolder', () => path.dirname(vscode.workspace.getConfiguration('amiga').get('program')?.toString().replace('\\', '/'))),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),

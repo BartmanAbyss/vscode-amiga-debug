@@ -7,7 +7,7 @@
             "preLaunchTask": "compile",
             "name": "AROS",
             "config": "A500",
-            "program": "${workspaceFolder}/${config:amiga.program}",
+            "program": "${workspaceFolder}/${config:amiga.program}-rel",
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
@@ -16,7 +16,7 @@
             "preLaunchTask": "compile",
             "name": "Amiga 500",
             "config": "A500",
-            "program": "${workspaceFolder}/${config:amiga.program}",
+            "program": "${workspaceFolder}/${config:amiga.program}-rel",
             "kickstart": "${config:amiga.rom-paths.A500}",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -26,7 +26,7 @@
             "preLaunchTask": "compile",
             "name": "Amiga 1200",
             "config": "A1200",
-            "program": "${workspaceFolder}/${config:amiga.program}",
+            "program": "${workspaceFolder}/${config:amiga.program}-rel",
             "kickstart": "${config:amiga.rom-paths.A1200}",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -35,6 +35,123 @@
             "request": "launch",
             "preLaunchTask": "compile",
             "name": "Amiga 4000",
+            "config": "A4000",
+            "program": "${workspaceFolder}/${config:amiga.program}-rel",
+            "kickstart": "${config:amiga.rom-paths.A4000}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-debug",
+            "name": "Debug - AROS",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}-dbg",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-debug",
+            "name": "Debug - Amiga 500",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}-dbg",
+            "kickstart": "${config:amiga.rom-paths.A500}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-debug",
+            "name": "Debug - Amiga 1200",
+            "config": "A1200",
+            "program": "${workspaceFolder}/${config:amiga.program}-dbg",
+            "kickstart": "${config:amiga.rom-paths.A1200}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-debug",
+            "name": "Debug - Amiga 4000",
+            "config": "A4000",
+            "program": "${workspaceFolder}/${config:amiga.program}-dbg",
+            "kickstart": "${config:amiga.rom-paths.A4000}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-final",
+            "name": "Final - AROS",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-final",
+            "name": "Final - Amiga 500",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "kickstart": "${config:amiga.rom-paths.A500}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-final",
+            "name": "Final - Amiga 1200",
+            "config": "A1200",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "kickstart": "${config:amiga.rom-paths.A1200}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-final",
+            "name": "Final - Amiga 4000",
+            "config": "A4000",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "kickstart": "${config:amiga.rom-paths.A4000}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-shrinkled",
+            "name": "Shrinkled - AROS",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-shrinkled",
+            "name": "Shrinkled - Amiga 500",
+            "config": "A500",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "kickstart": "${config:amiga.rom-paths.A500}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-shrinkled",
+            "name": "Shrinkled - Amiga 1200",
+            "config": "A1200",
+            "program": "${workspaceFolder}/${config:amiga.program}",
+            "kickstart": "${config:amiga.rom-paths.A1200}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "preLaunchTask": "compile-shrinkled",
+            "name": "Shrinkled - Amiga 4000",
             "config": "A4000",
             "program": "${workspaceFolder}/${config:amiga.program}",
             "kickstart": "${config:amiga.rom-paths.A4000}",
