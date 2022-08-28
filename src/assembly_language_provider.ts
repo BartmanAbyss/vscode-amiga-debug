@@ -405,7 +405,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	// HoverProvider
 	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
 		const word = document.getText(document.getWordRangeAtPosition(position));
-		console.log(word);
+		//console.log(word);
 		const doc = GetCpuDoc(word);
 		if(doc)
 			return new vscode.Hover(new vscode.MarkdownString(doc));
@@ -426,7 +426,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Location | vscode.Location[] | vscode.LocationLink[]> {
 		const context = this.getSourceContext(document.fileName);
 		const word = document.getText(document.getWordRangeAtPosition(position));
-		console.log(word);
+		//console.log(word);
 		const line = context.labels.get(word);
 		if(line === undefined)
 			return undefined;
