@@ -2,6 +2,13 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.5
+- NEW: VASM assembler with debugging support ([PR#123 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/123))
+  - GAS keeps the `.s` extension; VASM uses the `.asm` extension.
+  - VASM has been modified to provide valid DWARF section names to make the extension debugger to work (although you can debug using the official version prefixing code section names with `.text`).
+  - The assembly language provider has been updated to validate assembly sources against either GAS or VASM depending on the source code file extension.
+  - Syntax highlighting, symbol search and error squiggles support.
+
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms
 - NEW: profiler: show blitter mode (`Blit`, `Line`, `Fill`, `Clear`) in blitter timeline

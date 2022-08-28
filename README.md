@@ -28,7 +28,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 ## Features
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
 - State-of-the-art code generation by GCC with Link-Time-Optimizations (LTO) for increased performance and smaller code size
-- IntelliSense for C, C++, and assembly
+- IntelliSense for C, C++, and assembly (VASM or GAS)
 - Full source-level and assembly-level debugging with callstack, breakpoints, data breakpoints (watchpoints), watches, registers, memory view with GDB-enabled WinUAE
 - Fully AmigaOS compatible via included .h files
 - `INCBIN`, `INCBIN_CHIP` support
@@ -132,6 +132,9 @@ This extension contains binaries of:
 - `cd`, `EndCLI`, `run` from Workbench 1.3
 - unpacked [exe2adf](http://www.exe2adf.com/)
   - Copyright (c) 2015-2022 Bonefish/Reality. All rights reserved.
+- modified [VASM 1.9](https://github.com/davidcanadas/vasm-m68k-mot-win32)
+  - Copyright (c) 2002-2022 by Volker Barthelmann.
+  - see [vasm-LICENSE](https://github.com/BartmanAbyss/vscode-amiga-debug/blob/master/bin/vasm-LICENSE)
 
 ## Caveats
 - sometimes when you're multiplying 2 WORDs together, `gcc` tries to use a (slow) 32-bit multiply. So if you have performance-critical multiplications, consider using the `muluw` and `mulsw` functions from `gcc8_c_support.h`
