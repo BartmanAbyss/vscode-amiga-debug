@@ -1,3 +1,4 @@
+import { CustomRegisters } from './customRegisters';
 import doc000 from './doc/000.md';
 import doc002 from './doc/002.md';
 import doc004 from './doc/004.md';
@@ -478,6 +479,13 @@ export function GetCustomRegDoc(reg: number): string {
 		return customDocs[reg];
 	else
 		return undefined;
+}
+
+export function GetCustomRegDocByName(name: string): string {
+	const addr = CustomRegisters.getCustomAddress(name);
+	if(addr === undefined)
+		return undefined;
+	return GetCustomRegDoc(addr - 0xdff000);
 }
 
 import cpu_abcd from './doc/68k/abcd.md';

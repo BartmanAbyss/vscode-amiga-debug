@@ -8,6 +8,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
   - VASM has been modified to provide valid DWARF section names to make the extension debugger to work (although you can debug using the official version prefixing code section names with `.text`).
   - The assembly language provider has been updated to validate assembly sources against either GAS or VASM depending on the source code file extension.
   - Syntax highlighting, symbol search and error squiggles support.
+- NEW: `DMA Control` shows `BltPri`
+- NEW: assembly: hover over custom register name to get documentation
 
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms

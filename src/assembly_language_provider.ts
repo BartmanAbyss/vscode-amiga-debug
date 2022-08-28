@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCycles } from './client/68k';
-import { GetCpuDoc, GetCpuInsns, GetCpuName } from './client/docs';
+import { GetCpuDoc, GetCpuInsns, GetCpuName, GetCustomRegDocByName } from './client/docs';
 import { stringify } from 'querystring';
 import { arrayBuffer } from 'stream/consumers';
 
@@ -406,7 +406,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
 		const word = document.getText(document.getWordRangeAtPosition(position));
 		//console.log(word);
-		const doc = GetCpuDoc(word);
+		const doc = GetCpuDoc(word) || GetCustomRegDocByName(word);
 		if(doc)
 			return new vscode.Hover(new vscode.MarkdownString(doc));
 		return null;

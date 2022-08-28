@@ -251,7 +251,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Profiler
 * lines of functions seem to be off (see template/main.c: function main)
-* TODO: show blitter priority in profiler
 * TODO: drag across flame-graph to measure durations
 * TODO: multi-frame profiling: allow user to select number of frames
 * TODO: code lenses: update when display unit changes, when frame changes
@@ -309,3 +308,5 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * Denise: `turrican2-level1.uss`: sprites 2 pixels too far left
 * Denise: `turrican2-intro.uss`: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
 * Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp
+* Denise: `shuffling around the xmas tree.uss`: sprites over HAM have wrong colors
+* Copper: `shuffling around the xmas tree.uss`: very slow dragging the time.

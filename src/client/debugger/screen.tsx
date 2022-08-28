@@ -87,6 +87,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 			dmaconBits.push({ name: "Raster", enabled: !!(dmacon & DMACONFlags.BPLEN) });
 			dmaconBits.push({ name: "Copper", enabled: !!(dmacon & DMACONFlags.COPEN) });
 			dmaconBits.push({ name: "Blitter", enabled: !!(dmacon & DMACONFlags.BLTEN) });
+			dmaconBits.push({ name: "BltPri", enabled: !!(dmacon & DMACONFlags.BLTPRI) });
 			dmaconBits.push({ name: "Sprite", enabled: !!(dmacon & DMACONFlags.SPREN) });
 		} else {
 			dmaconBits.push({ name: "Master", enabled: false });

@@ -1036,23 +1036,24 @@ const Tooltip: FunctionComponent<{
 		name: string;
 		enabled: boolean;
 	}
-	const dmaChannels: Bit[] = [];
+	const DMACON: Bit[] = [];
 
 	if(isDma) {
 		if(amiga.dmacon !== undefined) {
 			if(amiga.dmacon & DMACONFlags.DMAEN) {
-				dmaChannels.push({ name: "Master", enabled: true });
-				dmaChannels.push({ name: "Raster", enabled: !!(amiga.dmacon & DMACONFlags.BPLEN) });
-				dmaChannels.push({ name: "Copper", enabled: !!(amiga.dmacon & DMACONFlags.COPEN) });
-				dmaChannels.push({ name: "Blitter", enabled: !!(amiga.dmacon & DMACONFlags.BLTEN) });
-				dmaChannels.push({ name: "Sprite", enabled: !!(amiga.dmacon & DMACONFlags.SPREN) });
-				dmaChannels.push({ name: "Disk", enabled: !!(amiga.dmacon & DMACONFlags.DSKEN) });
-				dmaChannels.push({ name: "Aud0", enabled: !!(amiga.dmacon & DMACONFlags.AUD0EN) });
-				dmaChannels.push({ name: "Aud1", enabled: !!(amiga.dmacon & DMACONFlags.AUD1EN) });
-				dmaChannels.push({ name: "Aud2", enabled: !!(amiga.dmacon & DMACONFlags.AUD2EN) });
-				dmaChannels.push({ name: "Aud3", enabled: !!(amiga.dmacon & DMACONFlags.AUD3EN) });
+				DMACON.push({ name: "Master", enabled: true });
+				DMACON.push({ name: "Raster", enabled: !!(amiga.dmacon & DMACONFlags.BPLEN) });
+				DMACON.push({ name: "Copper", enabled: !!(amiga.dmacon & DMACONFlags.COPEN) });
+				DMACON.push({ name: "Blitter", enabled: !!(amiga.dmacon & DMACONFlags.BLTEN) });
+				DMACON.push({ name: "BltPri", enabled: !!(amiga.dmacon & DMACONFlags.BLTPRI) });
+				DMACON.push({ name: "Sprite", enabled: !!(amiga.dmacon & DMACONFlags.SPREN) });
+				DMACON.push({ name: "Disk", enabled: !!(amiga.dmacon & DMACONFlags.DSKEN) });
+				DMACON.push({ name: "Aud0", enabled: !!(amiga.dmacon & DMACONFlags.AUD0EN) });
+				DMACON.push({ name: "Aud1", enabled: !!(amiga.dmacon & DMACONFlags.AUD1EN) });
+				DMACON.push({ name: "Aud2", enabled: !!(amiga.dmacon & DMACONFlags.AUD2EN) });
+				DMACON.push({ name: "Aud3", enabled: !!(amiga.dmacon & DMACONFlags.AUD3EN) });
 			} else {
-				dmaChannels.push({ name: "Master", enabled: false });
+				DMACON.push({ name: "Master", enabled: false });
 			}
 		}
 		if(amiga.dmaRecord.type !== undefined) {
@@ -1214,7 +1215,7 @@ const Tooltip: FunctionComponent<{
 						<dd className={styles.time}>{dmaEvents}</dd>
 					</>)}
 					<dt className={styles.time}>DMA Control</dt>
-					<dd className={styles.time}>{dmaChannels.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
+					<dd className={styles.time}>{DMACON.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt className={styles.time}>Line</dt>
 					<dd className={styles.time}>{location.callFrame.lineNumber}</dd>
 					<dt className={styles.time}>Color Clock</dt>
