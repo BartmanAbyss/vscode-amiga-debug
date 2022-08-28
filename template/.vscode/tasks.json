@@ -85,8 +85,8 @@
                 "-j4",
                 "program=${workspaceFolder}\\${config:amiga.program}",
                 "targetName=Final",
-                "ccExtraOptions=-Ofast -DNDEBUG",
-                "vasmExtraOptions=-DNDEBUG",
+                "ccExtraOptions=-gdwarf-3 -Ofast -DNDEBUG",
+                "vasmExtraOptions=-dwarf=3 -DNDEBUG",
                 "programFolder=${command:amiga.programFolder}"
             ],
             "options": {
