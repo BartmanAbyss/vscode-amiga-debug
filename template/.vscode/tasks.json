@@ -9,7 +9,7 @@
             "command": "${command:amiga.bin-path}\\gnumake.exe",
             "args": [
                 "-j4",
-                "program=${config:amiga.program}",
+                "program=${config:amiga.program}"
             ],
             "options": {
                 "cwd": "${workspaceRoot}",

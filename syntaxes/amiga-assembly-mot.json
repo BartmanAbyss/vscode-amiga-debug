@@ -1,0 +1,39 @@
+{
+	"name": "Amiga Assembly (Motorola syntax)",
+	"scopeName": "source.amiga-assembly-mot",
+	"uuid": "97a023d0-11a0-4f91-bd27-b4f2f387d5d3",
+	"patterns": [
+		{
+			"name": "comment.line.semicolon",
+			"match": ";[^\n]*\n"
+		},
+		{
+			"name": "comment.line.asterisk",
+			"match": "\\s\\*[^\n]*\n"
+		},
+		{
+			"name": "comment.wholeline.asterisk",
+			"match": "^\\*[^\n]*\n"
+		},
+		{
+			"comment": "Numeric constant",
+			"name": "constant.numeric",
+			"match": "\\b(#)?((-?0x[0-9A-Fa-f]+)|(-?[0-9]+))\\b"
+		},
+		{
+			"comment": "Register",
+			"name": "variable.language",
+			"match": "(?i)\\b([ad][0-7]|SP|PC|vbr|fp[0-7])\\b"
+		},
+		{
+			"comment": "Label",
+			"name": "entity.name.function",
+			"match": "(^|\\s)((\\.[L_])?[a-zA-Z0-9_]+:)"
+		},
+		{
+			"comment": "Meta",
+			"name": "keyword.control.directive.include.cpp",
+			"match": "(?:^|\\s)(?:align|blk\\.[bdlqswx]|bss(\\s|_[cf])|cargs|clrfo|clrso|cnop|code(\\s|_[cf])|comment|comm|cseg|data(\\s|_[cf])|db\\s|dc\\.[bdlpqswx]|dcb\\.[bdlqswx]|dl\\s|dr\\.[bwl]|ds\\.[bdlqswx]|dseg|dw\\s|dx\\.[bdlqswx]|echo|einline|else|endif|endm|endr|end|equ(\\s|\\.[sdxp])|erem|even|fail|fequ\\.[sdxp]|fo\\.|idnt|if1|if2|ifeq|ifne|ifgt|ifge|iflt|ifle|ifb|ifnb|ifc|ifnc|ifd|ifnd|ifmacrod|ifmacrond|ifp1|iif|if|incbin|incdir|include|inline|list|llen|macro|mexit|msource|nolist|nopage|nref|odd|offset|org|output|page|plen|printt|printv|public|popsection|pushsection|rem|rept|rorg|rs\\.|rsreset|rsset|section|setfo|setso|set|showoffset|so\\.|spc|text|ttl|weak|xdef|xref)"
+		}
+	]
+}

@@ -6,6 +6,8 @@ import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCycles } from './client/68k';
 import { GetCpuDoc, GetCpuInsns, GetCpuName } from './client/docs';
+import { stringify } from 'querystring';
+import { arrayBuffer } from 'stream/consumers';
 
 enum TokenTypes {
 	function,
@@ -58,47 +60,167 @@ class SourceContext {
 		const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 			date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 		
-		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o`);
+		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o.tmp`);
 		try {
 			fs.unlinkSync(tmp);
 		} catch(e) {}
-		const as = childProcess.spawnSync(
-			path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe"), 
-			[
+		let cmd: string, cmdParams: string[], spawnParams: object;
+		if (this.fileName.endsWith('.s')) {
+			//	Spawn the GNU Assembler to validate the file.
+			cmd = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
+			cmdParams = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
 				'--register-prefix-optional', 
 				'-g', // debug info
 				'-asn', // enable listing to stdout; 's' = symbol table, 'n' = turn off forms
-				'-L' // include local labels
-			], 
-			{
+				'-L', // include local labels
+				'-I', '.', 
+				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
+				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).			
+			];
+			spawnParams = {			
 				input: this.text,
 				maxBuffer: 10*1024*1024 
-			});
+			};
+			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
+			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 
-		const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
-		const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			// get labels
+			this.labels.clear();
+			for(const line of stdout) {
+				const match = line.match(/{standard input}:([0-9]+).*:[0-9a-fA-F]+\s+(.*)$/);
+				if(match) {
+					this.labels.set(match[2], parseInt(match[1]) - 1);
+				}
+			}			
 
-		// get labels
-		this.labels.clear();
-		for(const line of stdout) {
-			const match = line.match(/{standard input}:([0-9]+).*:[0-9a-fA-F]+\s+(.*)$/);
-			if(match) {
-				this.labels.set(match[2], parseInt(match[1]) - 1);
+			// get error/warning messages
+			const errors: vscode.Diagnostic[] = [];
+			for(const line of stderr) {
+				const match = line.match(/{standard input}:([0-9]+): (.*)$/);
+				if(match) {
+					console.log("stderr", match[1], match[2]);
+					errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
+				}
 			}
+			this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);
 		}
+		else if (this.fileName.endsWith('.asm')) {
+			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
+			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
+			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
+			fs.writeFileSync (inFile, this.text);
+			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
+			cmdParams = [
+				'-m68000', 
+				'-Felf', 
+				'-opt-fconst', 
+				'-nowarn=62', 
+				'-dwarf=3',
+				'-Llo', // Show only program labels in the sorted symbol listing.
+				'-Lni', // Do not show included source files in the listing file.
+				'-L', symTmp,
+				'-x',
+				'-I', '.', 
+				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
+				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-o', tmp, 
+				inFile
+			];
+			spawnParams = {};
+			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
+			const textLines = this.text.replace(/\r/g, '').split('\n');
+			try {
+				const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
 
-		// get error/warning messages
-		const errors: vscode.Diagnostic[] = [];
-		for(const line of stderr) {
-			const match = line.match(/{standard input}:([0-9]+): (.*)$/);
-			if(match) {
-				console.log("stderr", match[1], match[2]);
-				errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
+				// get labels
+				this.labels.clear();
+				let readingSymbols = false;
+				const symbolNames : string[] = [];
+				for(const line of stdout) {
+					if (readingSymbols) {
+						if (line === '')
+							break;
+						const match = line.match(/([^\s]+)\s+([0-9]+:[0-9]+)/);
+						if (match) {
+							symbolNames.push(match[1]);
+						}
+					}
+					else
+					if (line === 'Symbols by name:') {
+						readingSymbols = true;
+					}
+				}
+				
+				const symRegExp = new RegExp('^\\s*(' + symbolNames.join('|') + ')[:\\s]{1}');
+				let lineCount = 0;
+				for(const line of textLines)
+				{
+					const match = line.match(symRegExp);
+					if (match) {
+						this.labels.set(match[1], lineCount);
+					}
+					++lineCount;
+				}
+			} catch(e) {}
+
+			// get error/warning messages
+			const errors: vscode.Diagnostic[] = [];
+			for(const line of stderr) {
+				if ('' === line)
+					continue;
+
+				const match = line.match(/in line ([0-9]+)[^"]+"[^"]+":\s*(.*)+/);
+				if(match) {
+					errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2], line.startsWith('warning') ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error));
+				}
+				else {
+					const match = line.match(/(undefined symbol <([^>]+)>)/);
+					if (match) {
+						let lineNo = 0;
+						for(const srcLine of textLines) { // Error message comes without the corresponding line, search the source code for it.
+							if (srcLine.match('[\\,\\s(.-]' + match[2] + '[\\,\\s;\\*).-]?')) {
+								errors.push(new vscode.Diagnostic(new vscode.Range(lineNo, 0, lineNo, 10000), match[1]));
+							}
+							++lineNo;
+						}
+					}
+					else {
+						const match = line.match(/from line ([0-9]+)/);
+						if(match) { // Fix back-referencing errors.
+							errors[errors.length - 1].range = new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000);
+
+							//	Remove duplicates (multiple back-references to the same macro store duplicates).
+							const lastError = errors[errors.length - 1];
+							for (let i = errors.length - 2; i >= 0; --i)
+							{
+								if ((errors[i].range.start.line === lastError.range.start.line) && (errors[i].range.end.line === lastError.range.end.line) && (errors[i].message === lastError.message)) {
+									errors.pop();
+									break;
+								}
+							}
+						} else {
+							const match = line.match(/(error|warning)\s+[0-9]+:\s*(.*)+/);
+							if (match) { // Line-less errors, will show in line 1.
+								errors.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 10000), match[2], line.startsWith('warning') ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error));
+							}
+						}
+					}
+				}
 			}
+			this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);			
+
+			try {
+				fs.unlinkSync(inFile);
+			} catch(e) {}
+			try {
+				fs.unlinkSync(symTmp);
+			} catch(e) {}
 		}
-		this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);
 
 		// get cycles from disassembly
 		this.cycles.clear();
@@ -200,10 +322,14 @@ class SourceContext {
 
 export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSemanticTokensProvider, vscode.CompletionItemProvider, vscode.HoverProvider {
 	private sourceContexts = new Map<string, SourceContext>();
-	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(AmigaAssemblyLanguageProvider.getLanguageId());
+	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(this.getLanguageId());
 
-	public static getLanguageId() {
+	public static getLanguageIdStatic() {
 		return 'amiga.assembly';
+	}
+
+	public getLanguageId() {
+		return AmigaAssemblyLanguageProvider.getLanguageIdStatic();
 	}
 
 	constructor(extensionPath: string) {
@@ -213,7 +339,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// parse documents that are already open when extension is activated
 		for(const document of vscode.workspace.textDocuments) {
-			if(document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(document.languageId === this.getLanguageId()) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -223,7 +349,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// parse documents when they are opened
 		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
-			if(document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(document.languageId === this.getLanguageId()) {
 				console.log("openTextDocument: initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -233,7 +359,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// reparse documents in the background when they are modified
 		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
-			if(event.contentChanges.length > 0 && event.document.languageId === AmigaAssemblyLanguageProvider.getLanguageId()) {
+			if(event.contentChanges.length > 0 && event.document.languageId === this.getLanguageId()) {
 				const fileName = event.document.fileName;
 				this.getSourceContext(event.document.fileName).setText(event.document.getText());
 				if (changeTimers.has(fileName)) {
@@ -279,7 +405,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	// HoverProvider
 	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
 		const word = document.getText(document.getWordRangeAtPosition(position));
-		console.log(word);
+		//console.log(word);
 		const doc = GetCpuDoc(word);
 		if(doc)
 			return new vscode.Hover(new vscode.MarkdownString(doc));
@@ -300,7 +426,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Location | vscode.Location[] | vscode.LocationLink[]> {
 		const context = this.getSourceContext(document.fileName);
 		const word = document.getText(document.getWordRangeAtPosition(position));
-		console.log(word);
+		//console.log(word);
 		const line = context.labels.get(word);
 		if(line === undefined)
 			return undefined;
@@ -321,5 +447,15 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 			builder.push(token.line, token.char, token.length, token.type);
 		});
 		return builder.build();
+	}
+}
+
+export class AmigaMotAssemblyLanguageProvider extends AmigaAssemblyLanguageProvider {
+	public static getLanguageIdStatic() {
+		return 'amiga.assembly.mot';
+	}
+
+	public getLanguageId() {
+		return AmigaMotAssemblyLanguageProvider.getLanguageIdStatic();
 	}
 }
