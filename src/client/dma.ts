@@ -97,6 +97,10 @@ export namespace DmaEvents {
 	export const VDIW = 0x1000000;
 	export const HSS = 0x2000000;
 	export const HSE = 0x4000000;
+	export const DMA_EVENT_CIAA_IRQ	= 0x08000000;
+	export const DMA_EVENT_CIAB_IRQ	= 0x10000000;
+	export const DMA_EVENT_CPUSTOP = 0x20000000;
+	export const DMA_EVENT_CPUSTOPIPL = 0x40000000;
 }
 
 export namespace DmaTypes {
@@ -108,6 +112,7 @@ export namespace DmaTypes {
 	export const BITPLANE = 6;
 	export const SPRITE = 7;
 	export const DISK = 8;
+	export const DMARECORD_CONFLICT = 9;
 }
 
 export namespace DmaSubTypes {
