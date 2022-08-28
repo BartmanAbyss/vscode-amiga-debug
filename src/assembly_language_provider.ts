@@ -176,7 +176,7 @@ class SourceContext {
 
 				const match = line.match(/in line ([0-9]+)[^"]+"[^"]+":\s*(.*)+/);
 				if(match) {
-					errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2]));
+					errors.push(new vscode.Diagnostic(new vscode.Range(parseInt(match[1]) - 1, 0, parseInt(match[1]) - 1, 10000), match[2], line.startsWith('warning') ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error));
 				}
 				else {
 					const match = line.match(/(undefined symbol <([^>]+)>)/);
@@ -202,6 +202,11 @@ class SourceContext {
 									errors.pop();
 									break;
 								}
+							}
+						} else {
+							const match = line.match(/(error|warning)\s+[0-9]+:\s*(.*)+/);
+							if (match) { // Line-less errors, will show in line 1.
+								errors.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 10000), match[2], line.startsWith('warning') ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error));
 							}
 						}
 					}
