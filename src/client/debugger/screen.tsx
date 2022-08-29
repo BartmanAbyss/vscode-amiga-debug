@@ -9,7 +9,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags, FMODEFlags } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes, ChipsetFlags } from '../dma';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes, ChipsetFlags, GetAmigaColorCss } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -74,6 +74,8 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
 		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
 		const regFMODE = CustomRegisters.getCustomAddress("FMODE") - 0xdff000; // ECS
+		const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
+		const colorRgb = customRegs[(regCOLOR00 >>> 1) + color];
 
 		interface Bit {
 			name: string;
@@ -137,7 +139,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				</>}
 				{color !== undefined && <>
 					<dt>Color</dt>
-					<dd>{color} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(8/*TODO*/, '0')}</dd>
+					<dd class={styles.container}>{color.toString().padStart(2, '0')} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(8/*TODO*/, '0')} ${(colorRgb & 0xfff).toString(16).padStart(3, '0')}<span style={{marginLeft: 4, background: GetAmigaColorCss(colorRgb)}}>&nbsp;&nbsp;</span></dd>
 				</>}
 				<dt>Denise</dt>
 				<dd>H:{hpos} V:{vpos}</dd>
@@ -225,12 +227,6 @@ const DeniseScreen: FunctionComponent<{
 		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
 		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
 		const regBPL1DAT = CustomRegisters.getCustomAddress("BPL1DAT") - 0xdff000;
-		const regBPL2DAT = CustomRegisters.getCustomAddress("BPL2DAT") - 0xdff000;
-		const regBPL3DAT = CustomRegisters.getCustomAddress("BPL3DAT") - 0xdff000;
-		const regBPL4DAT = CustomRegisters.getCustomAddress("BPL4DAT") - 0xdff000;
-		const regBPL5DAT = CustomRegisters.getCustomAddress("BPL5DAT") - 0xdff000;
-		const regBPL6DAT = CustomRegisters.getCustomAddress("BPL6DAT") - 0xdff000;
-		const regBPL7DAT = CustomRegisters.getCustomAddress("BPL7DAT") - 0xdff000;
 		const regBPL8DAT = CustomRegisters.getCustomAddress("BPL8DAT") - 0xdff000;
 		const bplStride = CustomRegisters.getCustomAddress("BPL2DAT") - CustomRegisters.getCustomAddress("BPL1DAT");
 		const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
@@ -529,7 +525,7 @@ const DeniseScreen: FunctionComponent<{
 						}
 
 						let color = GetAmigaColor(customRegs[(regCOLOR00 >>> 1)]); // 0xAABBGGRR
-						if(ham) {
+						if(ham && !sprsel) {
 							// TODO: HAM8
 							switch(bpldata >> 4) {
 							case 0: // set
