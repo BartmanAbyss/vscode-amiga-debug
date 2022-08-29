@@ -1,5 +1,6 @@
 // ported from binutils-gdb/include/opcode/m68k.h, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 // removed all references to coldfire
+// some bugfixes from https://github.com/dirkwhoffmann/Moira/issues/10
 
 // see https://github.com/BartmanAbyss/binutils-gdb/blob/master/opcodes/m68k-dis.c
 // see https://github.com/BartmanAbyss/binutils-gdb/blob/master/opcodes/m68k-opc.c
@@ -262,7 +263,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "chk2.l", size: 4, 	opcode: two(0o0002300,0o0004000), match: two(0o0177700,0o07777), args: "!sR1", arch: m68020up, type: dis.nonbranch },
 
 	{ name: "chk.l", size: 2,	opcode: one(0o0040400),		match: one(0o0170700), args: ";lDd", arch: m68020up, type: dis.nonbranch },
-	{ name: "chk.w", size: 2,	opcode: one(0o0040600),		match: one(0o0170700), args: ";wDd", arch: m68020up, type: dis.nonbranch },
+	{ name: "chk.w", size: 2,	opcode: one(0o0040600),		match: one(0o0170700), args: ";wDd", arch: m68000up, type: dis.nonbranch },
 
 	{ name: "cinva", size: 2,	opcode: one(0xf400|SCOPE_ALL),  match: one(0xff38), args: "ce",   arch: m68040up, type: dis.nonbranch },
 	{ name: "cinvl", size: 2,	opcode: one(0xf400|SCOPE_LINE), match: one(0xff38), args: "ceas", arch: m68040up, type: dis.nonbranch },
