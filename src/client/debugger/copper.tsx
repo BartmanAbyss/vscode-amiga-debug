@@ -1,5 +1,5 @@
 import { Component, FunctionComponent, JSX } from 'preact';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
 import Markdown from 'markdown-to-jsx';
@@ -32,18 +32,16 @@ export const CopperView: FunctionComponent<{
 
 	// get copper instruction that is executing at 'time'
 	const dmaTime = CpuCyclesToDmaCycles(time);
-	let curInsn = -1;
-	for(let i = 0; i < copper.length - 1; i++) {
-		if(copper[i].cycle <= dmaTime && copper[i + 1].cycle > dmaTime) {
-			curInsn = i;
-			break;
+	const curInsn = useMemo(() => {
+		for(let i = 0; i < copper.length - 1; i++) {
+			if(copper[i].cycle <= dmaTime && copper[i + 1].cycle > dmaTime)
+				return i;
 		}
-	}
-	if(curInsn === -1) {
 		// end of copperlist?
 		if(copper.length > 0 && copper[copper.length - 1].cycle <= dmaTime)
-			curInsn = copper.length - 1;
-	}
+			return copper.length - 1;
+		return -1;
+	}, [dmaTime]);
 
 	useEffect(() => {
 		if(copper.length === 0 || !containerRef.current)
@@ -51,15 +49,7 @@ export const CopperView: FunctionComponent<{
 
 		const list = containerRef.current.base as HTMLElement;
 		containerRef.current.scroller ??= new Scrollable(list, 135);
-		let newScroll = Math.max(0, curInsn) * rowHeight;
-		const futureScroll = list.scrollTop;
-		if(newScroll >= futureScroll + list.offsetHeight * 0.1 && newScroll + rowHeight <= futureScroll + list.offsetHeight * 0.9)
-			return;
-		if(newScroll < futureScroll + list.offsetHeight * 0.5)
-			newScroll -= (list.offsetHeight * 0.9) | 0;
-		else
-			newScroll -= (list.offsetHeight * 0.1) | 0;
-		containerRef.current.scroller.setScrollPositionSmooth(Math.max(0, newScroll));
+		containerRef.current.scroller.scrollSmoothMinimum(Math.max(0, curInsn) * rowHeight);
 	}, [curInsn, containerRef.current]);
 
 	const onMouseEnter = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {

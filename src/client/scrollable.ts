@@ -188,6 +188,20 @@ export class Scrollable {
 		this.setState(newState);
 	}
 
+	// wrapper around setScrollPositionSmooth that tries to do as little scrolling as possible, while keeping 10% margin at the top&bottom
+	public scrollSmoothMinimum(update: number): void {
+		let newScroll = update;
+		const futureScroll = this.getFutureScrollPosition();
+		const list = this.container;
+		if(newScroll >= futureScroll + list.offsetHeight * 0.1 && newScroll <= futureScroll + list.offsetHeight * 0.9)
+			return;
+		if(newScroll < futureScroll + list.offsetHeight * 0.5)
+			newScroll -= (list.offsetHeight * 0.9) | 0;
+		else
+			newScroll -= (list.offsetHeight * 0.1) | 0;
+		this.setScrollPositionSmooth(Math.max(0, newScroll));
+	}
+
 	public setScrollPositionSmooth(update: number): void {
 		if (this.smoothScrollDuration === 0) {
 			// Smooth scrolling not supported.
