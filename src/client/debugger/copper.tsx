@@ -16,6 +16,8 @@ import { useWheelHack } from '../useWheelHack';
 import { Scrollable } from '../scrollable';
 import { VirtualList } from '../virtual_list';
 import { useCssVariables } from '../useCssVariables';
+import { Find, FindCallback } from '../find';
+import Highlighter from 'react-highlight-words';
 class VirtualListCopper extends VirtualList<Copper> {}
 
 export const CopperView: FunctionComponent<{
@@ -32,7 +34,55 @@ export const CopperView: FunctionComponent<{
 
 	// get copper instruction that is executing at 'time'
 	const dmaTime = CpuCyclesToDmaCycles(time);
+
+	// find
+	const renderRowText = useCallback((c: Copper) => {
+		return `L${c.vpos.toString().padStart(3, '0')}C${c.hpos.toString().padStart(3, '0')}: $${c.address.toString(16).padStart(8, '0')}: ` + (
+			c.insn.instructionType === CopperInstructionType.MOVE 
+			? `${c.insn.getAsmInstruction()}; ${(c.insn as CopperMove).label} = ${FormatCustomRegData((c.insn as CopperMove).label, (c.insn as CopperMove).RD)}`
+			: c.insn.toString());
+	}, [frame]);
+
+	const [find, setFind] = useState('');
+	const [curFind, setCurFind] = useState(0);
+	const findRef = useRef<FindCallback>();
+	const findResult = useMemo(() => {
+		console.time("findResult");
+		const result: number[] = [];
+		if(find.length > 0) {
+			copper.forEach((c, i) => {
+				const line = renderRowText(c);
+				if(line.toLowerCase().includes(find.toLowerCase()))
+					result.push(i);
+			});
+		}
+		if(result.length > 0) {
+			setCurFind(0);
+		}
+		console.timeEnd("findResult");
+		return result;
+	}, [copper, find]);
+	const findCallback = useCallback((action: string, text?: string) => {
+		if(action === 'prev') {
+			if(findResult.length) {
+				const n = (curFind + findResult.length - 1) % findResult.length;
+				setCurFind(n);
+			}
+		} else if(action === 'next') {
+			if(findResult.length) {
+				const n = (curFind + 1) % findResult.length;
+				setCurFind(n);
+			}
+		} else {
+			setFind(text ?? '');
+			if(action === 'close')
+				(containerRef.current?.base as HTMLElement)?.focus();
+		}
+	}, [setFind, containerRef.current, curFind, findResult]);
+
 	const curInsn = useMemo(() => {
+		if(findResult.length && curFind >= 0)
+			return findResult[curFind];
 		for(let i = 0; i < copper.length - 1; i++) {
 			if(copper[i].cycle <= dmaTime && copper[i + 1].cycle > dmaTime)
 				return i;
@@ -41,7 +91,27 @@ export const CopperView: FunctionComponent<{
 		if(copper.length > 0 && copper[copper.length - 1].cycle <= dmaTime)
 			return copper.length - 1;
 		return -1;
-	}, [dmaTime]);
+	}, [dmaTime, curFind, findResult]);
+
+	// cursor navigation
+	useEffect(() => {
+		const listener = (evt: KeyboardEvent) => {
+			if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+				// open search bar
+				findRef.current('open');
+				evt.preventDefault();
+			} else if(evt.key === 'Escape') {
+				// close search bar
+				findRef.current('close');
+				evt.preventDefault();
+			}
+		};
+		// make list accept keyboard events
+		(containerRef.current.base as HTMLElement).tabIndex = -1;
+		(containerRef.current?.base as HTMLElement)?.focus();
+		containerRef.current?.base?.addEventListener('keydown', listener);
+		return () => containerRef.current?.base?.removeEventListener('keydown', listener);
+	}, []);
 
 	useEffect(() => {
 		if(copper.length === 0 || !containerRef.current)
@@ -82,17 +152,26 @@ export const CopperView: FunctionComponent<{
 	}, [tooltipRef.current, preventWheelDefault]);
 
 	const renderRow = useCallback((c: Copper, i: number) => {
-		return <div class={styles.row + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
+		const text = findResult.length > 0 
+		? <Highlighter searchWords={[find]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={renderRowText(c)} />
+		: <>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <>
 				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = {FormatCustomRegData((c.insn as CopperMove).label, (c.insn as CopperMove).RD)}
-				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
 			</> : c.insn.toString()}
+		</>;
+
+		return <div class={styles.row + ' ' + (curInsn !== -1 && i === curInsn ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
+			{text}
+			{c.insn.instructionType === CopperInstructionType.MOVE && (c.insn as CopperMove).label.startsWith('COLOR') && <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span>}
 		</div>;
 	}, [frame, onMouseEnter, onMouseLeave, onWheel, curInsn]);
 
 	return <>
+		<div class={styles.wrapper}>
+			<Find ref={findRef} curFind={curFind} findResultLength={findResult.length} callback={findCallback}  />
+		</div>
 		<VirtualListCopper ref={containerRef} class={styles.container} rows={copper} renderRow={renderRow} rowHeight={rowHeight} overscanCount={50} />
 		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>

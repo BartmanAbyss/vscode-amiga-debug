@@ -101,7 +101,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	}
 
 	const [leftTab, setLeftTab] = useState(process.env.NODE_ENV === 'development' ? LeftTab.screen : LeftTab.profiler/*profiler*//*assembly*/);
-	const [rightTab, setRightTab] = useState(process.env.NODE_ENV === 'development' ? RightTab.memory : RightTab.copper);
+	const [rightTab, setRightTab] = useState(/*process.env.NODE_ENV === 'development' ? RightTab.memory :*/ RightTab.copper);
 
 	/*useEffect(() => {
 		const token = PubSub.subscribe('showBlit', () => setLeftTab(LeftTab.blitter));

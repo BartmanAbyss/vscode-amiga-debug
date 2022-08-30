@@ -237,6 +237,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [curRow, setCurRow] = useState(0);
 
+	// Find
 	const [find, setFind] = useState<{ text: string; internal: boolean }>({ text: '', internal: true });
 	const [curFind, setCurFind] = useState(0);
 	const findRef = useRef<FindCallback>();
@@ -246,7 +247,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(find.text.length > 0) {
 			if(find.internal) {
 				content.forEach((line, index) => {
-					if(line.text.includes(find.text))
+					if(line.text.toLowerCase().includes(find.text.toLowerCase()))
 						result.push(index);
 				});
 			} else {
@@ -447,6 +448,7 @@ export const ObjdumpView: FunctionComponent<{
 		</svg>);
 	}, [content, rowHeight, pc]);
 
+	// scroller
 	const listRef = useRef<Component>();
 	const [scroller, setScroller] = useState<Scrollable>(null);
 	useEffect(() => {
@@ -541,8 +543,9 @@ export const ObjdumpView: FunctionComponent<{
 		(listRef.current?.base as HTMLElement)?.focus();
 		listRef.current?.base?.addEventListener('keydown', listener);
 		return () => listRef.current?.base?.removeEventListener('keydown', listener);
-	}, [content, findRef, setFind, listRef.current]);
+	}, []);
 
+	// messages
 	useEffect(() => {
 		if(frame === -1) {
 			const listener = (e: MessageEvent) => {

@@ -17,7 +17,9 @@ if(process.env.NODE_ENV === 'development') {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		store.theme.$ = 'dark';
 		const devtools = document.createElement('div');
-		devtools.style.maxWidth = '100%';
+		devtools.style.position = 'absolute';
+		devtools.style.width = '50%';
+		devtools.style.zIndex = '999';
 		devtools.style.height = '200px';
 		devtools.style.overflow = 'auto';
 		document.body.appendChild(devtools);

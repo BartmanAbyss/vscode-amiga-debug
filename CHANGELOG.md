@@ -11,8 +11,10 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - NEW: `DMA Control` shows `BltPri`
 - NEW: assembly: hover over custom register name to get documentation
 - NEW: assembly: hover over status register bits to get more info
+- FIX: assembly: Find <kbd>Ctrl+F</kbd> now case-insensitive
 - FIX: screen: fix sprites over HAM
 - FIX: copper: improve performance
+- NEW: copper: Find <kbd>Ctrl+F</kbd>
 
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms
