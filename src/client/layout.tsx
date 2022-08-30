@@ -208,10 +208,10 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 						<Tab>Custom Registers</Tab>
 						<Tab>Memory</Tab>
 					</TabList>
-					<TabPanel style={{ overflow: 'auto' }}>
+					<TabPanel style={rightTab === RightTab.copper ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<CopperView frame={frame} time={time} />
 					</TabPanel>
-					<TabPanel style={{ overflow: 'auto' }}>
+					<TabPanel style={rightTab === RightTab.customRegs ? { overflow: 'auto' } : {}}>
 						<CustomRegsView frame={frame} time={time} setTime={setTime} />
 					</TabPanel>
 					<TabPanel style={rightTab === RightTab.memory ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {  overflow: 'auto' }}>

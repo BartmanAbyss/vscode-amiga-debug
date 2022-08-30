@@ -1,4 +1,4 @@
-import { FunctionComponent, JSX } from 'preact';
+import { Component, FunctionComponent, JSX } from 'preact';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
@@ -8,21 +8,27 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CopperInstructionType, CopperMove } from '../copperDisassembler';
-import { CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
+import { Copper, CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 import { FormatCustomRegData } from '../customRegisters';
 import { useWheelHack } from '../useWheelHack';
 import { Scrollable } from '../scrollable';
+import { VirtualList } from '../virtual_list';
+import { useCssVariables } from '../useCssVariables';
+class VirtualListCopper extends VirtualList<Copper> {}
 
 export const CopperView: FunctionComponent<{
 	frame: number;
 	time: number;
 }> = ({ frame, time }) => {
 	const copper = MODELS[frame].copper;
-	const containerRef = useRef<HTMLDivElement>();
+	const containerRef = useRef<Component & { scroller: Scrollable }>();
 	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
 	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
+
+	const cssVariables = useCssVariables();
+	const rowHeight = parseInt(cssVariables['editor-font-size']) + 3; // needs to match CSS
 
 	// get copper instruction that is executing at 'time'
 	const dmaTime = CpuCyclesToDmaCycles(time);
@@ -43,11 +49,17 @@ export const CopperView: FunctionComponent<{
 		if(copper.length === 0 || !containerRef.current)
 			return;
 
-		// smooth scrolling if just clicking on the timeline, instant scrolling when dragging
-		const now = performance.now();
-		const behavior: ScrollBehavior = (now - containerRef.current['lastUpdate'] > 100) ? 'smooth' : 'auto';
-		containerRef.current['lastUpdate'] = now;
-		containerRef.current.children[Math.max(0, curInsn)].scrollIntoView({ behavior, block: 'nearest' }); // 'block' would be better, but scrolls whole page...
+		const list = containerRef.current.base as HTMLElement;
+		containerRef.current.scroller ??= new Scrollable(list, 135);
+		let newScroll = Math.max(0, curInsn) * rowHeight;
+		const futureScroll = list.scrollTop;
+		if(newScroll >= futureScroll + list.offsetHeight * 0.1 && newScroll + rowHeight <= futureScroll + list.offsetHeight * 0.9)
+			return;
+		if(newScroll < futureScroll + list.offsetHeight * 0.5)
+			newScroll -= (list.offsetHeight * 0.9) | 0;
+		else
+			newScroll -= (list.offsetHeight * 0.1) | 0;
+		containerRef.current.scroller.setScrollPositionSmooth(Math.max(0, newScroll));
 	}, [curInsn, containerRef.current]);
 
 	const onMouseEnter = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
@@ -79,20 +91,24 @@ export const CopperView: FunctionComponent<{
 		}
 	}, [tooltipRef.current, preventWheelDefault]);
 
-	return (<div ref={containerRef} class={styles.container}>
-		{copper.map((c, i) => <div class={styles.fixed + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
+	const renderRow = useCallback((c: Copper, i: number) => {
+		return <div class={styles.row + ' ' + (curInsn !== -1 && c === copper[curInsn] ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
 			{'L' + c.vpos.toString().padStart(3, '0') + 'C' + c.hpos.toString().padStart(3, '0') + ': '}
 			{'$' + c.address.toString(16).padStart(8, '0') + ': '} 
 			{c.insn.instructionType === CopperInstructionType.MOVE ? <>
 				{c.insn.getAsmInstruction()}; <span class={styles.reg} data={i.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{(c.insn as CopperMove).label}</span> = {FormatCustomRegData((c.insn as CopperMove).label, (c.insn as CopperMove).RD)}
 				{(c.insn as CopperMove).label.startsWith('COLOR') ? <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span> : ''}
 			</> : c.insn.toString()}
-		</div>)}
+		</div>;
+	}, [frame, onMouseEnter, onMouseLeave, onWheel, curInsn]);
+
+	return <>
+		<VirtualListCopper ref={containerRef} class={styles.container} rows={copper} renderRow={renderRow} rowHeight={rowHeight} overscanCount={50} />
 		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
 				<div ref={tooltipRef} class={styles.tooltip}>
 					<Markdown>{hovered.markdown}</Markdown>
 				</div>
 			</div>, document.body))}
-	</div>);
+	</>;
 };

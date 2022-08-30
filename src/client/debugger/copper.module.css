@@ -1,13 +1,16 @@
 .container {
 	background: var(--vscode-editor-background);
 	color: var(--vscode-editor-foreground);
-}
-
-.fixed {
 	font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size);
 	font-weight: var(--vscode-editor-font-weight);   
 	white-space: nowrap;
+	flex-grow: 1;
+	overflow: auto;
+}
+
+.row {
+	height: calc(var(--vscode-editor-font-size) + 3px);
 }
 
 .past {

@@ -22,7 +22,7 @@ interface VirtualListProps<R, A extends Absolute> {
 	[x: string]: any; // passthrough properties
 }
 
-export class VirtualList<R, A extends Absolute> extends Component<VirtualListProps<R, A>, { offset: number; height: number }> {
+export class VirtualList<R, A extends Absolute = Absolute> extends Component<VirtualListProps<R, A>, { offset: number; height: number }> {
 	private resize = () => {
 		if (this.state.height !== (this.base as HTMLElement).offsetHeight) {
 			this.setState({ height: (this.base as HTMLElement).offsetHeight });
