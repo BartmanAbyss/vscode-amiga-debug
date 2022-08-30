@@ -588,12 +588,11 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, [content, scroller]);
 
-	const onClickContainer = useCallback((evt: MouseEvent) => {
+	const onClickContainer = useCallback((evt: JSX.TargetedMouseEvent<HTMLElement>) => {
 		if(frame === -1) {
-			const elem = evt.srcElement as HTMLElement;
-			for(let elem = evt.srcElement as HTMLElement; elem; elem = elem.parentElement) {
-				if(elem.attributes['data-row']) {
-					const row = parseInt(elem.attributes['data-row'].value);
+			for(let elem = evt.target as HTMLElement; elem; elem = elem.parentElement) {
+				if(elem.getAttribute('data-row')) {
+					const row = parseInt(elem.getAttribute('data-row'));
 					setCurRow(row);
 					return;
 				}
@@ -615,22 +614,25 @@ export const ObjdumpView: FunctionComponent<{
 			setCurRow(findResult[n]);
 		}
 	}, [curFind, findResult]);
-	const onFindClick = useCallback((evt: Event) => {
-		(evt.target as HTMLInputElement).select();
+	const onFindClick = useCallback((evt: JSX.TargetedEvent<HTMLInputElement>) => {
+		evt.currentTarget.select();
 	}, []);
-	const onFindPaste = useCallback((evt: Event) => {
-		const find = (evt.target as HTMLInputElement).value;
+	const onFindPaste = useCallback((evt: JSX.TargetedEvent<HTMLInputElement>) => {
+		const find = evt.currentTarget.value;
 		setFind({ text: find, internal: true });
 	}, [setFind]);
-	const onFindKeyUp = useCallback((evt: KeyboardEvent) => {
+	const onFindKeyUp = useCallback((evt: JSX.TargetedKeyboardEvent<HTMLInputElement>) => {
 		if(evt.key === 'Enter' || evt.key === 'Escape')
 			return;
-		const find = (evt.target as HTMLInputElement).value;
+		const find = evt.currentTarget.value;
 		setFind({ text: find, internal: true });
 	}, [setFind]);
 	const onFindKeyDown = useCallback((evt: KeyboardEvent) => {
 		if(evt.key === 'Enter')
-			evt.shiftKey ? onFindPrev() : onFindNext();
+			if(evt.shiftKey)
+				onFindPrev();
+			else
+				onFindNext();
 		if(evt.key !== 'Escape')
 			evt.stopPropagation();
 	}, [onFindPrev, onFindNext]);
