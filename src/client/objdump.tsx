@@ -655,17 +655,17 @@ export const ObjdumpView: FunctionComponent<{
 						A{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.A0 + i])}>${regs[Register.A0 + i].toString(16).padStart(8, '0')}</a>
 					<br/></>)}
 					SR: ${regs[Register.SR].toString(16).padStart(4, '0')}&nbsp;&nbsp;&nbsp;
-					<span class={(regs[Register.SR] & (1 << 15)) ? styles.sr_on : styles.sr_off}>T</span>
-					<span class={(regs[Register.SR] & (1 << 14)) ? styles.sr_on : styles.sr_off}>T</span>
-					<span class={(regs[Register.SR] & (1 << 13)) ? styles.sr_on : styles.sr_off}>S</span>
-					<span class={(regs[Register.SR] & (1 << 12)) ? styles.sr_on : styles.sr_off}>M</span>
-					<span class={styles.sr_off}>-</span>IP{(regs[Register.SR] & 0b111) >>> 8}
+					<span class={(regs[Register.SR] & (1 << 15)) ? styles.sr_on : styles.sr_off} title='Trace Enable'>T</span>
+					<span class={(regs[Register.SR] & (1 << 14)) ? styles.sr_on : styles.sr_off} title='Trace Enable'>T</span>
+					<span class={(regs[Register.SR] & (1 << 13)) ? styles.sr_on : styles.sr_off} title='Supervisor/User State'>S</span>
+					<span class={(regs[Register.SR] & (1 << 12)) ? styles.sr_on : styles.sr_off} title='Master/Interrupt State'>M</span>
+					<span class={styles.sr_off}>-</span><span class={styles.sr_on} title='Interrupt Priority Mask'>IP{(regs[Register.SR] & 0b111) >>> 8}</span>
 					<span class={styles.sr_off}>---</span>
-					<span class={(regs[Register.SR] & (1 << 4)) ? styles.sr_on : styles.sr_off}>X</span>
-					<span class={(regs[Register.SR] & (1 << 3)) ? styles.sr_on : styles.sr_off}>N</span>
-					<span class={(regs[Register.SR] & (1 << 2)) ? styles.sr_on : styles.sr_off}>Z</span>
-					<span class={(regs[Register.SR] & (1 << 1)) ? styles.sr_on : styles.sr_off}>V</span>
-					<span class={(regs[Register.SR] & (1 << 0)) ? styles.sr_on : styles.sr_off}>C</span>
+					<span class={(regs[Register.SR] & (1 << 4)) ? styles.sr_on : styles.sr_off} title='Extend'>X</span>
+					<span class={(regs[Register.SR] & (1 << 3)) ? styles.sr_on : styles.sr_off} title='Negative'>N</span>
+					<span class={(regs[Register.SR] & (1 << 2)) ? styles.sr_on : styles.sr_off} title='Zero'>Z</span>
+					<span class={(regs[Register.SR] & (1 << 1)) ? styles.sr_on : styles.sr_off} title='Overflow'>V</span>
+					<span class={(regs[Register.SR] & (1 << 0)) ? styles.sr_on : styles.sr_off} title='Carry'>C</span>
 			</div>}
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />

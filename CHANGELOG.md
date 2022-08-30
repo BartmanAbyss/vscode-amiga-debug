@@ -10,7 +10,9 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
   - Syntax highlighting, symbol search and error squiggles support.
 - NEW: `DMA Control` shows `BltPri`
 - NEW: assembly: hover over custom register name to get documentation
+- NEW: assembly: hover over status register bits to get more info
 - FIX: screen: fix sprites over HAM
+- FIX: copper: improve performance
 
 ## 1.5.4
 - NEW: profiler: improve blitter tooltip for line mode, show simplified formulas of minterms

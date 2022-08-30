@@ -229,7 +229,7 @@ a:focus {
 }
 
 /* from copper.css */
-.opcode {
+.opcode, .sr_on, .sr_off {
 	text-decoration-line: underline;
 	text-decoration-style: dotted;
   text-decoration-color: currentColor;
