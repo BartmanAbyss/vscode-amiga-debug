@@ -1,12 +1,9 @@
-import { Component, FunctionComponent, JSX } from 'preact';
+import { Component, FunctionComponent, JSX, Ref } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
 import { Icon } from './icons';
-import * as ChevronDown from './icons/arrow-down.svg';
-import * as ChevronUp from './icons/arrow-up.svg';
-import * as Close from './icons/close.svg';
 import * as SymbolMethod from './icons/symbol-method.svg';
 import { IProfileModel } from './model';
 import styles from './objdump.module.css';
@@ -20,6 +17,7 @@ import Highlighter from 'react-highlight-words';
 import { resolvePath } from './pathResolve';
 import { GetCpuDoc } from './docs';
 import Markdown from 'markdown-to-jsx';
+import { FindCallback, Find } from './find';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -241,7 +239,7 @@ export const ObjdumpView: FunctionComponent<{
 
 	const [find, setFind] = useState<{ text: string; internal: boolean }>({ text: '', internal: true });
 	const [curFind, setCurFind] = useState(0);
-	const findRef = useRef<HTMLDivElement>();
+	const findRef = useRef<FindCallback>();
 	const findResult = useMemo(() => {
 		console.time("findResult");
 		const result: number[] = [];
@@ -498,16 +496,11 @@ export const ObjdumpView: FunctionComponent<{
 		const listener = (evt: KeyboardEvent) => {
 			if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
 				// open search bar
-				findRef.current.classList.remove(styles.find_hidden);
-				findRef.current.classList.add(styles.find_visible);
-				findRef.current.getElementsByTagName('input')[0].select();
+				findRef.current('open');
 				evt.preventDefault();
 			} else if(evt.key === 'Escape') {
 				// close search bar
-				findRef.current.getElementsByTagName('input')[0].blur();
-				findRef.current.classList.remove(styles.find_visible);
-				findRef.current.classList.add(styles.find_hidden);
-				setFind({ text: '', internal: true });
+				findRef.current('close');
 				evt.preventDefault();
 			}
 			if(frame === -1) {
@@ -543,9 +536,12 @@ export const ObjdumpView: FunctionComponent<{
 				evt.preventDefault();
 			}
 		};
-		document.addEventListener('keydown', listener);
-		return () => document.removeEventListener('keydown', listener);
-	}, [content, findRef, setFind]);
+		// make list accept keyboard events
+		(listRef.current.base as HTMLElement).tabIndex = -1;
+		(listRef.current?.base as HTMLElement)?.focus();
+		listRef.current?.base?.addEventListener('keydown', listener);
+		return () => listRef.current?.base?.removeEventListener('keydown', listener);
+	}, [content, findRef, setFind, listRef.current]);
 
 	useEffect(() => {
 		if(frame === -1) {
@@ -556,10 +552,7 @@ export const ObjdumpView: FunctionComponent<{
 					console.log("Message", type, body);
 					const loc = `${body.file}:${body.line}`;
 					// open search bar
-					findRef.current.classList.remove(styles.find_hidden);
-					findRef.current.classList.add(styles.find_visible);
-					findRef.current.getElementsByTagName('input')[0].select();
-					findRef.current.getElementsByTagName('input')[0].value = loc;
+					findRef.current('open', loc);
 					setFind({ text: loc, internal: false });
 					break;
 				case 'fileChanged':
@@ -600,58 +593,30 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, []);
 
-	const onFindPrev = useCallback(() => {
-		if(findResult.length) {
-			const n = (curFind + findResult.length - 1) % findResult.length;
-			setCurFind(n);
-			setCurRow(findResult[n]);
+	const findCallback = useCallback((action: string, text?: string) => {
+		if(action === 'prev') {
+			if(findResult.length) {
+				const n = (curFind + findResult.length - 1) % findResult.length;
+				setCurFind(n);
+				setCurRow(findResult[n]);
+			}
+		} else if(action === 'next') {
+			if(findResult.length) {
+				const n = (curFind + 1) % findResult.length;
+				setCurFind(n);
+				setCurRow(findResult[n]);
+			}
+		} else {
+			setFind({ text: text ?? '', internal: true });
+			if(action === 'close')
+				(listRef.current?.base as HTMLElement)?.focus();
 		}
-	}, [curFind, findResult]);
-	const onFindNext = useCallback(() => {
-		if(findResult.length) {
-			const n = (curFind + 1) % findResult.length;
-			setCurFind(n);
-			setCurRow(findResult[n]);
-		}
-	}, [curFind, findResult]);
-	const onFindClick = useCallback((evt: JSX.TargetedEvent<HTMLInputElement>) => {
-		evt.currentTarget.select();
-	}, []);
-	const onFindPaste = useCallback((evt: JSX.TargetedEvent<HTMLInputElement>) => {
-		const find = evt.currentTarget.value;
-		setFind({ text: find, internal: true });
-	}, [setFind]);
-	const onFindKeyUp = useCallback((evt: JSX.TargetedKeyboardEvent<HTMLInputElement>) => {
-		if(evt.key === 'Enter' || evt.key === 'Escape')
-			return;
-		const find = evt.currentTarget.value;
-		setFind({ text: find, internal: true });
-	}, [setFind]);
-	const onFindKeyDown = useCallback((evt: KeyboardEvent) => {
-		if(evt.key === 'Enter')
-			if(evt.shiftKey)
-				onFindPrev();
-			else
-				onFindNext();
-		if(evt.key !== 'Escape')
-			evt.stopPropagation();
-	}, [onFindPrev, onFindNext]);
-	const onFindClose = useCallback(() => {
-		findRef.current.classList.remove(styles.find_visible);
-		findRef.current.classList.add(styles.find_hidden);
-		setFind({ text: '', internal: true });
-	}, [findRef]);
+	}, [setFind, listRef.current, curFind, findResult]);
 	
 	return <>
 		<div class={styles.wrapper}>
-			<div ref={findRef} class={[styles.find, styles.find_hidden].join(' ')} style={{ visibility: '' }}>
-				<input placeholder="Find" onClick={onFindClick} onPaste={onFindPaste} onKeyUp={onFindKeyUp} onKeyDown={onFindKeyDown}></input>
-				<span class={styles.find_result}>{findResult.length > 0 ? `${curFind % findResult.length + 1} of ${findResult.length}` : 'No results'}</span>
-				<button class={styles.button} onMouseDown={onFindPrev} disabled={findResult.length === 0} type="button" title="Previous match (Shift+Enter)" dangerouslySetInnerHTML={{__html: ChevronUp}} />
-				<button class={styles.button} onMouseDown={onFindNext} disabled={findResult.length === 0} type="button" title="Next match (Enter)" dangerouslySetInnerHTML={{__html: ChevronDown}} />
-				<button class={styles.button} onMouseDown={onFindClose} type="button" title="Close (Escape)" dangerouslySetInnerHTML={{__html: Close}} />
-			</div>
-			{regs?.length && <div class={styles.registers}>
+			<Find ref={findRef} curFind={curFind} findResultLength={findResult.length} callback={findCallback}  />
+			{regs?.length > 0 && <div class={styles.registers}>
 					{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>
 						D{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.D0 + i])}>${regs[Register.D0 + i].toString(16).padStart(8, '0')}</a>&nbsp;
 						A{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.A0 + i])}>${regs[Register.A0 + i].toString(16).padStart(8, '0')}</a>

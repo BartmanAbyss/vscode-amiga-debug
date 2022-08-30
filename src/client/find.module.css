@@ -1,0 +1,81 @@
+/* find */
+.find {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 500px;
+  max-width: 90%;
+  right: 16px;
+  top: 0;
+  padding: 4px;
+  background: var(--vscode-sideBar-background);
+  box-shadow: 0 .25em .5em 0 black;
+  transition: transform ease-out 0.2s;
+  white-space: nowrap;
+}
+
+.find_hidden {
+  transform: translateY(-40px);
+}
+
+.find_visible {
+  transform: translateY(0);
+}
+
+.find_result {
+  flex-grow: 0;
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 0px 8px;
+  font-size: calc(var(--vscode-editor-font-size) - 2px);
+  flex-basis: 80px;
+}
+
+/* copy from filter.module.css */
+.find > input {
+  font-family: var(--vscode-font-family);
+  font-weight: var(--vscode-editor-font-weight);
+  font-size: var(--vscode-editor-font-size);
+  background: var(--vscode-input-background);
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  color: var(--vscode-input-foreground);
+  flex-grow: 1;
+}
+
+.find > input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.find > input:focus {
+  border-color: var(--vscode-focusBorder);
+  outline: 0;
+}
+
+.find > button {
+  flex-shrink: 0;
+}
+
+.button {
+	background: none;
+	border: none;
+	align-items: center;
+	border: none;
+	outline: 0 !important;
+	margin-left: 3px;
+	margin-right: 3px;
+	padding: 0;
+  cursor: pointer;
+  height: 16px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.button > svg {
+  width: 16px;
+  height: 16px;
+}
