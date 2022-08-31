@@ -6,7 +6,7 @@ import * as ChevronUp from './icons/arrow-up.svg';
 import * as Close from './icons/close.svg';
 import styles from './find.module.css';
 
-export type FindCallback = (action: string, text?: string) => void;
+export type FindCallback = (action: string, text?: string) => boolean;
 const findFn: ForwardFn<{
 	callback: FindCallback;
 	curFind: number;
@@ -15,17 +15,23 @@ const findFn: ForwardFn<{
 	const divRef = useRef<HTMLDivElement>();
 	useImperativeHandle(ref, () => (action: string, text?: string) => {
 		if(action === 'open') {
+			if(text === divRef.current.getElementsByTagName('input')[0].value)
+				return false;
+			//console.log('Find:open', text);
 			divRef.current.classList.remove(styles.find_hidden);
 			divRef.current.classList.add(styles.find_visible);
-			divRef.current.getElementsByTagName('input')[0].select();
+			if(text === undefined || !text.includes(':'))
+				divRef.current.getElementsByTagName('input')[0].select();
 			if(text !== undefined)
 				divRef.current.getElementsByTagName('input')[0].value = text;
 		} else if(action === 'close') {
+			//console.log('Find:close', text);
 			divRef.current.getElementsByTagName('input')[0].blur();
 			divRef.current.classList.remove(styles.find_visible);
 			divRef.current.classList.add(styles.find_hidden);
 			callback('close');
 		}
+		return true;
 	}, [divRef.current]);
 	const onFindClick = useCallback((evt: JSX.TargetedEvent<HTMLInputElement>) => {
 		evt.currentTarget.select();

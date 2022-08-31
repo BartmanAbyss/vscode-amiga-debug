@@ -101,7 +101,7 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
 			case 'openDocument':
-				void showPositionInFile(message.location, message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
+				void showPositionInFile(message.location, message.toSide ? webviewPanel.viewColumn + 1 : webviewPanel.viewColumn);
 				return;
 			case 'setCodeLenses':
 				this.lenses.registerLenses(this.createLensCollection(message.lenses));

@@ -555,8 +555,8 @@ export const ObjdumpView: FunctionComponent<{
 					console.log("Message", type, body);
 					const loc = `${body.file}:${body.line}`;
 					// open search bar
-					findRef.current('open', loc);
-					setFind({ text: loc, internal: false });
+					if(findRef.current('open', loc))
+						setFind({ text: loc, internal: false });
 					break;
 				case 'fileChanged':
 					console.log("Message", type);
@@ -614,6 +614,7 @@ export const ObjdumpView: FunctionComponent<{
 			if(action === 'close')
 				(listRef.current?.base as HTMLElement)?.focus();
 		}
+		return true;
 	}, [setFind, listRef.current, curFind, findResult]);
 	
 	return <>

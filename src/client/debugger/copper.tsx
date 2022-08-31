@@ -78,6 +78,7 @@ export const CopperView: FunctionComponent<{
 			if(action === 'close')
 				(containerRef.current?.base as HTMLElement)?.focus();
 		}
+		return true;
 	}, [setFind, containerRef.current, curFind, findResult]);
 
 	const curInsn = useMemo(() => {

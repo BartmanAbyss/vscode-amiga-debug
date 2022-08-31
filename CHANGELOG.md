@@ -6,6 +6,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)
 - FIX: [#128 Can't use the image converter link](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/128)
 - FIX: [#129 Screen and Resources tabs have no scroll bars so I can't see the bottom of a tall image](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/129)
+- FIX: improved behavior of jumping from assembly to source (still sometimes the source window disappears)
 
 ## 1.5.5
 - NEW: VASM assembler with debugging support ([PR#123 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/123))

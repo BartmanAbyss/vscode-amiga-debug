@@ -273,7 +273,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Objdump
 * TODO: click/follow any addresses
-* editing source while having disassembly open doesn't really work
 
 ### Terminal
 * Terminal doesn't open again once closed

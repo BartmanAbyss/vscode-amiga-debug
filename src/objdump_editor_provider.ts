@@ -64,6 +64,7 @@ class ObjdumpDocument implements vscode.CustomDocument {
 export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvider<ObjdumpDocument> {
 	private readonly webviews = new WebviewCollection(); 
 	private sourceEditor: vscode.TextEditor;
+	private ignoreSelection = false;
 		
 	constructor(private readonly context: vscode.ExtensionContext) {
 	}
@@ -94,12 +95,22 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		webviewPanel.webview.onDidReceiveMessage(async (message) => {
 			switch (message.type) {
 			case 'openDocument':
-				this.sourceEditor = await vscode.window.showTextDocument(vscode.Uri.file(message.file), {
-					viewColumn: vscode.ViewColumn.Beside,
-					preserveFocus: true,
-					preview: true,
-					selection: new vscode.Range(message.line - 1, 0, message.line, 0)
-				});
+				if(this.ignoreSelection)
+					return;
+				//console.log('openDocument', message.file, 'VC', webviewPanel.viewColumn);
+				this.ignoreSelection = true;
+				try {
+					this.sourceEditor = await vscode.window.showTextDocument(vscode.Uri.file(message.file), {
+						viewColumn: webviewPanel.viewColumn + 1,
+						preserveFocus: true,
+						preview: false,
+						selection: new vscode.Range(message.line - 1, 0, message.line, 0)
+					});
+				} catch(e) {
+					console.log('openDocument', `can't open ${message.file}: ${e}`);
+					this.sourceEditor = undefined;
+				}
+				this.ignoreSelection = false;
 				return;
 			case 'error':
 				void vscode.window.showErrorMessage(message.text, { modal: true });
@@ -131,7 +142,10 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 	}
 
 	public async handleSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
+		if(this.ignoreSelection)
+			return;
 		for (const webviewPanel of this.webviews.all()) { 
+			//console.log('findLocation', e.textEditor.document.uri.fsPath, e.selections[0].start.line + 1 );
 			await webviewPanel.webview.postMessage({ 
 				type: 'findLocation', 
 				body: { 
