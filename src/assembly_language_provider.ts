@@ -17,7 +17,7 @@ function split_with_offset(str: string, re: RegExp) {
 	if (!re.global) {
 		throw new Error("no no no no :(");
 	}
-	const results = [];
+	const results: [string, number][] = [];
 	let m: RegExpExecArray, p: number;
 	while (p = re.lastIndex, m = re.exec(str)) {
 		results.push([str.substring(p, m.index), p]);
@@ -440,7 +440,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
 	}
 
-	public async provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens> {
+	public provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.SemanticTokens {
 		const context = this.getSourceContext(document.fileName);
 		const builder = new vscode.SemanticTokensBuilder();
 		context.tokens.forEach((token) => {

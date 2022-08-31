@@ -15,21 +15,272 @@
 // 68060 user's manual: https://www.nxp.com/docs/en/data-sheet/MC68060UM.pdf
 // 68881/68882 user's manual: http://bitsavers.trailing-edge.com/components/motorola/68000/MC68881_MC68882_Floating-Point_Coprocessor_Users_Manual_1ed_1987.pdf
 
+/* We store four bytes of opcode for all opcodes because that is the
+   most any of them need.  The actual length of an instruction is
+   always at least 2 bytes, and is as much longer as necessary to hold
+   the operands it has.
+   The match field is a mask saying which bits must match particular
+   opcode in order for an instruction to be an instance of that
+   opcode.
+   The args field is a string containing two characters for each
+   operand of the instruction.  The first specifies the kind of
+   operand; the second, the place it is stored.
+   If the first char of args is '.', it indicates that the opcode is
+   two words.  This is only necessary when the match field does not
+   have any bits set in the second opcode word.  Such a '.' is skipped
+   for operand processing.  */
 
-/* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle,id-denylist,id-match, @typescript-eslint/naming-convention */
+/* Kinds of operands:
+   Characters used: AaBbCcDdEeFfGgHIiJjKkLlMmnOopQqRrSsTtUuVvWwXxYyZz01234|*~%;@!&$?/<>#^+-
+   D  data register only.  Stored as 3 bits.
+   A  address register only.  Stored as 3 bits.
+   a  address register indirect only.  Stored as 3 bits.
+   R  either kind of register.  Stored as 4 bits.
+   r  either kind of register indirect only.  Stored as 4 bits.
+      At the moment, used only for cas2 instruction.
+   F  floating point coprocessor register only.   Stored as 3 bits.
+   O  an offset (or width): immediate data 0-31 or data register.
+      Stored as 6 bits in special format for BF... insns.
+   +  autoincrement only.  Stored as 3 bits (number of the address register).
+   -  autodecrement only.  Stored as 3 bits (number of the address register).
+   Q  quick immediate data.  Stored as 3 bits.
+      This matches an immediate operand only when value is in range 1 .. 8.
+   M  moveq immediate data.  Stored as 8 bits.
+      This matches an immediate operand only when value is in range -128..127
+   T  trap vector immediate data.  Stored as 4 bits.
+   k  K-factor for fmove.p instruction.   Stored as a 7-bit constant or
+      a three bit register offset, depending on the field type.
+   #  immediate data.  Stored in special places (b, w or l)
+      which say how many bits to store.
+   ^  immediate data for floating point instructions.   Special places
+      are offset by 2 bytes from '#'...
+   B  pc-relative address, converted to an offset
+      that is treated as immediate data.
+   d  displacement and register.  Stores the register as 3 bits
+      and stores the displacement in the entire second word.
+   C  the CCR.  No need to store it; this is just for filtering validity.
+   S  the SR.  No need to store, just as with CCR.
+   U  the USP.  No need to store, just as with CCR.
+   E  the MAC ACC.  No need to store, just as with CCR.
+   e  the EMAC ACC[0123].
+   G  the MAC/EMAC MACSR.  No need to store, just as with CCR.
+   g  the EMAC ACCEXT{01,23}.
+   H  the MASK.  No need to store, just as with CCR.
+   i  the MAC/EMAC scale factor.
+   I  Coprocessor ID.   Not printed if 1.   The Coprocessor ID is always
+      extracted from the 'd' field of word one, which means that an extended
+      coprocessor opcode can be skipped using the 'i' place, if needed.
+   s  System Control register for the floating point coprocessor.
+   J  Misc register for movec instruction, stored in 'j' format.
+        Possible values:
+        0x000   SFC     Source Function Code reg        [60, 40, 30, 20, 10]
+        0x001   DFC     Data Function Code reg          [60, 40, 30, 20, 10]
+        0x002   CACR    Cache Control Register          [60, 40, 30, 20, mcf]
+        0x003   TC      MMU Translation Control         [60, 40]
+        0x004   ITT0    Instruction Transparent
+                                Translation reg 0       [60, 40]
+        0x005   ITT1    Instruction Transparent
+                                Translation reg 1       [60, 40]
+        0x006   DTT0    Data Transparent
+                                Translation reg 0       [60, 40]
+        0x007   DTT1    Data Transparent
+                                Translation reg 1       [60, 40]
+        0x008   BUSCR   Bus Control Register            [60]
+        0x800   USP     User Stack Pointer              [60, 40, 30, 20, 10]
+        0x801   VBR     Vector Base reg                 [60, 40, 30, 20, 10, mcf]
+        0x802   CAAR    Cache Address Register          [        30, 20]
+        0x803   MSP     Master Stack Pointer            [    40, 30, 20]
+        0x804   ISP     Interrupt Stack Pointer         [    40, 30, 20]
+        0x805   MMUSR   MMU Status reg                  [    40]
+        0x806   URP     User Root Pointer               [60, 40]
+        0x807   SRP     Supervisor Root Pointer         [60, 40]
+        0x808   PCR     Processor Configuration reg     [60]
+        0xC00   ROMBAR  ROM Base Address Register       [520X]
+        0xC04   RAMBAR0 RAM Base Address Register 0     [520X]
+        0xC05   RAMBAR1 RAM Base Address Register 0     [520X]
+        0xC0F   MBAR0   RAM Base Address Register 0     [520X]
+        0xC04   FLASHBAR FLASH Base Address Register    [mcf528x]
+        0xC05   RAMBAR  Static RAM Base Address Register [mcf528x]
+    L  Register list of the type d0-d7/a0-a7 etc.
+       (New!  Improved!  Can also hold fp0-fp7, as well!)
+       The assembler tries to see if the registers match the insn by
+       looking at where the insn wants them stored.
+    l  Register list like L, but with all the bits reversed.
+       Used for going the other way. . .
+    c  cache identifier which may be "nc" for no cache, "ic"
+       for instruction cache, "dc" for data cache, or "bc"
+       for both caches.  Used in cinv and cpush.  Always
+       stored in position "d".
+    u  Any register, with ``upper'' or ``lower'' specification.  Used
+       in the mac instructions with size word.
+ The remainder are all stored as 6 bits using an address mode and a
+ register number; they differ in which addressing modes they match.
+   *  all                                       (modes 0-6,7.0-4)
+   ~  alterable memory                          (modes 2-6,7.0,7.1)
+                                                (not 0,1,7.2-4)
+   %  alterable                                 (modes 0-6,7.0,7.1)
+                                                (not 7.2-4)
+   ;  data                                      (modes 0,2-6,7.0-4)
+                                                (not 1)
+   @  data, but not immediate                   (modes 0,2-6,7.0-3)
+                                                (not 1,7.4)
+   !  control                                   (modes 2,5,6,7.0-3)
+                                                (not 0,1,3,4,7.4)
+   &  alterable control                         (modes 2,5,6,7.0,7.1)
+                                                (not 0,1,3,4,7.2-4)
+   $  alterable data                            (modes 0,2-6,7.0,7.1)
+                                                (not 1,7.2-4)
+   ?  alterable control, or data register       (modes 0,2,5,6,7.0,7.1)
+                                                (not 1,3,4,7.2-4)
+   /  control, or data register                 (modes 0,2,5,6,7.0-3)
+                                                (not 1,3,4,7.4)
+   >  *save operands                            (modes 2,4,5,6,7.0,7.1)
+                                                (not 0,1,3,7.2-4)
+   <  *restore operands                         (modes 2,3,5,6,7.0-3)
+                                                (not 0,1,4,7.4)
+   coldfire move operands:
+   m                                            (modes 0-4)
+   n                                            (modes 5,7.2)
+   o                                            (modes 6,7.0,7.1,7.3,7.4)
+   p                                            (modes 0-5)
+   coldfire bset/bclr/btst/mulsl/mulul operands:
+   q                                            (modes 0,2-5)
+   v                                            (modes 0,2-5,7.0,7.1)
+   b                                            (modes 0,2-5,7.2)
+   w                                            (modes 2-5,7.2)
+   y                                            (modes 2,5)
+   z                                            (modes 2,5,7.2)
+   x  mov3q immediate operand.
+   j  coprocessor ET operand.
+   K  coprocessor command number.
+   4                                            (modes 2,3,4,5)
+*/
+
+/* For the 68851:  */
+/* I didn't use much imagination in choosing the
+   following codes, so many of them aren't very
+   mnemonic. -rab
+   0  32 bit pmmu register
+        Possible values:
+        000     TC      Translation Control Register (68030, 68851)
+   1  16 bit pmmu register
+        111     AC      Access Control (68851)
+   2  8 bit pmmu register
+        100     CAL     Current Access Level (68851)
+        101     VAL     Validate Access Level (68851)
+        110     SCC     Stack Change Control (68851)
+   3  68030-only pmmu registers (32 bit)
+        010     TT0     Transparent Translation reg 0
+                        (aka Access Control reg 0 -- AC0 -- on 68ec030)
+        011     TT1     Transparent Translation reg 1
+                        (aka Access Control reg 1 -- AC1 -- on 68ec030)
+   W  wide pmmu registers
+        Possible values:
+        001     DRP     Dma Root Pointer (68851)
+        010     SRP     Supervisor Root Pointer (68030, 68851)
+        011     CRP     Cpu Root Pointer (68030, 68851)
+   f    function code register (68030, 68851)
+        0       SFC
+        1       DFC
+   V    VAL register only (68851)
+   X    BADx, BACx (16 bit)
+        100     BAD     Breakpoint Acknowledge Data (68851)
+        101     BAC     Breakpoint Acknowledge Control (68851)
+   Y    PSR (68851) (MMUSR on 68030) (ACUSR on 68ec030)
+   Z    PCSR (68851)
+   |    memory          (modes 2-6, 7.*)
+   t  address test level (68030 only)
+      Stored as 3 bits, range 0-7.
+      Also used for breakpoint instruction now.
+*/
+
+/* Places to put an operand, for non-general operands:
+   Characters used: BbCcDdFfGgHhIijkLlMmNnostWw123456789/
+   s  source, low bits of first word.
+   d  dest, shifted 9 in first word
+   1  second word, shifted 12
+   2  second word, shifted 6
+   3  second word, shifted 0
+   4  third word, shifted 12
+   5  third word, shifted 6
+   6  third word, shifted 0
+   7  second word, shifted 7
+   8  second word, shifted 10
+   9  second word, shifted 5
+   E  second word, shifted 9
+   D  store in both place 1 and place 3; for divul and divsl.
+   B  first word, low byte, for branch displacements
+   W  second word (entire), for branch displacements
+   L  second and third words (entire), for branch displacements
+      (also overloaded for move16)
+   b  second word, low byte
+   w  second word (entire) [variable word/long branch offset for dbra]
+   W  second word (entire) (must be signed 16 bit value)
+   l  second and third word (entire)
+   g  variable branch offset for bra and similar instructions.
+      The place to store depends on the magnitude of offset.
+   t  store in both place 7 and place 8; for floating point operations
+   c  branch offset for cpBcc operations.
+      The place to store is word two if bit six of word one is zero,
+      and words two and three if bit six of word one is one.
+   i  Increment by two, to skip over coprocessor extended operands.   Only
+      works with the 'I' format.
+   k  Dynamic K-factor field.   Bits 6-4 of word 2, used as a register number.
+      Also used for dynamic fmovem instruction.
+   C  floating point coprocessor constant - 7 bits.  Also used for static
+      K-factors...
+   j  Movec register #, stored in 12 low bits of second word.
+   m  For M[S]ACx; 4 bits split with MSB shifted 6 bits in first word
+      and remaining 3 bits of register shifted 9 bits in first word.
+      Indicate upper/lower in 1 bit shifted 7 bits in second word.
+      Use with `R' or `u' format.
+   n  `m' withouth upper/lower indication. (For M[S]ACx; 4 bits split
+      with MSB shifted 6 bits in first word and remaining 3 bits of
+      register shifted 9 bits in first word.  No upper/lower
+      indication is done.)  Use with `R' or `u' format.
+   o  For M[S]ACw; 4 bits shifted 12 in second word (like `1').
+      Indicate upper/lower in 1 bit shifted 7 bits in second word.
+      Use with `R' or `u' format.
+   M  For M[S]ACw; 4 bits in low bits of first word.  Indicate
+      upper/lower in 1 bit shifted 6 bits in second word.  Use with
+      `R' or `u' format.
+   N  For M[S]ACw; 4 bits in low bits of second word.  Indicate
+      upper/lower in 1 bit shifted 6 bits in second word.  Use with
+      `R' or `u' format.
+   h  shift indicator (scale factor), 1 bit shifted 10 in second word
+ Places to put operand, for general operands:
+   d  destination, shifted 6 bits in first word
+   b  source, at low bit of first word, and immediate uses one byte
+   w  source, at low bit of first word, and immediate uses two bytes
+   l  source, at low bit of first word, and immediate uses four bytes
+   s  source, at low bit of first word.
+      Used sometimes in contexts where immediate is not allowed anyway.
+   f  single precision float, low bit of 1st word, immediate uses 4 bytes
+   F  double precision float, low bit of 1st word, immediate uses 8 bytes
+   x  extended precision float, low bit of 1st word, immediate uses 12 bytes
+   p  packed float, low bit of 1st word, immediate uses 12 bytes
+   G  EMAC accumulator, load  (bit 4 2nd word, !bit8 first word)
+   H  EMAC accumulator, non load  (bit 4 2nd word, bit 8 first word)
+   F  EMAC ACCx
+   f  EMAC ACCy
+   I  MAC/EMAC scale factor
+   /  Like 's', but set 2nd word, bit 5 if trailing_ampersand set
+   ]  first word, bit 10
+*/
+
+// eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle,id-denylist,id-match, @typescript-eslint/naming-convention 
 
 enum dis {
-	noninsn,		/* Not a valid instruction.  */
-	nonbranch,		/* Not a branch instruction.  */
-	branch,			/* Unconditional branch.  */
-	condbranch,		/* Conditional branch.  */
-	jsr,			/* Jump to subroutine.  */
-	condjsr,		/* Conditional jump to subroutine.  */
-	dref,			/* Data reference instruction.  */
-	dref2			/* Two data references in instruction.  */
+	noninsn,		// Not a valid instruction.  
+	nonbranch,		// Not a branch instruction.  
+	branch,			// Unconditional branch.  
+	condbranch,		// Conditional branch.  
+	jsr,			// Jump to subroutine.  
+	condjsr,		// Conditional jump to subroutine.  
+	dref,			// Data reference instruction.  
+	dref2			// Two data references in instruction.  
 }
 
-const _m68k_undef = 0;
 const m68000 = 0x001;
 const m68010 = 0x002;
 const m68020 = 0x004;
@@ -40,7 +291,7 @@ const m68881 = 0x040;
 const m68851 = 0x080;
 const m68k_mask = 0x3ff;
 
-/* Handy aliases.  */
+// Handy aliases.  
 const m68040up = (m68040 | m68060);
 const m68030up = (m68030 | m68040up);
 const m68020up = (m68020 | m68030up);
@@ -60,11 +311,6 @@ interface m68k_opcode {
 	type: dis;
 }
 
-interface m68k_opcode_alias {
-	alias: string;
-	primary: string;
-}
-
 const one = (x: number) => x << 16 >>> 0; // >>> 0: make unsigned
 const two = (x: number, y: number) => ((x << 16) + y) >>> 0;
 
@@ -73,7 +319,7 @@ const SCOPE_PAGE = (0x2 << 3);
 const SCOPE_ALL  = (0x3 << 3);
 
 // ported from binutils-gdb/opcodes/m68k-opc.c, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
-// removed all coldfire opcodes, FPU opcodes missing
+// removed all coldfire opcodes
 
 const m68k_opcodes: m68k_opcode[] = [
 	{ name: "abcd",  size: 2,	opcode: one(0o0140400),	match: one(0o0170770), args: "DsDd", arch: m68000up, type: dis.nonbranch },
@@ -90,7 +336,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "addq.w", size: 2,	opcode: one(0o0050100),	match: one(0o0170700), args: "Qd%w", arch: m68000up, type: dis.nonbranch },
 	{ name: "addq.l", size: 2,	opcode: one(0o0050200),	match: one(0o0170700), args: "Qd%l", arch: m68000up, type: dis.nonbranch },
 
-	/* The add opcode can generate the adda, addi, and addq instructions.  */
+	// The add opcode can generate the adda, addi, and addq instructions.  
 	{ name: "add.b", size: 2,	opcode: one(0o0050000),	match: one(0o0170700), args: "Qd$b", arch: m68000up, type: dis.nonbranch },
 	{ name: "add.b", size: 4,	opcode: one(0o0003000),	match: one(0o0177700), args: "#b$s", arch: m68000up, type: dis.nonbranch },
 	{ name: "add.b", size: 2,	opcode: one(0o0150000),	match: one(0o0170700), args: ";bDd", arch: m68000up, type: dis.nonbranch },
@@ -122,7 +368,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "andi",  size: 4,	opcode: one(0o0001074),	match: one(0o0177777), args: "#bCs", arch: m68000up, type: dis.nonbranch },
 	{ name: "andi",  size: 4,	opcode: one(0o0001174),	match: one(0o0177777), args: "#wSs", arch: m68000up, type: dis.nonbranch },
 
-	/* The and opcode can generate the andi instruction.  */
+	// The and opcode can generate the andi instruction.  
 	{ name: "and.b", size: 4,	opcode: one(0o0001000),	match: one(0o0177700), args: "#b$s", arch: m68000up, type: dis.nonbranch },
 	{ name: "and.b", size: 4,	opcode: one(0o0001074),	match: one(0o0177777), args: "#bCs", arch: m68000up, type: dis.nonbranch },
 	{ name: "and.b", size: 2,	opcode: one(0o0140000),	match: one(0o0170700), args: ";bDd", arch: m68000up, type: dis.nonbranch },
@@ -201,20 +447,20 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "bgt.s", size: 2,	opcode: one(0o0067000),	match: one(0o0177400), args: "BB", arch: m68000up, type: dis.condbranch },
 	{ name: "ble.s", size: 2,	opcode: one(0o0067400),	match: one(0o0177400), args: "BB", arch: m68000up, type: dis.condbranch },
 
-	{ name: "jhi", size: 2,	opcode: one(0o0061000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch }, // pseudo op
-	{ name: "jls", size: 2,	opcode: one(0o0061400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jcc", size: 2,	opcode: one(0o0062000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jcs", size: 2,	opcode: one(0o0062400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jne", size: 2,	opcode: one(0o0063000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jeq", size: 2,	opcode: one(0o0063400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jvc", size: 2,	opcode: one(0o0064000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jvs", size: 2,	opcode: one(0o0064400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jpl", size: 2,	opcode: one(0o0065000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jmi", size: 2,	opcode: one(0o0065400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jge", size: 2,	opcode: one(0o0066000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jlt", size: 2,	opcode: one(0o0066400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jgt", size: 2,	opcode: one(0o0067000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
-	{ name: "jle", size: 2,	opcode: one(0o0067400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jhi", size: 2,		opcode: one(0o0061000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch }, // pseudo op
+	{ name: "jls", size: 2,		opcode: one(0o0061400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jcc", size: 2,		opcode: one(0o0062000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jcs", size: 2,		opcode: one(0o0062400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jne", size: 2,		opcode: one(0o0063000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jeq", size: 2,		opcode: one(0o0063400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jvc", size: 2,		opcode: one(0o0064000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jvs", size: 2,		opcode: one(0o0064400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jpl", size: 2,		opcode: one(0o0065000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jmi", size: 2,		opcode: one(0o0065400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jge", size: 2,		opcode: one(0o0066000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jlt", size: 2,		opcode: one(0o0066400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jgt", size: 2,		opcode: one(0o0067000),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
+	{ name: "jle", size: 2,		opcode: one(0o0067400),	match: one(0o0177400), args: "Bg", arch: m68000up, type: dis.condbranch },
 
 	{ name: "bchg", size: 2,	opcode: one(0o0000500),	match: one(0o0170700), args: "Dd$s", arch: m68000up, type: dis.nonbranch },
 	{ name: "bchg", size: 4,	opcode: one(0o0004100),	match: one(0o0177700), args: "#b$s", arch: m68000up, type: dis.nonbranch },
@@ -249,10 +495,10 @@ const m68k_opcodes: m68k_opcode[] = [
 
 	{ name: "callm", size: 4,	opcode: one(0o0003300),	match: one(0o0177700), args: "#b!s", arch: m68020, type: dis.nonbranch },
 
-	{ name: "cas2.w", size: 6,   opcode:  two(0o0006374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5r1r4", arch: m68020up, type: dis.nonbranch },
-	{ name: "cas2.w", size: 6,   opcode:  two(0o0006374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5R1R4", arch: m68020up, type: dis.nonbranch },
-	{ name: "cas2.l", size: 6,   opcode:  two(0o0007374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5r1r4", arch: m68020up, type: dis.nonbranch },
-	{ name: "cas2.l", size: 6,   opcode:  two(0o0007374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5R1R4", arch: m68020up, type: dis.nonbranch },
+	{ name: "cas2.w", size: 6,  opcode: two(0o0006374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5r1r4", arch: m68020up, type: dis.nonbranch },
+	{ name: "cas2.w", size: 6,  opcode: two(0o0006374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5R1R4", arch: m68020up, type: dis.nonbranch },
+	{ name: "cas2.l", size: 6,  opcode: two(0o0007374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5r1r4", arch: m68020up, type: dis.nonbranch },
+	{ name: "cas2.l", size: 6,  opcode: two(0o0007374,0), match: two(0o0177777,0o0007070), args: "D3D6D2D5R1R4", arch: m68020up, type: dis.nonbranch },
 
 	{ name: "cas.b", size: 4,	opcode: two(0o0005300, 0), match: two(0o0177700, 0o0177070),	args: "D3D2~s", arch: m68020up, type: dis.nonbranch },
 	{ name: "cas.w", size: 4,	opcode: two(0o0006300, 0), match: two(0o0177700, 0o0177070),	args: "D3D2~s", arch: m68020up, type: dis.nonbranch },
@@ -295,7 +541,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "cmpm.w", size: 2,	opcode: one(0o0130510),	match: one(0o0170770), args: "+s+d", arch: m68000up, type: dis.nonbranch },
 	{ name: "cmpm.l", size: 2,	opcode: one(0o0130610),	match: one(0o0170770), args: "+s+d", arch: m68000up, type: dis.nonbranch },
 
-	/* The cmp opcode can generate the cmpa, cmpm, and cmpi instructions.  */
+	// The cmp opcode can generate the cmpa, cmpm, and cmpi instructions.  
 	{ name: "cmp.b", size: 4,	opcode: one(0o0006000),	match: one(0o0177700), args: "#b$s", arch: m68000 | m68010, type: dis.nonbranch },
 	{ name: "cmp.b", size: 4,	opcode: one(0o0006000),	match: one(0o0177700), args: "#b@s", arch: m68020up, type: dis.nonbranch },
 	{ name: "cmp.b", size: 2,	opcode: one(0o0130410),	match: one(0o0170770), args: "+s+d", arch: m68000up, type: dis.nonbranch },
@@ -341,8 +587,8 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "divu.l", size: 4,	opcode: two(0o0046100,0o0002000),match: two(0o0177700,0o0107770), args:";lD3D1", arch: m68020up , type: dis.nonbranch },
 	{ name: "divu.l", size: 4,	opcode: two(0o0046100,0o0000000),match: two(0o0177700,0o0107770), args:";lDD",   arch: m68020up , type: dis.nonbranch },
 	
-	{ name: "divul.l", size: 4,	opcode: two(0o0046100,0o0000000),match: two(0o0177700,0o0107770), args:";lD3D1",arch: m68020up , type: dis.nonbranch },
-	{ name: "divul.l", size: 4,	opcode: two(0o0046100,0o0000000),match: two(0o0177700,0o0107770), args:";lDD",  arch: m68020up , type: dis.nonbranch },
+	{ name: "divul.l", size: 4, opcode: two(0o0046100,0o0000000),match: two(0o0177700,0o0107770), args:";lD3D1",arch: m68020up , type: dis.nonbranch },
+	{ name: "divul.l", size: 4, opcode: two(0o0046100,0o0000000),match: two(0o0177700,0o0107770), args:";lDD",  arch: m68020up , type: dis.nonbranch },
 
 	{ name: "eori.b", size: 4,	opcode: one(0o0005000),	match: one(0o0177700), args: "#b$s", arch: m68000up , type: dis.nonbranch },
 	{ name: "eori.b", size: 4,	opcode: one(0o0005074),	match: one(0o0177777), args: "#bCs", arch: m68000up , type: dis.nonbranch },
@@ -464,15 +710,15 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fatan.x", size: 4,	opcode: two(0xF000, 0x480A), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fatan.x", size: 4,	opcode: two(0xF000, 0x000A), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fatanh.b", size: 4,	opcode: two(0xF000, 0x580D), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.d", size: 4,	opcode: two(0xF000, 0x540D), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.l", size: 4,	opcode: two(0xF000, 0x400D), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.p", size: 4,	opcode: two(0xF000, 0x4C0D), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.s", size: 4,	opcode: two(0xF000, 0x440D), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.w", size: 4,	opcode: two(0xF000, 0x500D), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.x", size: 4,	opcode: two(0xF000, 0x000D), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.x", size: 4,	opcode: two(0xF000, 0x480D), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fatanh.x", size: 4,	opcode: two(0xF000, 0x000D), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.b", size: 4,opcode: two(0xF000, 0x580D), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.d", size: 4,opcode: two(0xF000, 0x540D), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.l", size: 4,opcode: two(0xF000, 0x400D), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.p", size: 4,opcode: two(0xF000, 0x4C0D), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.s", size: 4,opcode: two(0xF000, 0x440D), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.w", size: 4,opcode: two(0xF000, 0x500D), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.x", size: 4,opcode: two(0xF000, 0x000D), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.x", size: 4,opcode: two(0xF000, 0x480D), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fatanh.x", size: 4,opcode: two(0xF000, 0x000D), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	// This is the same as `fbf opcode: .+2'.
 	{ name: "fnop", size: 4,	opcode: two(0xF280, 0x0000), match: two(0xFFFF, 0xFFFF), args: "Ii", arch: mfloat, type: dis.nonbranch },
@@ -521,7 +767,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fbne.l", size: 2,	opcode: one(0xF0CE),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
 	{ name: "fbnge.l", size: 2,	opcode: one(0xF0DC),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
 	{ name: "fbngl.l", size: 2,	opcode: one(0xF0D9),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
-	{ name: "fbngle.l", size: 2,	opcode: one(0xF0D8),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
+	{ name: "fbngle.l", size: 2,opcode: one(0xF0D8),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
 	{ name: "fbngt.l", size: 2,	opcode: one(0xF0DD),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
 	{ name: "fbnle.l", size: 2,	opcode: one(0xF0DA),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
 	{ name: "fbnlt.l", size: 2,	opcode: one(0xF0DB),		match: one(0xF1FF), args: "IdBC", arch: mfloat, type: dis.nonbranch },
@@ -675,33 +921,33 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fetox.x", size: 4,	opcode: two(0xF000, 0x4810), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fetox.x", size: 4,	opcode: two(0xF000, 0x0010), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fetoxm1.b", size:4,	opcode: two(0xF000, 0x5808), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.d", size:4,	opcode: two(0xF000, 0x5408), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.l", size:4,	opcode: two(0xF000, 0x4008), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.p", size:4,	opcode: two(0xF000, 0x4C08), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.s", size:4,	opcode: two(0xF000, 0x4408), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.w", size:4,	opcode: two(0xF000, 0x5008), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.x", size:4,	opcode: two(0xF000, 0x0008), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.x", size:4,	opcode: two(0xF000, 0x4808), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fetoxm1.x", size:4,	opcode: two(0xF000, 0x0008), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.b", size:4,	opcode: two(0xF000, 0x581E), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.d", size:4,	opcode: two(0xF000, 0x541E), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.l", size:4,	opcode: two(0xF000, 0x401E), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.p", size:4,	opcode: two(0xF000, 0x4C1E), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.s", size:4,	opcode: two(0xF000, 0x441E), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.w", size:4,	opcode: two(0xF000, 0x501E), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.x", size:4,	opcode: two(0xF000, 0x001E), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.x", size:4,	opcode: two(0xF000, 0x481E), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetexp.x", size:4,	opcode: two(0xF000, 0x001E), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.b", size:4,	opcode: two(0xF000, 0x581F), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.d", size:4,	opcode: two(0xF000, 0x541F), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.l", size:4,	opcode: two(0xF000, 0x401F), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.p", size:4,	opcode: two(0xF000, 0x4C1F), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.s", size:4,	opcode: two(0xF000, 0x441F), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.w", size:4,	opcode: two(0xF000, 0x501F), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.x", size:4,	opcode: two(0xF000, 0x001F), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.x", size:4,	opcode: two(0xF000, 0x481F), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fgetman.x", size:4,	opcode: two(0xF000, 0x001F), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.b", size:4,opcode: two(0xF000, 0x5808), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.d", size:4,opcode: two(0xF000, 0x5408), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.l", size:4,opcode: two(0xF000, 0x4008), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.p", size:4,opcode: two(0xF000, 0x4C08), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.s", size:4,opcode: two(0xF000, 0x4408), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.w", size:4,opcode: two(0xF000, 0x5008), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.x", size:4,opcode: two(0xF000, 0x0008), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.x", size:4,opcode: two(0xF000, 0x4808), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fetoxm1.x", size:4,opcode: two(0xF000, 0x0008), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.b", size:4,opcode: two(0xF000, 0x581E), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.d", size:4,opcode: two(0xF000, 0x541E), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.l", size:4,opcode: two(0xF000, 0x401E), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.p", size:4,opcode: two(0xF000, 0x4C1E), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.s", size:4,opcode: two(0xF000, 0x441E), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.w", size:4,opcode: two(0xF000, 0x501E), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.x", size:4,opcode: two(0xF000, 0x001E), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.x", size:4,opcode: two(0xF000, 0x481E), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetexp.x", size:4,opcode: two(0xF000, 0x001E), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.b", size:4,opcode: two(0xF000, 0x581F), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.d", size:4,opcode: two(0xF000, 0x541F), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.l", size:4,opcode: two(0xF000, 0x401F), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.p", size:4,opcode: two(0xF000, 0x4C1F), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.s", size:4,opcode: two(0xF000, 0x441F), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.w", size:4,opcode: two(0xF000, 0x501F), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.x", size:4,opcode: two(0xF000, 0x001F), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.x", size:4,opcode: two(0xF000, 0x481F), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fgetman.x", size:4,opcode: two(0xF000, 0x001F), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "fint.b", size: 4,	opcode: two(0xF000, 0x5801), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fint.d", size: 4,	opcode: two(0xF000, 0x5401), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -713,25 +959,25 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fint.x", size: 4,	opcode: two(0xF000, 0x4801), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fint.x", size: 4,	opcode: two(0xF000, 0x0001), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fintrz.b", size: 4,	opcode: two(0xF000, 0x5803), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.d", size: 4,	opcode: two(0xF000, 0x5403), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.l", size: 4,	opcode: two(0xF000, 0x4003), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.p", size: 4,	opcode: two(0xF000, 0x4C03), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.s", size: 4,	opcode: two(0xF000, 0x4403), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.w", size: 4,	opcode: two(0xF000, 0x5003), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.x", size: 4,	opcode: two(0xF000, 0x0003), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.x", size: 4,	opcode: two(0xF000, 0x4803), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fintrz.x", size: 4,	opcode: two(0xF000, 0x0003), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
-	
-	{ name: "flog10.b", size: 4,	opcode: two(0xF000, 0x5815), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.d", size: 4,	opcode: two(0xF000, 0x5415), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.l", size: 4,	opcode: two(0xF000, 0x4015), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.p", size: 4,	opcode: two(0xF000, 0x4C15), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.s", size: 4,	opcode: two(0xF000, 0x4415), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.w", size: 4,	opcode: two(0xF000, 0x5015), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.x", size: 4,	opcode: two(0xF000, 0x0015), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.x", size: 4,	opcode: two(0xF000, 0x4815), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flog10.x", size: 4,	opcode: two(0xF000, 0x0015), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.b", size: 4,opcode: two(0xF000, 0x5803), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.d", size: 4,opcode: two(0xF000, 0x5403), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.l", size: 4,opcode: two(0xF000, 0x4003), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.p", size: 4,opcode: two(0xF000, 0x4C03), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.s", size: 4,opcode: two(0xF000, 0x4403), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.w", size: 4,opcode: two(0xF000, 0x5003), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.x", size: 4,opcode: two(0xF000, 0x0003), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.x", size: 4,opcode: two(0xF000, 0x4803), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fintrz.x", size: 4,opcode: two(0xF000, 0x0003), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+
+	{ name: "flog10.b", size: 4,opcode: two(0xF000, 0x5815), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.d", size: 4,opcode: two(0xF000, 0x5415), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.l", size: 4,opcode: two(0xF000, 0x4015), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.p", size: 4,opcode: two(0xF000, 0x4C15), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.s", size: 4,opcode: two(0xF000, 0x4415), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.w", size: 4,opcode: two(0xF000, 0x5015), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.x", size: 4,opcode: two(0xF000, 0x0015), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.x", size: 4,opcode: two(0xF000, 0x4815), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flog10.x", size: 4,opcode: two(0xF000, 0x0015), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "flog2.b", size: 4,	opcode: two(0xF000, 0x5816), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "flog2.d", size: 4,	opcode: two(0xF000, 0x5416), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -753,15 +999,15 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "flogn.x", size: 4,	opcode: two(0xF000, 0x4814), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "flogn.x", size: 4,	opcode: two(0xF000, 0x0014), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "flognp1.b", size:4,	opcode: two(0xF000, 0x5806), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.d", size:4,	opcode: two(0xF000, 0x5406), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.l", size:4,	opcode: two(0xF000, 0x4006), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.p", size:4,	opcode: two(0xF000, 0x4C06), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.s", size:4,	opcode: two(0xF000, 0x4406), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.w", size:4,	opcode: two(0xF000, 0x5006), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.x", size:4,	opcode: two(0xF000, 0x0006), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.x", size:4,	opcode: two(0xF000, 0x4806), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "flognp1.x", size:4,	opcode: two(0xF000, 0x0006), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.b", size:4,opcode: two(0xF000, 0x5806), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.d", size:4,opcode: two(0xF000, 0x5406), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.l", size:4,opcode: two(0xF000, 0x4006), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.p", size:4,opcode: two(0xF000, 0x4C06), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.s", size:4,opcode: two(0xF000, 0x4406), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.w", size:4,opcode: two(0xF000, 0x5006), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.x", size:4,opcode: two(0xF000, 0x0006), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.x", size:4,opcode: two(0xF000, 0x4806), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "flognp1.x", size:4,opcode: two(0xF000, 0x0006), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "fmod.b", size: 4,	opcode: two(0xF000, 0x5821), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fmod.d", size: 4,	opcode: two(0xF000, 0x5421), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -793,43 +1039,43 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fmove.x", size: 4,	opcode: two(0xF000, 0x4800), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fmove.x", size: 4,	opcode: two(0xF000, 0x6800), match: two(0xF1C0, 0xFC7F), args: "IiF7~x", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fsmove.b", size: 4,	opcode: two(0xF000, 0x5840), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.d", size: 4,	opcode: two(0xF000, 0x5440), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.l", size: 4,	opcode: two(0xF000, 0x4040), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.s", size: 4,	opcode: two(0xF000, 0x4440), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.w", size: 4,	opcode: two(0xF000, 0x5040), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.x", size: 4,	opcode: two(0xF000, 0x0040), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.x", size: 4,	opcode: two(0xF000, 0x4840), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fsmove.p", size: 4,	opcode: two(0xF000, 0x4C40), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
-	
-	{ name: "fdmove.b", size: 4,	opcode: two(0xF000, 0x5844), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.d", size: 4,	opcode: two(0xF000, 0x5444), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.l", size: 4,	opcode: two(0xF000, 0x4044), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.s", size: 4,	opcode: two(0xF000, 0x4444), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.w", size: 4,	opcode: two(0xF000, 0x5044), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.x", size: 4,	opcode: two(0xF000, 0x0044), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.x", size: 4,	opcode: two(0xF000, 0x4844), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdmove.p", size: 4,	opcode: two(0xF000, 0x4C44), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.b", size: 4,opcode: two(0xF000, 0x5840), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.d", size: 4,opcode: two(0xF000, 0x5440), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.l", size: 4,opcode: two(0xF000, 0x4040), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.s", size: 4,opcode: two(0xF000, 0x4440), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.w", size: 4,opcode: two(0xF000, 0x5040), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.x", size: 4,opcode: two(0xF000, 0x0040), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.x", size: 4,opcode: two(0xF000, 0x4840), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fsmove.p", size: 4,opcode: two(0xF000, 0x4C40), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
+
+	{ name: "fdmove.b", size: 4,opcode: two(0xF000, 0x5844), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.d", size: 4,opcode: two(0xF000, 0x5444), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.l", size: 4,opcode: two(0xF000, 0x4044), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.s", size: 4,opcode: two(0xF000, 0x4444), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.w", size: 4,opcode: two(0xF000, 0x5044), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.x", size: 4,opcode: two(0xF000, 0x0044), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.x", size: 4,opcode: two(0xF000, 0x4844), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdmove.p", size: 4,opcode: two(0xF000, 0x4C44), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
 	
 	{ name: "fmovecrx", size:4,	opcode: two(0xF000, 0x5C00), match: two(0xF1FF, 0xFC00), args: "Ii#CF7", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xF800), match: two(0xF1C0, 0xFF8F), args: "IiDk&s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF020, 0xE800), match: two(0xF1F8, 0xFF8F), args: "IiDk-s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xD800), match: two(0xF1C0, 0xFF8F), args: "Ii&sDk", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF018, 0xD800), match: two(0xF1F8, 0xFF8F), args: "Ii+sDk", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xF000), match: two(0xF1C0, 0xFF00), args: "Idl3&s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xF000), match: two(0xF1C0, 0xFF00), args: "Id#3&s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xD000), match: two(0xF1C0, 0xFF00), args: "Id&sl3", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF000, 0xD000), match: two(0xF1C0, 0xFF00), args: "Id&s#3", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF020, 0xE000), match: two(0xF1F8, 0xFF00), args: "IdL3-s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF020, 0xE000), match: two(0xF1F8, 0xFF00), args: "Id#3-s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF018, 0xD000), match: two(0xF1F8, 0xFF00), args: "Id+sl3", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.x", size: 4,	opcode: two(0xF018, 0xD000), match: two(0xF1F8, 0xFF00), args: "Id+s#3", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xF800), match: two(0xF1C0, 0xFF8F), args: "IiDk&s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF020, 0xE800), match: two(0xF1F8, 0xFF8F), args: "IiDk-s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xD800), match: two(0xF1C0, 0xFF8F), args: "Ii&sDk", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF018, 0xD800), match: two(0xF1F8, 0xFF8F), args: "Ii+sDk", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xF000), match: two(0xF1C0, 0xFF00), args: "Idl3&s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xF000), match: two(0xF1C0, 0xFF00), args: "Id#3&s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xD000), match: two(0xF1C0, 0xFF00), args: "Id&sl3", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF000, 0xD000), match: two(0xF1C0, 0xFF00), args: "Id&s#3", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF020, 0xE000), match: two(0xF1F8, 0xFF00), args: "IdL3-s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF020, 0xE000), match: two(0xF1F8, 0xFF00), args: "Id#3-s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF018, 0xD000), match: two(0xF1F8, 0xFF00), args: "Id+sl3", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.x", size: 4,opcode: two(0xF018, 0xD000), match: two(0xF1F8, 0xFF00), args: "Id+s#3", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fmovem.l", size: 4,	opcode: two(0xF000, 0xA000), match: two(0xF1C0, 0xE3FF), args: "Iis8%s", arch: mfloat , type: dis.nonbranch },
-	{ name: "fmovem.l", size: 4,	opcode: two(0xF000, 0xA000), match: two(0xF1C0, 0xE3FF), args: "IiL8~s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.l", size: 4,opcode: two(0xF000, 0xA000), match: two(0xF1C0, 0xE3FF), args: "Iis8%s", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.l", size: 4,opcode: two(0xF000, 0xA000), match: two(0xF1C0, 0xE3FF), args: "IiL8~s", arch: mfloat , type: dis.nonbranch },
 	// FIXME: In the next instruction, we should only permit %dn if the target is a single register.  We should only permit %an if the target is a single %fpiar.
-	{ name: "fmovem.l", size: 4,	opcode: two(0xF000, 0x8000), match: two(0xF1C0, 0xE3FF), args: "Ii*lL8", arch: mfloat , type: dis.nonbranch },
+	{ name: "fmovem.l", size: 4,opcode: two(0xF000, 0x8000), match: two(0xF1C0, 0xE3FF), args: "Ii*lL8", arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "fmovem", size: 4,	opcode: two(0xF020, 0xE000), match: two(0xF1F8, 0xFF00), args: "IdL3-s", arch: mfloat , type: dis.nonbranch },
 	{ name: "fmovem", size: 4,	opcode: two(0xF000, 0xF000), match: two(0xF1C0, 0xFF00), args: "Idl3&s", arch: mfloat , type: dis.nonbranch },
@@ -918,14 +1164,14 @@ const m68k_opcodes: m68k_opcode[] = [
 	
 	{ name: "fsave", size: 2,	opcode: one(0xF100),		 match: one(0xF1C0), args: "Id>s", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fscale.b", size: 4,	opcode: two(0xF000, 0x5826), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.d", size: 4,	opcode: two(0xF000, 0x5426), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.l", size: 4,	opcode: two(0xF000, 0x4026), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.p", size: 4,	opcode: two(0xF000, 0x4C26), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.s", size: 4,	opcode: two(0xF000, 0x4426), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.w", size: 4,	opcode: two(0xF000, 0x5026), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.x", size: 4,	opcode: two(0xF000, 0x0026), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fscale.x", size: 4,	opcode: two(0xF000, 0x4826), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.b", size: 4,opcode: two(0xF000, 0x5826), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.d", size: 4,opcode: two(0xF000, 0x5426), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.l", size: 4,opcode: two(0xF000, 0x4026), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.p", size: 4,opcode: two(0xF000, 0x4C26), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.s", size: 4,opcode: two(0xF000, 0x4426), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.w", size: 4,opcode: two(0xF000, 0x5026), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.x", size: 4,opcode: two(0xF000, 0x0026), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fscale.x", size: 4,opcode: two(0xF000, 0x4826), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	
 	// $ is necessary to prevent the assembler from using PC-relative.If used, "label: fseq label" could produce "ftrapeq", size: 2, because "label" became "pc@label".
 	{ name: "fseq", size: 4,	opcode: two(0xF040, 0x0001), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
@@ -961,25 +1207,25 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fsult", size: 4,	opcode: two(0xF040, 0x000C), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsun", size: 4,	opcode: two(0xF040, 0x0008), match: two(0xF1C0, 0xFFFF), args: "Ii$s", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fsgldiv.b", size:4,	opcode: two(0xF000, 0x5824), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.d", size:4,	opcode: two(0xF000, 0x5424), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.l", size:4,	opcode: two(0xF000, 0x4024), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.p", size:4,	opcode: two(0xF000, 0x4C24), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.s", size:4,	opcode: two(0xF000, 0x4424), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.w", size:4,	opcode: two(0xF000, 0x5024), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.x", size:4,	opcode: two(0xF000, 0x0024), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.x", size:4,	opcode: two(0xF000, 0x4824), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsgldiv.x", size:4,	opcode: two(0xF000, 0x0024), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.b", size:4,opcode: two(0xF000, 0x5824), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.d", size:4,opcode: two(0xF000, 0x5424), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.l", size:4,opcode: two(0xF000, 0x4024), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.p", size:4,opcode: two(0xF000, 0x4C24), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.s", size:4,opcode: two(0xF000, 0x4424), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.w", size:4,opcode: two(0xF000, 0x5024), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.x", size:4,opcode: two(0xF000, 0x0024), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.x", size:4,opcode: two(0xF000, 0x4824), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsgldiv.x", size:4,opcode: two(0xF000, 0x0024), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 
-	{ name: "fsglmul.b", size:4,	opcode: two(0xF000, 0x5827), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.d", size:4,	opcode: two(0xF000, 0x5427), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.l", size:4,	opcode: two(0xF000, 0x4027), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.p", size:4,	opcode: two(0xF000, 0x4C27), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.s", size:4,	opcode: two(0xF000, 0x4427), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.w", size:4,	opcode: two(0xF000, 0x5027), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.x", size:4,	opcode: two(0xF000, 0x0027), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.x", size:4,	opcode: two(0xF000, 0x4827), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsglmul.x", size:4,	opcode: two(0xF000, 0x0027), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.b", size:4,opcode: two(0xF000, 0x5827), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.d", size:4,opcode: two(0xF000, 0x5427), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.l", size:4,opcode: two(0xF000, 0x4027), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.p", size:4,opcode: two(0xF000, 0x4C27), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.s", size:4,opcode: two(0xF000, 0x4427), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.w", size:4,opcode: two(0xF000, 0x5027), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.x", size:4,opcode: two(0xF000, 0x0027), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.x", size:4,opcode: two(0xF000, 0x4827), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsglmul.x", size:4,opcode: two(0xF000, 0x0027), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "fsin.b", size: 4,	opcode: two(0xF000, 0x580E), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsin.d", size: 4,	opcode: two(0xF000, 0x540E), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -991,14 +1237,14 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fsin.x", size: 4,	opcode: two(0xF000, 0x480E), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsin.x", size: 4,	opcode: two(0xF000, 0x000E), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fsincos.b", size:4,	opcode: two(0xF000, 0x5830), match: two(0xF1C0, 0xFC78), args: "Ii;bF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.d", size:4,	opcode: two(0xF000, 0x5430), match: two(0xF1C0, 0xFC78), args: "Ii;FF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.l", size:4,	opcode: two(0xF000, 0x4030), match: two(0xF1C0, 0xFC78), args: "Ii;lF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.p", size:4,	opcode: two(0xF000, 0x4C30), match: two(0xF1C0, 0xFC78), args: "Ii;pF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.s", size:4,	opcode: two(0xF000, 0x4430), match: two(0xF1C0, 0xFC78), args: "Ii;fF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.w", size:4,	opcode: two(0xF000, 0x5030), match: two(0xF1C0, 0xFC78), args: "Ii;wF3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.x", size:4,	opcode: two(0xF000, 0x0030), match: two(0xF1C0, 0xE078), args: "IiF8F3F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "fsincos.x", size:4,	opcode: two(0xF000, 0x4830), match: two(0xF1C0, 0xFC78), args: "Ii;xF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.b", size:4,opcode: two(0xF000, 0x5830), match: two(0xF1C0, 0xFC78), args: "Ii;bF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.d", size:4,opcode: two(0xF000, 0x5430), match: two(0xF1C0, 0xFC78), args: "Ii;FF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.l", size:4,opcode: two(0xF000, 0x4030), match: two(0xF1C0, 0xFC78), args: "Ii;lF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.p", size:4,opcode: two(0xF000, 0x4C30), match: two(0xF1C0, 0xFC78), args: "Ii;pF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.s", size:4,opcode: two(0xF000, 0x4430), match: two(0xF1C0, 0xFC78), args: "Ii;fF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.w", size:4,opcode: two(0xF000, 0x5030), match: two(0xF1C0, 0xFC78), args: "Ii;wF3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.x", size:4,opcode: two(0xF000, 0x0030), match: two(0xF1C0, 0xE078), args: "IiF8F3F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "fsincos.x", size:4,opcode: two(0xF000, 0x4830), match: two(0xF1C0, 0xFC78), args: "Ii;xF3F7", arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "fsinh.b", size: 4,	opcode: two(0xF000, 0x5802), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsinh.d", size: 4,	opcode: two(0xF000, 0x5402), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -1020,25 +1266,25 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "fsqrt.x", size: 4,	opcode: two(0xF000, 0x4804), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsqrt.x", size: 4,	opcode: two(0xF000, 0x0004), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "fssqrt.b", size: 4,	opcode: two(0xF000, 0x5841), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.d", size: 4,	opcode: two(0xF000, 0x5441), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.l", size: 4,	opcode: two(0xF000, 0x4041), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.p", size: 4,	opcode: two(0xF000, 0x4C41), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.s", size: 4,	opcode: two(0xF000, 0x4441), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.w", size: 4,	opcode: two(0xF000, 0x5041), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.x", size: 4,	opcode: two(0xF000, 0x0041), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.x", size: 4,	opcode: two(0xF000, 0x4841), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fssqrt.x", size: 4,	opcode: two(0xF000, 0x0041), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.b", size: 4,opcode: two(0xF000, 0x5841), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.d", size: 4,opcode: two(0xF000, 0x5441), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.l", size: 4,opcode: two(0xF000, 0x4041), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.p", size: 4,opcode: two(0xF000, 0x4C41), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.s", size: 4,opcode: two(0xF000, 0x4441), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.w", size: 4,opcode: two(0xF000, 0x5041), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.x", size: 4,opcode: two(0xF000, 0x0041), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.x", size: 4,opcode: two(0xF000, 0x4841), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fssqrt.x", size: 4,opcode: two(0xF000, 0x0041), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: m68040up , type: dis.nonbranch },
 	
-	{ name: "fdsqrt.b", size: 4,	opcode: two(0xF000, 0x5845), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.d", size: 4,	opcode: two(0xF000, 0x5445), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.l", size: 4,	opcode: two(0xF000, 0x4045), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.p", size: 4,	opcode: two(0xF000, 0x4C45), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.s", size: 4,	opcode: two(0xF000, 0x4445), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.w", size: 4,	opcode: two(0xF000, 0x5045), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.x", size: 4,	opcode: two(0xF000, 0x0045), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.x", size: 4,	opcode: two(0xF000, 0x4845), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
-	{ name: "fdsqrt.x", size: 4,	opcode: two(0xF000, 0x0045), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.b", size: 4,opcode: two(0xF000, 0x5845), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.d", size: 4,opcode: two(0xF000, 0x5445), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.l", size: 4,opcode: two(0xF000, 0x4045), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.p", size: 4,opcode: two(0xF000, 0x4C45), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.s", size: 4,opcode: two(0xF000, 0x4445), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.w", size: 4,opcode: two(0xF000, 0x5045), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.x", size: 4,opcode: two(0xF000, 0x0045), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.x", size: 4,opcode: two(0xF000, 0x4845), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: m68040up , type: dis.nonbranch },
+	{ name: "fdsqrt.x", size: 4,opcode: two(0xF000, 0x0045), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: m68040up , type: dis.nonbranch },
 	
 	{ name: "fsub.b", size: 4,	opcode: two(0xF000, 0x5828), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "fsub.d", size: 4,	opcode: two(0xF000, 0x5428), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
@@ -1090,15 +1336,15 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ftanh.x", size: 4,	opcode: two(0xF000, 0x4809), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftanh.x", size: 4,	opcode: two(0xF000, 0x0009), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "ftentox.b", size:4,	opcode: two(0xF000, 0x5812), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.d", size:4,	opcode: two(0xF000, 0x5412), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.l", size:4,	opcode: two(0xF000, 0x4012), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.p", size:4,	opcode: two(0xF000, 0x4C12), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.s", size:4,	opcode: two(0xF000, 0x4412), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.w", size:4,	opcode: two(0xF000, 0x5012), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.x", size:4,	opcode: two(0xF000, 0x0012), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.x", size:4,	opcode: two(0xF000, 0x4812), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftentox.x", size:4,	opcode: two(0xF000, 0x0012), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.b", size:4,opcode: two(0xF000, 0x5812), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.d", size:4,opcode: two(0xF000, 0x5412), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.l", size:4,opcode: two(0xF000, 0x4012), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.p", size:4,opcode: two(0xF000, 0x4C12), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.s", size:4,opcode: two(0xF000, 0x4412), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.w", size:4,opcode: two(0xF000, 0x5012), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.x", size:4,opcode: two(0xF000, 0x0012), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.x", size:4,opcode: two(0xF000, 0x4812), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftentox.x", size:4,opcode: two(0xF000, 0x0012), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "ftrapeq", size: 4,	opcode: two(0xF07C, 0x0001), match: two(0xF1FF, 0xFFFF), args: "Ii", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapf", size: 4,	opcode: two(0xF07C, 0x0000), match: two(0xF1FF, 0xFFFF), args: "Ii", arch: mfloat , type: dis.nonbranch },
@@ -1133,71 +1379,71 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ftrapult", size:4,	opcode: two(0xF07C, 0x000C), match: two(0xF1FF, 0xFFFF), args: "Ii", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapun", size: 4,	opcode: two(0xF07C, 0x0008), match: two(0xF1FF, 0xFFFF), args: "Ii", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "ftrapeq.w", size:4,	opcode: two(0xF07A, 0x0001), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapf.w", size: 4,	opcode: two(0xF07A, 0x0000), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapge.w", size:4,	opcode: two(0xF07A, 0x0013), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgl.w", size:4,	opcode: two(0xF07A, 0x0016), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgle.w", size:4,opcode: two(0xF07A, 0x0017), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgt.w", size:4,	opcode: two(0xF07A, 0x0012), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftraple.w", size:4,	opcode: two(0xF07A, 0x0015), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftraplt.w", size:4,	opcode: two(0xF07A, 0x0014), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapne.w", size:4,	opcode: two(0xF07A, 0x000E), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnge.w", size:4,opcode: two(0xF07A, 0x001C), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapngl.w", size:4,opcode: two(0xF07A, 0x0019), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapeq.w", size:4,opcode: two(0xF07A, 0x0001), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapf.w", size: 4,opcode: two(0xF07A, 0x0000), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapge.w", size:4,opcode: two(0xF07A, 0x0013), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgl.w", size:4,opcode: two(0xF07A, 0x0016), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgle.w",size:4,opcode: two(0xF07A, 0x0017), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgt.w", size:4,opcode: two(0xF07A, 0x0012), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftraple.w", size:4,opcode: two(0xF07A, 0x0015), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftraplt.w", size:4,opcode: two(0xF07A, 0x0014), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapne.w", size:4,opcode: two(0xF07A, 0x000E), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnge.w",size:4,opcode: two(0xF07A, 0x001C), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapngl.w",size:4,opcode: two(0xF07A, 0x0019), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapngle.w",size:4,opcode: two(0xF07A, 0x0018), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapngt.w", size:4,opcode: two(0xF07A, 0x001D), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnle.w", size:4,opcode: two(0xF07A, 0x001A), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnlt.w", size:4,opcode: two(0xF07A, 0x001B), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapoge.w", size:4,opcode: two(0xF07A, 0x0003), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapogl.w", size:4,opcode: two(0xF07A, 0x0006), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapogt.w", size:4,opcode: two(0xF07A, 0x0002), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapolew.", size:4,opcode: two(0xF07A, 0x0005), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapolt.w", size:4,opcode: two(0xF07A, 0x0004), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapor.w", size:4,	opcode: two(0xF07A, 0x0007), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapngt.w",size:4,opcode: two(0xF07A, 0x001D), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnle.w",size:4,opcode: two(0xF07A, 0x001A), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnlt.w",size:4,opcode: two(0xF07A, 0x001B), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapoge.w",size:4,opcode: two(0xF07A, 0x0003), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapogl.w",size:4,opcode: two(0xF07A, 0x0006), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapogt.w",size:4,opcode: two(0xF07A, 0x0002), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapolew.",size:4,opcode: two(0xF07A, 0x0005), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapolt.w",size:4,opcode: two(0xF07A, 0x0004), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapor.w", size:4,opcode: two(0xF07A, 0x0007), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapseq.w", size:4,opcode: two(0xF07A, 0x0011), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapsf.w", size:4,	opcode: two(0xF07A, 0x0010), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapsf.w", size:4,opcode: two(0xF07A, 0x0010), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapsne.w", size:4,opcode: two(0xF07A, 0x001E), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapst.w", size:4,	opcode: two(0xF07A, 0x001F), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapt.w", size: 4,	opcode: two(0xF07A, 0x000F), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapueq.w", size:4,opcode: two(0xF07A, 0x0009), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapuge.w", size:4,opcode: two(0xF07A, 0x000B), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapugt.w", size:4,opcode: two(0xF07A, 0x000A), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapule.w", size:4,opcode: two(0xF07A, 0x000D), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapult.w", size:4,opcode: two(0xF07A, 0x000C), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapun.w", size:4,	opcode: two(0xF07A, 0x0008), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapst.w", size:4,opcode: two(0xF07A, 0x001F), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapt.w", size: 4,opcode: two(0xF07A, 0x000F), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapueq.w",size:4,opcode: two(0xF07A, 0x0009), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapuge.w",size:4,opcode: two(0xF07A, 0x000B), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapugt.w",size:4,opcode: two(0xF07A, 0x000A), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapule.w",size:4,opcode: two(0xF07A, 0x000D), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapult.w",size:4,opcode: two(0xF07A, 0x000C), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapun.w", size:4,opcode: two(0xF07A, 0x0008), match: two(0xF1FF, 0xFFFF), args: "Ii^w", arch: mfloat , type: dis.nonbranch },
 	
-	{ name: "ftrapeq.l", size:4,	opcode: two(0xF07B, 0x0001), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapf.l", size: 4,	opcode: two(0xF07B, 0x0000), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapge.l", size:4,	opcode: two(0xF07B, 0x0013), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgl.l", size:4,	opcode: two(0xF07B, 0x0016), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgle.l", size:4,opcode: two(0xF07B, 0x0017), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapgt.l", size:4,	opcode: two(0xF07B, 0x0012), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftraple.l", size:4,	opcode: two(0xF07B, 0x0015), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftraplt.l", size:4,	opcode: two(0xF07B, 0x0014), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapne.l", size:4,	opcode: two(0xF07B, 0x000E), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnge.l", size:4,opcode: two(0xF07B, 0x001C), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapngl.l", size:4,opcode: two(0xF07B, 0x0019), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapeq.l", size:4,opcode: two(0xF07B, 0x0001), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapf.l", size: 4,opcode: two(0xF07B, 0x0000), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapge.l", size:4,opcode: two(0xF07B, 0x0013), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgl.l", size:4,opcode: two(0xF07B, 0x0016), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgle.l",size:4,opcode: two(0xF07B, 0x0017), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapgt.l", size:4,opcode: two(0xF07B, 0x0012), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftraple.l", size:4,opcode: two(0xF07B, 0x0015), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftraplt.l", size:4,opcode: two(0xF07B, 0x0014), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapne.l", size:4,opcode: two(0xF07B, 0x000E), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnge.l",size:4,opcode: two(0xF07B, 0x001C), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapngl.l",size:4,opcode: two(0xF07B, 0x0019), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapngle.l",size:4,opcode: two(0xF07B, 0x0018), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapngt.l", size:4,opcode: two(0xF07B, 0x001D), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnle.l", size:4,opcode: two(0xF07B, 0x001A), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapnlt.l", size:4,opcode: two(0xF07B, 0x001B), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapoge.l", size:4,opcode: two(0xF07B, 0x0003), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapogl.l", size:4,opcode: two(0xF07B, 0x0006), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapogt.l", size:4,opcode: two(0xF07B, 0x0002), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapole.l", size:4,opcode: two(0xF07B, 0x0005), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapolt.l", size:4,opcode: two(0xF07B, 0x0004), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapor.l", size:4,	opcode: two(0xF07B, 0x0007), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapseq.l", size:4,opcode: two(0xF07B, 0x0011), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapsf.l", size:4,	opcode: two(0xF07B, 0x0010), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapsne.l", size:4,opcode: two(0xF07B, 0x001E), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapst.l", size:4,	opcode: two(0xF07B, 0x001F), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapngt.l",size:4,opcode: two(0xF07B, 0x001D), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnle.l",size:4,opcode: two(0xF07B, 0x001A), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapnlt.l",size:4,opcode: two(0xF07B, 0x001B), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapoge.l",size:4,opcode: two(0xF07B, 0x0003), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapogl.l",size:4,opcode: two(0xF07B, 0x0006), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapogt.l",size:4,opcode: two(0xF07B, 0x0002), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapole.l",size:4,opcode: two(0xF07B, 0x0005), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapolt.l",size:4,opcode: two(0xF07B, 0x0004), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapor.l", size:4,opcode: two(0xF07B, 0x0007), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapseq.l",size:4,opcode: two(0xF07B, 0x0011), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapsf.l", size:4,opcode: two(0xF07B, 0x0010), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapsne.l",size:4,opcode: two(0xF07B, 0x001E), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapst.l", size:4,opcode: two(0xF07B, 0x001F), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftrapt.l", size:4,	opcode: two(0xF07B, 0x000F), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapueq.l", size:4,opcode: two(0xF07B, 0x0009), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapuge.l", size:4,opcode: two(0xF07B, 0x000B), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapugt.l", size:4,opcode: two(0xF07B, 0x000A), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapule.l", size:4,opcode: two(0xF07B, 0x000D), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapult.l", size:4,opcode: two(0xF07B, 0x000C), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftrapun.l", size:4,	opcode: two(0xF07B, 0x0008), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapueq.l",size:4,opcode: two(0xF07B, 0x0009), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapuge.l",size:4,opcode: two(0xF07B, 0x000B), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapugt.l",size:4,opcode: two(0xF07B, 0x000A), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapule.l",size:4,opcode: two(0xF07B, 0x000D), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapult.l",size:4,opcode: two(0xF07B, 0x000C), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftrapun.l", size:4,opcode: two(0xF07B, 0x0008), match: two(0xF1FF, 0xFFFF), args: "Ii^l", arch: mfloat , type: dis.nonbranch },
 	
 	{ name: "ftst.b", size: 4,	opcode: two(0xF000, 0x583A), match: two(0xF1C0, 0xFC7F), args: "Ii;b", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftst.d", size: 4,	opcode: two(0xF000, 0x543A), match: two(0xF1C0, 0xFC7F), args: "Ii;F", arch: mfloat , type: dis.nonbranch },
@@ -1208,18 +1454,16 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ftst.x", size: 4,	opcode: two(0xF000, 0x003A), match: two(0xF1C0, 0xE07F), args: "IiF8", arch: mfloat , type: dis.nonbranch },
 	{ name: "ftst.x", size: 4,	opcode: two(0xF000, 0x483A), match: two(0xF1C0, 0xFC7F), args: "Ii;x", arch: mfloat , type: dis.nonbranch },
 
-	{ name: "ftwotox.b", size:4,	opcode: two(0xF000, 0x5811), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.d", size:4,	opcode: two(0xF000, 0x5411), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.l", size:4,	opcode: two(0xF000, 0x4011), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.p", size:4,	opcode: two(0xF000, 0x4C11), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.s", size:4,	opcode: two(0xF000, 0x4411), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.w", size:4,	opcode: two(0xF000, 0x5011), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.x", size:4,	opcode: two(0xF000, 0x0011), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.x", size:4,	opcode: two(0xF000, 0x4811), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
-	{ name: "ftwotox.x", size:4,	opcode: two(0xF000, 0x0011), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
-
+	{ name: "ftwotox.b", size:4,opcode: two(0xF000, 0x5811), match: two(0xF1C0, 0xFC7F), args: "Ii;bF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.d", size:4,opcode: two(0xF000, 0x5411), match: two(0xF1C0, 0xFC7F), args: "Ii;FF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.l", size:4,opcode: two(0xF000, 0x4011), match: two(0xF1C0, 0xFC7F), args: "Ii;lF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.p", size:4,opcode: two(0xF000, 0x4C11), match: two(0xF1C0, 0xFC7F), args: "Ii;pF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.s", size:4,opcode: two(0xF000, 0x4411), match: two(0xF1C0, 0xFC7F), args: "Ii;fF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.w", size:4,opcode: two(0xF000, 0x5011), match: two(0xF1C0, 0xFC7F), args: "Ii;wF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.x", size:4,opcode: two(0xF000, 0x0011), match: two(0xF1C0, 0xE07F), args: "IiF8F7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.x", size:4,opcode: two(0xF000, 0x4811), match: two(0xF1C0, 0xFC7F), args: "Ii;xF7", arch: mfloat , type: dis.nonbranch },
+	{ name: "ftwotox.x", size:4,opcode: two(0xF000, 0x0011), match: two(0xF1C0, 0xE07F), args: "IiFt",   arch: mfloat , type: dis.nonbranch },
 	// FLOAT ends here
-
 
 	{ name: "halt", size: 2,	opcode: one(0o0045310),	match: one(0o0177777), args: "",     arch: m68060 , type: dis.nonbranch },
 
@@ -1287,7 +1531,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "moveq", size: 2,	opcode: one(0o0070000),	match: one(0o0170400), args: "MsDd", arch: m68000up , type: dis.nonbranch },
 	{ name: "moveq", size: 2,	opcode: one(0o0070000),	match: one(0o0170400), args: "#BDd", arch: m68000up , type: dis.nonbranch },
 	
-	/* The move opcode can generate the movea and moveq instructions.  */
+	// The move opcode can generate the movea and moveq instructions.  
 	{ name: "move.b", size: 2,	opcode: one(0o0010000),	match: one(0o0170000), args: ";b$d", arch: m68000up , type: dis.nonbranch },
 
 	{ name: "move.w", size: 2,	opcode: one(0o0030000),	match: one(0o0170000), args: "*w%d", arch: m68000up , type: dis.nonbranch },
@@ -1356,7 +1600,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ori", size: 4,		opcode: one(0o0000100),	match: one(0o0177700), args: "#w$s", arch: m68000up , type: dis.nonbranch },
 	{ name: "ori", size: 4,		opcode: one(0o0000174),	match: one(0o0177777), args: "#wSs", arch: m68000up , type: dis.nonbranch },
 	
-	/* The or opcode can generate the ori instruction.  */
+	// The or opcode can generate the ori instruction.  
 	{ name: "or.b", size: 4,	opcode: one(0o0000000),	match: one(0o0177700), args: "#b$s", arch: m68000up , type: dis.nonbranch },
 	{ name: "or.b", size: 4,	opcode: one(0o0000074),	match: one(0o0177777), args: "#bCs", arch: m68000up , type: dis.nonbranch },
 	{ name: "or.b", size: 2,	opcode: one(0o0100000),	match: one(0o0170700), args: ";bDd", arch: m68000up , type: dis.nonbranch },
@@ -1368,58 +1612,58 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "or.l", size: 6,	opcode: one(0o0000200),	match: one(0o0177700), args: "#l$s", arch: m68000up , type: dis.nonbranch },
 	{ name: "or.l", size: 2,	opcode: one(0o0100200),	match: one(0o0170700), args: ";lDd", arch: m68000up , type: dis.nonbranch },
 	{ name: "or.l", size: 2,	opcode: one(0o0100600),	match: one(0o0170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
-	{ name: "or", size: 4,	opcode: one(0o0000074),	match: one(0o0177777), args: "#bCs", arch: m68000up , type: dis.nonbranch },
-	{ name: "or", size: 4,	opcode: one(0o0000100),	match: one(0o0177700), args: "#w$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "or", size: 4,	opcode: one(0o0000174),	match: one(0o0177777), args: "#wSs", arch: m68000up , type: dis.nonbranch },
-	{ name: "or", size: 2,	opcode: one(0o0100100),	match: one(0o0170700), args: ";wDd", arch: m68000up , type: dis.nonbranch },
-	{ name: "or", size: 2,	opcode: one(0o0100500),	match: one(0o0170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
+	{ name: "or", size: 4,		opcode: one(0o0000074),	match: one(0o0177777), args: "#bCs", arch: m68000up , type: dis.nonbranch },
+	{ name: "or", size: 4,		opcode: one(0o0000100),	match: one(0o0177700), args: "#w$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "or", size: 4,		opcode: one(0o0000174),	match: one(0o0177777), args: "#wSs", arch: m68000up , type: dis.nonbranch },
+	{ name: "or", size: 2,		opcode: one(0o0100100),	match: one(0o0170700), args: ";wDd", arch: m68000up , type: dis.nonbranch },
+	{ name: "or", size: 2,		opcode: one(0o0100500),	match: one(0o0170700), args: "Dd~s", arch: m68000up , type: dis.nonbranch },
 
-	{ name: "pack", size: 4, opcode:one(0o0100500),	match: one(0o0170770), args: "DsDd#w", arch: m68020up , type: dis.nonbranch },
-	{ name: "pack", size: 4, opcode:one(0o0100510),	match: one(0o0170770), args: "-s-d#w", arch: m68020up , type: dis.nonbranch },
+	{ name: "pack", size: 4, 	opcode:one(0o0100500),	match: one(0o0170770), args: "DsDd#w", arch: m68020up , type: dis.nonbranch },
+	{ name: "pack", size: 4, 	opcode:one(0o0100510),	match: one(0o0170770), args: "-s-d#w", arch: m68020up , type: dis.nonbranch },
 
 	// MMU opcodes missing here
 
-	{ name: "pea", size: 2,	opcode:one(0o0044100),		match: one(0o0177700), args: "!s", arch: m68000up , type: dis.nonbranch },
+	{ name: "pea", size: 2,		opcode:one(0o0044100),		match: one(0o0177700), args: "!s", arch: m68000up , type: dis.nonbranch },
 
 	{ name: "pflusha", size: 2,	opcode:one(0xf518),		match: one(0xfff8), args: "", arch: m68040up , type: dis.nonbranch },
 	{ name: "pflusha", size: 4,	opcode:two(0xf000,0x2400), match: two(0xffff,0xffff), args: "", arch: m68030 |m68851 , type: dis.nonbranch },
 	
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3010), match: two(0xffc0,0xfe10), args: "T3T9", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3810), match: two(0xffc0,0xfe10), args: "T3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3008), match: two(0xffc0,0xfe18), args: "D3T9", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3808), match: two(0xffc0,0xfe18), args: "D3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3000), match: two(0xffc0,0xfe1e), args: "f3T9", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pflush", size: 4,   opcode:two(0xf000,0x3800), match: two(0xffc0,0xfe1e), args: "f3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3010), match: two(0xffc0,0xfe10), args: "T3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3810), match: two(0xffc0,0xfe10), args: "T3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3008), match: two(0xffc0,0xfe18), args: "D3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3808), match: two(0xffc0,0xfe18), args: "D3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3000), match: two(0xffc0,0xfe1e), args: "f3T9", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pflush", size: 4,  opcode:two(0xf000,0x3800), match: two(0xffc0,0xfe1e), args: "f3T9&s", arch: m68030|m68851 , type: dis.nonbranch },
 	{ name: "pflush", size: 2,	opcode:one(0xf508),		match: one(0xfff8), args: "as", arch: m68040up , type: dis.nonbranch },
 	{ name: "pflush", size: 2,	opcode:one(0xf508),		match: one(0xfff8), args: "As", arch: m68040up , type: dis.nonbranch },
 	
-	{ name: "pflushan", size: 2,	opcode:one(0xf510),		match: one(0xfff8), args: "", arch: m68040up , type: dis.nonbranch },
+	{ name: "pflushan", size: 2,opcode:one(0xf510),		match: one(0xfff8), args: "", arch: m68040up , type: dis.nonbranch },
 	{ name: "pflushn", size: 2,	opcode:one(0xf500),		match: one(0xfff8), args: "as", arch: m68040up , type: dis.nonbranch },
 	{ name: "pflushn", size: 2,	opcode:one(0xf500),		match: one(0xfff8), args: "As", arch: m68040up , type: dis.nonbranch },
 	
-	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2210), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2208), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "ploadr", size: 4,   opcode:two(0xf000,0x2200), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2010), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2008), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "ploadw", size: 4,   opcode:two(0xf000,0x2000), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadr", size: 4,  opcode:two(0xf000,0x2210), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadr", size: 4,  opcode:two(0xf000,0x2208), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadr", size: 4,  opcode:two(0xf000,0x2200), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,  opcode:two(0xf000,0x2010), match: two(0xffc0,0xfff0), args: "T3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,  opcode:two(0xf000,0x2008), match: two(0xffc0,0xfff8), args: "D3&s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "ploadw", size: 4,  opcode:two(0xf000,0x2000), match: two(0xffc0,0xfffe), args: "f3&s", arch: m68030|m68851 , type: dis.nonbranch },
 	
 	{ name: "plpar", size: 2,	opcode:one(0xf5c8),		match: one(0xfff8), args: "as", arch: m68060 , type: dis.nonbranch },
 	{ name: "plpaw", size: 2,	opcode:one(0xf588),		match: one(0xfff8), args: "as", arch: m68060 , type: dis.nonbranch },
 	
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4000), match: two(0xffc0,0xffff), args: "*l08", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xffff), args: "08%s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x5e00), match: two(0xffc0,0xffff), args: "18%s", arch: m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "28%s", arch: m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4000), match: two(0xffc0,0xe3ff), args: "|sW8", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "W8~s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6000), match: two(0xffc0,0xffff), args: "*wY8", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6200), match: two(0xffc0,0xffff), args: "Y8%s", arch: m68030|m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6600), match: two(0xffc0,0xffff), args: "Z8%s", arch: m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6000), match: two(0xffc0,0xe3e3), args: "*wX3", arch: m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x6200), match: two(0xffc0,0xe3e3), args: "X3%s", arch: m68851 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x0800), match: two(0xffc0,0xfbff), args: "*l38", arch: m68030 , type: dis.nonbranch },
-	{ name: "pmove", size: 4,    opcode:two(0xf000,0x0a00), match: two(0xffc0,0xfbff), args: "38%s", arch: m68030 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x4000), match: two(0xffc0,0xffff), args: "*l08", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x4200), match: two(0xffc0,0xffff), args: "08%s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x5e00), match: two(0xffc0,0xffff), args: "18%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "28%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x4000), match: two(0xffc0,0xe3ff), args: "|sW8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x4200), match: two(0xffc0,0xe3ff), args: "W8~s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x6000), match: two(0xffc0,0xffff), args: "*wY8", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x6200), match: two(0xffc0,0xffff), args: "Y8%s", arch: m68030|m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x6600), match: two(0xffc0,0xffff), args: "Z8%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x6000), match: two(0xffc0,0xe3e3), args: "*wX3", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x6200), match: two(0xffc0,0xe3e3), args: "X3%s", arch: m68851 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x0800), match: two(0xffc0,0xfbff), args: "*l38", arch: m68030 , type: dis.nonbranch },
+	{ name: "pmove", size: 4,   opcode:two(0xf000,0x0a00), match: two(0xffc0,0xfbff), args: "38%s", arch: m68030 , type: dis.nonbranch },
 
 	{ name: "pmovefd", size: 4,	opcode:two(0xf000, 0x4100),	match: two(0xffc0, 0xe3ff), args: "*l08", arch: m68030 , type: dis.nonbranch },
 	{ name: "pmovefd", size: 4,	opcode:two(0xf000, 0x4100),	match: two(0xffc0, 0xe3ff), args: "|sW8", arch: m68030 , type: dis.nonbranch },
@@ -1441,68 +1685,68 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "ptestw", size: 4, 	opcode:two(0xf000,0x8100), match: two(0xffc0,0xe31e), args: "f3&st8A9", arch: m68030|m68851 , type: dis.nonbranch },
 	{ name: "ptestw", size: 2,	opcode:one(0xf548),		match: one(0xfff8), args: "as", arch: m68040 , type: dis.nonbranch },
 
-	{ name: "ptrapac.w", size: 6,	opcode: two(0xf07a, 0x0007),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapac.l", size: 6,	opcode: two(0xf07b, 0x0007),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapac.w",size: 6,opcode: two(0xf07a, 0x0007),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapac.l",size: 6,opcode: two(0xf07b, 0x0007),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapac", size: 4,	opcode: two(0xf07c, 0x0007),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapas.w", size: 6,	opcode: two(0xf07a, 0x0006),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapas.l", size: 6,	opcode: two(0xf07b, 0x0006),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapas.w",size: 6,opcode: two(0xf07a, 0x0006),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapas.l",size: 6,opcode: two(0xf07b, 0x0006),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapas", size: 4,	opcode: two(0xf07c, 0x0006),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
-	{ name: "ptrapbc.w", size: 6,	opcode: two(0xf07a, 0x0001),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapbc.l", size: 6,	opcode: two(0xf07b, 0x0001),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbc.w",size: 6,opcode: two(0xf07a, 0x0001),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbc.l",size: 6,opcode: two(0xf07b, 0x0001),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapbc", size: 4,	opcode: two(0xf07c, 0x0001),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
-	{ name: "ptrapbs.w", size: 6,	opcode: two(0xf07a, 0x0000),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapbs.l", size: 6,	opcode: two(0xf07b, 0x0000),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbs.w",size: 6,opcode: two(0xf07a, 0x0000),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapbs.l",size: 6,opcode: two(0xf07b, 0x0000),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapbs", size: 4,	opcode: two(0xf07c, 0x0000),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
-	{ name: "ptrapcc.w", size: 6,	opcode: two(0xf07a, 0x000f),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapcc.l", size: 6,	opcode: two(0xf07b, 0x000f),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcc.w",size: 6,opcode: two(0xf07a, 0x000f),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcc.l",size: 6,opcode: two(0xf07b, 0x000f),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapcc", size: 4,	opcode: two(0xf07c, 0x000f),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
-	{ name: "ptrapcs.w", size: 6,	opcode: two(0xf07a, 0x000e),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapcs.l", size: 6,	opcode: two(0xf07b, 0x000e),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcs.w",size: 6,opcode: two(0xf07a, 0x000e),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapcs.l",size: 6,opcode: two(0xf07b, 0x000e),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapcs", size: 4,	opcode: two(0xf07c, 0x000e),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
-	{ name: "ptrapgc.w", size: 6,	opcode: two(0xf07a, 0x000d),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapgc.l", size: 6,	opcode: two(0xf07b, 0x000d),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgc.w",size: 6,opcode: two(0xf07a, 0x000d),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgc.l",size: 6,opcode: two(0xf07b, 0x000d),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapgc", size: 4,	opcode: two(0xf07c, 0x000d),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapgs.w", size: 6,	opcode: two(0xf07a, 0x000c),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapgs.l", size: 6,	opcode: two(0xf07b, 0x000c),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgs.w",size: 6,opcode: two(0xf07a, 0x000c),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapgs.l",size: 6,opcode: two(0xf07b, 0x000c),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapgs", size: 4,	opcode: two(0xf07c, 0x000c),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapic.w", size: 6,	opcode: two(0xf07a, 0x000b),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapic.l", size: 6,	opcode: two(0xf07b, 0x000b),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapic.w",size: 6,opcode: two(0xf07a, 0x000b),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapic.l",size: 6,opcode: two(0xf07b, 0x000b),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapic", size: 4,	opcode: two(0xf07c, 0x000b),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapis.w", size: 6,	opcode: two(0xf07a, 0x000a),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapis.l", size: 6,	opcode: two(0xf07b, 0x000a),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapis.w",size: 6,opcode: two(0xf07a, 0x000a),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapis.l",size: 6,opcode: two(0xf07b, 0x000a),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapis", size: 4,	opcode: two(0xf07c, 0x000a),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptraplc.w", size: 6,	opcode: two(0xf07a, 0x0003),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptraplc.l", size: 6,	opcode: two(0xf07b, 0x0003),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptraplc.w",size: 6,opcode: two(0xf07a, 0x0003),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptraplc.l",size: 6,opcode: two(0xf07b, 0x0003),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptraplc", size: 4,	opcode: two(0xf07c, 0x0003),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapls.w", size: 6,	opcode: two(0xf07a, 0x0002),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapls.l", size: 6,	opcode: two(0xf07b, 0x0002),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapls.w",size: 6,opcode: two(0xf07a, 0x0002),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapls.l",size: 6,opcode: two(0xf07b, 0x0002),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapls", size: 4,	opcode: two(0xf07c, 0x0002),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapsc.w", size: 6,	opcode: two(0xf07a, 0x0005),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapsc.l", size: 6,	opcode: two(0xf07b, 0x0005),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapsc.w",size: 6,opcode: two(0xf07a, 0x0005),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapsc.l",size: 6,opcode: two(0xf07b, 0x0005),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapsc", size: 4,	opcode: two(0xf07c, 0x0005),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapss.w", size: 6,	opcode: two(0xf07a, 0x0004),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapss.l", size: 6,	opcode: two(0xf07b, 0x0004),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapss.w",size: 6,opcode: two(0xf07a, 0x0004),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapss.l",size: 6,opcode: two(0xf07b, 0x0004),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapss", size: 4,	opcode: two(0xf07c, 0x0004),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapwc.w", size: 6,	opcode: two(0xf07a, 0x0009),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapwc.l", size: 6,	opcode: two(0xf07b, 0x0009),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapwc.w",size: 6,opcode: two(0xf07a, 0x0009),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapwc.l",size: 6,opcode: two(0xf07b, 0x0009),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapwc", size: 4,	opcode: two(0xf07c, 0x0009),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 	 
-	{ name: "ptrapws.w", size: 6,	opcode: two(0xf07a, 0x0008),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
-	{ name: "ptrapws.l", size: 6,	opcode: two(0xf07b, 0x0008),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapws.w",size: 6,opcode: two(0xf07a, 0x0008),	match: two(0xffff, 0xffff), args: "#w", arch: m68851 , type: dis.nonbranch },
+	{ name: "ptrapws.l",size: 6,opcode: two(0xf07b, 0x0008),	match: two(0xffff, 0xffff), args: "#l", arch: m68851 , type: dis.nonbranch },
 	{ name: "ptrapws", size: 4,	opcode: two(0xf07c, 0x0008),	match: two(0xffff, 0xffff), args: "",   arch: m68851 , type: dis.nonbranch },
 
 	{ name: "pulse", size: 2,	opcode:one(0o045314),		match: one(0o177777), args: "", arch: m68060 , type: dis.nonbranch },
@@ -1541,15 +1785,15 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "roxr.l", size: 2,	opcode:one(0o160220),		match: one(0o170770), args: "QdDs", arch: m68000up , type: dis.nonbranch },
 	{ name: "roxr.l", size: 2,	opcode:one(0o160260),		match: one(0o170770), args: "DdDs", arch: m68000up , type: dis.nonbranch },
 	
-	{ name: "rtd", size: 4,	opcode:one(0o047164),		match: one(0o177777), args: "#w", arch: m68010up , type: dis.nonbranch },
+	{ name: "rtd", size: 4,		opcode:one(0o047164),		match: one(0o177777), args: "#w", arch: m68010up , type: dis.nonbranch },
 
-	{ name: "rte", size: 2,	opcode:one(0o047163),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+	{ name: "rte", size: 2,		opcode:one(0o047163),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
 
-	{ name: "rtm", size: 2,	opcode:one(0o003300),		match: one(0o177760), args: "Rs", arch: m68020 , type: dis.nonbranch },
+	{ name: "rtm", size: 2,		opcode:one(0o003300),		match: one(0o177760), args: "Rs", arch: m68020 , type: dis.nonbranch },
 
-	{ name: "rtr", size: 2,	opcode:one(0o047167),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+	{ name: "rtr", size: 2,		opcode:one(0o047167),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
 
-	{ name: "rts", size: 2,	opcode:one(0o047165),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
+	{ name: "rts", size: 2,		opcode:one(0o047165),		match: one(0o177777), args: "",   arch: m68000up , type: dis.nonbranch },
 	
 	{ name: "sbcd", size: 2,	opcode:one(0o100400),		match: one(0o170770), args: "DsDd", arch: m68000up , type: dis.nonbranch },
 	{ name: "sbcd", size: 2,	opcode:one(0o100410),		match: one(0o170770), args: "-s-d", arch: m68000up , type: dis.nonbranch },
@@ -1572,58 +1816,58 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "trapvc", size: 2,	opcode:one(0o054374),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
 	{ name: "trapvs", size: 2,	opcode:one(0o054774),	match: one(0o177777), args: "", arch: m68020up, type: dis.nonbranch },
 
-	{ name: "trapcc.w", size: 4,	opcode:one(0o052372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapcs.w", size: 4,	opcode:one(0o052772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapeq.w", size: 4,	opcode:one(0o053772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapf.w", size: 4,		opcode:one(0o050772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapge.w", size: 4,	opcode:one(0o056372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapgt.w", size: 4,	opcode:one(0o057372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "traphi.w", size: 4,	opcode:one(0o051372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "traple.w", size: 4,	opcode:one(0o057772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapls.w", size: 4,	opcode:one(0o051772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "traplt.w", size: 4,	opcode:one(0o056772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapmi.w", size: 4,	opcode:one(0o055772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapne.w", size: 4,	opcode:one(0o053372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trappl.w", size: 4,	opcode:one(0o055372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapt.w", size: 4,		opcode:one(0o050372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapvc.w", size: 4,	opcode:one(0o054372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapvs.w", size: 4,	opcode:one(0o054772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcc.w", size: 4,opcode:one(0o052372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcs.w", size: 4,opcode:one(0o052772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapeq.w", size: 4,opcode:one(0o053772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapf.w", size: 4,	opcode:one(0o050772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapge.w", size: 4,opcode:one(0o056372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapgt.w", size: 4,opcode:one(0o057372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traphi.w", size: 4,opcode:one(0o051372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traple.w", size: 4,opcode:one(0o057772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapls.w", size: 4,opcode:one(0o051772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "traplt.w", size: 4,opcode:one(0o056772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapmi.w", size: 4,opcode:one(0o055772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapne.w", size: 4,opcode:one(0o053372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trappl.w", size: 4,opcode:one(0o055372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapt.w", size: 4,	opcode:one(0o050372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvc.w", size: 4,opcode:one(0o054372),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvs.w", size: 4,opcode:one(0o054772),	match: one(0o177777), args: "#w", arch: m68020up, type: dis.nonbranch },
 
-	{ name: "trapcc.l", size: 6,	opcode:one(0o052373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapcs.l", size: 6,	opcode:one(0o052773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapeq.l", size: 6,	opcode:one(0o053773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapf.l", size: 6,		opcode:one(0o050773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapge.l", size: 6,	opcode:one(0o056373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapgt.l", size: 6,	opcode:one(0o057373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "traphi.l", size: 6,	opcode:one(0o051373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "traple.l", size: 6,	opcode:one(0o057773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapls.l", size: 6,	opcode:one(0o051773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "traplt.l", size: 6,	opcode:one(0o056773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapmi.l", size: 6,	opcode:one(0o055773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapne.l", size: 6,	opcode:one(0o053373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trappl.l", size: 6,	opcode:one(0o055373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapt.l", size: 6,		opcode:one(0o050373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapvc.l", size: 6,	opcode:one(0o054373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
-	{ name: "trapvs.l", size: 6,	opcode:one(0o054773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcc.l", size: 6,opcode:one(0o052373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapcs.l", size: 6,opcode:one(0o052773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapeq.l", size: 6,opcode:one(0o053773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapf.l", size: 6,	opcode:one(0o050773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapge.l", size: 6,opcode:one(0o056373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapgt.l", size: 6,opcode:one(0o057373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traphi.l", size: 6,opcode:one(0o051373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traple.l", size: 6,opcode:one(0o057773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapls.l", size: 6,opcode:one(0o051773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "traplt.l", size: 6,opcode:one(0o056773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapmi.l", size: 6,opcode:one(0o055773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapne.l", size: 6,opcode:one(0o053373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trappl.l", size: 6,opcode:one(0o055373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapt.l", size: 6,	opcode:one(0o050373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvc.l", size: 6,opcode:one(0o054373),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
+	{ name: "trapvs.l", size: 6,opcode:one(0o054773),	match: one(0o177777), args: "#l", arch: m68020up, type: dis.nonbranch },
 
 	{ name: "trapv", size: 2,	opcode:one(0o047166),	match: one(0o177777), args: "", arch: m68000up , type: dis.nonbranch },
 	
-	{ name: "scc", size: 2,	opcode:one(0o052300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "scs", size: 2,	opcode:one(0o052700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "seq", size: 2,	opcode:one(0o053700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sf", size: 2,	opcode:one(0o050700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sge", size: 2,	opcode:one(0o056300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sgt", size: 2,	opcode:one(0o057300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "shi", size: 2,	opcode:one(0o051300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sle", size: 2,	opcode:one(0o057700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sls", size: 2,	opcode:one(0o051700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "slt", size: 2,	opcode:one(0o056700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "smi", size: 2,	opcode:one(0o055700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "sne", size: 2,	opcode:one(0o053300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "spl", size: 2,	opcode:one(0o055300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "st", size: 2,	opcode:one(0o050300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "svc", size: 2,	opcode:one(0o054300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
-	{ name: "svs", size: 2,	opcode:one(0o054700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "scc", size: 2,		opcode:one(0o052300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "scs", size: 2,		opcode:one(0o052700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "seq", size: 2,		opcode:one(0o053700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sf", size: 2,		opcode:one(0o050700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sge", size: 2,		opcode:one(0o056300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sgt", size: 2,		opcode:one(0o057300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "shi", size: 2,		opcode:one(0o051300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sle", size: 2,		opcode:one(0o057700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sls", size: 2,		opcode:one(0o051700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "slt", size: 2,		opcode:one(0o056700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "smi", size: 2,		opcode:one(0o055700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "sne", size: 2,		opcode:one(0o053300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "spl", size: 2,		opcode:one(0o055300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "st", size: 2,		opcode:one(0o050300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "svc", size: 2,		opcode:one(0o054300),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
+	{ name: "svs", size: 2,		opcode:one(0o054700),	match: one(0o177700), args: "$s", arch: m68000up , type: dis.nonbranch },
 	
 	{ name: "stop", size: 4,	opcode:one(0o047162),	match: one(0o177777), args: "#w", arch: m68000up, type: dis.nonbranch },
 
@@ -1638,7 +1882,7 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "subq.w", size: 2,	opcode:one(0o050500),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
 	{ name: "subq.l", size: 2,	opcode:one(0o050600),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
 	
-	/* The sub opcode can generate the suba, subi, and subq instructions.  */
+	// The sub opcode can generate the suba, subi, and subq instructions.  
 	{ name: "sub.b", size: 2,	opcode:one(0o050400),	match: one(0o170700), args: "Qd%s", arch: m68000up , type: dis.nonbranch },
 	{ name: "sub.b", size: 4,	opcode:one(0o002000),	match: one(0o177700), args: "#b$s", arch: m68000up , type: dis.nonbranch },
 	{ name: "sub.b", size: 2,	opcode:one(0o110000),	match: one(0o170700), args: ";bDd", arch: m68000up , type: dis.nonbranch },
@@ -1680,254 +1924,6 @@ const m68k_opcodes: m68k_opcode[] = [
 	{ name: "unpk", size: 4,	opcode:one(0o100610),	match: one(0o170770), args: "-s-d#w", arch: m68020up , type: dis.nonbranch },
 ];
 
-// no size suffix
-const m68k_opcode_aliases_nosize: m68k_opcode_alias[] = [
-  { alias:"add",	primary:"add.w" },
-  { alias:"adda",	primary:"adda.w" },
-  { alias:"addi",	primary:"addi.w" },
-  { alias:"addq",	primary:"addq.w" },
-  { alias:"addx",	primary:"addx.w" },
-  { alias:"asl",	primary:"asl.w" },
-  { alias:"asr",	primary:"asr.w" },
-  { alias:"bhi",	primary:"bhi.w" },
-  { alias:"bls",	primary:"bls.w" },
-  { alias:"bcc",	primary:"bcc.w" },
-  { alias:"bcs",	primary:"bcs.w" },
-  { alias:"bne",	primary:"bne.w" },
-  { alias:"beq",	primary:"beq.w" },
-  { alias:"bvc",	primary:"bvc.w" },
-  { alias:"bvs",	primary:"bvs.w" },
-  { alias:"bpl",	primary:"bpl.w" },
-  { alias:"bmi",	primary:"bmi.w" },
-  { alias:"bge",	primary:"bge.w" },
-  { alias:"blt",	primary:"blt.w" },
-  { alias:"bgt",	primary:"bgt.w" },
-  { alias:"ble",	primary:"ble.w" },
-  { alias:"bra",	primary:"bra.w" },
-  { alias:"bsr",	primary:"bsr.w" },
-  { alias:"cas2",	primary:"cas2.w" },
-  { alias:"cas",	primary:"cas.w" },
-  { alias:"chk2",	primary:"chk2.w" },
-  { alias:"chk",	primary:"chk.w" },
-  { alias:"clr",	primary:"clr.w" },
-  { alias:"cmp2",	primary:"cmp2.w" },
-  { alias:"cmpa",	primary:"cmpa.w" },
-  { alias:"cmpi",	primary:"cmpi.w" },
-  { alias:"cmpm",	primary:"cmpm.w" },
-  { alias:"cmp",	primary:"cmp.w" },
-  { alias:"divs",	primary:"divs.w" },
-  { alias:"divu",	primary:"divu.w" },
-  { alias:"ext",	primary:"ext.w" },
-  { alias:"lsl",	primary:"lsl.w" },
-  { alias:"lsr",	primary:"lsr.w" },
-  { alias:"movea",	primary:"movea.w" },
-  { alias:"movem",	primary:"movem.w" },
-  { alias:"movep",	primary:"movep.w" },
-  { alias:"muls",	primary:"muls.w" },
-  { alias:"mulu",	primary:"mulu.w" },
-  { alias:"neg",	primary:"neg.w" },
-  { alias:"negx",	primary:"negx.w" },
-  { alias:"not",	primary:"not.w" },
-  { alias:"rol",	primary:"rol.w" },
-  { alias:"ror",	primary:"ror.w" },
-  { alias:"roxl",	primary:"roxl.w" },
-  { alias:"roxr",	primary:"roxr.w" },
-  { alias:"tst",	primary:"tst.w" },
-  { alias:"suba",	primary:"suba.w" },
-  { alias:"subi",	primary:"subi.w" },
-  { alias:"subq",	primary:"subq.w" },
-  { alias:"sub",	primary:"sub.w" },
-  { alias:"subx",	primary:"subx.w" },
-];
-
-const m68k_opcode_aliases_branch: m68k_opcode_alias[] = [
-	{ alias:"dbra",	primary:"dbf" },
-	{ alias:"jbra",	primary:"jra" },
-	{ alias:"jbhi",	primary:"jhi" },
-	{ alias:"jbls",	primary:"jls" },
-	{ alias:"jbcc",	primary:"jcc" },
-	{ alias:"jbcs",	primary:"jcs" },
-	{ alias:"jbne",	primary:"jne" },
-	{ alias:"jbeq",	primary:"jeq" },
-	{ alias:"jbvc",	primary:"jvc" },
-	{ alias:"jbvs",	primary:"jvs" },
-	{ alias:"jbpl",	primary:"jpl" },
-	{ alias:"jbmi",	primary:"jmi" },
-	{ alias:"jbge",	primary:"jge" },
-	{ alias:"jblt",	primary:"jlt" },
-	{ alias:"jbgt",	primary:"jgt" },
-	{ alias:"jble",	primary:"jle" },
-  ];
-
-// obscure stuff
-const m68k_opcode_aliases2: m68k_opcode_alias[] = [
-  { alias:"bhib",	primary:"bhi.s" },
-  { alias:"blsb",	primary:"bls.s" },
-  { alias:"bccb",	primary:"bcc.s" },
-  { alias:"bcsb",	primary:"bcs.s" },
-  { alias:"bneb",	primary:"bne.s" },
-  { alias:"beqb",	primary:"beq.s" },
-  { alias:"bvcb",	primary:"bvc.s" },
-  { alias:"bvsb",	primary:"bvs.s" },
-  { alias:"bplb",	primary:"bpl.s" },
-  { alias:"bmib",	primary:"bmi.s" },
-  { alias:"bgeb",	primary:"bge.s" },
-  { alias:"bltb",	primary:"blt.s" },
-  { alias:"bgtb",	primary:"bgt.s" },
-  { alias:"bleb",	primary:"ble.s" },
-  { alias:"brab",	primary:"bra.s" },
-  { alias:"bsrb",	primary:"bsr.s" },
-  { alias:"bhs",	primary:"bcc.w" },
-  { alias:"bhss",	primary:"bcc.s" },
-  { alias:"bhsb",	primary:"bcc.s" },
-  { alias:"bhsw",	primary:"bcc.w" },
-  { alias:"bhsl",	primary:"bcc.l" },
-  { alias:"blo",	primary:"bcs.w" },
-  { alias:"blos",	primary:"bcs.s" },
-  { alias:"blob",	primary:"bcs.s" },
-  { alias:"blow",	primary:"bcs.w" },
-  { alias:"blol",	primary:"bcs.l" },
-  { alias:"br",		primary:"bra.w" },
-  { alias:"brs",	primary:"bra.s" },
-  { alias:"brb",	primary:"bra.s" },
-  { alias:"brw",	primary:"bra.w" },
-  { alias:"brl",	primary:"bra.l" },
-  { alias:"jfnlt",	primary:"bcc" },	/* Apparently a sun alias.  */
-  { alias:"jfngt",	primary:"ble" },	/* Apparently a sun alias.  */
-  { alias:"jfeq",	primary:"beq.s" },	/* Apparently a sun alias.  */
-  { alias:"bchgb",	primary:"bchg" },
-  { alias:"bchgl",	primary:"bchg" },
-  { alias:"bclrb",	primary:"bclr" },
-  { alias:"bclrl",	primary:"bclr" },
-  { alias:"bsetb",	primary:"bset" },
-  { alias:"bsetl",	primary:"bset" },
-  { alias:"btstb",	primary:"btst" },
-  { alias:"btstl",	primary:"btst" },
-  { alias:"dbccw",	primary:"dbcc" },
-  { alias:"dbcsw",	primary:"dbcs" },
-  { alias:"dbeqw",	primary:"dbeq" },
-  { alias:"dbfw",	primary:"dbf" },
-  { alias:"dbgew",	primary:"dbge" },
-  { alias:"dbgtw",	primary:"dbgt" },
-  { alias:"dbhiw",	primary:"dbhi" },
-  { alias:"dblew",	primary:"dble" },
-  { alias:"dblsw",	primary:"dbls" },
-  { alias:"dbltw",	primary:"dblt" },
-  { alias:"dbmiw",	primary:"dbmi" },
-  { alias:"dbnew",	primary:"dbne" },
-  { alias:"dbplw",	primary:"dbpl" },
-  { alias:"dbtw",	primary:"dbt" },
-  { alias:"dbvcw",	primary:"dbvc" },
-  { alias:"dbvsw",	primary:"dbvs" },
-  { alias:"dbhs",	primary:"dbcc" },
-  { alias:"dbhsw",	primary:"dbcc" },
-  { alias:"dbraw",	primary:"dbf" },
-  { alias:"tdivsl",	primary:"divsl.l" },
-  { alias:"extbw",	primary:"ext.w" },
-  { alias:"extwl",	primary:"ext.l" },
-  { alias:"fbneq",	primary:"fbne" },
-  { alias:"fbsneq",	primary:"fbsne" },
-  { alias:"fdbneq",	primary:"fdbne" },
-  { alias:"fdbsneq",primary:"fdbsne" },
-  { alias:"fmovecr",primary:"fmovecrx" },
-  { alias:"fmovm",	primary:"fmovem" },
-  { alias:"fsneq",	primary:"fsne" },
-  { alias:"fssneq",	primary:"fssne" },
-  { alias:"ftrapneq",primary:"ftrapne" },
-  { alias:"ftrapsneq", primary:"ftrapsne" },
-  { alias:"fjneq",	primary:"fjne" },
-  { alias:"fjsneq",	primary:"fjsne" },
-  { alias:"jmpl",	primary:"jmp" },
-  { alias:"jmps",	primary:"jmp" },
-  { alias:"jsrl",	primary:"jsr" },
-  { alias:"jsrs",	primary:"jsr" },
-  { alias:"leal",	primary:"lea" },
-  { alias:"movml",	primary:"movem.l" },
-  { alias:"movmw",	primary:"movem.w" },
-  { alias:"movm",	primary:"movem.w" },
-  { alias:"movpw",	primary:"movep.w" },
-  { alias:"moves",	primary:"moves.w" },
-  { alias:"nbcdb",	primary:"nbcd" },
-  { alias:"peal",	primary:"pea" },
-  { alias:"sats",	primary:"satsl" },
-  { alias:"sbcdb",	primary:"sbcd" },
-  { alias:"sccb",	primary:"scc" },
-  { alias:"scsb",	primary:"scs" },
-  { alias:"seqb",	primary:"seq" },
-  { alias:"sfb",	primary:"sf" },
-  { alias:"sgeb",	primary:"sge" },
-  { alias:"sgtb",	primary:"sgt" },
-  { alias:"shib",	primary:"shi" },
-  { alias:"sleb",	primary:"sle" },
-  { alias:"slsb",	primary:"sls" },
-  { alias:"sltb",	primary:"slt" },
-  { alias:"smib",	primary:"smi" },
-  { alias:"sneb",	primary:"sne" },
-  { alias:"splb",	primary:"spl" },
-  { alias:"stb",	primary:"st" },
-  { alias:"svcb",	primary:"svc" },
-  { alias:"svsb",	primary:"svs" },
-  { alias:"sfge",	primary:"sge" },
-  { alias:"sfgt",	primary:"sgt" },
-  { alias:"sfle",	primary:"sle" },
-  { alias:"sflt",	primary:"slt" },
-  { alias:"sfneq",	primary:"sne" },
-  { alias:"swapw",	primary:"swap" },
-  { alias:"tasb",	primary:"tas" },
-  { alias:"tpcc",	primary:"trapcc" },
-  { alias:"tcc",	primary:"trapcc" },
-  { alias:"movql",	primary:"moveq" },
-  { alias:"moveql",	primary:"moveq" },
-  { alias:"movl",	primary:"movel" },
-  { alias:"movq",	primary:"moveq" },
-  { alias:"moval",	primary:"movea.l" },
-  { alias:"movaw",	primary:"movea.w" },
-  { alias:"movb",	primary:"moveb" },
-  { alias:"movc",	primary:"movec" },
-  { alias:"movecl",	primary:"movec" },
-  { alias:"movpl",	primary:"movep.l" },
-  { alias:"movw",	primary:"movew" },
-  { alias:"movsb",	primary:"moves.b" },
-  { alias:"movsl",	primary:"moves.l" },
-  { alias:"movsw",	primary:"moves.w" },
-  { alias:"mov3q",	primary:"mov3q.l" },
-
-  { alias:"tdivul",	primary:"divul.l" },	/* For m68k-svr4.  */
-  { alias:"fmovb",	primary:"fmoveb" },
-  { alias:"fsmovb",	primary:"fsmoveb" },
-  { alias:"fdmovb",	primary:"fdmoveb" },
-  { alias:"fmovd",	primary:"fmoved" },
-  { alias:"fsmovd",	primary:"fsmoved" },
-  { alias:"fmovl",	primary:"fmovel" },
-  { alias:"fsmovl",	primary:"fsmovel" },
-  { alias:"fdmovl",	primary:"fdmovel" },
-  { alias:"fmovp",	primary:"fmovep" },
-  { alias:"fsmovp",	primary:"fsmovep" },
-  { alias:"fdmovp",	primary:"fdmovep" },
-  { alias:"fmovs",	primary:"fmoves" },
-  { alias:"fsmovs",	primary:"fsmoves" },
-  { alias:"fdmovs",	primary:"fdmoves" },
-  { alias:"fmovw",	primary:"fmovew" },
-  { alias:"fsmovw",	primary:"fsmovew" },
-  { alias:"fdmovw",	primary:"fdmovew" },
-  { alias:"fmovx",	primary:"fmovex" },
-  { alias:"fsmovx",	primary:"fsmovex" },
-  { alias:"fdmovx",	primary:"fdmovex" },
-  { alias:"fmovcr",	primary:"fmovecr" },
-  { alias:"fmovcrx",primary:"fmovecrx" },
-  { alias:"ftestb",	primary:"ftstb" },
-  { alias:"ftestd",	primary:"ftstd" },
-  { alias:"ftestl",	primary:"ftstl" },
-  { alias:"ftestp",	primary:"ftstp" },
-  { alias:"ftests",	primary:"ftsts" },
-  { alias:"ftestw",	primary:"ftstw" },
-  { alias:"ftestx",	primary:"ftstx" },
-
-  { alias:"bitrevl",  primary:"bitrev" },
-  { alias:"byterevl", primary:"byterev" },
-  { alias:"ff1l",     primary:"ff1" },
-];
-
 // ported from binutils-gdb/opcodes/m68k-dis.c, Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 
 const fpcr_names: string[] = [
@@ -1938,12 +1934,6 @@ const fpcr_names: string[] = [
 const reg_names: string[] = [
   "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
   "a0", "a1", "a2", "a3", "a4", "a5", "a6", "sp",
-  "ps", "pc"
-];
-
-const reg_half_names: string[] = [
-  "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
-  "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
   "ps", "pc"
 ];
 
@@ -1988,27 +1978,27 @@ function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 	let val = 0;
 
 	switch (code) {
-	case '/': /* MAC/EMAC mask bit.  */
+	case '/': // MAC/EMAC mask bit.  
 		val = buffer[3] >> 5;
 		break;
 
-	case 'G': /* EMAC ACC load.  */
+	case 'G': // EMAC ACC load.  
 		val = ((buffer[3] >> 3) & 0x2) | ((~buffer[1] >> 7) & 0x1);
 		break;
 
-	case 'H': /* EMAC ACC !load.  */
+	case 'H': // EMAC ACC !load.  
 		val = ((buffer[3] >> 3) & 0x2) | ((buffer[1] >> 7) & 0x1);
 		break;
 
-	case ']': /* EMAC ACCEXT bit.  */
+	case ']': // EMAC ACCEXT bit.  
 		val = buffer[0] >> 2;
 		break;
 
-	case 'I': /* MAC/EMAC scale factor.  */
+	case 'I': // MAC/EMAC scale factor.  
 		val = buffer[2] >> 1;
 		break;
 
-	case 'F': /* EMAC ACCx.  */
+	case 'F': // EMAC ACCx.  
 		val = buffer[0] >> 1;
 		break;
 
@@ -2020,12 +2010,12 @@ function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 		val = buffer[1];
 		break;
 
-	case 'd':			/* Destination, for register or quick.  */
+	case 'd':			// Destination, for register or quick.  
 		val = (buffer[0] << 8) + buffer[1];
 		val >>= 9;
 		break;
 
-	case 'x':			/* Destination, for general arg.  */
+	case 'x':			// Destination, for general arg.  
 		val = (buffer[0] << 8) + buffer[1];
 		val >>= 6;
 		break;
@@ -2117,10 +2107,10 @@ function fetch_arg(buffer: Uint8Array, code: string, bits: number): number {
 		break;
 
 	default:
-		//throw new Error("<internal error>"); // TODO: bei divu.l dürfen wir hier nicht hinkommen, wieso geht das in der C version?
+		throw new Error("<internal error>");
 	}
 
-	/* bits is never too big.  */
+	// bits is never too big.  
 	return val & ((1 << bits) - 1);
 }
 
@@ -2131,84 +2121,35 @@ function m68k_valid_ea(code: string, val: number): boolean {
 		(n0 | n1 << 1 | n2 << 2 | n3 << 3 | n4 << 4 | n5 << 5 | n6 << 6 | n70 << 7 | n71 << 8 | n72 << 9 | n73 << 10 | n74 << 11);
 
 	switch(code) {
-	case '*':
-		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-		break;
-	case '~':
-		mask = M(0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '%':
-		mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case ';':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-		break;
-	case '@':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '!':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '&':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '$':
-		mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '?':
-		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '/':
-		mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '|':
-		mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case '>':
-		mask = M(0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0);
-		break;
-	case '<':
-		mask = M(0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
-		break;
-	case 'm':
-		mask = M(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'n':
-		mask = M(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'o':
-		mask = M(0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1);
-		break;
-	case 'p':
-		mask = M(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'q':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'v':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0);
-		break;
-	case 'b':
-		mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'w':
-		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case 'y':
-		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	case 'z':
-		mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0);
-		break;
-	case '4':
-		mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0);
-		break;
-	default:
-		throw new Error("abort");
+	case '*': mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1); break;
+	case '~': mask = M(0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0); break;
+	case '%': mask = M(1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0); break;
+	case ';': mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1); break;
+	case '@': mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0); break;
+	case '!': mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0); break;
+	case '&': mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0); break;
+	case '$': mask = M(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0); break;
+	case '?': mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0); break;
+	case '/': mask = M(1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0); break;
+	case '|': mask = M(0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0); break;
+	case '>': mask = M(0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0); break;
+	case '<': mask = M(0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0); break;
+	case 'm': mask = M(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0); break;
+	case 'n': mask = M(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0); break;
+	case 'o': mask = M(0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1); break;
+	case 'p': mask = M(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0); break;
+	case 'q': mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0); break;
+	case 'v': mask = M(1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0); break;
+	case 'b': mask = M(1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0); break;
+	case 'w': mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0); break;
+	case 'y': mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0); break;
+	case 'z': mask = M(0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0); break;
+	case '4': mask = M(0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0); break;
+	default: throw new Error("abort");
 	}
 
 	let mode = (val >> 3) & 7;
-	if (mode === 7)
+	if(mode === 7)
 		mode += val & 7;
 	return (mask & (1 << mode)) !== 0;
 }
@@ -2246,20 +2187,20 @@ function print_indexed(basereg: number, buffer: Uint8Array, p: number, addr: num
 
 	let buf = `${reg_names[(word >> 12) & 0xf]}.${(word & 0x800) ? 'l' : 'w'}${scales[(word >> 9) & 3]}`;
 
-	/* Handle the 68000 style of indexing.  */
+	// Handle the 68000 style of indexing.  
 	if((word & 0x100) === 0) {
 		base_disp = word & 0xff;
-		if ((base_disp & 0x80) !== 0)
+		if((base_disp & 0x80) !== 0)
 			base_disp -= 0x100;
-		if (basereg === -1)
+		if(basereg === -1)
 			base_disp += addr;
 		return ['(' + print_base(basereg, base_disp) + ',' + buf + ')', p];
 	}
 
-	/* Handle the generalized kind.  */
-	/* First, compute the displacement to add to the base register.  */
+	// Handle the generalized kind.  
+	// First, compute the displacement to add to the base register.  
 	if(word & 0o200) {
-		if (basereg === -1)
+		if(basereg === -1)
 			basereg = -3;
 		else
 			basereg = -2;
@@ -2279,11 +2220,11 @@ function print_indexed(basereg: number, buffer: Uint8Array, p: number, addr: num
 	if(basereg === -1)
 		base_disp += addr;
 
-	/* Handle single-level case (not indirect).  */
+	// Handle single-level case (not indirect).  
 	if((word & 7) === 0)
 		return ['(' + print_base(basereg, base_disp) + ((buf !== '') ? (',' + buf) : '') + ')', p];
 
-	/* Two level.  Compute displacement to add after indirection.  */
+	// Two level.  Compute displacement to add after indirection.  
 	outer_disp = 0;
 	switch (word & 3) {
 	case 2:
@@ -2368,7 +2309,7 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 
 	case 'Q':
 		val = FETCH_ARG(3);
-		/* 0 means 8, except for the bkpt instruction... */
+		// 0 means 8, except for the bkpt instruction... 
 		if(val === 0 && d[1] !== 's')
 			val = 8;
 		text = `#${val}`;
@@ -2376,7 +2317,7 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 
 	case 'x':
 		val = FETCH_ARG(3);
-		/* 0 means -1 */
+		// 0 means -1 
 		if(val === 0)
 			val = -1;
 		text = `#${val}`;
@@ -2457,7 +2398,7 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 			text = `{${reg_names[val]}}`;
 		} else if(place === 'C') {
 			val = FETCH_ARG(7);
-			if(val > 63)		/* This is a signed constant.  */
+			if(val > 63)		// This is a signed constant.  
 				val -= 128;
 			text = `{#${val}}`;
 		} else
@@ -2467,19 +2408,19 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 	case '#':
 	case '^':
 		let p1 = d[0] === '#' ? 2 : 4;
-		if (place === 's')
+		if(place === 's')
 			val = FETCH_ARG(4);
-		else if (place === 'C')
+		else if(place === 'C')
 			val = FETCH_ARG(7);
-		else if (place === '8')
+		else if(place === '8')
 			val = FETCH_ARG(3);
-		else if (place === '3')
+		else if(place === '3')
 			val = FETCH_ARG(8);
-		else if (place === 'b')
+		else if(place === 'b')
 			[p1, val] = NEXTBYTE(buffer, p1);
-		else if (place === 'w' || place === 'W')
+		else if(place === 'w' || place === 'W')
 			[p1, val] = NEXTWORD(buffer, p1);
-		else if (place === 'l')
+		else if(place === 'l')
 			[p1, val] = NEXTLONG(buffer, p1);
 		else
 			throw new Error("<invalid op_table>");
@@ -2525,9 +2466,9 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 	case 'I':
 		// Get coprocessor ID...
 		val = fetch_arg(buffer, 'd', 3);
-		if (val < 0)
+		if(val < 0)
 			text = "<PRINT_INSN_ARG_MEMORY_ERROR>";
-		if (val !== 1)				// Unusual coprocessor ID?
+		if(val !== 1)				// Unusual coprocessor ID?
 			text = `(cpid=${val}) `;
 		break;		
 
@@ -2555,18 +2496,18 @@ function print_insn_arg(d: string, buffer: Uint8Array, p0: number, addr: number)
 	case 'w':
 	case 'y':
 	case 'z':
-		if (place === 'd') {
+		if(place === 'd') {
 			val = fetch_arg(buffer, 'x', 6);
 			val = ((val & 7) << 3) + ((val >> 3) & 7);
 		} else {
 			val = fetch_arg(buffer, 's', 6);
 		}
 
-		/* If the <ea> is invalid for *d, then reject this match.  */
+		// If the <ea> is invalid for *d, then reject this match.  
 		if(!m68k_valid_ea(d[0], val))
 			return { len: -1 };
 
-		/* Get register number assuming address register.  */
+		// Get register number assuming address register.  
 		regno = (val & 7) + 8;
 		const regname = reg_names[regno];
 		switch (val >> 3) {
@@ -2732,10 +2673,10 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 		if(best.args[d] === '#') {
 		  if(best.args[d + 1] === 'l' && p < 6)
 			p = 6;
-		  else if (p < 4 && best.args[d + 1] !== 'C' && best.args[d + 1] !== '8')
+		  else if(p < 4 && best.args[d + 1] !== 'C' && best.args[d + 1] !== '8')
 			p = 4;
 		}
-		if ((best.args[d] === 'L' || best.args[d] === 'l') && best.args[d + 1] === 'w' && p < 4)
+		if((best.args[d] === 'L' || best.args[d] === 'l') && best.args[d + 1] === 'w' && p < 4)
 			p = 4;
 		switch (best.args[d + 1]) {
 		case '1':
@@ -2745,13 +2686,13 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 		case '8':
 		case '9':
 		case 'i':
-			if (p < 4)
+			if(p < 4)
 				p = 4;
 			break;
 		case '4':
 		case '5':
 		case '6':
-			if (p < 6)
+			if(p < 6)
 				p = 6;
 			break;
 		default:
@@ -2759,21 +2700,14 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 		}
 	}
 
-	/* pflusha is an exceptions.  It takes no arguments but is two words
-	   long.  Recognize it by looking at the lower 16 bits of the mask.  */
+	// pflusha is an exceptions.  It takes no arguments but is two words long.  Recognize it by looking at the lower 16 bits of the mask.  
 	if(p < 4 && (best.match & 0xffff) !== 0)
 		p = 4;
 
-	/* lpstop is another exception.  It takes a one word argument but is
-	   three words long.  */
-	if (p < 6
-		&& (best.match & 0xffff) === 0xffff
-		&& best.args[0] === '#'
-		&& best.args[1] === 'w') {
-		/* Copy the one word argument into the usual location for a one
-	   word argument, to simplify printing it.  We can get away with
-	   this because we know exactly what the second word is, and we
-	   aren't going to print anything based on it.  */
+	// lpstop is another exception.  It takes a one word argument but is three words long.  
+	if(p < 6 && (best.match & 0xffff) === 0xffff && best.args[0] === '#' && best.args[1] === 'w') {
+		// Copy the one word argument into the usual location for a one word argument, to simplify printing it.
+		// We can get away with this because we know exactly what the second word is, and we aren't going to print anything based on it.  
 		p = 6;
 		buffer[2] = buffer[4];
 		buffer[3] = buffer[5];
@@ -2794,7 +2728,7 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 		text += arg_val.text;
 		d += 2;
 
-		if (d < best.args.length && best.args[d - 2] !== 'I' && best.args[d] !== 'k')
+		if(d < best.args.length && best.args[d - 2] !== 'I' && best.args[d] !== 'k')
 			text += ",";
 	}
 
@@ -2806,7 +2740,7 @@ function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number):
 		let a = 0, d = 0;
 		if(opc.args[0] === '.')
 			a++;
-		if (((0xff & buffer[0] & (opc.match >> 24)) === (0xff & (opc.opcode >> 24)))
+		if(((0xff & buffer[0] & (opc.match >> 24)) === (0xff & (opc.opcode >> 24)))
 		 && ((0xff & buffer[1] & (opc.match >> 16)) === (0xff & (opc.opcode >> 16)))
 		 && (((0xffff & opc.match) === 0) // Only fetch the next two bytes if we need to.
 			  || (((0xff & buffer[2] & (opc.match >> 8)) === (0xff & (opc.opcode >> 8)))
@@ -2821,7 +2755,6 @@ function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number):
 				for(d = a; d < opc.args.length; d += 2)
 					if(opc.args[d + 1] === 't')
 						break;
-
 			// Don't match fmovel with more than one register; wait for fmoveml.
 			if(d >= opc.args.length) {
 				for(d = a; d < opc.args.length; d += 2) {
@@ -2834,7 +2767,6 @@ function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number):
 					}
 				}
 			}
-
 			// Don't match FPU insns with non-default coprocessor ID.
 			if(d >= opc.args.length) {
 				for(d = a; d < opc.args.length; d += 2) {
@@ -2845,7 +2777,6 @@ function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number):
 					}
 				}
 			}
-
 			//console.log('match:', opc);
 			if(d >= opc.args.length) {
 				const val = match_insn_m68k(buffer, memaddr, opc);
@@ -2863,19 +2794,5 @@ export function print_insn_m68k(buffer: Uint8Array, memaddr: number): { text: st
 	if(ret.len === 0) {
 		return { text: `.short 0x${buffer[0].toString(16).padStart(2, '0')}${buffer[1].toString(16).padStart(2, '0')}`, len: 2 };
 	}
-	return ret;
-}
-
-export function get_all_insn_m68k(): string[] {
-	const set = new Set<string>();
-	for(const opc of m68k_opcodes)
-		set.add(opc.name);
-	for(const alias of m68k_opcode_aliases_nosize)
-		set.add(alias.alias);
-	for(const alias of m68k_opcode_aliases_branch)
-		set.add(alias.alias);
-	const ret: string[] = [];
-	for(const v of set.values())
-		ret.push(v);
 	return ret;
 }

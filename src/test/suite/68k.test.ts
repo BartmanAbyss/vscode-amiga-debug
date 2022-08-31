@@ -206,10 +206,15 @@ suite("68k-dis", () => {
 		const dis = print_insn_m68k(insn, 0);
 		assert.strictEqual(dis.text, "moveq #1,d1");
 	});
-	test("divul.l", () => {
-		const insn = new Uint8Array([0x4c, 0x40, 0x00, 0x00]);
+	test("divu.l", () => {
+		const insn = new Uint8Array([0x4c, 0x40, 0x24, 0x01]);
 		const dis = print_insn_m68k(insn, 0);
-		assert.strictEqual(dis.text, "divul.l d0,d0,d0");
+		assert.strictEqual(dis.text, "divu.l d0,d1,d2");
+	});
+	test("divul.l", () => {
+		const insn = new Uint8Array([0x4c, 0x40, 0x20, 0x01]);
+		const dis = print_insn_m68k(insn, 0);
+		assert.strictEqual(dis.text, "divul.l d0,d1,d2");
 	});
 });
 
