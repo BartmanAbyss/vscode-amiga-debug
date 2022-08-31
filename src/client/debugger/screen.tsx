@@ -567,11 +567,18 @@ const DeniseScreen: FunctionComponent<{
 	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
 		if(state.screenshot && PROFILES[frame].$amiga.screenshot) {
-			//width: 752, height: 574, // from WinUAE code
+			//752x574: Overscan
+			//784x578: Overscan+
+			//820x580: Extreme
+			//908x628: Ultra extreme debug
+			//turrican2-title.uss, Ultra extreme debug
+			//rechts:434(WinUAE)->449(this)
+			//unten: 255(WinUAE)->256(this)
+			//Nspitze:360,43->375,44
 			const img = new Image();
 			img.onload = () => {
+				console.log(`screenshot: ${img.width}x${img.height}`);
 				context.clearRect(0, 0, canvas.current.width, canvas.current.height);
-				//console.log(`${img.width}x${img.height}`);
 				context.drawImage(img, 0, 0, img.width * canvasScaleX, img.height * canvasScaleY / 2);
 			};
 			img.src = PROFILES[frame].$amiga.screenshot;
