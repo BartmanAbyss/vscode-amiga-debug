@@ -11,3 +11,7 @@
 	border-left: 1px solid var(--vscode-editorGroup-border);
 	cursor: w-resize;
 }
+
+:focus-visible {
+	outline: var(--vscode-focusBorder) solid 2px;
+}

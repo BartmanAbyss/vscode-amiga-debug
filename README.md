@@ -304,7 +304,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
 * Multi-frame: Resource from Copper: memory not ok?
-* Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites
+* Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites, multi-frame
 * Denise: `turrican2-level1.uss`: sprites 2 pixels too far left
 * Denise: `turrican2-intro.uss`: sprite 3 (star on logo) is black, sprite 7 (star on logo) wrong colors
 * Denise: get overscan values from https://github.com/tonioni/WinUAE/blob/master/debug.cpp
