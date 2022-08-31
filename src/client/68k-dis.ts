@@ -2803,17 +2803,55 @@ function match_insn_m68k(buffer: Uint8Array, memaddr: number, best: m68k_opcode)
 
 function m68k_scan_mask(buffer: Uint8Array, memaddr: number, arch_mask: number): { text: string; len: number } {
 	for(const opc of m68k_opcodes) {
+		let a = 0, d = 0;
+		if(opc.args[0] === '.')
+			a++;
 		if (((0xff & buffer[0] & (opc.match >> 24)) === (0xff & (opc.opcode >> 24)))
 		 && ((0xff & buffer[1] & (opc.match >> 16)) === (0xff & (opc.opcode >> 16)))
-		 && (((0xffff & opc.match) === 0)
+		 && (((0xffff & opc.match) === 0) // Only fetch the next two bytes if we need to.
 			  || (((0xff & buffer[2] & (opc.match >> 8)) === (0xff & (opc.opcode >> 8)))
 			   && ((0xff & buffer[3] & opc.match) === (0xff & opc.opcode))))
 		 && (opc.arch & arch_mask) !== 0) {
- 			 // TODO: args for divul, divsl
+			// Don't use for printout the variants of divul and divsl that have the same register number in two places. The more general variants will match instead.
+			for(d = a; d < opc.args.length; d += 2)
+				if(opc.args[d + 1] === 'D')
+					break;
+			// Don't use for printout the variants of most floating point coprocessor instructions which use the same register number in two places, as above.
+			if(d >= opc.args.length)
+				for(d = a; d < opc.args.length; d += 2)
+					if(opc.args[d + 1] === 't')
+						break;
+
+			// Don't match fmovel with more than one register; wait for fmoveml.
+			if(d >= opc.args.length) {
+				for(d = a; d < opc.args.length; d += 2) {
+					if(opc.args[d + 0] === 's' && opc.args[d + 1] === '8') {
+						const val = fetch_arg(buffer, opc.args[d + 1], 3);
+						if(val < 0)
+							return { text: '', len: 0 };
+						if((val & (val - 1)) !== 0)
+							break;
+					}
+				}
+			}
+
+			// Don't match FPU insns with non-default coprocessor ID.
+			if(d >= opc.args.length) {
+				for(d = a; d < opc.args.length; d += 2) {
+					if(opc.args[d + 0] === 'I') {
+						const val = fetch_arg(buffer, 'd', 3);
+						if(val !== 1)
+							break;
+					}
+				}
+			}
+
 			//console.log('match:', opc);
-			const val = match_insn_m68k(buffer, memaddr, opc);
-			if(val.len)
-				return val;
+			if(d >= opc.args.length) {
+				const val = match_insn_m68k(buffer, memaddr, opc);
+				if(val.len)
+					return val;
+			}
 		}
 	}
 	

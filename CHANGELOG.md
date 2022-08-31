@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.6
+- FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)
+
 ## 1.5.5
 - NEW: VASM assembler with debugging support ([PR#123 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/123))
   - GAS keeps the `.s` extension; VASM uses the `.asm` extension.
