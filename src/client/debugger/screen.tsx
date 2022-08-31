@@ -677,7 +677,7 @@ export const DeniseView: FunctionComponent<{
 			{PROFILES[frame].$amiga.screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
 		</Toolbar>
 		</div>
-		<div style={{ /*overflow: 'auto'*/ }}>
+		<div style={{ overflow: 'auto' }}>
 			<DeniseScreen frame={frame} time={time} setTime={setTime} state={state} dmaOpacity={dmaOpacity} />
 		</div>
 	</>);

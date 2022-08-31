@@ -547,7 +547,7 @@ export const GfxResourcesView: FunctionComponent<{
 				<option value="overdraw">Overdraw</option>
 			</select>
 		</div>
-		<div style={{/*overflow: 'auto'*/}}>
+		<div style={{ overflow: 'auto' }}>
 			<Screen frame={frame} time={time} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
 		</div>
 	</>;
