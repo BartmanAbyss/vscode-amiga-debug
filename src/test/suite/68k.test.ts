@@ -241,13 +241,10 @@ suite("68k-fpu", () => {
 	});
 });
 
-/*
 suite("68k-mmu", () => {
 	test("ptrapbc.l #65537", () => {
 		const insn = new Uint8Array([0xF0, 0x7b, 0x00, 0x01, 0x00, 0x01]);
 		const dis = print_insn_m68k(insn, 0);
-		// always gets "ftrapeq.l (cpid=0) #0". seems both have same opcode...
 		assert.strictEqual(dis.text, "ptrapbc.l #65537");
 	});
 });
-*/
