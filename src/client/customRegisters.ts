@@ -491,14 +491,14 @@ export class CustomRegisters {
 		{ name: "BLTBMOD", adr: 0xdff062, rw: 2, special: 0 }, /* Blitter modulo for source B */
 		{ name: "BLTAMOD", adr: 0xdff064, rw: 2, special: 0 }, /* Blitter modulo for source A */
 		{ name: "BLTDMOD", adr: 0xdff066, rw: 2, special: 0 }, /* Blitter modulo for destn  D */
-		{ name: "Unknown", adr: 0xdff068 }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff06a }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff06c }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff06e }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff068 }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff06a }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff06c }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff06e }, /* Unknown or Unused */
 		{ name: "BLTCDAT", adr: 0xdff070, rw: 2, special: 0 }, /* Blitter source C data reg */
 		{ name: "BLTBDAT", adr: 0xdff072, rw: 2, special: 0 }, /* Blitter source B data reg */
 		{ name: "BLTADAT", adr: 0xdff074, rw: 2, special: 0 }, /* Blitter source A data reg */
-		{ name: "BLTDDAT", adr: 0xdff076, rw: 2, special: 0 }, /* Blitter destination reg */
+		{ name: "-", adr: 0xdff076 }, /* Unknown or Unused */
 		{ name: "SPRHDAT", adr: 0xdff078 }, /* Ext logic UHRES sprite pointer and data identifier */
 		{ name: "BPLHDAT", adr: 0xdff07A }, /* Ext logic UHRES bit plane identifier */
 		{ name: "LISAID", adr: 0xdff07C, rw: 1, special: 8 }, /* Chip revision level for Denise/Lisa */
@@ -525,32 +525,32 @@ export class CustomRegisters {
 		{ name: "AUD0PER", adr: 0xdff0A6, rw: 2 }, /* Audio channel 0 period */
 		{ name: "AUD0VOL", adr: 0xdff0A8, rw: 2 }, /* Audio channel 0 volume */
 		{ name: "AUD0DAT", adr: 0xdff0AA, rw: 2 }, /* Audio channel 0 data */
-		{ name: "Unknown", adr: 0xdff0AC }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff0AE }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0AC }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0AE }, /* Unknown or Unused */
 		{ name: "AUD1LCH", adr: 0xdff0B0, rw: 2, special: 1 }, /* Audio channel 1 location (high 5 bits) */
 		{ name: "AUD1LCL", adr: 0xdff0B2, rw: 2, special: 2 }, /* Audio channel 1 location (low 15 bits) */
 		{ name: "AUD1LEN", adr: 0xdff0B4, rw: 2 }, /* Audio channel 1 length */
 		{ name: "AUD1PER", adr: 0xdff0B6, rw: 2 }, /* Audio channel 1 period */
 		{ name: "AUD1VOL", adr: 0xdff0B8, rw: 2 }, /* Audio channel 1 volume */
 		{ name: "AUD1DAT", adr: 0xdff0BA, rw: 2 }, /* Audio channel 1 data */
-		{ name: "Unknown", adr: 0xdff0BC }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff0BE }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0BC }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0BE }, /* Unknown or Unused */
 		{ name: "AUD2LCH", adr: 0xdff0C0, rw: 2, special: 1 }, /* Audio channel 2 location (high 5 bits) */
 		{ name: "AUD2LCL", adr: 0xdff0C2, rw: 2, special: 2 }, /* Audio channel 2 location (low 15 bits) */
 		{ name: "AUD2LEN", adr: 0xdff0C4, rw: 2 }, /* Audio channel 2 length */
 		{ name: "AUD2PER", adr: 0xdff0C6, rw: 2 }, /* Audio channel 2 period */
 		{ name: "AUD2VOL", adr: 0xdff0C8, rw: 2 }, /* Audio channel 2 volume */
 		{ name: "AUD2DAT", adr: 0xdff0CA, rw: 2 }, /* Audio channel 2 data */
-		{ name: "Unknown", adr: 0xdff0CC }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff0CE }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0CC }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0CE }, /* Unknown or Unused */
 		{ name: "AUD3LCH", adr: 0xdff0D0, rw: 2, special: 1 }, /* Audio channel 3 location (high 5 bits) */
 		{ name: "AUD3LCL", adr: 0xdff0D2, rw: 2, special: 2 }, /* Audio channel 3 location (low 15 bits) */
 		{ name: "AUD3LEN", adr: 0xdff0D4, rw: 2 }, /* Audio channel 3 length */
 		{ name: "AUD3PER", adr: 0xdff0D6, rw: 2 }, /* Audio channel 3 period */
 		{ name: "AUD3VOL", adr: 0xdff0D8, rw: 2 }, /* Audio channel 3 volume */
 		{ name: "AUD3DAT", adr: 0xdff0DA, rw: 2 }, /* Audio channel 3 data */
-		{ name: "Unknown", adr: 0xdff0DC }, /* Unknown or Unused */
-		{ name: "Unknown", adr: 0xdff0DE }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0DC }, /* Unknown or Unused */
+		{ name: "-", adr: 0xdff0DE }, /* Unknown or Unused */
 		{ name: "BPL1PTH", adr: 0xdff0E0, rw: 2, special: 1 }, /* Bit plane pointer 1 (high 5 bits) */
 		{ name: "BPL1PTL", adr: 0xdff0E2, rw: 2, special: 2 }, /* Bit plane pointer 1 (low 15 bits) */
 		{ name: "BPL2PTH", adr: 0xdff0E4, rw: 2, special: 1 }, /* Bit plane pointer 2 (high 5 bits) */
