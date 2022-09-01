@@ -18,6 +18,7 @@ export interface DmaRecord {
 	type?: number;
 	extra?: number;
 	intlev?: number;
+	end?: boolean;
 }
 
 // needs to match gcc8_c_support.h

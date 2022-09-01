@@ -299,7 +299,7 @@ export class ProfileFile {
 	public frames: ProfileFrame[] = [];
 
 	private static customRegsLen = 256 * 2 + 4 /*chipsetFlags*/ + 4/*RefPtr*/;
-	private static sizeofDmaRec = 42;
+	private static sizeofDmaRec = 49;
 	private static sizeofResource = 52;
 
 	constructor(private filename: string) {
@@ -337,7 +337,7 @@ export class ProfileFile {
 			const customRegsOffset = bufferOffset;
 			frame.chipsetFlags = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
 			if (customRegsLen !== ProfileFile.customRegsLen)
-				throw new Error(`customRegsLen mismatch (want ${ProfileFile.customRegsLen}, got ${customRegsLen})`);
+				throw new Error(`<internal error> customRegsLen mismatch (want ${ProfileFile.customRegsLen}, got ${customRegsLen})`);
 			//frame.customRegs = new Uint16Array(buffer.buffer, bufferOffset, 256); bufferOffset += 256 * 2;
 			// maybe unaligned, so read manually
 			frame.customRegs = new Uint16Array(256);
@@ -350,9 +350,9 @@ export class ProfileFile {
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			if (dmaLen !== ProfileFile.sizeofDmaRec)
-				throw new Error("dmaLen mismatch");
+				throw new Error(`<internal error> dmaLen mismatch (want ${ProfileFile.sizeofDmaRec}, got ${dmaLen})`);
 			if (dmaCount !== NR_DMA_REC_HPOS * NR_DMA_REC_VPOS)
-				throw new Error(`dmaCount mismatch (${dmaCount} != ${NR_DMA_REC_HPOS * NR_DMA_REC_VPOS})`);
+				throw new Error(`<internal error> dmaCount mismatch (${dmaCount} != ${NR_DMA_REC_HPOS * NR_DMA_REC_VPOS})`);
 			const dmaBuffer = Buffer.from(buffer.buffer, bufferOffset, dmaLen * dmaCount); bufferOffset += dmaLen * dmaCount;
 			for (let i = 0; i < dmaCount; i++) {
 				const reg = dmaBuffer.readUInt16LE(i * dmaLen + 0);
@@ -361,9 +361,20 @@ export class ProfileFile {
 				const size = dmaBuffer.readUInt16LE(i * dmaLen + 10);
 				const addr = dmaBuffer.readUInt32LE(i * dmaLen + 12);
 				const evt = dmaBuffer.readUInt32LE(i * dmaLen + 16);
-				const type = dmaBuffer.readInt16LE(i * dmaLen + 20);
-				const extra = dmaBuffer.readUInt16LE(i * dmaLen + 22);
-				const intlev = dmaBuffer.readInt8(i * dmaLen + 24);
+				const evtdata = dmaBuffer.readUInt32LE(i * dmaLen + 20);
+				const evtdataset = dmaBuffer.readInt8(i * dmaLen + 24);
+				const type = dmaBuffer.readInt16LE(i * dmaLen + 25);
+				const extra = dmaBuffer.readUInt16LE(i * dmaLen + 27);
+				const intlev = dmaBuffer.readInt8(i * dmaLen + 29);
+				const ipl = dmaBuffer.readInt8(i * dmaLen + 30);
+				const cf_reg = dmaBuffer.readUInt16LE(i * dmaLen + 31);
+				const cf_dat = dmaBuffer.readUInt16LE(i * dmaLen + 33);
+				const cf_addr = dmaBuffer.readUInt16LE(i * dmaLen + 35);
+				const ciareg = dmaBuffer.readUInt32LE(i * dmaLen + 37);
+				const ciamask = dmaBuffer.readUInt32LE(i * dmaLen + 41);
+				const ciarw = dmaBuffer.readInt8(i * dmaLen + 45);
+				const ciavalue = dmaBuffer.readUInt16LE(i * dmaLen + 46);
+				const end = dmaBuffer.readInt8(i * dmaLen + 48);
 
 				if (reg !== 0xffff) {
 					frame.dmaRecords.push({ reg, dat, datHi, size, addr, evt, type, extra, intlev });

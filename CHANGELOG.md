@@ -7,6 +7,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - FIX: [#128 Can't use the image converter link](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/128)
 - FIX: [#129 Screen and Resources tabs have no scroll bars so I can't see the bottom of a tall image](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/129)
 - FIX: improved behavior of jumping from assembly to source (still sometimes the source window disappears)
+- NEW: update to [latest WinUAE](https://github.com/tonioni/WinUAE/tree/e95402d9aa8a95d6164d65d210b4d8ec52ac037d)
+- FIX: screen: center reference screenshot (probably still wrong)
 
 ## 1.5.5
 - NEW: VASM assembler with debugging support ([PR#123 by merry^Architect](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/123))

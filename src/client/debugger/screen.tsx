@@ -567,19 +567,23 @@ const DeniseScreen: FunctionComponent<{
 	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
 		if(state.screenshot && PROFILES[frame].$amiga.screenshot) {
+			//MAXVPOS_PAL=312
 			//752x574: Overscan
 			//784x578: Overscan+
 			//820x580: Extreme
-			//908x628: Ultra extreme debug
-			//turrican2-title.uss, Ultra extreme debug
-			//rechts:434(WinUAE)->449(this)
-			//unten: 255(WinUAE)->256(this)
-			//Nspitze:360,43->375,44
+			//908x628: Ultra extreme debug; maxhpos_display = AMIGA_WIDTH_MAX (754 / 2 = 377) + EXTRAWIDTH_ULTRA (77) = 908
 			const img = new Image();
 			img.onload = () => {
 				console.log(`screenshot: ${img.width}x${img.height}`);
 				context.clearRect(0, 0, canvas.current.width, canvas.current.height);
-				context.drawImage(img, 0, 0, img.width * canvasScaleX, img.height * canvasScaleY / 2);
+
+				// these values are to bring WinUAE reference screenshots into our Denise space, which is probably still wrong...
+				const [x, y] = (img.width === 908 && img.height === 628) ? [30, 2] // Ultra extreme debug
+				             : (img.width === 820 && img.height === 580) ? [166, 50] // Extreme
+				             : (img.width === 784 && img.height === 578) ? [150, 50] // Overscan+
+				             : (img.width === 752 && img.height === 574) ? [182, 52] // Overscan
+				             : [0, 0];
+				context.drawImage(img, x, y, img.width * canvasScaleX, img.height * canvasScaleY / 2);
 			};
 			img.src = PROFILES[frame].$amiga.screenshot;
 			return null;
