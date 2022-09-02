@@ -138,6 +138,7 @@ export class Kickstart {
 	private hash = '';
 	private base = 0xfc0000;
 	private idc = '';
+	private ghidra = '';
 	private libraries: Library[] = [];
 	private functions: KickFunction[] = [];
 
@@ -201,6 +202,11 @@ static Structures(void) {
 	public writeIdc() {
 		this.parseLibraries();
 		fs.writeFileSync(this.kickPath + '.idc', this.idc);
+	}
+
+	public writeGhidra() {
+		this.parseLibraries();
+		fs.writeFileSync(this.kickPath + '.syms', this.ghidra);
 	}
 
 	public writeSymbols(binDir: string, outDir: string) {
@@ -300,6 +306,7 @@ static Structures(void) {
 								this.functions.push({ name, addr: funcAddr, size: funcSize });
 								this.idc += `\tMakeName(0x${funcAddr.toString(16)}, "${name}"); // GV ${gvIndex}\n`;
 								this.idc += `\tMakeFunction(0x${funcAddr.toString(16)}, BADADDR);\n`;
+								this.ghidra += `${name} 0x${funcAddr.toString(16)} f\n`;
 							}
 							tableOffset -= 8;
 						}
@@ -328,6 +335,7 @@ static Structures(void) {
 						this.functions.push({ name: func.name, addr: vectors[index], size: funcSize });
 						this.idc += `\tMakeName (0x${vectors[index].toString(16)}, "${func.name}"); // LVO -${func.lvo}\n`;
 						this.idc += `\tMakeFunction(0x${vectors[index].toString(16)}, BADADDR);\n`;
+						this.ghidra += `${func.name} 0x${vectors[index].toString(16)} f\n`;
 					}
 				}
 			}
