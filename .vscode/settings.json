@@ -17,7 +17,10 @@
 
 	// test explorer
 	"mochaExplorer.files": "src/test/suite/*.test.ts",
-	"mochaExplorer.require": "ts-node/register",
+	"mochaExplorer.require": [
+		"ts-node/register",
+		"mocha-profiler"
+	],
     "testExplorer.hideEmptyLog": false,
     "testExplorer.useNativeTesting": true,
 }
