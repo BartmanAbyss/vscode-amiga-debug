@@ -74,7 +74,7 @@ async function Profiler() {
 			// add dummy models for rest of profiles
 			// will be built in layout.tsx as needed, but we need memory to get all copper resources
 			for(let i = 1; i < PROFILES.length; i++) {
-				const memory = GetMemory(MODELS[i-1].memory, PROFILES[i].$amiga.dmaRecords);
+				const memory = GetMemory(MODELS[i-1].memory, PROFILES[i-1].$amiga.dmaRecords);
 				MODELS.push({ memory } as IProfileModel);
 				//MODELS.push(null);
 				//MODELS.push(buildModel(PROFILES[i]));
