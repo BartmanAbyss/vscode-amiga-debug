@@ -11,6 +11,7 @@ suite("kickstart", () => {
 	test("1.2", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("1.3", () => {
@@ -24,26 +25,31 @@ suite("kickstart", () => {
 		assert.equal(kickstart.getFunctionSize(0xFC14D4), 0x54); // SumLibrary
 		assert.equal(kickstart.getFunctionSize(0xFC06A2), 0x4e); // OpenDevice
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("2.04", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("2.05", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("3.0", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v3.0 r39.106 (1992)(Commodore)(A1200)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("3.1", () => {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v3.1 r40.68 (1993)(Commodore)(A1200)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();
+		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
 	});
 	test("FD", () => {
