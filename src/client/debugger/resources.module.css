@@ -213,3 +213,16 @@
 .memory_span_4:nth-child(4n) {
 	padding-right: 1.0em;
 }
+
+.bplptr_on, .bplptr_off {
+	float: left;
+	padding-right: 0.5em;
+}
+
+.bplptr_off {
+	opacity: 0.6;
+}
+
+.bplptr_on:nth-child(3n+1), .bplptr_off:nth-child(3n+1) {
+	clear:left;
+}

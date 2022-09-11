@@ -6,6 +6,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - NEW: icons for `.uss`, `.amigaprofile`, `.shrinklerstats`, `.objdump`
 - CHG: screen: zoom panel size, clipping
 - FIX: fix memory content for multi-frame captures (was wrong after frame 1)
+- NEW: screen: show bitplane pointers
 
 ## 1.5.6
 - FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)

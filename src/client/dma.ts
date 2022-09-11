@@ -28,7 +28,6 @@ export class Memory {
 	}
 	public readWord(addr: number): number {
 		return (this.readByte(addr) << 8) | (this.readByte(addr + 1));
-
 	}
 	public readLong(addr: number): number {
 		return (this.readWord(addr) << 16) | (this.readWord(addr + 2));

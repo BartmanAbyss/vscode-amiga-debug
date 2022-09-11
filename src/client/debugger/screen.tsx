@@ -9,7 +9,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { BPLCON0Flags, BPLCON2Flags, CustomReadWrite, CustomRegisters, DMACONFlags, FMODEFlags } from '../customRegisters';
-import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes, ChipsetFlags, GetAmigaColorCss } from '../dma';
+import { DmaCyclesToCpuCycles, GetAmigaColor, GetAmigaColorEhb, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, displayLeft, displayTop, dmaTypes, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, DmaTypes, DmaSubTypes, ChipsetFlags, GetAmigaColorCss, Memory } from '../dma';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -54,6 +54,7 @@ const swizzle = (src: number, bitFrom: number, bitTo: number): number => {
 
 interface DeniseZoomProps extends IZoomProps {
 	pixelSources: Uint8Array;
+	pixelPtrs: Uint32Array;
 	pixels: Uint8Array;
 	frame: number;
 }
@@ -131,11 +132,19 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		fmodeBits.push({ name: "BPAGEM", enabled: !!(fmode & FMODEFlags.BPAGEM) });
 		fmodeBits.push({ name: "BPL32", enabled: !!(fmode & FMODEFlags.BPL32) });
 
+		const ecsAga = (MODELS[0].amiga.chipsetFlags & (ChipsetFlags.AGA | ChipsetFlags.ECSDenise)) !== 0;
+
 		return <div>
 			<dl>
 				{props.pixelSources && <>
 					<dt>Source</dt>
 					<dd>{PixelSource[props.pixelSources.at(props.y * NR_DMA_REC_HPOS * 4 + props.x)]}</dd>
+				</>}
+				{props.pixelPtrs && <>
+					<dt>Pointers</dt>
+					<dd class={styles.container}>{[0, 1, 2, 3, 4, 5, 6, 7].filter((pl) => ecsAga ? true : pl < 6).map((i) => <span class={bpu > i ? styles.bplptr_on : styles.bplptr_off}>
+						${props.pixelPtrs.at((line * NR_DMA_REC_HPOS + cck) * 8 + i).toString(16).padStart(6, '0')}
+					</span>)}</dd>
 				</>}
 				{color !== undefined && <>
 					<dt>Color</dt>
@@ -153,7 +162,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				<dd>{bplcon1Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				<dt>BPLCON2</dt>
 				<dd>{bplcon2Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
-				{(MODELS[0].amiga.chipsetFlags & (ChipsetFlags.AGA | ChipsetFlags.ECSDenise)) !== 0 && <>
+				{ecsAga && <>
 					<dt>FMODE</dt>
 					<dd>{fmodeBits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				</>}
@@ -183,8 +192,9 @@ const DeniseScreen: FunctionComponent<{
 	const zoomCanvasWidth = 144*2;
 	const zoomCanvasHeight = 144;
 
-	const [pixelSources, pixels, pixelsRgb, pixelsDma] = useMemo((): [Uint8Array, Uint8Array, Uint32Array, Uint32Array] => { // screen
+	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo((): [Uint8Array, Uint32Array, Uint8Array, Uint32Array, Uint32Array] => { // screen
 		const pixelSources = new Uint8Array(NR_DMA_REC_HPOS * 4 * NR_DMA_REC_VPOS);
+		const pixelPtrs = new Uint32Array(NR_DMA_REC_HPOS * NR_DMA_REC_VPOS * 8); // 8 = max planes
 		const pixels = new Uint8Array(NR_DMA_REC_HPOS * 4 * NR_DMA_REC_VPOS);
 		const pixelsRgb = new Uint32Array(canvasWidth * canvasHeight);
 		const pixelsDma = new Uint32Array(canvasWidth * canvasHeight);
@@ -216,6 +226,7 @@ const DeniseScreen: FunctionComponent<{
 		// Denise emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
 		const bplDat        = [0, 0, 0, 0, 0, 0, 0, 0];
 		const bplDatHi      = [0, 0, 0, 0, 0, 0, 0, 0];
+		const bplPtr        = [0, 0, 0, 0, 0, 0, 0, 0];
 		const bplShifter    = [0, 0, 0, 0, 0, 0, 0, 0];
 		const bplShifterHi  = [0, 0, 0, 0, 0, 0, 0, 0];
 		const bplScroller   = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -269,6 +280,7 @@ const DeniseScreen: FunctionComponent<{
 
 		const sprites = [createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite()];
 		const customRegs = MODELS[frame].amiga.customRegs.slice(); // initial copy
+		const memory = new Memory(MODELS[frame].memory.chipMem.slice(), new Uint8Array());
 	
 		let vpos = -1;
 		let hpos = 0;
@@ -284,7 +296,7 @@ const DeniseScreen: FunctionComponent<{
 				const dmaRecord = MODELS[frame].amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 				// see dma.ts@GetCustomRegsAfterDma
 				if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
-					// fix fake instructions after copper jump
+					// skip 2 fake instructions after copper jump
 					if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER) {
 						if(ignoreCopper > 0) {
 							ignoreCopper--;
@@ -293,7 +305,16 @@ const DeniseScreen: FunctionComponent<{
 						if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
 							ignoreCopper = 2;
 					} 
-					if(dmaRecord.reg === regDMACON) {
+					// see dma.ts@GetMemoryAfterDma
+					if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
+						switch(dmaRecord.reg & 0xff) {
+							case 1: memory.writeByte(dmaRecord.addr, dmaRecord.dat); break;
+							case 2: memory.writeWord(dmaRecord.addr, dmaRecord.dat); break;
+							case 4: memory.writeLong(dmaRecord.addr, dmaRecord.dat); break;
+						}
+					} else if(dmaRecord.reg === 0) { // Blitter write
+						memory.writeWord(dmaRecord.addr, dmaRecord.dat);
+					} else if(dmaRecord.reg === regDMACON) {
 						if(dmaRecord.dat & DMACONFlags.SETCLR)
 							customRegs[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 						else
@@ -322,9 +343,32 @@ const DeniseScreen: FunctionComponent<{
 				// bpldat
 				if(dmaRecord.reg >= regBPL1DAT && dmaRecord.reg <= regBPL8DAT) {
 					const i = (dmaRecord.reg - regBPL1DAT) / bplStride;
-					bplDat[i] = dmaRecord.dat;
-					bplDatHi[i] = dmaRecord.datHi;
+					if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
+						bplPtr[i] = dmaRecord.addr;
+						switch(customRegs[regFMODE >>> 1] & (FMODEFlags.BPL32 | FMODEFlags.BPAGEM)) {
+						case 0: // 16 bit
+							bplDatHi[i] = 0;
+							bplDat[i] = memory.readWord(bplPtr[i]);
+							break;
+						case 1: 
+						case 2: // 32 bit
+							bplDatHi[i] = 0;
+							bplDat[i] = memory.readLong(bplPtr[i]);
+							break;
+						case 3: // 64 bit
+							bplDatHi[i] = memory.readLong(bplPtr[i]);
+							bplDat[i] = memory.readLong(bplPtr[i] + 4);
+							break;
+						}
+					} else {
+						bplPtr[i] = 0;
+						bplDat[i] = dmaRecord.dat;
+						bplDatHi[i] = dmaRecord.datHi;
+					}
 				}
+
+				for(let i = 0; i < 8; i++)
+					pixelPtrs[(cycleY * NR_DMA_REC_HPOS + cycleX) * 8 + i] = bplPtr[i];
 
 				// BPL1DAT triggers serial->parallel conversion
 				if(dmaRecord.reg === regBPL1DAT) {
@@ -561,7 +605,7 @@ const DeniseScreen: FunctionComponent<{
 			}
 		}
 		console.timeEnd('denise');
-		return [pixelSources, pixels, pixelsRgb, pixelsDma];
+		return [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma];
 	}, [scale, frame/*, time*/, state]);
 
 	useEffect(() => { // screen canvas
@@ -628,7 +672,7 @@ const DeniseScreen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
-			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={325} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels, frame }} onClick={zoomClick} />
+			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={325} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
 		</div>
 	</>;
 };
