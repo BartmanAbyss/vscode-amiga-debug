@@ -1,7 +1,7 @@
 import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { ToggleButton } from '../toggle-button';
-import { Filter, Toolbar } from '../filter';
+import { Toolbar } from '../filter';
 import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 import '../styles.css';
 import styles from './resources.module.css';
@@ -180,7 +180,7 @@ const DeniseScreen: FunctionComponent<{
 	const canvasHeight = NR_DMA_REC_VPOS * canvasScaleY;
 
 	const zoomCanvasScale = 8;
-	const zoomCanvasWidth = 144;
+	const zoomCanvasWidth = 144*2;
 	const zoomCanvasHeight = 144;
 
 	const [pixelSources, pixels, pixelsRgb, pixelsDma] = useMemo((): [Uint8Array, Uint8Array, Uint32Array, Uint32Array] => { // screen
@@ -628,7 +628,7 @@ const DeniseScreen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
-			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={350} infoHeight={325} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels, frame }} onClick={zoomClick} />
+			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={325} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixels, frame }} onClick={zoomClick} />
 		</div>
 	</>;
 };
