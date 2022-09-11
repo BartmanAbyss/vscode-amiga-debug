@@ -6,27 +6,27 @@ import { UssFile } from '../../backend/savestate';
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data/uss");
 const testOutDir = path.resolve(__dirname, "../../../src/test/suite/data/output");
 
-suite("savestate", () => {
-	test("read bobble-title.uss", () => {
+suite("savestate", function () {
+	test("read bobble-title.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'bobble-title.uss'));
 	});
-	test("read desertdream-dots.uss", () => {
+	test("read desertdream-dots.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'desertdream-dots.uss'));
 	});
-	test("read gods.uss", () => {
+	test("read gods.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'gods.uss'));
 	});
-	test("write gods.uss", () => {
+	test("write gods.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'gods.uss'));
 		ussFile.write(path.join(testOutDir, 'gods.uss'));
 		const ussFile2 = new UssFile(path.join(testOutDir, 'gods.uss'));
 	});
-	test("write masterblazer.uss", () => {
+	test("write masterblazer.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'masterblazer.uss'));
 		ussFile.write(path.join(testOutDir, 'masterblazer.uss'));
 		const ussFile2 = new UssFile(path.join(testOutDir, 'masterblazer.uss'));
 	});
-	test("write shadesbeat.uss", () => {
+	test("write shadesbeat.uss", function () {
 		const ussFile = new UssFile(path.join(testDataDir, 'shadesbeat.uss'));
 		ussFile.setCycleExact();
 		ussFile.write(path.join(testOutDir, 'shadesbeat.uss'));

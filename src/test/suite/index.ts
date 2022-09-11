@@ -1,6 +1,8 @@
 import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
+import * as inspector from 'inspector';
+import * as fs from 'fs';
 
 export function run(): Promise<void> {
 	// Create the mocha test
@@ -37,3 +39,17 @@ export function run(): Promise<void> {
 		});
 	});
 }
+
+export const profile = (name: string, func: () => void) => () => {
+	const session = new inspector.Session();
+	session.connect();
+	session.post('Profiler.enable', () => {
+		session.post('Profiler.start', () => {
+			func();
+			session.post('Profiler.stop', (err, { profile }) => {
+				if(!err)
+					fs.writeFileSync(path.join('profile', `${name}.cpuprofile`), JSON.stringify(profile));
+			});
+		});
+	});
+};

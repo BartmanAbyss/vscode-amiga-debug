@@ -24,7 +24,7 @@ gcc-barto.patch
 out/**
 src/**
 preact-devtools/**
-*.cpuprofile
+profile/**
 template/.vscode/settings.json
 template/obj
 template/obj8mingw

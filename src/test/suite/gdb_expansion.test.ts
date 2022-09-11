@@ -2,9 +2,9 @@ import { suite, test } from 'mocha';
 import * as assert from 'assert';
 import { expandValue, isExpandable } from '../../backend/gdb_expansion';
 
-suite("GDB Value Expansion", () => {
+suite("GDB Value Expansion", function () {
 	let variableCreate = (variable) => { return { expanded: variable }; };
-	test("Various values", () => {
+	test("Various values", function () {
 		assert.strictEqual(isExpandable(`false`), 0);
 		assert.equal(expandValue(variableCreate, `false`), "false");
 		assert.strictEqual(isExpandable(`5`), 0);
@@ -78,11 +78,11 @@ suite("GDB Value Expansion", () => {
 				variablesReference: 0
 			}]);
 	});
-	test("Error values", () => {
+	test("Error values", function () {
 		assert.strictEqual(isExpandable(`<No data fields>`), 0);
 		assert.equal(expandValue(variableCreate, `<No data fields>`), "<No data fields>");
 	});
-	test("Nested values", () => {
+	test("Nested values", function () {
 		assert.strictEqual(isExpandable(`{a = {b = e}, c = d}`), 1);
 		assert.deepEqual(expandValue(variableCreate, `{a = {b = e}, c = d}`), [
 			{
@@ -103,7 +103,7 @@ suite("GDB Value Expansion", () => {
 				variablesReference: 0
 			}]);
 	});
-	test("Simple node", () => {
+	test("Simple node", function () {
 		assert.strictEqual(isExpandable(`{a = false, b = 5, c = 0x0, d = "foobar"}`), 1);
 		let variables = expandValue(variableCreate, `{a = false, b = 5, c = 0x0, d = "foobar"}`);
 		assert.equal(variables.length, 4);
@@ -116,7 +116,7 @@ suite("GDB Value Expansion", () => {
 		assert.equal(variables[3].name, "d");
 		assert.equal(variables[3].value, `"foobar"`);
 	});
-	test("Complex node", () => {
+	test("Complex node", function () {
 		let node = `{quit = false, _views = {{view = 0x7ffff7ece1e8, renderer = 0x7ffff7eccc50, world = 0x7ffff7ece480}}, deltaTimer = {_flagStarted = false, _timeStart = {length = 0}, _timeMeasured = {length = 0}}, _start = {callbacks = 0x0}, _stop = {callbacks = 0x0}}`;
 		assert.strictEqual(isExpandable(node), 1);
 		let variables = expandValue(variableCreate, node);
@@ -224,7 +224,7 @@ suite("GDB Value Expansion", () => {
 			}
 		]);
 	});
-	test("Simple node with errors", () => {
+	test("Simple node with errors", function () {
 		let node = `{_enableMipMaps = false, _minFilter = <incomplete type>, _magFilter = <incomplete type>, _wrapX = <incomplete type>, _wrapY = <incomplete type>, _inMode = 6408, _mode = 6408, _id = 1, _width = 1024, _height = 1024}`;
 		assert.strictEqual(isExpandable(node), 1);
 		let variables = expandValue(variableCreate, node);
@@ -281,7 +281,7 @@ suite("GDB Value Expansion", () => {
 			}
 		]);
 	});
-	test("lldb strings", () => {
+	test("lldb strings", function () {
 		let node = `{ name = {...} }`;
 		assert.strictEqual(isExpandable(node), 1);
 		let variables = expandValue(variableCreate, node);

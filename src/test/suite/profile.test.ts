@@ -111,7 +111,7 @@ function htmlPage(title: string, scripts: string[], profiles: string) {
 
 				let state = {bounds:{minX:0,maxX:1}};
 
-				return () => {
+				return function () {
 					if (acquired && !undefined) {
 						throw new Error('An instance of the VS Code API has already been acquired');
 					}
@@ -207,43 +207,43 @@ function test_profile_savestate(base: string) {
 	fs.writeFileSync(path.join(testHtmlDir, base + '.amigaprofile.html'), html);
 }
 
-suite("Profiler", () => {
-/*	test("unwind bobble.debug.elf", () => {
+suite("Profiler", function () {
+/*	test("unwind bobble.debug.elf", function () {
 		test_unwind('private/bobble.debug.elf');
 	});
-	test("unwind test.elf", () => {
+	test("unwind test.elf", function () {
 		test_unwind('test.elf');
 	});
-	test("unwind bitshmup.elf", () => {
+	test("unwind bitshmup.elf", function () {
 		test_unwind('private/bitshmup.elf');
 	});
-	test("Time: test.elf A500", () => {
+	test("Time: test.elf A500", function () {
 		test_profile_time('amiga-profile-2020.08.18-21.34.52_A500', 'test.elf');
 	});
-	test("Time: test.elf A1200", () => {
+	test("Time: test.elf A1200", function () {
 		test_profile_time('amiga-profile-2020.08.18-21.31.05_A1200', 'test.elf');
 	});*/
-	test("Size: test.elf", () => {
+	test("Size: test.elf", function () {
 		test_profile_size('test', 'test.elf');
 	});
 
-/*	test("Time: test2.elf", () => {
+/*	test("Time: test2.elf", function () {
 		test_profile_time('amiga-profile-1590418304029', 'test2.elf');
 	});
-	test("bitshmup.elf", () => {
+	test("bitshmup.elf", function () {
 		test_profile('amiga-profile-1589891749803', 'private/bitshmup.elf');
 	});
-	test("Time: bobble.debug.elf", () => {
+	test("Time: bobble.debug.elf", function () {
 		test_profile_time('amiga-profile-2020.07.22-13.46.24', 'private/bobble.debug.elf');
 	});
-	test("Size: bitshmup.elf", () => {
+	test("Size: bitshmup.elf", function () {
 		test_profile_size('bitshmup', 'private/bitshmup.elf');
 	});*/
-	test("Shrinkler: bobble.shrinklerstats", () => {
+	test("Shrinkler: bobble.shrinklerstats", function () {
 		test_profile_shrinkler('bobble');
 	});
 
-/*	test("Savestate: desertdream-dots.profile", () => {
+/*	test("Savestate: desertdream-dots.profile", function () {
 		test_profile_savestate('desertdream-dots.profile');
 	});*/
 });
