@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.5.7
+- NEW: icons for `.uss`, `.amigaprofile`, `.shrinklerstats`, `.objdump`
+
 ## 1.5.6
 - FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)
 - FIX: [#128 Can't use the image converter link](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/128)

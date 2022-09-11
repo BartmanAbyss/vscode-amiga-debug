@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.5.6",
+	"version": "1.5.7",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -165,6 +165,37 @@
 					".asm"
 				],
 				"configuration": "./amiga.assembly-mot-language-configuration.json"
+			},
+			{
+				"id": "amiga.savestate",
+				"extensions": [
+					".uss"
+				],
+				"icon": {
+					"light": "icon.png",
+					"dark": "icon.png"
+				}
+			},
+			{
+				"id": "amiga.profile",
+				"extensions": [
+					".amigaprofile",
+					".shrinklerstats"
+				],
+				"icon": {
+					"light": "icon.png",
+					"dark": "icon.png"
+				}
+			},
+			{
+				"id": "amiga.objdump",
+				"extensions": [
+					".objdump"
+				],
+				"icon": {
+					"light": "icon.png",
+					"dark": "icon.png"
+				}
 			}
 		],
 		"grammars": [
