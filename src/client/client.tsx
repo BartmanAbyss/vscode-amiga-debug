@@ -68,7 +68,7 @@ async function Profiler() {
 		console.time('models');
 
 		// build model for first profile
-		MODELS.push(buildModel(PROFILES[0]));
+		MODELS.push(await buildModel(PROFILES[0]));
 
 		if(PROFILES[0].$amiga) {
 			// add dummy models for rest of profiles

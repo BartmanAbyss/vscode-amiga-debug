@@ -108,11 +108,11 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 		return () => PubSub.unsubscribe(token);
 	}, []);*/
 
-	const onClickFrame = useCallback((event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
+	const onClickFrame = useCallback(async (event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
 		const fr = parseInt(event.currentTarget.getAttribute('data'));
 		// build models on demand. memory, copper, blits have already been filled by client.tsx
 		if(!MODELS[fr].nodes)
-			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
+			MODELS[fr] = { ...MODELS[fr], ...await buildModel(PROFILES[fr]) };
 		setFrame(fr);
 	}, [setFrame]);
 
@@ -136,8 +136,8 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 		((color >>> 8) & 0xff).toString(16).padStart(2, '0') +
 		((color >>> 16) & 0xff).toString(16).padStart(2, '0');
 
-	const cpuColor = colorToHex(dmaTypes[DmaTypes.CPU].subtypes[DmaSubTypes.CPU_CODE].color);
-	const blitColor = colorToHex(dmaTypes[DmaTypes.BLITTER].subtypes[DmaSubTypes.BLITTER].color);
+	const cpuColor = colorToHex(dmaTypes.get(DmaTypes.CPU).subtypes.get(DmaSubTypes.CPU_CODE).color);
+	const blitColor = colorToHex(dmaTypes.get(DmaTypes.BLITTER).subtypes.get(DmaSubTypes.BLITTER).color);
 
 	const frameBlitCycles = useMemo(() => {
 		const cycles: number[] = [];

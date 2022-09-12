@@ -55,7 +55,7 @@ export interface DmaSubtype {
 }
 export interface DmaType {
 	name: string;
-	subtypes: { [x: number]: DmaSubtype };
+	subtypes: Map<number, DmaSubtype>;
 }
 
 export const NR_DMA_REC_HPOS = 227;
@@ -125,87 +125,93 @@ export namespace DmaSubTypes {
 	export const BLITTER_LINE = 2;
 }
 
-export const dmaTypes: DmaType[] = [
-	{ // 0
+export const dmaTypes: Map<number, DmaType> = new Map([
+	[0, {
 		name: "-",
-		subtypes: { 0: { color: 0xff222222 } }
-	},
-	{ // DMARECORD_REFRESH 1
+		subtypes: new Map([ 
+			[0, { color: 0xff222222 }] 
+		])
+	}],
+	[DmaTypes.REFRESH, {
 		name: 'Refresh',
-		subtypes: { 0: { color: 0xff444444 } }
-	},
-	{ // DMARECORD_CPU 2
+		subtypes: new Map([ 
+			[0, { color: 0xff444444 }] 
+		])
+	}],
+	[DmaTypes.CPU, {
 		name: 'CPU',
-		subtypes: {
-			0: { color: 0xff4253a2, name: 'Code' },
-			1: { color: 0xffd698ad, name: 'Data' }
-		}
-	},
-	{ // DMARECORD_COPPER 3
+		subtypes: new Map([
+			[DmaSubTypes.CPU_CODE, { color: 0xff4253a2, name: 'Code' }],
+			[DmaSubTypes.CPU_DATA, { color: 0xffd698ad, name: 'Data' }]
+		])
+	}],
+	[DmaTypes.COPPER, {
 		name: 'Copper',
-		subtypes: {
-			0: { color: 0xff00eeee },
-			1: { color: 0xff22aaaa, name: 'Wait' },
-			2: { color: 0xff446666, name: 'Special' }
-		}
-	},
-	{ // DMARECORD_AUDIO 4
+		subtypes: new Map([
+			[DmaSubTypes.COPPER, { color: 0xff00eeee }],
+			[DmaSubTypes.COPPER_WAIT, { color: 0xff22aaaa, name: 'Wait' }],
+			[DmaSubTypes.COPPER_SPECIAL, { color: 0xff446666, name: 'Special' }]
+		])
+	}],
+	[DmaTypes.AUDIO, {
 		name: 'Audio',
-		subtypes: {
-			0: { color: 0xff0000ff, name: 'Channel 0' },
-			1: { color: 0xff0000ee, name: 'Channel 1' },
-			2: { color: 0xff0000dd, name: 'Channel 2' },
-			3: { color: 0xff0000cc, name: 'Channel 3' },
-		}
-	},
-	{ // DMARECORD_BLITTER 5
+		subtypes: new Map([
+			[0, { color: 0xff0000ff, name: 'Channel 0' }],
+			[1, { color: 0xff0000ee, name: 'Channel 1' }],
+			[2, { color: 0xff0000dd, name: 'Channel 2' }],
+			[3, { color: 0xff0000cc, name: 'Channel 3' }],
+		])
+	}],
+	[DmaTypes.BLITTER, {
 		name: 'Blitter',
-		subtypes: {
-			0x00: { color: 0xff888800, name: 'A-Blit' },
-			0x01: { color: 0xee888800, name: 'B-Blit' },
-			0x02: { color: 0xdd888800, name: 'C-Blit' },
-			0x03: { color: 0xcc888800, name: 'D-Blit' },
-			0x10: { color: 0xffff8800, name: 'A-Fill' },
-			0x11: { color: 0xeeff8800, name: 'B-Fill' },
-			0x12: { color: 0xddff8800, name: 'C-Fill' },
-			0x13: { color: 0xccff8800, name: 'D-Fill' },
-			0x20: { color: 0xff00ff00, name: 'A-Line' },
-			0x21: { color: 0xee00ff00, name: 'B-Line' },
-			0x22: { color: 0xdd00ff00, name: 'C-Line' },
-			0x23: { color: 0xcc00ff00, name: 'D-Line' },
-		}
-	},
-	{ // DMARECORD_BITPLANE 6
+		subtypes: new Map([
+			[0x00, { color: 0xff888800, name: 'A-Blit' }],
+			[0x01, { color: 0xee888800, name: 'B-Blit' }],
+			[0x02, { color: 0xdd888800, name: 'C-Blit' }],
+			[0x03, { color: 0xcc888800, name: 'D-Blit' }],
+			[0x10, { color: 0xffff8800, name: 'A-Fill' }],
+			[0x11, { color: 0xeeff8800, name: 'B-Fill' }],
+			[0x12, { color: 0xddff8800, name: 'C-Fill' }],
+			[0x13, { color: 0xccff8800, name: 'D-Fill' }],
+			[0x20, { color: 0xff00ff00, name: 'A-Line' }],
+			[0x21, { color: 0xee00ff00, name: 'B-Line' }],
+			[0x22, { color: 0xdd00ff00, name: 'C-Line' }],
+			[0x23, { color: 0xcc00ff00, name: 'D-Line' }],
+		])
+	}],
+	[DmaTypes.BITPLANE, {
 		name: 'Bitplane',
-		subtypes: {
-			0: { color: 0xffff0000, name: 'Plane 1' },
-			1: { color: 0xffee0000, name: 'Plane 2' },
-			2: { color: 0xffdd0000, name: 'Plane 3' },
-			3: { color: 0xffcc0000, name: 'Plane 4' },
-			4: { color: 0xffbb0000, name: 'Plane 5' },
-			5: { color: 0xffaa0000, name: 'Plane 6' },
-			6: { color: 0xff990000, name: 'Plane 7' },
-			7: { color: 0xff880000, name: 'Plane 8' },
-		}
-	},
-	{ // DMARECORD_SPRITE 7
+		subtypes: new Map([
+			[0, { color: 0xffff0000, name: 'Plane 1' }],
+			[1, { color: 0xffee0000, name: 'Plane 2' }],
+			[2, { color: 0xffdd0000, name: 'Plane 3' }],
+			[3, { color: 0xffcc0000, name: 'Plane 4' }],
+			[4, { color: 0xffbb0000, name: 'Plane 5' }],
+			[5, { color: 0xffaa0000, name: 'Plane 6' }],
+			[6, { color: 0xff990000, name: 'Plane 7' }],
+			[7, { color: 0xff880000, name: 'Plane 8' }],
+		])
+	}],
+	[DmaTypes.SPRITE, {
 		name: 'Sprite',
-		subtypes: {
-			0: { color: 0xffff00ff, name: 'Sprite 0' },
-			1: { color: 0xffee00ee, name: 'Sprite 1' },
-			2: { color: 0xffdd00dd, name: 'Sprite 2' },
-			3: { color: 0xffcc00cc, name: 'Sprite 3' },
-			4: { color: 0xffbb00bb, name: 'Sprite 4' },
-			5: { color: 0xffaa00aa, name: 'Sprite 5' },
-			6: { color: 0xff990099, name: 'Sprite 6' },
-			7: { color: 0xff880088, name: 'Sprite 7' },
-		}
-	},
-	{ // DMARECORD_DISK 8
+		subtypes: new Map([
+			[0, { color: 0xffff00ff, name: 'Sprite 0' }],
+			[1, { color: 0xffee00ee, name: 'Sprite 1' }],
+			[2, { color: 0xffdd00dd, name: 'Sprite 2' }],
+			[3, { color: 0xffcc00cc, name: 'Sprite 3' }],
+			[4, { color: 0xffbb00bb, name: 'Sprite 4' }],
+			[5, { color: 0xffaa00aa, name: 'Sprite 5' }],
+			[6, { color: 0xff990099, name: 'Sprite 6' }],
+			[7, { color: 0xff880088, name: 'Sprite 7' }],
+		])
+	}],
+	[DmaTypes.DISK, {
 		name: 'Disk',
-		subtypes: { 0: { color: 0xffffffff } }
-	},
-];
+		subtypes: new Map([
+			[0, { color: 0xffffffff }]
+		])
+	}],
+]);
 
 export enum BlitterChannel {
 	A, B, C, D

@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from '../model';
-import { dmaTypes, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { DmaTypes, dmaTypes, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
 
 export class TopDownNode implements IGraphNode {
 	public static root() {
@@ -124,17 +124,16 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
 			if(dmaRecord.type === undefined)
 				continue;
-			const dmaType = dmaRecord.type;
-			const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
-			if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
+			const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
+			if(!dmaType)
 				continue;
-
-			dmaTimes[(dmaSubtype << 4) | dmaType] += (512 / model.amiga.cpuCycleUnit) | 0;
+			const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ? dmaRecord.extra : 0;
+			dmaTimes[(dmaSubtype << 4) | dmaRecord.type] += (512 / model.amiga.cpuCycleUnit) | 0;
 		}
 	}
 
-	for(let dmaTypeId = 1; dmaTypeId < dmaTypes.length; dmaTypeId++) {
-		const dmaType = dmaTypes[dmaTypeId];
+	for(let dmaTypeId = DmaTypes.REFRESH; dmaTypeId <= DmaTypes.DISK; dmaTypeId++) {
+		const dmaType = dmaTypes.get(dmaTypeId);
 		let dmaTime = 0;
 		for(let dmaSubtypeId = 0; dmaSubtypeId < 0x30; dmaSubtypeId++) {
 			dmaTime += dmaTimes[(dmaSubtypeId << 4) | dmaTypeId];
@@ -144,7 +143,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			continue;
 
 		let dmaParent = dmaRoot;
-		if(Object.keys(dmaType.subtypes).length > 1) {
+		if(dmaType.subtypes.size > 1) {
 			const dmaParentLoc: ILocation = {
 				selfTime: 0,
 				aggregateTime: 0,
@@ -152,7 +151,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 				ticks: 0,
 				category: Category.User,
 				callFrame: {
-					functionName: dmaTypes[dmaTypeId].name,
+					functionName: dmaType.name,
 					scriptId: '#dma',
 					url: '',
 					lineNumber: 0,
@@ -171,10 +170,9 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			if(time === 0)
 				continue;
 
-			const dmaSubtype = dmaType.subtypes[dmaSubtypeId];
+			const dmaSubtype = dmaType.subtypes.get(dmaSubtypeId);
 			let text = dmaType.name;
-
-			if(dmaSubtype.name !== undefined)
+			if(dmaSubtype?.name)
 				text = dmaSubtype.name;
 
 			const color =

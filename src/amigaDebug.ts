@@ -59,7 +59,7 @@ class CustomStoppedEvent extends Event implements DebugProtocol.Event {
 		reason: string;
 		threadID: number;
 	};
-	public readonly event: string;
+	declare public readonly event: string;
 
 	constructor(reason: string, threadID: number) {
 		super('custom-stop', { reason, threadID });
@@ -71,7 +71,7 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 		threadID: number;
 		allThreads: boolean;
 	};
-	public readonly event: string;
+	declare public readonly event: string;
 
 	constructor(threadID: number, allThreads = true) {
 		super('custom-continued', { threadID, allThreads });

@@ -105,6 +105,7 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 	const regSPR0CTL = CustomRegisters.getCustomAddress("SPR0CTL") - 0xdff000;
 	const regSPR0DATA = CustomRegisters.getCustomAddress("SPR0DATA") - 0xdff000;
 	const regSPR0DATB = CustomRegisters.getCustomAddress("SPR0DATB") - 0xdff000;
+	const regSPR7DATB = CustomRegisters.getCustomAddress("SPR7DATB") - 0xdff000;
 	const spriteStride = CustomRegisters.getCustomAddress("SPR1POS") - CustomRegisters.getCustomAddress("SPR0POS");
 
 	interface Sprite {
@@ -174,12 +175,13 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 					customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
 				}
 
-                // **15ms**
-				const dmaType = dmaRecord.type || 0;
-				const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
-				if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
+				const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
+				if(!dmaType)
 					continue;
-				const dmaColor = dmaTypes[dmaType].subtypes[dmaSubtype].color;
+				const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ?? dmaType.subtypes.get(0);
+				if(!dmaSubtype)
+					continue;
+				const dmaColor = dmaSubtype.color;
 				putDma(cycleX, cycleY, dmaColor);
 			}
 			// vpos, hpos - https://www.techtravels.org/2012/04/progress-on-amiga-vsc-made-this-weekend-vsync-problem-persists/ 
@@ -248,18 +250,20 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 				//if(cycleY === 100) console.log(` **** load scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')}`);
 			}
 
-			// sprites **6ms**
-			for(let i = 0; i < 8; i++) {
-				if(dmaRecord.reg === regSPR0CTL + i * spriteStride) {
+			// sprites
+			if(dmaRecord.reg >= regSPR0POS && dmaRecord.reg <= regSPR7DATB) {
+				const i = ((dmaRecord.reg - regSPR0POS) / spriteStride) | 0;
+				const r = dmaRecord.reg - i * spriteStride;
+				if(r === regSPR0CTL) {
 					sprites[i].armed = false;
 					sprites[i].hstart = (dmaRecord.dat & 1) | (sprites[i].hstart & ~1);
 					sprites[i].attach = (dmaRecord.dat & (1 << 7)) ? true : false;
-				} else if(dmaRecord.reg === regSPR0POS + i * spriteStride) {
+				} else if(r === regSPR0POS) {
 					sprites[i].hstart = ((dmaRecord.dat & 0xff) << 1) | (sprites[i].hstart & 1);
-				} else if(dmaRecord.reg === regSPR0DATA + i * spriteStride) {
+				} else if(r === regSPR0DATA) {
 					sprites[i].armed = true;
 					sprites[i].data = dmaRecord.dat;
-				} else if(dmaRecord.reg === regSPR0DATB + i * spriteStride) {
+				} else if(r === regSPR0DATB) {
 					sprites[i].datb = dmaRecord.dat;
 				}
 			}

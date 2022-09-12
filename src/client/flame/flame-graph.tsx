@@ -139,11 +139,12 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 
 			if(dmaRecord.type === undefined && dmaRecord.evt === undefined)
 				continue;
-			const dmaType = dmaRecord.type || 0;
-			const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
-			if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
+			const dmaType = dmaTypes.get(dmaRecord.type) ?? dmaTypes.get(0);
+			const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ?? dmaType.subtypes.get(0);
+			if(!dmaSubtype)
 				continue;
-
+			const dmaColor = dmaSubtype.color;
+	
 			if(dmaRecord.reg === regDMACON) {
 				if(dmaRecord.dat & DMACONFlags.SETCLR)
 					dmacon |= dmaRecord.dat & 0x7FFF;
@@ -151,10 +152,9 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 					dmacon &= ~dmaRecord.dat;
 			}
 
-			let text = dmaTypes[dmaType].name;
-			if(dmaTypes[dmaType].subtypes[dmaSubtype].name !== undefined)
-				text += ' (' + dmaTypes[dmaType].subtypes[dmaSubtype].name + ')';
-			const color = dmaTypes[dmaType].subtypes[dmaSubtype].color;
+			let text = dmaType.name;
+			if(dmaSubtype.name !== undefined)
+				text += ' (' + dmaSubtype.name + ')';
 
 			const x1 = i * 2 / duration;
 			const x2 = (i + 1) * 2 / duration;
@@ -169,7 +169,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 				y2,
 				level: 0,
 				text,
-				color,
+				color: dmaColor,
 				loc: {
 					filtered: true,
 					graphId: 100000 + i,
@@ -207,7 +207,7 @@ const buildBlitBoxes = (MODEL: IProfileModel) => {
 		const line = !!(blit.BLTCON1 & BLTCON1Flags.LINE);
 		const fill = blit.BLTCON1 & (BLTCON1Flags.EFE | BLTCON1Flags.IFE);
 		const dmaSubtype = line ? DmaSubTypes.BLITTER_LINE : fill ? DmaSubTypes.BLITTER_FILL : DmaSubTypes.BLITTER;
-		const color = dmaTypes[DmaTypes.BLITTER].subtypes[dmaSubtype].color;
+		const color = dmaTypes.get(DmaTypes.BLITTER).subtypes.get(dmaSubtype).color;
 		const minterm = blit.BLTCON0 & 0xff;
 
 		const x1 = blit.cycleStart * 2 / duration; // * 2: convert from DMA cycles to CPU cycles
@@ -327,7 +327,7 @@ export const FlameGraph: FunctionComponent<{
 	data: readonly IColumn[];
 	filter: IRichFilter;
 	displayUnit: DisplayUnit;
-	time;
+	time: number;
 	setTime: StateUpdater<number>;
 }> = ({ frame, data, filter, displayUnit, time, setTime }) => {
 	const vscode = VsCodeApi as IVscodeApi<ISerializedState>;
@@ -393,7 +393,7 @@ export const FlameGraph: FunctionComponent<{
 		const range = bounds.maxX - bounds.minX;
 		const width = canvasSize.width / range;
 		const scroll = bounds.minX * width;
-		scrollChildRef.current.style.width = width + 'px';
+		scrollChildRef.current.style.width = `${width}px`;
 		if(scroll !== scrollRef.current.scrollLeft) {
 			scrollRef.current.ignoreNextScroll = true;
 			scrollRef.current.scrollLeft = scroll;
@@ -605,8 +605,10 @@ export const FlameGraph: FunctionComponent<{
 
 			const from = bounds;
 			const to = 'minX' in target ? target : { minX: (target ).x1, maxX: (target ).x2 };
-			if(from.minX === to.minX && from.maxX === to.maxX)
-				to.minX = 0, to.maxX = 1;
+			if(from.minX === to.minX && from.maxX === to.maxX) {
+				to.minX = 0;
+				to.maxX = 1;
+			}
 
 			//setBounds(to);return;
 

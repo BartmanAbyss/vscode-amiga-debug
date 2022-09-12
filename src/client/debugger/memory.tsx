@@ -70,11 +70,11 @@ export const MemoryView: FunctionComponent<{
 			const dmaRecord = MODELS[frame].amiga.dmaRecords[i];
 			if(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
 				continue;
-			const dmaType = dmaRecord.type || 0;
-			const dmaSubtype = (Object.keys(dmaTypes[dmaType].subtypes).length === 1) ? 0 : (dmaRecord.extra || 0);
-			if(dmaType >= dmaTypes.length || !dmaTypes[dmaType].subtypes[dmaSubtype])
+			const dmaType = dmaTypes.get(dmaRecord.type) ?? dmaTypes.get(0);
+			const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ?? dmaType.subtypes.get(0);
+			if(!dmaSubtype)
 				continue;
-			const dmaColor = dmaTypes[dmaType].subtypes[dmaSubtype].color;
+			const dmaColor = dmaSubtype.color;
 			const alpha = (1 - Math.min(Math.max((maxCycle - i) / persistence, 0), 1)) * 255;
 
 			let read = true;
