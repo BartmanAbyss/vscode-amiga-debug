@@ -33,3 +33,5 @@ export function extractBits(value: number, offset: number, width: number) {
 	const bvalue = ((value & mask) >>> offset) >>> 0;
 	return bvalue;
 }
+
+export const swizzle = (src: number, bitFrom: number, bitTo: number) => ((src >>> bitFrom) & 1) << bitTo;

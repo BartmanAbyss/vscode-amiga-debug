@@ -695,10 +695,11 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 }
 
 // AABBGGRR
-export const GetAmigaColor = (color: number): number => ((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
-	(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
-	(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
-	0xff000000) >>> 0; // AA;
+export const GetAmigaColor = (color: number): number => 
+	((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
+	 (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
+	 (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
+	 0xff000000) >>> 0; // AA;
 
 // AABBGGRR <-> AARRGGBB
 const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
