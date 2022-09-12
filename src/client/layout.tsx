@@ -112,7 +112,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 		const fr = parseInt(event.currentTarget.getAttribute('data'));
 		// build models on demand. memory, copper, blits have already been filled by client.tsx
 		if(!MODELS[fr].nodes)
-			MODELS[fr] = { ...MODELS[fr], ...await buildModel(PROFILES[fr]) };
+			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
 		setFrame(fr);
 	}, [setFrame]);
 

@@ -10,7 +10,6 @@ import { DisplayUnit, scaleValue } from './display';
 import { DmaRecord } from '../backend/profile_types';
 
 import { Base64Decoder } from 'base64-encoding';
-let base64decoder: Base64Decoder;
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -212,7 +211,7 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): readonly IAnnotationLoc
 /**
  * Computes the model for the given profile.
  */
-export const buildModel = async (profile: ICpuProfileRaw): Promise<IProfileModel> => {
+export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	if(!profile.timeDeltas)
 		profile.timeDeltas = [];
 	if(!profile.samples)
@@ -231,9 +230,6 @@ export const buildModel = async (profile: ICpuProfileRaw): Promise<IProfileModel
 	}
 */
 	console.time('buildModel');
-
-	if(!base64decoder)
-		base64decoder = await new Base64Decoder().optimize();
 
 	const sourceLocations = ensureSourceLocations(profile);
 	const locations: ILocation[] = sourceLocations.map((l, id) => {
@@ -344,8 +340,8 @@ export const buildModel = async (profile: ICpuProfileRaw): Promise<IProfileModel
 
 		// decode memory to binary
 		if(model.amiga.chipMem) {
-			const chipMem = base64decoder.decode(model.amiga.chipMem);
-			const bogoMem = base64decoder.decode(model.amiga.bogoMem);
+			const chipMem = new Base64Decoder().decode(model.amiga.chipMem);
+			const bogoMem = new Base64Decoder().decode(model.amiga.bogoMem);
 			model.memory = new Memory(chipMem, bogoMem);
 		}
 	}
