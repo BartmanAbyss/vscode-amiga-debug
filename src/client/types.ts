@@ -90,6 +90,13 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	nodes: IProfileNode[];
 }
 
+export interface IAmigaProfileSplit {
+	$id: 'IAmigaProfileSplit';
+	numFrames: number;
+	firstFrame: ICpuProfileRaw;
+	screenshots: string[];
+}
+
 // messages from webview to vs code
 export interface IOpenDocumentMessage {
 	type: 'openDocument';

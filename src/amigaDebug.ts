@@ -703,12 +703,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 					if(message.startsWith("PRF: ")) {
 						const match = message.match(/(\d+)\/(\d+)/);
 						if(match)
-							progress.report({ increment: 100 / parseInt(match[2]), message: `Profiling frame ${match[1]} of ${match[2]} `});
+							progress.report({ increment: 50 / numFrames, message: `Profiling frame ${match[1]} of ${match[2]}`});
 						else
 							progress.report({ message });
 					}
 				};
-
 				this.miDebugger.on('msg', debuggerProgress);
 
 				// path to profile file
@@ -729,7 +728,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const kickSymPath = path.join(binPath, `symbols/kick_${kickId}.elf`);
 				let kickSymTable: SymbolTable = null;
 				if(fs.existsSync(kickSymPath)) {
-					const kickBase = profileFile.kickRomSize === 512 * 1024 ? 0xf80000 : 0xfc0000;
+					const kickBase = 0x100_0000 - profileFile.kickRomSize;
 					kickSymTable = new SymbolTable(objdumpPath, kickSymPath);
 					kickSymTable.relocate([ { name: '.kick', address: kickBase, size: profileFile.kickRomSize } ]);
 				}
@@ -737,8 +736,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const profiler = new Profiler(sourceMap, this.symbolTable, kickSymTable);
 	
 				progress.report({ message: 'Writing profile...'});
-				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile, Disassemble(objdumpPath, this.args.program + ".elf")));
-
+				const disasm = Disassemble(objdumpPath, this.args.program + ".elf");
+				if(numFrames > 1) {
+					await profiler.profileTimeSplit(tmp, profileFile, disasm, (curFrame: number, numFrames: number) => {
+						progress.report({ increment: 50 / numFrames, message: `Writing frame ${curFrame + 1} of ${numFrames}`});
+					});
+				} else {
+					fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile, disasm));
+				}
+					
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 				this.miDebugger.off('msg', debuggerProgress);

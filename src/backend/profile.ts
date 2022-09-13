@@ -2,10 +2,11 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as util from 'util';
 import { GetJump, JumpType } from '../client/68k';
 import { print_insn_m68k } from '../client/68k-dis';
 import { NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../client/dma';
-import { ICpuProfileRaw, Register } from '../client/types';
+import { IAmigaProfileSplit, ICpuProfileRaw, Register } from '../client/types';
 import { profileCommon } from './profile_common';
 import { CallFrame, DmaRecord, GfxResource, GfxResourceFlags, GfxResourceType, SourceLine } from './profile_types';
 import { SymbolTable } from './symbols';
@@ -570,6 +571,31 @@ export class Profiler {
 	}
 
 	public profileTime(profileFile: ProfileFile, disassembly: string): string {
+		return JSON.stringify(this.profileTimeInternal(profileFile, disassembly)/*, null, 2*/);
+	}
+
+	public async profileTimeSplit(path: string, profileFile: ProfileFile, disassembly: string, callback: (curFrame: number, numFrames: number) => void) {
+		const frames = this.profileTimeInternal(profileFile, disassembly);
+		const screenshots = frames.map((frame) => frame.$amiga.screenshot);
+		frames.forEach((frame) => { 
+			frame.$amiga.screenshot = undefined; 
+		});
+		const out: IAmigaProfileSplit = {
+			$id: 'IAmigaProfileSplit',
+			numFrames: frames.length,
+			firstFrame: frames.shift(),
+			screenshots
+		};
+		const writeFile = util.promisify(fs.writeFile);
+		callback(0, out.numFrames);
+		await writeFile(`${path}.amigaprofile`, JSON.stringify(out));
+		for(let i = 0; i < frames.length; i++) {
+			callback(i + 1, out.numFrames);
+			await writeFile(`${path}_${(i+1).toString().padStart(2, '0')}.amigaprofile`, JSON.stringify(frames[i]));
+		}
+	}
+
+	private profileTimeInternal(profileFile: ProfileFile, disassembly: string): ICpuProfileRaw[] {
 		const out: ICpuProfileRaw[] = [];
 
 		for (const frame of profileFile.frames)
@@ -592,7 +618,7 @@ export class Profiler {
 		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
 		out[0].$amiga.objdump = disassembly + this.disassemblePcTrace(profileFile, kickTrace, kickFunctions);
 
-		return JSON.stringify(out/*, null, 2*/);
+		return out;
 	}
 
 	private profileTimeFrame(profileFile: ProfileFile, frame: ProfileFrame): ICpuProfileRaw {

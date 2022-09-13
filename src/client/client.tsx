@@ -33,7 +33,7 @@ import { CpuProfileLayout } from './layout';
 import { IProfileModel, buildModel, createLenses, GetMemory } from './model';
 import { profileShrinkler, Stats } from '../backend/shrinkler';
 import { VsCodeApi } from './vscodeApi';
-import { ISetCodeLenses, ICpuProfileRaw, IErrorMessage } from './types';
+import { ISetCodeLenses, ICpuProfileRaw, IErrorMessage, IAmigaProfileSplit } from './types';
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
 import { SavestateView } from './savestate';
@@ -59,13 +59,28 @@ async function Profiler() {
 		const response = await fetch(PROFILE_URL);
 		console.timeEnd('fetch');
 		console.time('json');
-		PROFILES = await response.json() as ICpuProfileRaw[];
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const obj = await response.json();
 		console.timeEnd('json');
 
-		if((PROFILES as unknown as Stats).hunks) { // shrinklerstats
+		if((obj as Stats).hunks) { // shrinklerstats
 			console.log("Shrinkler");
-			PROFILES = [ profileShrinkler(PROFILES as unknown as Stats) ];
+			PROFILES = [ profileShrinkler(obj as Stats) ];
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		} else if(obj['$id'] === 'IAmigaProfileSplit') {
+			console.time('extra frames');
+			const split = obj as IAmigaProfileSplit;
+			PROFILES = [ split.firstFrame ];
+			PROFILES[0].$amiga.screenshot = split.screenshots[0];
+			for(let i = 1; i < split.numFrames; i++) {
+				const url = PROFILE_URL.replace('.amigaprofile', `_${i.toString().padStart(2, '0')}.amigaprofile`);
+				const response = await fetch(url);
+				PROFILES.push(await response.json() as ICpuProfileRaw);
+				PROFILES[i].$amiga.screenshot = split.screenshots[i];
+			}
+			console.timeEnd('extra frames');
 		}
+		//PROFILES =  as ICpuProfileRaw[];
 
 		console.time('models');
 
