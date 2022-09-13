@@ -55,10 +55,12 @@ async function Profiler() {
 
 	document.body.appendChild(loader);
 	try {
-		console.time('fetch+json');
+		console.time('fetch');
 		const response = await fetch(PROFILE_URL);
+		console.timeEnd('fetch');
+		console.time('json');
 		PROFILES = await response.json() as ICpuProfileRaw[];
-		console.timeEnd('fetch+json');
+		console.timeEnd('json');
 
 		if((PROFILES as unknown as Stats).hunks) { // shrinklerstats
 			console.log("Shrinkler");

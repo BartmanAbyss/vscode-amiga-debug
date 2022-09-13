@@ -352,9 +352,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 };
 
 export function GetMemory(base: Memory, dmaRecords: DmaRecord[]): Memory {
-	console.time('getMemory');
 	const memory = GetMemoryAfterDma(base, dmaRecords, 0xffffffff);
-	console.timeEnd('getMemory');
 	return memory;
 }
 
