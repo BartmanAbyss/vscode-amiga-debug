@@ -3,9 +3,9 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra } from './types';
+import { ICpuProfileRaw, IAnnotationLocation, IAmigaProfileExtra, Lens, IShrinklerProfileExtra, IAmigaProfileBase } from './types';
 import { ISourceLocation } from './location-mapping';
-import { Memory, Blit, GetBlits, GetMemoryAfterDma, Copper } from './dma';
+import { Memory, Blit, GetBlits, GetMemoryAfterDma, Copper, GetCopper } from './dma';
 import { DisplayUnit, scaleValue } from './display';
 import { DmaRecord } from '../backend/profile_types';
 
@@ -74,6 +74,7 @@ export interface IProfileModel {
 	duration: number;
 
 	amiga?: IAmigaProfileExtra;
+	base?: IAmigaProfileBase;
 	shrinkler?: IShrinklerProfileExtra;
 
 	// these fields get filled in client.tsx
@@ -211,7 +212,7 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): readonly IAnnotationLoc
 /**
  * Computes the model for the given profile.
  */
-export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
+export const buildModel = (profile: ICpuProfileRaw, memory?: Memory): IProfileModel => {
 	if(!profile.timeDeltas)
 		profile.timeDeltas = [];
 	if(!profile.samples)
@@ -234,7 +235,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 	const sourceLocations = ensureSourceLocations(profile);
 	const locations: ILocation[] = sourceLocations.map((l, id) => {
 		const src = getBestLocation(profile, l.locations);
-
 		return {
 			id,
 			selfTime: 0,
@@ -329,21 +329,28 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 		rootPath: profile.$vscode?.rootPath,
 		duration: profile.endTime - profile.startTime,
 		amiga: profile.$amiga,
+		base: profile.$base,
 		shrinkler: profile.$shrinkler,
+		memory,
 	};
-	if (model.amiga) {
+	if(model.base) {
 		// set duration to exactly 1 frame
-		const hz = (model.amiga.baseClock === 28_375_160) ? 50 /* PAL */ : 60 /* NTSC */;
-		const cpuFreq = model.amiga.baseClock / 4 * 256 / model.amiga.cpuCycleUnit;
+		const hz = (model.base.baseClock === 28_375_160) ? 50 /* PAL */ : 60 /* NTSC */;
+		const cpuFreq = model.base.baseClock / 4 * 256 / model.base.cpuCycleUnit;
 		model.duration = cpuFreq / hz;
-		console.log("MODEL:", "hz", hz, "cpuCycleUnit", model.amiga.cpuCycleUnit, "cpuFreq", cpuFreq, "duration", model.duration);
+		console.log("MODEL:", "hz", hz, "cpuCycleUnit", model.base.cpuCycleUnit, "cpuFreq", cpuFreq, "duration", model.duration);
 
 		// decode memory to binary
-		if(model.amiga.chipMem) {
-			const chipMem = new Base64Decoder().decode(model.amiga.chipMem);
-			const bogoMem = new Base64Decoder().decode(model.amiga.bogoMem);
+		if(model.base.chipMem) {
+			const chipMem = new Base64Decoder().decode(model.base.chipMem);
+			const bogoMem = new Base64Decoder().decode(model.base.bogoMem);
 			model.memory = new Memory(chipMem, bogoMem);
 		}
+	}
+	if(model.amiga) {
+		model.copper = GetCopper(model.memory.chipMem, model.amiga.dmaRecords);
+		const customRegs = new Uint16Array(model.amiga.customRegs);
+		model.blits = GetBlits(customRegs, model.amiga.dmaRecords);
 	}
 
 	console.timeEnd('buildModel');

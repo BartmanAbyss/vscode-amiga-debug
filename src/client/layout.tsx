@@ -55,7 +55,9 @@ const defaultLayout: LayoutData = {
 <DockLayout defaultLayout={layout} style={{position: 'absolute', left: 10, top: 10, right: 10, bottom: 10}}/>
 */
 
-export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
+export const CpuProfileLayout: FunctionComponent<{
+	numFramesLoaded: number;
+}> = ({ numFramesLoaded = 1 }) => {
 	const [frame, setFrame] = useState(0);
 	const [regex, setRegex] = useState(false);
 	const [caseSensitive, setCaseSensitive] = useState(false);
@@ -65,7 +67,7 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 	const filter: IRichFilter = useMemo(() => ({ text, caseSensitive, regex }), [text, caseSensitive, regex]);
 
 	const dataFlame = useMemo(() => buildColumns(MODELS[frame]), [frame]);
-	const dataTable = useMemo(() => Object.values(createTopDownGraph(MODELS[frame]).children), [frame]);
+	const dataTable = useMemo(() => Object.values(createTopDownGraph(MODELS[frame], MODELS[0].base).children), [frame]);
 
 	const flameHeight = useMemo(() => {
 		const extraRows = (MODELS[frame].amiga ? 2 : 0) + 1 + 1; // +1 for dmaRecord, +1 for blits, +1 padding, +1 for scrollbar
@@ -108,12 +110,10 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 		return () => PubSub.unsubscribe(token);
 	}, []);*/
 
-	const onClickFrame = useCallback(async (event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
+	const onClickFrame = useCallback((event: JSX.TargetedMouseEvent<HTMLImageElement>) => {
 		const fr = parseInt(event.currentTarget.getAttribute('data'));
-		// build models on demand. memory, copper, blits have already been filled by client.tsx
-		if(!MODELS[fr].nodes)
-			MODELS[fr] = { ...MODELS[fr], ...buildModel(PROFILES[fr]) };
-		setFrame(fr);
+		if(MODELS.length >= fr)
+			setFrame(fr);
 	}, [setFrame]);
 
 	// don't use createPortal, causes too much re-render
@@ -143,19 +143,19 @@ export const CpuProfileLayout: FunctionComponent<{}> = (_) => {
 		const cycles: number[] = [];
 		if(PROFILES[0].$amiga) {
 			for(const p of PROFILES)
-				cycles.push(GetBlitCycles(p.$amiga.dmaRecords));
+				cycles.push(p.$amiga?.dmaRecords ? GetBlitCycles(p.$amiga.dmaRecords) : 0);
 		}
 		return cycles;
-	}, []);
+	}, [numFramesLoaded]);
 
 	return (
 		<>
 			{PROFILES[0].$amiga && PROFILES.length > 1 && <>
 				<div class={styles.frames}>
 					{PROFILES.map((PROFILE, fr) => <div class={styles.frame}>
-						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent') }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.$amiga.screenshot} alt={`Frame ${fr + 1}`} />
+						<img style={{border: '2px solid ' + (fr === frame ? 'var(--vscode-focusBorder)' : 'transparent'), opacity: fr < numFramesLoaded ? 1.0 : 0.5 }} onClick={onClickFrame} onMouseEnter={onEnterFrame} onMouseLeave={onLeaveFrame} data={fr.toString()} src={PROFILE.screenshot} alt={`Frame ${fr + 1}`} />
 						<div class={styles.label}>{fr + 1}</div>
-						<div style={{width: `${100 - (100 * PROFILE.$amiga.idleCycles / (7_093_790 / 50))}%`, backgroundColor: cpuColor, height: '5px'}} />
+						<div style={{width: `${100 - (100 * PROFILE.$amiga?.idleCycles / (7_093_790 / 50))}%`, backgroundColor: cpuColor, height: '5px'}} />
 						<div style={{width: `${100 * frameBlitCycles[fr] / (7_093_790 / 2 / 50)}%`, backgroundColor: blitColor, height: '5px'}} />
 					</div>)}
 				</div>

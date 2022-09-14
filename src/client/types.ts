@@ -54,24 +54,26 @@ export enum Register {
 	_count // end marker
 }
 
-export interface IAmigaProfileExtra {
-	objdump?: string; // disassembly from objdump, only in frame[0]
-	chipMem?: string; // base64 encoded binary data, only in frame[0]
-	bogoMem?: string; // base64 encoded binary data, only in frame[0]
-	baseClock?: number;
-	cpuCycleUnit?: number;
-	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
-	chipsetFlags: number;
-	customRegs: number[];
-	dmaRecords: DmaRecord[];
-	gfxResources: GfxResource[];
-	idleCycles: number;
+export interface IAmigaProfileBase {
+	objdump: string; // disassembly from objdump
+	chipMem: string; // base64 encoded binary data
+	bogoMem: string; // base64 encoded binary data
 	symbols: SymbolInformation[];
 	sections: Section[];
 	systemStackLower: number;
 	systemStackUpper: number;
 	stackLower: number;
 	stackUpper: number;
+	baseClock: number;
+	cpuCycleUnit: number;
+}
+
+export interface IAmigaProfileExtra {
+	chipsetFlags: number;
+	customRegs: number[];
+	dmaRecords: DmaRecord[];
+	gfxResources: GfxResource[];
+	idleCycles: number;
 	uniqueCallFrames: CallFrame[];
 	callFrames: number[]; // 1 entry per word in .text section, indexes uniqueCallFrames
 	pcTrace: number[]; // 1 entry: PC relative to .text, number of cycles
@@ -87,6 +89,8 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
 	$shrinkler?: IShrinklerProfileExtra;
 	$vscode?: IJsDebugAnnotations;
 	$amiga?: IAmigaProfileExtra;
+	$base?: IAmigaProfileBase; // only in frame[0]
+	screenshot?: string; // base64 encoded jpeg, ready to use (only present for multi-frame captures)
 	nodes: IProfileNode[];
 }
 

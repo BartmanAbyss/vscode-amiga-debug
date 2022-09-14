@@ -159,7 +159,7 @@ const DeniseScreen: FunctionComponent<{
 
 	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
-		if(state.screenshot && PROFILES[frame].$amiga.screenshot) {
+		if(state.screenshot && PROFILES[frame].screenshot) {
 			//MAXVPOS_PAL=312
 			//752x574: Overscan
 			//784x578: Overscan+
@@ -178,7 +178,7 @@ const DeniseScreen: FunctionComponent<{
 				             : [0, 0];
 				context.drawImage(img, x, y, img.width * canvasScaleX, img.height * canvasScaleY / 2);
 			};
-			img.src = PROFILES[frame].$amiga.screenshot;
+			img.src = PROFILES[frame].screenshot;
 			return null;
 		}
 
@@ -278,7 +278,7 @@ export const DeniseView: FunctionComponent<{
 			<ToggleButton icon="Sprites" label="Show Sprites" checked={state.sprites.some((v) => v)} onChange={showAllSprites} />
 			{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
 			<span style={{ width: '1em' }}></span>
-			{PROFILES[frame].$amiga.screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
+			{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
 		</Toolbar>
 		</div>
 		<div style={{ overflow: 'auto' }}>

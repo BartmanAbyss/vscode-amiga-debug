@@ -206,7 +206,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(frame === -1)
 			return new ObjdumpModel(OBJDUMP);
 
-		return new ObjdumpModel(MODELS[0].amiga.objdump, MODELS[0].amiga.cpuCycleUnit === 256 ? true : false, MODELS[frame].amiga.pcTrace); // theoretical cycles only for 7MHz (68000)
+		return new ObjdumpModel(MODELS[0].base.objdump, MODELS[0].base.cpuCycleUnit === 256 ? true : false, MODELS[frame].amiga.pcTrace); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
 

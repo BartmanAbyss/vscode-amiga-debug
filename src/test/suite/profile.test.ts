@@ -162,7 +162,7 @@ function makeDirs() {
 
 function test_profile_time(base: string, elf: string) {
 	makeDirs();
-	const profileFile = new ProfileFile(path.join(testDataDir, base));
+	const profileFile = new ProfileFile(fs.readFileSync(path.join(testDataDir, base)));
 	const symbolTable = new SymbolTable(path.join(binDir, 'm68k-amiga-elf-objdump.exe'), path.join(testDataDir, elf));
 	const sourceMap = new SourceMap(path.join(binDir, 'm68k-amiga-elf-addr2line.exe'), path.join(testDataDir, elf), symbolTable);
 	symbolTable.relocate(symbolTable.getRelocatedSections(profileFile.sectionBases));
@@ -200,7 +200,7 @@ function test_unwind(elf: string) {
 
 function test_profile_savestate(base: string) {
 	makeDirs();
-	const profileArchive = new ProfileFile(path.join(testDataDir, base));
+	const profileArchive = new ProfileFile(fs.readFileSync(path.join(testDataDir, base)));
 	const profiler = new Profiler(null, null);
 	fs.writeFileSync(path.join(testOutDir, base + ".amigaprofile"), profiler.profileSavestate(profileArchive));
 	const html = htmlPage(base, [ "client.js" ], "data/" + base + ".amigaprofile");

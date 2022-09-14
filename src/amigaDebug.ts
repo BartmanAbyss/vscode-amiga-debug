@@ -719,7 +719,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				progress.report({ message: 'Reading profile...'});
 
 				// read profile file
-				const profileFile = new ProfileFile(tmp);
+				const readFile = util.promisify(fs.readFile);
+				const profileFile = new ProfileFile(await readFile(tmp));
 				if(!DEBUG)
 					fs.unlinkSync(tmp);
 

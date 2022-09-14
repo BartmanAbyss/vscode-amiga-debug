@@ -1202,7 +1202,7 @@ const Tooltip: FunctionComponent<{
 					<dd className={styles.function}>{location.callFrame.functionName}</dd>
 					{amiga.dmaRecord.addr !== undefined && amiga.dmaRecord.addr !== 0xffffffff && (<>
 						<dt className={styles.time}>Address</dt>
-						<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODELS[frame].amiga)}</dd>
+						<dd className={styles.time}>{SymbolizeAddress(amiga.dmaRecord.addr & 0x00ffffff, MODELS[frame].amiga, MODELS[0].base)}</dd>
 					</>)}
 					{dmaReg && (<>
 						<dt className={styles.time}>Register</dt>
@@ -1242,7 +1242,7 @@ const Tooltip: FunctionComponent<{
 						{BLTDAT[channel] ? <>
 							<dd className={styles.time}>%{amiga.blit.BLTxDAT[channel].toString(2).padStart(16, '0')}</dd>
 						</> : <>
-							<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga)} 
+							<dd className={styles.time}>{SymbolizeAddress(amiga.blit.BLTxPT[channel], MODELS[frame].amiga, MODELS[0].base)} 
 							{!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) && channel === 0 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON0 >>> 12).toString()}</>)}
 							{!(amiga.blit.BLTCON1 & BLTCON1Flags.LINE) && channel === 1 && (<><span class={styles.eh}>Shift</span> {(amiga.blit.BLTCON1 >>> 12).toString()}</>)}
 							<span class={styles.eh}>Modulo</span> {amiga.blit.BLTxMOD[channel]}</dd>

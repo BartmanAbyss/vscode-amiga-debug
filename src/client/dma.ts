@@ -1,16 +1,16 @@
 import { DmaRecord } from "../backend/profile_types";
 import { CustomRegisters, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './customRegisters';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
-import { IAmigaProfileExtra, ICpuProfileRaw } from "./types";
+import { IAmigaProfileBase, IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
 declare let PROFILES: ICpuProfileRaw[];
 
 // COERCE: make signed
 const COERCE16 = (x: number) => (x ^ 0x8000) - 0x8000;
 
-export const CpuCyclesToDmaCycles = (cpuCycles: number) => (cpuCycles * PROFILES[0].$amiga.cpuCycleUnit / 512) | 0;
+export const CpuCyclesToDmaCycles = (cpuCycles: number) => (cpuCycles * PROFILES[0].$base.cpuCycleUnit / 512) | 0;
 
-export const DmaCyclesToCpuCycles = (dmaCycles: number) => (dmaCycles * 512 / PROFILES[0].$amiga.cpuCycleUnit) | 0;
+export const DmaCyclesToCpuCycles = (dmaCycles: number) => (dmaCycles * 512 / PROFILES[0].$base.cpuCycleUnit) | 0;
 
 export class Memory {
 	public chipMemAddr = 0x00000000;
@@ -762,27 +762,27 @@ export function GetPaletteFromCopper(copper: Copper[]): number[] {
 	return palette;
 }
 
-export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra) {
+export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra, base: IAmigaProfileBase) {
 	const addressString = `$${address.toString(16).padStart(8, '0')}`;
 
 	if(address !== 0) {
-		if(address >= amiga.systemStackLower && address < amiga.systemStackUpper)
-			return `SYSSTACK-$${(amiga.systemStackUpper - address).toString(16)} (${addressString})`;
-		if(address >= amiga.stackLower && address < amiga.stackUpper)
-			return `STACK-$${(amiga.stackUpper - address).toString(16)} (${addressString})`;
+		if(address >= base.systemStackLower && address < base.systemStackUpper)
+			return `SYSSTACK-$${(base.systemStackUpper - address).toString(16)} (${addressString})`;
+		if(address >= base.stackLower && address < base.stackUpper)
+			return `STACK-$${(base.stackUpper - address).toString(16)} (${addressString})`;
 
 		const resource = amiga.gfxResources.find((r) => address >= r.address && address < r.address + r.size);
 		if(resource)
 			return `${resource.name}+$${(address - resource.address).toString(16)} (${addressString})`;
 
-		const section = amiga.sections.find((r) => address >= r.address && address < r.address + r.size);
+		const section = base.sections.find((r) => address >= r.address && address < r.address + r.size);
 		if(section) {
 			if(section.name === '.text') {
 				const offset = address - section.address;
 				const callFrame = amiga.uniqueCallFrames[amiga.callFrames[offset >> 1]];
 				return `${callFrame.frames.map((fr) => fr.func).join(">")} (${section.name}+$${offset.toString(16)}) (${addressString})`;
 			}
-			const symbol = amiga.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
+			const symbol = base.symbols.find((r) => address >= r.address + r.base && address < r.address + r.base + r.size);
 			if(symbol)
 				return `${symbol.name}+$${(address - symbol.address - symbol.base).toString(16)} (${section.name}+$${symbol.address.toString(16)}) (${addressString})`;
 			return `${section.name}+$${(address - section.address).toString(16)} (${addressString})`;

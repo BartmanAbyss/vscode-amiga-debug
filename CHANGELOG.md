@@ -9,6 +9,8 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - NEW: screen: show bitplane pointers
 - CHG: screen: improve performance by 40%
 - CHG: profiler: improve loading performance by >1000%
+- CHG: profiler: multi-frame captures are now loaded in the background for faster startup time
+- CHG: savestate: show progress bar during profiling
 
 ## 1.5.6
 - FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)

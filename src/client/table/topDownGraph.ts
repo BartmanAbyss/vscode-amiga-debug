@@ -4,6 +4,7 @@
 
 import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from '../model';
 import { DmaTypes, dmaTypes, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { IAmigaProfileBase } from '../types';
 
 export class TopDownNode implements IGraphNode {
 	public static root() {
@@ -91,7 +92,7 @@ const processNode = (aggregate: TopDownNode, node: IComputedNode, model: IProfil
 	}
 };
 
-const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
+const processDmaNodes = (parent: TopDownNode, model: IProfileModel, base: IAmigaProfileBase) => {
 	if(!model.amiga || !model.amiga.dmaRecords)
 		return;
 	const dmaRecords = model.amiga.dmaRecords;
@@ -128,7 +129,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 			if(!dmaType)
 				continue;
 			const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ? dmaRecord.extra : 0;
-			dmaTimes[(dmaSubtype << 4) | dmaRecord.type] += (512 / model.amiga.cpuCycleUnit) | 0;
+			dmaTimes[(dmaSubtype << 4) | dmaRecord.type] += (512 / base.cpuCycleUnit) | 0;
 		}
 	}
 
@@ -210,7 +211,7 @@ const processDmaNodes = (parent: TopDownNode, model: IProfileModel) => {
 /**
  * Creates a bottom-up graph of the process information
  */
-export const createTopDownGraph = (model: IProfileModel) => {
+export const createTopDownGraph = (model: IProfileModel, base: IAmigaProfileBase) => {
 	const root = TopDownNode.root();
 	let cpuRoot = root;
 	if(model.amiga) {
@@ -246,8 +247,7 @@ export const createTopDownGraph = (model: IProfileModel) => {
 	if(model.amiga) {
 		//root.selfTime = cpuRoot.selfTime;
 		root.aggregateTime = cpuRoot.aggregateTime;
-
-		processDmaNodes(root, model);
+		processDmaNodes(root, model, base);
 	}
 
 	return root;

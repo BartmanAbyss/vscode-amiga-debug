@@ -303,8 +303,7 @@ export class ProfileFile {
 	private static sizeofDmaRec = 49;
 	private static sizeofResource = 52;
 
-	constructor(private filename: string) {
-		const buffer = fs.readFileSync(filename);
+	constructor(private buffer: Buffer) {
 		let bufferOffset = 0;
 		const numFrames = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 		const sectionCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
@@ -455,9 +454,20 @@ export class Profiler {
 				pcTrace.push(frame.$amiga.pcTrace[i]);
 
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
-		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
-		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
-		out[0].$amiga.objdump = this.disassemblePcTrace(profileFile, pcTrace);
+		out[0].$base = {
+			chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
+			bogoMem: Buffer.from(profileFile.bogoMem).toString('base64'),
+			objdump: this.disassemblePcTrace(profileFile, pcTrace),
+			baseClock: profileFile.baseClock,
+			cpuCycleUnit: profileFile.cpuCycleUnit,
+			symbols: [],
+			sections: [],
+			systemStackLower: profileFile.systemStackLower,
+			systemStackUpper: profileFile.systemStackUpper,
+			stackLower: profileFile.stackLower,
+			stackUpper: profileFile.stackUpper
+		};
+
 		return JSON.stringify(out); //, null, 2);
 	}
 
@@ -546,19 +556,11 @@ export class Profiler {
 			startTime: 0,
 			endTime: totalCycles,
 			$amiga: {
-				chipsetFlags: frame.chipsetFlags,
-				baseClock: profileFile.baseClock,
-				cpuCycleUnit: profileFile.cpuCycleUnit,
 				customRegs: Array.from(frame.customRegs),
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,
 				idleCycles: frame.idleCycles,
-				symbols: [],
-				sections: [],
-				systemStackLower: profileFile.systemStackLower,
-				systemStackUpper: profileFile.systemStackUpper,
-				stackLower: profileFile.stackLower,
-				stackUpper: profileFile.stackUpper,
+				chipsetFlags: frame.chipsetFlags,
 				uniqueCallFrames: [],
 				callFrames: [],
 				pcTrace,
@@ -566,7 +568,7 @@ export class Profiler {
 			}
 		};
 		if (frame.screenshot.length)
-			out.$amiga.screenshot = 'data:image/' + frame.screenshotType + ';base64,' + Buffer.from(frame.screenshot).toString('base64');
+			out.screenshot = 'data:image/' + frame.screenshotType + ';base64,' + Buffer.from(frame.screenshot).toString('base64');
 		return out;
 	}
 
@@ -576,9 +578,9 @@ export class Profiler {
 
 	public async profileTimeSplit(path: string, profileFile: ProfileFile, disassembly: string, callback: (curFrame: number, numFrames: number) => void) {
 		const frames = this.profileTimeInternal(profileFile, disassembly);
-		const screenshots = frames.map((frame) => frame.$amiga.screenshot);
+		const screenshots = frames.map((frame) => frame.screenshot);
 		frames.forEach((frame) => { 
-			frame.$amiga.screenshot = undefined; 
+			frame.screenshot = undefined; 
 		});
 		const out: IAmigaProfileSplit = {
 			$id: 'IAmigaProfileSplit',
@@ -612,11 +614,25 @@ export class Profiler {
 			for(const f of this.kickstartSymbols.getFunctionSymbols())
 				kickFunctions.set(f.base + f.address, '[Kick]' + f.name);
 		}
-	
+
+		// filter symbols
+		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));
+		const symbols = this.symbolTable.symbols.filter((symbol) => symbol.size > 0 && sections.find((section) => symbol.section === section.name));
+		
 		// store memory only for first frame, will later be reconstructed via dmaRecords for other frames
-		out[0].$amiga.chipMem = Buffer.from(profileFile.chipMem).toString('base64');
-		out[0].$amiga.bogoMem = Buffer.from(profileFile.bogoMem).toString('base64');
-		out[0].$amiga.objdump = disassembly + this.disassemblePcTrace(profileFile, kickTrace, kickFunctions);
+		out[0].$base = {
+			chipMem: Buffer.from(profileFile.chipMem).toString('base64'),
+			bogoMem: Buffer.from(profileFile.bogoMem).toString('base64'),
+			objdump: disassembly + this.disassemblePcTrace(profileFile, kickTrace, kickFunctions),
+			baseClock: profileFile.baseClock,
+			cpuCycleUnit: profileFile.cpuCycleUnit,
+			symbols, 
+			sections,
+			systemStackLower: profileFile.systemStackLower,
+			systemStackUpper: profileFile.systemStackUpper,
+			stackLower: profileFile.stackLower,
+			stackUpper: profileFile.stackUpper
+		};
 
 		return out;
 	}
@@ -706,26 +722,15 @@ export class Profiler {
 		}
 		//console.log("totalCycles", totalCycles);
 
-		// filter symbols
-		const sections = this.symbolTable.sections.filter((section) => section.flags.find((f) => f === "ALLOC"));
-		const symbols = this.symbolTable.symbols.filter((symbol) => symbol.size > 0 && sections.find((section) => symbol.section === section.name));
 
 		const out: ICpuProfileRaw = {
 			...profileCommon(cycles, locations),
 			$amiga: {
 				chipsetFlags: frame.chipsetFlags,
-				baseClock: profileFile.baseClock,
-				cpuCycleUnit: profileFile.cpuCycleUnit,
 				customRegs: Array.from(frame.customRegs),
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,
 				idleCycles: frame.idleCycles,
-				symbols,
-				sections,
-				systemStackLower: profileFile.systemStackLower,
-				systemStackUpper: profileFile.systemStackUpper,
-				stackLower: profileFile.stackLower,
-				stackUpper: profileFile.stackUpper,
 				uniqueCallFrames: this.sourceMap.uniqueLines,
 				callFrames: this.sourceMap.lines,
 				pcTrace,
@@ -733,7 +738,7 @@ export class Profiler {
 			}
 		};
 		if (frame.screenshot)
-			out.$amiga.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
+			out.screenshot = 'data:image/jpg;base64,' + Buffer.from(frame.screenshot).toString('base64');
 		return out;
 	}
 

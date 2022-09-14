@@ -87,7 +87,7 @@ export const CustomRegsView: FunctionComponent<{
 			return (<div class={styles.line}>
 				<div class={styles.reg + ' ' + ((customRegs[index] !== prevRegs[index] || customRegs[index + 1] !== prevRegs[index + 1]) ? styles.cur : '')}>
 					<span class={styles.help} data={index.toString()} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onWheel={onWheel}>{regName}</span>{regPad} (${(index << 1).toString(16).padStart(3, '0')}):&nbsp;
-					{SymbolizeAddress((customRegs[index] << 16) | customRegs[index + 1], MODELS[frame].amiga)}
+					{SymbolizeAddress((customRegs[index] << 16) | customRegs[index + 1], MODELS[frame].amiga, MODELS[0].base)}
 				</div>
 				{Nav}
 			</div>);

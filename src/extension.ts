@@ -18,7 +18,7 @@ import { AmigaAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider, getEdi
 import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
-import { SourceMap, Profiler, ProfileFile } from './backend/profile';
+import { SourceMap, Profiler } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
 import { SavestateEditorProvider } from './savestate_editor_provider';
 

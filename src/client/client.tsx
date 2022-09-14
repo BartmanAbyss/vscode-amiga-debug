@@ -66,45 +66,28 @@ async function Profiler() {
 		if((obj as Stats).hunks) { // shrinklerstats
 			console.log("Shrinkler");
 			PROFILES = [ profileShrinkler(obj as Stats) ];
+			MODELS.push(buildModel(PROFILES[0]));
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		} else if(obj['$id'] === 'IAmigaProfileSplit') {
-			console.time('extra frames');
+			// split multi-frame profile
 			const split = obj as IAmigaProfileSplit;
 			PROFILES = [ split.firstFrame ];
-			PROFILES[0].$amiga.screenshot = split.screenshots[0];
+			PROFILES[0].screenshot = split.screenshots[0];
 			for(let i = 1; i < split.numFrames; i++) {
-				const url = PROFILE_URL.replace('.amigaprofile', `_${i.toString().padStart(2, '0')}.amigaprofile`);
-				const response = await fetch(url);
-				PROFILES.push(await response.json() as ICpuProfileRaw);
-				PROFILES[i].$amiga.screenshot = split.screenshots[i];
+				// dummy
+				PROFILES.push({ screenshot: split.screenshots[i], nodes: [], startTime: 0, endTime: 0 });
 			}
-			console.timeEnd('extra frames');
-		}
-		//PROFILES =  as ICpuProfileRaw[];
-
-		console.time('models');
-
-		// build model for first profile
-		MODELS.push(buildModel(PROFILES[0]));
-
-		if(PROFILES[0].$amiga) {
-			// add dummy models for rest of profiles
-			// will be built in layout.tsx as needed, but we need memory to get all copper resources
+			// build model for first profile
+			MODELS.push(buildModel(PROFILES[0]));
+		} else {
+			// regular single or multi-frame profile
+			PROFILES = obj as ICpuProfileRaw[];
+			MODELS.push(buildModel(PROFILES[0]));
 			for(let i = 1; i < PROFILES.length; i++) {
 				const memory = GetMemory(MODELS[i-1].memory, PROFILES[i-1].$amiga.dmaRecords);
-				MODELS.push({ memory } as IProfileModel);
-				//MODELS.push(null);
-				//MODELS.push(buildModel(PROFILES[i]));
-			}
-			// build copper, blits for all frames
-			for(let i = 0; i < PROFILES.length; i++) {
-				MODELS[i].copper = GetCopper(MODELS[i].memory.chipMem, PROFILES[i].$amiga.dmaRecords);
-				const customRegs = new Uint16Array(PROFILES[i].$amiga.customRegs);
-				MODELS[i].blits = GetBlits(customRegs, PROFILES[i].$amiga.dmaRecords);
+				MODELS.push(buildModel(PROFILES[i], memory));
 			}
 		}
-
-		console.timeEnd('models');
 
 		// TODO: set lenses when frame changed in layout.tsx
 		if(MODELS[0].amiga) {
@@ -118,7 +101,27 @@ async function Profiler() {
 		container = document.createElement('div');
 		container.classList.add(styles.wrapper);
 		document.body.appendChild(container);
-		render(<CpuProfileLayout />, container);
+		render(<CpuProfileLayout numFramesLoaded={1} />, container);
+
+		// load rest of frames
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		if(obj['$id'] === 'IAmigaProfileSplit') {
+			console.time('extra frames');
+			const split = obj as IAmigaProfileSplit;
+			for(let i = 1; i < split.numFrames; i++) {
+				const url = PROFILE_URL.replace('.amigaprofile', `_${i.toString().padStart(2, '0')}.amigaprofile`);
+				console.time('fetch');
+				const response = await fetch(url);
+				console.timeEnd('fetch');
+				console.time('json');
+				PROFILES[i] = { screenshot: split.screenshots[i], ...await response.json() as ICpuProfileRaw };
+				console.timeEnd('json');
+				const memory = GetMemory(MODELS[i-1].memory, PROFILES[i-1].$amiga.dmaRecords);
+				MODELS[i] = buildModel(PROFILES[i], memory);
+				render(<CpuProfileLayout numFramesLoaded={i+1} />, container);
+			}
+			console.timeEnd('extra frames');
+		}
 	} catch(e) {
 		if(container)
 			container.remove();

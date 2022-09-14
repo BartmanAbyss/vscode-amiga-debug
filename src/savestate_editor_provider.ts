@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as os from 'os';
+import * as util from 'util';
 import { bundlePage } from './profile_editor_provider';
 import { UssFile } from './backend/savestate';
 import { ProfileFile, Profiler } from './backend/profile';
@@ -141,28 +142,45 @@ class SavestateDocument implements vscode.CustomDocument {
 			return;
 
 		this.miDebugger.once("signal-stop", () => {
-			void (async () => {
+			void vscode.window.withProgress({
+				location: vscode.ProgressLocation.Notification,
+				title: "Profiling"
+			}, async (progress, token) => {
 				const date = new Date();
 				const dateString = date.getFullYear().toString() + "." + (date.getMonth() + 1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 					date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 				const tmp = path.join(os.tmpdir(), path.basename(this.ussPath) + '-' + dateString);
 				// path to profile file
 				const tmpQuoted = tmp.replace(/\\/g, '\\\\');
+				progress.report({ message: 'Starting profile...'});
+				const debuggerProgress = (type: string, message: string) => {
+					if(message.startsWith("PRF: ")) {
+						const match = message.match(/(\d+)\/(\d+)/);
+						if(match)
+							progress.report({ increment: 100 / frames, message: `Profiling frame ${match[1]} of ${match[2]}`});
+						else
+							progress.report({ message });
+					}
+				};
+				this.miDebugger.on('msg', debuggerProgress);
+
 				await this.miDebugger.sendUserInput(`monitor profile ${frames} "" "${tmpQuoted}"`);
 
 				// read profile file
-				const profileArchive = new ProfileFile(tmp);
+				const readFile = util.promisify(fs.readFile);
+				const profileFile = new ProfileFile(await readFile(tmp));
 				fs.unlinkSync(tmp); // !DEBUG
 
 				// generate output
 				const profiler = new Profiler(null, null);
-				//progress.report({ message: 'Writing profile...'});
-				fs.writeFileSync(tmp + ".amigaprofile", profiler.profileSavestate(profileArchive));
+				progress.report({ message: 'Writing profile...'});
+				const writeFile = util.promisify(fs.writeFile);
+				await writeFile(tmp + ".amigaprofile", profiler.profileSavestate(profileFile));
 
 				// open output
 				void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 				void this.miDebugger.continue(this.currentThreadId);
-			})();
+			});
 		});
 		await this.miDebugger.interrupt(this.currentThreadId);
 	}
