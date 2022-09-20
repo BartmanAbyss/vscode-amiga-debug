@@ -11,7 +11,7 @@ import { CopperInstructionType, CopperMove } from '../copperDisassembler';
 import { Copper, CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
-import { FormatCustomRegData } from '../customRegisters';
+import { FormatCustomRegData } from '../custom';
 import { useWheelHack } from '../useWheelHack';
 import { Scrollable } from '../scrollable';
 import { VirtualList } from '../virtual_list';

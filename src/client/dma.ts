@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { CustomRegisters, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './customRegisters';
+import { Custom, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './custom';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileBase, IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
@@ -255,30 +255,30 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 	const customReg = (reg: number) => customRegs[reg >>> 1];
 	const customRegL = (reg: number) => (customRegs[reg >>> 1] << 16) | customRegs[(reg + 2) >>> 1];
 	const regBLTxPT = [
-		CustomRegisters.getCustomAddress("BLTAPT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTBPT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTCPT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTDPT") - 0xdff000
+		Custom.ByName("BLTAPTH").adr - 0xdff000,
+		Custom.ByName("BLTBPTH").adr - 0xdff000,
+		Custom.ByName("BLTCPTH").adr - 0xdff000,
+		Custom.ByName("BLTDPTH").adr - 0xdff000
 	];
 	const regBLTxDAT = [
-		CustomRegisters.getCustomAddress("BLTADAT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTBDAT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTCDAT") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTDDAT") - 0xdff000
+		Custom.ByName("BLTADAT").adr - 0xdff000,
+		Custom.ByName("BLTBDAT").adr - 0xdff000,
+		Custom.ByName("BLTCDAT").adr - 0xdff000,
+		Custom.ByName("BLTDDAT").adr - 0xdff000
 	];
 	const regBLTxMOD = [
-		CustomRegisters.getCustomAddress("BLTAMOD") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTBMOD") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTCMOD") - 0xdff000,
-		CustomRegisters.getCustomAddress("BLTDMOD") - 0xdff000
+		Custom.ByName("BLTAMOD").adr - 0xdff000,
+		Custom.ByName("BLTBMOD").adr - 0xdff000,
+		Custom.ByName("BLTCMOD").adr - 0xdff000,
+		Custom.ByName("BLTDMOD").adr - 0xdff000
 	];
-	const regBLTCON0 = CustomRegisters.getCustomAddress("BLTCON0") - 0xdff000;
-	const regBLTCON1 = CustomRegisters.getCustomAddress("BLTCON1") - 0xdff000;
-	const regBLTAFWM = CustomRegisters.getCustomAddress("BLTAFWM") - 0xdff000;
-	const regBLTALWM = CustomRegisters.getCustomAddress("BLTALWM") - 0xdff000;
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
-	const regBLTSIZV = CustomRegisters.getCustomAddress("BLTSIZV") - 0xdff000;
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
+	const regBLTCON0 = Custom.ByName("BLTCON0").adr - 0xdff000;
+	const regBLTCON1 = Custom.ByName("BLTCON1").adr - 0xdff000;
+	const regBLTAFWM = Custom.ByName("BLTAFWM").adr - 0xdff000;
+	const regBLTALWM = Custom.ByName("BLTALWM").adr - 0xdff000;
+	const regBLTSIZE = Custom.ByName("BLTSIZE").adr - 0xdff000;
+	const regBLTSIZV = Custom.ByName("BLTSIZV").adr - 0xdff000;
+	const regBLTSIZH = Custom.ByName("BLTSIZH").adr - 0xdff000;
 	let BlitTrace = "";
 
 	const blits: Blit[] = [];
@@ -366,8 +366,8 @@ export function GetBlits(customRegs: Uint16Array, dmaRecords: DmaRecord[]): Blit
 }
 
 export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
-	const regBLTSIZE = CustomRegisters.getCustomAddress("BLTSIZE") - 0xdff000;
-	const regBLTSIZH = CustomRegisters.getCustomAddress("BLTSIZH") - 0xdff000;
+	const regBLTSIZE = Custom.ByName("BLTSIZE").adr - 0xdff000;
+	const regBLTSIZH = Custom.ByName("BLTSIZH").adr - 0xdff000;
 
 	let cycles = 0;
 	let i = 0;
@@ -393,7 +393,7 @@ export function GetBlitCycles(dmaRecords: DmaRecord[]): number {
 
 export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[] {
 	const insns: Copper[] = [];
-	const regCOPINS = CustomRegisters.getCustomAddress("COPINS") - 0xdff000;
+	const regCOPINS = Custom.ByName("COPINS").adr - 0xdff000;
 
 	let i = 0;
 	let lastinsn: CopperInstruction = null;
@@ -451,31 +451,31 @@ export function GetScreenFromCopper(copper: Copper[], chipsetFlags: number): ISc
 	let useDIWHIGH = false;
 	let FMODE = 0;
 
-	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0");
-	const regBPL1MOD = CustomRegisters.getCustomAddress("BPL1MOD");
-	const regBPL2MOD = CustomRegisters.getCustomAddress("BPL2MOD");
-	const regBPL1PTH = CustomRegisters.getCustomAddress("BPL1PTH");
-	const regBPL1PTL = CustomRegisters.getCustomAddress("BPL1PTL");
-	const regBPL2PTH = CustomRegisters.getCustomAddress("BPL2PTH");
-	const regBPL2PTL = CustomRegisters.getCustomAddress("BPL2PTL");
-	const regBPL3PTH = CustomRegisters.getCustomAddress("BPL3PTH");
-	const regBPL3PTL = CustomRegisters.getCustomAddress("BPL3PTL");
-	const regBPL4PTH = CustomRegisters.getCustomAddress("BPL4PTH");
-	const regBPL4PTL = CustomRegisters.getCustomAddress("BPL4PTL");
-	const regBPL5PTH = CustomRegisters.getCustomAddress("BPL5PTH");
-	const regBPL5PTL = CustomRegisters.getCustomAddress("BPL5PTL");
-	const regBPL6PTH = CustomRegisters.getCustomAddress("BPL6PTH");
-	const regBPL6PTL = CustomRegisters.getCustomAddress("BPL6PTL");
-	const regBPL7PTH = CustomRegisters.getCustomAddress("BPL7PTH");
-	const regBPL7PTL = CustomRegisters.getCustomAddress("BPL7PTL");
-	const regBPL8PTH = CustomRegisters.getCustomAddress("BPL8PTH");
-	const regBPL8PTL = CustomRegisters.getCustomAddress("BPL8PTL");
-	const regDDFSTRT = CustomRegisters.getCustomAddress("DDFSTRT");
-	const regDDFSTOP = CustomRegisters.getCustomAddress("DDFSTOP");
-	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT");
-	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP");
-	const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH"); // ECS
-	const regFMODE = CustomRegisters.getCustomAddress("FMODE"); // ECS
+	const regBPLCON0 = Custom.ByName("BPLCON0").adr;
+	const regBPL1MOD = Custom.ByName("BPL1MOD").adr;
+	const regBPL2MOD = Custom.ByName("BPL2MOD").adr;
+	const regBPL1PTH = Custom.ByName("BPL1PTH").adr;
+	const regBPL1PTL = Custom.ByName("BPL1PTL").adr;
+	const regBPL2PTH = Custom.ByName("BPL2PTH").adr;
+	const regBPL2PTL = Custom.ByName("BPL2PTL").adr;
+	const regBPL3PTH = Custom.ByName("BPL3PTH").adr;
+	const regBPL3PTL = Custom.ByName("BPL3PTL").adr;
+	const regBPL4PTH = Custom.ByName("BPL4PTH").adr;
+	const regBPL4PTL = Custom.ByName("BPL4PTL").adr;
+	const regBPL5PTH = Custom.ByName("BPL5PTH").adr;
+	const regBPL5PTL = Custom.ByName("BPL5PTL").adr;
+	const regBPL6PTH = Custom.ByName("BPL6PTH").adr;
+	const regBPL6PTL = Custom.ByName("BPL6PTL").adr;
+	const regBPL7PTH = Custom.ByName("BPL7PTH").adr;
+	const regBPL7PTL = Custom.ByName("BPL7PTL").adr;
+	const regBPL8PTH = Custom.ByName("BPL8PTH").adr;
+	const regBPL8PTL = Custom.ByName("BPL8PTL").adr;
+	const regDDFSTRT = Custom.ByName("DDFSTRT").adr;
+	const regDDFSTOP = Custom.ByName("DDFSTOP").adr;
+	const regDIWSTRT = Custom.ByName("DIWSTRT").adr;
+	const regDIWSTOP = Custom.ByName("DIWSTOP").adr;
+	const regDIWHIGH = Custom.ByName("DIWHIGH").adr; // ECS
+	const regFMODE   = Custom.ByName("FMODE").adr; // ECS
 
 	for(const c of copper) {
 		if(c.vpos >= 200) // ignore bottom-of-screen HUD
@@ -636,9 +636,9 @@ export function GetMemoryAfterDma(memory: Memory, dmaRecords: DmaRecord[], endCy
 
 // returs custom registers after DMA requests up to endCycle
 export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
-	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
-	const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
+	const regDMACON  = Custom.ByName("DMACON") .adr - 0xdff000;
+	const regCOPJMP1 = Custom.ByName("COPJMP1").adr  - 0xdff000;
+	const regCOPJMP2 = Custom.ByName("COPJMP2").adr  - 0xdff000;
 	const customRegsAfter = customRegs.slice(); // initial copy
 
 	let i = 0;
@@ -665,7 +665,7 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 					customRegsAfter[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 				else
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
-			} else if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write)
+			} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write)
 				customRegsAfter[dmaRecord.reg >>> 1] = dmaRecord.dat;
 		}
 	}
@@ -722,7 +722,7 @@ export const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color 
 // returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const customReg = (reg: number) => customRegs[(reg - 0xdff000) >>> 1];
-	const regCOLOR = CustomRegisters.getCustomAddress("COLOR00");
+	const regCOLOR = Custom.ByName("COLOR00").adr;
 	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		const color = customReg(regCOLOR + i * 2);
@@ -748,7 +748,7 @@ export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: n
 }
 
 export function GetPaletteFromCopper(copper: Copper[]): number[] {
-	const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
+	const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
 	const palette = new Array(64).fill([]);
 	for(const c of copper) {
 		if(c.insn instanceof CopperMove && c.insn.DA >= regCOLOR00 && c.insn.DA < regCOLOR00 + 32 * 2) {
@@ -788,9 +788,9 @@ export function SymbolizeAddress(address: number, amiga: IAmigaProfileExtra, bas
 			return `${section.name}+$${(address - section.address).toString(16)} (${addressString})`;
 		}
 
-		const customReg = CustomRegisters.getCustomName(address);
+		const customReg = Custom.ByAddr(address);
 		if(customReg)
-			return `${customReg} (${addressString})`;
+			return `${customReg.name} (${addressString})`;
 	}
 
 	return addressString;

@@ -1,4 +1,4 @@
-import { CustomRegisters } from './customRegisters';
+import { Custom } from './custom';
 import doc000 from './doc/000.md';
 import doc002 from './doc/002.md';
 import doc004 from './doc/004.md';
@@ -482,7 +482,7 @@ export function GetCustomRegDoc(reg: number): string {
 }
 
 export function GetCustomRegDocByName(name: string): string {
-	const addr = CustomRegisters.getCustomAddress(name);
+	const addr = Custom.ByName(name).adr;
 	if(addr === undefined)
 		return undefined;
 	return GetCustomRegDoc(addr - 0xdff000);

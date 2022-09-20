@@ -26,7 +26,7 @@ import { IColumn, IColumnLocation } from './stacks';
 import { TextCache } from './textCache';
 import { setupGl } from './webgl/boxes';
 import { DmaRecord } from '../../backend/profile_types';
-import { BlitOp, BLTCON0Flags, BLTCON1Flags, CustomRegisters, DMACONFlags } from '../customRegisters';
+import { BlitOp, BLTCON0Flags, BLTCON1Flags, Custom, DMACONFlags } from '../custom';
 import { Screen } from '../debugger/resources';
 import { GetCustomRegDoc } from '../docs';
 
@@ -127,7 +127,7 @@ const buildDmaBoxes = (MODEL: IProfileModel) => {
 		return [];
 	const dmaRecords = MODEL.amiga.dmaRecords;
 
-	const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
+	const regDMACON = Custom.ByName("DMACON").adr - 0xdff000;
 	let dmacon = MODEL.amiga.customRegs[regDMACON >>> 1];
 
 	const duration = 7_093_790 / 50;
@@ -1082,7 +1082,7 @@ const Tooltip: FunctionComponent<{
 					dmaData = '$' + (amiga.dmaRecord.dat & 0xff).toString(16).padStart(2, '0');
 				}
 			} else {
-				dmaReg = CustomRegisters.getCustomName(0xdff000 + amiga.dmaRecord.reg) + ' ($' + amiga.dmaRecord.reg.toString(16).padStart(3, '0') + ')';
+				dmaReg = Custom.ByOffs(amiga.dmaRecord.reg).name + ' ($' + amiga.dmaRecord.reg.toString(16).padStart(3, '0') + ')';
 				dmaDoc = GetCustomRegDoc(amiga.dmaRecord.reg) || '';
 			}
 		}

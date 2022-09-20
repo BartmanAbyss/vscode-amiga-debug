@@ -9,7 +9,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 import { ICpuProfileRaw } from '../types';
 import { getScreen, PixelSource, DeniseState, DefaultDeniseState } from '../screen';
-import { BPLCON0Flags, BPLCON2Flags, CustomRegisters, DMACONFlags, FMODEFlags } from '../customRegisters';
+import { BPLCON0Flags, BPLCON2Flags, Custom, DMACONFlags, FMODEFlags } from '../custom';
 import { DmaCyclesToCpuCycles, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, ChipsetFlags, GetAmigaColorCss } from '../dma';
 import { swizzle } from '../../utils';
 declare let PROFILES: ICpuProfileRaw[];
@@ -33,12 +33,12 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
 		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 
-		const regDMACON = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-		const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
-		const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
-		const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
-		const regFMODE = CustomRegisters.getCustomAddress("FMODE") - 0xdff000; // ECS
-		const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
+		const regDMACON = Custom.ByName("DMACON").adr - 0xdff000;
+		const regBPLCON0 = Custom.ByName("BPLCON0").adr - 0xdff000;
+		const regBPLCON1 = Custom.ByName("BPLCON1").adr - 0xdff000;
+		const regBPLCON2 = Custom.ByName("BPLCON2").adr - 0xdff000;
+		const regFMODE = Custom.ByName("FMODE").adr - 0xdff000; // ECS
+		const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
 		const colorRgb = customRegs[(regCOLOR00 >>> 1) + color];
 
 		interface Bit {

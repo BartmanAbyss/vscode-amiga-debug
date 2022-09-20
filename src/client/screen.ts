@@ -1,5 +1,5 @@
 import { swizzle } from "../utils";
-import { CustomReadWrite, CustomRegisters, DMACONFlags, FMODEFlags } from "./customRegisters";
+import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags } from "./custom";
 import { displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
 import { IProfileModel } from "./model";
 
@@ -82,31 +82,31 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 	const bplShifterHi  = [0, 0, 0, 0, 0, 0, 0, 0];
 	const bplScroller   = [0, 0, 0, 0, 0, 0, 0, 0];
 	const bplScrollerHi = [0, 0, 0, 0, 0, 0, 0, 0];
-	const regDMACON  = CustomRegisters.getCustomAddress("DMACON") - 0xdff000;
-	const regCOPJMP1 = CustomRegisters.getCustomAddress("COPJMP1") - 0xdff000;
-	const regCOPJMP2 = CustomRegisters.getCustomAddress("COPJMP2") - 0xdff000;
-	const regBPLCON0 = CustomRegisters.getCustomAddress("BPLCON0") - 0xdff000;
-	const regBPLCON1 = CustomRegisters.getCustomAddress("BPLCON1") - 0xdff000;
-	const regBPLCON2 = CustomRegisters.getCustomAddress("BPLCON2") - 0xdff000;
-	const regBPL1DAT = CustomRegisters.getCustomAddress("BPL1DAT") - 0xdff000;
-	const regBPL8DAT = CustomRegisters.getCustomAddress("BPL8DAT") - 0xdff000;
-	const bplStride = CustomRegisters.getCustomAddress("BPL2DAT") - CustomRegisters.getCustomAddress("BPL1DAT");
-	const regCOLOR00 = CustomRegisters.getCustomAddress("COLOR00") - 0xdff000;
-	const regSTRHOR = CustomRegisters.getCustomAddress("STRHOR") - 0xdff000; // line 24-311
-	const regSTRLONG = CustomRegisters.getCustomAddress("STRLONG") - 0xdff000; // probably only interlace
-	const regSTREQU = CustomRegisters.getCustomAddress("STREQU") - 0xdff000; // line 0-7
-	const regSTRVBL = CustomRegisters.getCustomAddress("STRVBL") - 0xdff000; // line 8-23, 312
-	const regDIWSTRT = CustomRegisters.getCustomAddress("DIWSTRT") - 0xdff000;
-	const regDIWSTOP = CustomRegisters.getCustomAddress("DIWSTOP") - 0xdff000;
-	const regDIWHIGH = CustomRegisters.getCustomAddress("DIWHIGH") - 0xdff000; // ECS
-	const regFMODE = CustomRegisters.getCustomAddress("FMODE") - 0xdff000; // ECS
+	const regDMACON  = Custom.ByName("DMACON") .adr - 0xdff000;
+	const regCOPJMP1 = Custom.ByName("COPJMP1").adr - 0xdff000;
+	const regCOPJMP2 = Custom.ByName("COPJMP2").adr - 0xdff000;
+	const regBPLCON0 = Custom.ByName("BPLCON0").adr - 0xdff000;
+	const regBPLCON1 = Custom.ByName("BPLCON1").adr - 0xdff000;
+	const regBPLCON2 = Custom.ByName("BPLCON2").adr - 0xdff000;
+	const regBPL1DAT = Custom.ByName("BPL1DAT").adr - 0xdff000;
+	const regBPL8DAT = Custom.ByName("BPL8DAT").adr - 0xdff000;
+	const bplStride  = Custom.ByName("BPL2DAT").adr - Custom.ByName("BPL1DAT").adr;
+	const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
+	const regSTRHOR  = Custom.ByName("STRHOR") .adr - 0xdff000; // line 24-311
+	const regSTRLONG = Custom.ByName("STRLONG").adr - 0xdff000; // probably only interlace
+	const regSTREQU  = Custom.ByName("STREQU") .adr - 0xdff000; // line 0-7
+	const regSTRVBL  = Custom.ByName("STRVBL") .adr - 0xdff000; // line 8-23, 312
+	const regDIWSTRT = Custom.ByName("DIWSTRT").adr - 0xdff000;
+	const regDIWSTOP = Custom.ByName("DIWSTOP").adr - 0xdff000;
+	const regDIWHIGH = Custom.ByName("DIWHIGH").adr - 0xdff000; // ECS
+	const regFMODE   = Custom.ByName("FMODE")  .adr - 0xdff000; // ECS
 
-	const regSPR0POS = CustomRegisters.getCustomAddress("SPR0POS") - 0xdff000;
-	const regSPR0CTL = CustomRegisters.getCustomAddress("SPR0CTL") - 0xdff000;
-	const regSPR0DATA = CustomRegisters.getCustomAddress("SPR0DATA") - 0xdff000;
-	const regSPR0DATB = CustomRegisters.getCustomAddress("SPR0DATB") - 0xdff000;
-	const regSPR7DATB = CustomRegisters.getCustomAddress("SPR7DATB") - 0xdff000;
-	const spriteStride = CustomRegisters.getCustomAddress("SPR1POS") - CustomRegisters.getCustomAddress("SPR0POS");
+	const regSPR0POS   = Custom.ByName("SPR0POS") .adr- 0xdff000;
+	const regSPR0CTL   = Custom.ByName("SPR0CTL") .adr- 0xdff000;
+	const regSPR0DATA  = Custom.ByName("SPR0DATA").adr - 0xdff000;
+	const regSPR0DATB  = Custom.ByName("SPR0DATB").adr - 0xdff000;
+	const regSPR7DATB  = Custom.ByName("SPR7DATB").adr - 0xdff000;
+	const spriteStride = Custom.ByName("SPR1POS") .adr- Custom.ByName("SPR0POS").adr;
 
 	interface Sprite {
 		armed: boolean;
@@ -171,7 +171,7 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 						customRegs[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
 					else
 						customRegs[regDMACON >>> 1] &= ~dmaRecord.dat;
-				} else if(CustomRegisters.getCustomReadWrite(0xdff000 + dmaRecord.reg) & CustomReadWrite.write) {
+				} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write) {
 					customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
 				}
 

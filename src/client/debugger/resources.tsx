@@ -6,7 +6,7 @@ import styles from './resources.module.css';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { CustomRegisters } from '../customRegisters';
+import { Custom } from '../custom';
 import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss, ScreenType, displayLeft, displayTop } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
@@ -496,7 +496,7 @@ export const GfxResourcesView: FunctionComponent<{
 		const customRegs = GetCustomRegsAfterDma(MODELS[frame].amiga.customRegs, MODELS[frame].amiga.dmaRecords, CpuCyclesToDmaCycles(time));
 		const customRegsPalette = GetPaletteFromCustomRegs(new Uint16Array(customRegs));
 		const customRegsResource: GfxResource = {
-			address: CustomRegisters.getCustomAddress("COLOR00"),
+			address: Custom.ByName("COLOR00").adr,
 			size: 32 * 2,
 			name: '*Custom Registers*',
 			type: GfxResourceType.palette,
@@ -526,8 +526,8 @@ export const GfxResourcesView: FunctionComponent<{
 	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(state.bitmap);
 	const [palette, setPalette] = useState<GfxResourceWithPayload>(state.palette);
 	// update custom registers palette on time change
-	if(palette.resource.address === CustomRegisters.getCustomAddress("COLOR00"))
-		palette.palette = palettes.find((p) => p.resource.address === CustomRegisters.getCustomAddress("COLOR00")).palette;
+	if(palette.resource.address === Custom.ByName("COLOR00").adr)
+		palette.palette = palettes.find((p) => p.resource.address === Custom.ByName("COLOR00").adr).palette;
 	const onChangeBitmap = (selected: GfxResourceWithPayload) => { state.bitmap = selected; setBitmap(selected); };
 	const onChangePalette = (selected: GfxResourceWithPayload) => { state.palette = selected; setPalette(selected); };
 

@@ -8,7 +8,7 @@ import * as ChevronRight from '../icons/chevron-right.svg';
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
-import { CustomRegisters, CustomReadWrite, CustomSpecial, FormatCustomRegData } from '../customRegisters';
+import { CustomReadWrite, CustomSpecial, FormatCustomRegData, Custom } from '../custom';
 import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles } from '../dma';
 import { GetCustomRegDoc } from '../docs';
 import { createPortal } from 'preact/compat';
@@ -33,7 +33,7 @@ export const CustomRegsView: FunctionComponent<{
 		const index = parseInt(evt.currentTarget.attributes['data'].nodeValue);
 		const rect = evt.currentTarget.getBoundingClientRect();
 		let markdown = GetCustomRegDoc(index << 1);
-		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
+		if(Custom.ByIndex(index).special & CustomSpecial.pth)
 			markdown += GetCustomRegDoc((index + 1) << 1);
 		if(markdown) {
 			const hov = { 
@@ -60,14 +60,14 @@ export const CustomRegsView: FunctionComponent<{
 	const renderReg = useCallback((index: number) => {
 		const navPrev = useCallback(() => {
 			let newCycle = GetPrevCustomRegWriteTime(index, dmaTime, MODELS[frame].amiga.dmaRecords);
-			if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
+			if(Custom.ByIndex(index).special & CustomSpecial.pth)
 				newCycle = Math.max(newCycle || dmaTime, GetPrevCustomRegWriteTime(index + 1, dmaTime, MODELS[frame].amiga.dmaRecords));
 			if(newCycle !== undefined)
 				setTime(DmaCyclesToCpuCycles(newCycle));
 		}, [dmaTime, frame]);
 		const navNext = useCallback(() => {
 			let newCycle = GetNextCustomRegWriteTime(index, dmaTime, MODELS[frame].amiga.dmaRecords);
-			if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth)
+			if(Custom.ByIndex(index).special & CustomSpecial.pth)
 				newCycle = Math.min(newCycle || dmaTime, GetNextCustomRegWriteTime(index + 1, dmaTime, MODELS[frame].amiga.dmaRecords));
 			if(newCycle !== undefined)
 				setTime(DmaCyclesToCpuCycles(newCycle));
@@ -78,10 +78,10 @@ export const CustomRegsView: FunctionComponent<{
 			<button class={styles.button} onMouseDown={navNext} type="button" dangerouslySetInnerHTML={{__html: ChevronRight}} />
 		</div>;
 
-		let regName = CustomRegisters.getCustomName(0xdff000 + (index << 1));
+		let regName = Custom.ByIndex(index).name;
 		let regPad = ''.padEnd(8 - regName.length);
 
-		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.pth) {
+		if(Custom.ByIndex(index).special & CustomSpecial.pth) {
 			regName = regName.slice(0, -1);
 			regPad += ' ';
 			return (<div class={styles.line}>
@@ -104,9 +104,9 @@ export const CustomRegsView: FunctionComponent<{
 	}, [ frame, dmaTime, setTime, prevRegs, customRegs, onMouseEnter, onMouseLeave, onWheel ]);
 
 	const wantCustom = (index: number) => {
-		if(CustomRegisters.getCustomSpecial(0xdff000 + (index << 1)) & CustomSpecial.ptl)
+		if(Custom.ByIndex(index).special & CustomSpecial.ptl)
 			return false;
-		if(!(CustomRegisters.getCustomReadWrite(0xdff000 + (index << 1)) & CustomReadWrite.write))
+		if(!(Custom.ByIndex(index).rw & CustomReadWrite.write))
 			return false;
 		return true;
 	};
