@@ -58,6 +58,8 @@ async function Profiler() {
 		console.time('fetch');
 		const response = await fetch(PROFILE_URL);
 		console.timeEnd('fetch');
+		if(!response.ok)
+			throw new Error(`${response.status} ${response.statusText}`);
 		console.time('json');
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const obj = await response.json();

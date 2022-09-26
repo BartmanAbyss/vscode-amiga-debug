@@ -23,6 +23,32 @@
 	position: relative;
 }
 
+@keyframes blink {
+	50% {
+		border-color: #ff0000;
+	}
+}
+
+.error {
+	border: 8px solid #000000;
+	position: absolute;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 70%;
+	min-width: 800px;
+	text-align: center;
+	font-family: var(--vscode-editor-font-family);
+	font-weight: var(--vscode-editor-font-weight);
+	font-size: var(--vscode-editor-font-size);
+	line-height: 150%;
+	color: #ff0000;
+	background-color: #000000;
+	animation: blink .55s step-end infinite alternate;
+}
+
 /* from https://tobiasahlin.com/spinkit/ */
 
 .spinner {
@@ -31,14 +57,25 @@
 	background-color: #333;
 
 	position: absolute;
-	top: 0; right: 0; bottom: 0; left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	margin: auto;
 
 	animation: sk-rotateplane 1.2s infinite ease-in-out;
 }
 
 @keyframes sk-rotateplane {
-	0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); } 
-	50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); } 
-	100% { transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg); }
+	0% {
+		transform: perspective(120px) rotateX(0deg) rotateY(0deg);
+	}
+
+	50% {
+		transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg);
+	}
+
+	100% {
+		transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
+	}
 }

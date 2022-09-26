@@ -74,7 +74,7 @@ enum LvoFlags {
 const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 	// Kickstart v1.2 r33.180 (1986)(Commodore)(A500-A1000-A2000)[!].rom
 	'11f9e62cf299f72184835b7b2a70a16333fc0d88': {
-		'exec 33.192 (8 Oct 1986)': [LvoFlags.short, 0xFC1A40 ],
+		'exec 33.192 (8 Oct 1986)': [ LvoFlags.short, 0xFC1A40 ],
 		'graphics 33.97 (8 Oct 1986)': [ LvoFlags.long, 0xFCB0A6 ],
 		'layers 33.33 (2 Oct 1986)': [ LvoFlags.short, 0xFE0F38 ],
 		'dos 33.124 (11 Sep 1986)': [ LvoFlags.dos, 0xFF421C, 0xFF43E0 ],
@@ -96,7 +96,7 @@ const libraryVectors: { [x: string]: { [x: string]: number[] } } = {
 		'dos 37.44 (22.5.91)': [ LvoFlags.short, 0xF91544],
 		'graphics 37.35 (23.5.91)': [ LvoFlags.long, 0xFA8E64 ],
 		'layers 37.7 (13.3.91)': [ LvoFlags.short, 0xFC272C ],
-		'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ], // our disassembler doesn't support float instructions
+		'mathieeesingbas 37.3 (9.5.91)': [ LvoFlags.short, 0xFC66BC ],
 	},
 
 	// Kickstart v2.05 r37.299 (1991)(Commodore)(A600)[!].rom
