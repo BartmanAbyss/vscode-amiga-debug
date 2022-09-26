@@ -325,13 +325,18 @@ class AmigaDebugExtension {
 	private terminal: vscode.Terminal = null;
 
 	private openTerminal() {
-		if(!this.terminal)
+		if(this.terminal && this.terminal.exitStatus) {
+			this.terminal.dispose();
+			this.terminal = null;
+		}
+		if(!this.terminal) {
 			this.terminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				env: {
 					path: `\${env:PATH};${this.extensionPath}\\bin;${this.extensionPath}\\bin\\opt\\bin`
 				}
 			});
+		}
 		this.terminal.show();
 	}
 
@@ -441,8 +446,7 @@ class AmigaDebugExtension {
 	private externalCommandTerminal: vscode.Terminal;
 	private externalCommandFinished = false;
 
-	private runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction)
-	{
+	private runExternalCommand(uri: vscode.Uri, cmd: string, args: string[], output: string, onOutputReady: OnOutputReadyFunction) {
 		if(uri.scheme !== 'file') {
 			void vscode.window.showErrorMessage(`Error running external command: Don't know how to open ${uri.toString()}`);
 			return;

@@ -275,9 +275,6 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 ### Objdump
 * TODO: click/follow any addresses
 
-### Terminal
-* Terminal doesn't open again once closed
-
 ### WinUAE
 * execution for A4000 model is very flaky (since 1.2.1)
 * TODO: fill memory with $DEAD on startup to better find uninitialized memory bugs
