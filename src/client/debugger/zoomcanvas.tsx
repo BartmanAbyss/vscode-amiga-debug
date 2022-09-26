@@ -69,6 +69,17 @@ export const ZoomCanvas: FunctionComponent<{
 				const srcX = Math.floor(evt.offsetX / canvasScaleX);
 				const srcY = Math.floor(evt.offsetY / canvasScaleY);
 				onClick(srcX, srcY);
+				canvas.current.onmousemove = (evt: MouseEvent) => {
+					onMouseMove(evt);
+					const srcX = Math.floor(evt.offsetX / canvasScaleX);
+					const srcY = Math.floor(evt.offsetY / canvasScaleY);
+					onClick(srcX, srcY);
+				};
+				canvas.current.onmouseup = (evt: MouseEvent) => {
+					canvas.current.onmousemove = onMouseMove;
+					canvas.current.onmousedown = onMouseDown;
+					canvas.current.onmouseup = undefined;
+				};
 			};
 			canvas.current.onmousedown = onMouseDown;
 		}

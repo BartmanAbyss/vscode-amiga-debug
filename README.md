@@ -303,5 +303,4 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
 * Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites, multi-frame
-* Denise: mouse click&drag to set time
 * Denise: `turrican2-level1.uss`, `desertdream-dots.uss`: sprites 2 pixels too far left

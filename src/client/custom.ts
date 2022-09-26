@@ -695,9 +695,9 @@ const customData: CustomData[] = [
 	{ name: "NO-OP", adr: 0xdff1FE }   /*   Can also indicate last 2 or 3 refresh cycles or the restart of the COPPER after lockup.*/
 ];
 
-const customByName: Map<string, CustomData> = new Map(customData.map((c) => [ c.name, c]));
-const customByAddr: Map<number, CustomData> = new Map(customData.map((c) => [ c.adr, c]));
-const customByOffs: Map<number, CustomData> = new Map(customData.map((c) => [ c.adr - 0xdff000, c]));
+const customByName: Map<string, CustomData> = new Map(customData.map((c) => [c.name, c]));
+const customByAddr: Map<number, CustomData> = new Map(customData.map((c) => [c.adr, c]));
+const customByOffs: Map<number, CustomData> = new Map(customData.map((c) => [c.adr - 0xdff000, c]));
 
 export namespace Custom {
 	export const ByName = (name: string) => customByName.get(name);
