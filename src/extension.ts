@@ -145,6 +145,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
+			vscode.commands.registerCommand('amiga.cleanTemp', this.cleanTemp.bind(this)),
 			vscode.commands.registerCommand('amiga.externalResources.gradientMaster', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/gradientmaster'))),
 			vscode.commands.registerCommand('amiga.externalResources.imageTool', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/ImageTool'))),
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/ColorReducer'))),
@@ -332,6 +333,20 @@ class AmigaDebugExtension {
 				}
 			});
 		this.terminal.show();
+	}
+
+	private cleanTemp() {
+		const regex = /[.]amigaprofile$/;
+		const p = os.tmpdir();
+		let count = 0, size = 0;
+		fs.readdirSync(p)
+		.filter(f => regex.test(f))
+		.map(f => { 
+			size += fs.statSync(path.join(p, f)).size;
+			count++;
+			fs.unlinkSync(path.join(p, f));
+		});
+		void vscode.window.showInformationMessage(`Cleaned ${(size / 1024. / 1024.)|0}MB in ${count} files`);
 	}
 
 	private setForceDisassembly() {

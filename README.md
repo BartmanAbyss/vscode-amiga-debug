@@ -49,6 +49,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - Use the command `Amiga: Open Terminal` to open a shell with the environment set to use the included tools like `elf2hunk`, `gcc`, `gnumake` etc. (e.g. `gnumake clean`)
 - Frame Profiler: function-level + DMA profiling: during a debugging session, press the `Profile` button on the right of the debug toolbar, and 1 frame will be profiled. Press the rightmost button to profile 50 frames. Mark your WaitVBLs etc with calls to `debug_start_idle()` and `debug_stop_idle()` to show correct CPU usage under thumbnails.
 - Size Profiler: profile the size of your executable: right-click an ELF file in the Explorer, and select `Amiga: Profile File Size`
+- All the profilers write (sometimes rather large) files in your temp directory. If you're low on disk space, use `Amiga: Clean Temp Files`
 - WinUAE debug overlay: see debug_* calls in template project's main.c
 - WinUAE:
   - <kbd>^</kbd> = single step, <kbd>Pause</kbd> = pause/resume <kbd>Page-up</kbd> = warp mode

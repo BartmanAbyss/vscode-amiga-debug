@@ -12,6 +12,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 - CHG: profiler: multi-frame captures are now loaded in the background for faster startup time
 - CHG: savestate: show progress bar during profiling
 - NEW: screen: mouse click&drag to set time
+- NEW: `Amiga: Clean Temp Files` to delete `.amigaprofile` files from your temp path.
 
 ## 1.5.6
 - FIX: disassembly: fix divul, divsl, FPU, fmoveml (see `68k-dis.ts`)

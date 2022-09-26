@@ -24,6 +24,7 @@
 		"onCommand:amiga.shrinkler",
 		"onCommand:amiga.disassembleElf",
 		"onCommand:amiga.exe2adf",
+		"onCommand:amiga.cleanTemp",
 		"onCommand:amiga.externalResources.gradientMaster",
 		"onCommand:amiga.externalResources.imageTool",
 		"onCommand:amiga.externalResources.colorReducer",
@@ -70,6 +71,11 @@
 				"category": "Amiga",
 				"command": "amiga.initProject",
 				"title": "Init Project"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.cleanTemp",
+				"title": "Clean Temp Files"
 			},
 			{
 				"category": "Amiga",
