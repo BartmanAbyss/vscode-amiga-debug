@@ -278,7 +278,7 @@ export const DeniseView: FunctionComponent<{
 			<ToggleButton icon="Sprites" label="Show Sprites" checked={state.sprites.some((v) => v)} onChange={showAllSprites} />
 			{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
 			<span style={{ width: '1em' }}></span>
-			{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference Screenshot" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
+			{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
 		</Toolbar>
 		</div>
 		<div style={{ overflow: 'auto' }}>
