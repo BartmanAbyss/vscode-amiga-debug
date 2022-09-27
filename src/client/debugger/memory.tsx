@@ -165,8 +165,7 @@ export const MemoryView: FunctionComponent<{
 	return <>
 		<div style={{ flexGrow: 0 }}>
 			<Toolbar>
-				<div>Persistence</div>
-				<div><input style={{verticalAlign: 'bottom'}} type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setPersistence(parseInt(currentTarget.value))} /></div>
+				<div>Persistence</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setPersistence(parseInt(currentTarget.value))} /></div>
 				<ToggleButton icon="Reads" label="Show Memory Reads" checked={showReads} onChange={setShowReads} />
 				<ToggleButton icon="Writes" label="Show Memory Writes" checked={showWrites} onChange={setShowWrites} />
 				<ToggleButton icon="Track CPU Data" label="Track CPU Data" checked={trackCpuData} onChange={setTrackCpuData} />

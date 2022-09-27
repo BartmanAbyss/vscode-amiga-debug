@@ -1,6 +1,6 @@
 import { swizzle } from "../utils";
 import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags } from "./custom";
-import { displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
+import { CpuCyclesToDmaCycles, displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, GetMemoryAfterDma, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
 import { IProfileModel } from "./model";
 
 export interface DeniseState {
@@ -9,6 +9,7 @@ export interface DeniseState {
 	window: boolean;
 	planes: boolean[];
 	sprites: boolean[];
+	persistence: number;
 }
 
 export const DefaultDeniseState: DeniseState = {
@@ -17,6 +18,7 @@ export const DefaultDeniseState: DeniseState = {
 	window: true,
 	planes: [true, true, true, true, true, true, true, true],
 	sprites: [true, true, true, true, true, true, true, true],
+	persistence: 10_000,
 };
 
 export enum PixelSource {
@@ -40,7 +42,7 @@ export enum PixelSource {
 	outsideWindow,
 }
 
-export function getScreen(scale: number, model: IProfileModel/*, time*/, state: DeniseState): [Uint8Array, Uint32Array, Uint8Array, Uint32Array, Uint32Array] {
+export function getScreen(scale: number, model: IProfileModel, freezeModel: IProfileModel, time: number, state: DeniseState): [Uint8Array, Uint32Array, Uint8Array, Uint32Array, Uint32Array] {
 	const canvasScaleX = scale / 2;
 	const canvasScaleY = scale;
 	const canvasWidth = NR_DMA_REC_HPOS * 4 * canvasScaleX;
@@ -132,9 +134,11 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 		};
 	};
 
+	const freeze = state.freeze !== -1;
 	const sprites = [createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite(), createSprite()];
-	const customRegs = model.amiga.customRegs.slice(); // initial copy
+	const customRegs = freezeModel.amiga.customRegs.slice(); // initial copy
 	const memory = new Memory(model.memory.chipMem.slice(), new Uint8Array()); // initial copy
+	const lastUpdate = new Uint32Array(memory.chipMem.byteLength);
 
 	let vpos = -1;
 	let hpos = 0;
@@ -144,10 +148,45 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 	let window = false;
 	let prevColor = 0xff000000; // HAM
 	let ignoreCopper = 0;
-	for (let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
-		for (let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++) {
+	const maxCycle = CpuCyclesToDmaCycles(time);
+	let cycle = 0;
+	for(let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
+		for(let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++, cycle++) {
+			// process real memory
+			if(freeze && cycle < maxCycle) {
+				const dmaRecord = model.amiga.dmaRecords[cycle];
+				if(dmaRecord.addr >= 0 && dmaRecord.addr < lastUpdate.byteLength) {
+					if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
+						const color = dmaTypes.get(DmaTypes.CPU).subtypes.get(DmaSubTypes.CPU_DATA).color;
+						const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
+						const len = dmaRecord.reg & 0xff;
+						switch(dmaRecord.reg & 0xff) {
+							case 1: 
+								memory.writeByte(dmaRecord.addr, dmaRecord.dat); 
+								lastUpdate[dmaRecord.addr] = (color & 0xffffff) | (alpha << 24);
+								break;
+							case 2: 
+								memory.writeWord(dmaRecord.addr, dmaRecord.dat); 
+								lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
+								break;
+							case 4: 
+								memory.writeLong(dmaRecord.addr, dmaRecord.dat); 
+								lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = 
+								lastUpdate[dmaRecord.addr + 2] = lastUpdate[dmaRecord.addr + 3] = (color & 0xffffff) | (alpha << 24);
+								break;
+						}
+					} else if(dmaRecord.reg === 0) { // Blitter write
+						const color = dmaTypes.get(DmaTypes.BLITTER).subtypes.get(dmaRecord.extra).color;
+						const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
+						lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
+						memory.writeWord(dmaRecord.addr, dmaRecord.dat);
+					}
+				}
+			}
+
 			// this is per 2 lores pixels
-			const dmaRecord = model.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
+			// process frozen memory
+			const dmaRecord = freezeModel.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 			// see dma.ts@GetCustomRegsAfterDma
 			if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {
 				// skip 2 fake instructions after copper jump
@@ -161,13 +200,16 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 				} 
 				// see dma.ts@GetMemoryAfterDma
 				if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
-					switch(dmaRecord.reg & 0xff) {
+					if(!freeze) {
+						switch(dmaRecord.reg & 0xff) {
 						case 1: memory.writeByte(dmaRecord.addr, dmaRecord.dat); break;
 						case 2: memory.writeWord(dmaRecord.addr, dmaRecord.dat); break;
 						case 4: memory.writeLong(dmaRecord.addr, dmaRecord.dat); break;
+						}
 					}
 				} else if(dmaRecord.reg === 0) { // Blitter write
-					memory.writeWord(dmaRecord.addr, dmaRecord.dat);
+					if(!freeze)
+						memory.writeWord(dmaRecord.addr, dmaRecord.dat);
 				} else if(dmaRecord.reg === regDMACON) {
 					if(dmaRecord.dat & DMACONFlags.SETCLR)
 						customRegs[regDMACON >>> 1] |= dmaRecord.dat & 0x7FFF;
@@ -176,15 +218,16 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 				} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write) {
 					customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
 				}
-
-				const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
-				if(!dmaType)
-					continue;
-				const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ?? dmaType.subtypes.get(0);
-				if(!dmaSubtype)
-					continue;
-				const dmaColor = dmaSubtype.color;
-				putDma(cycleX, cycleY, dmaColor);
+				if(!freeze) {
+					const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
+					if(!dmaType)
+						continue;
+					const dmaSubtype = dmaType.subtypes.get(dmaRecord.extra) ?? dmaType.subtypes.get(0);
+					if(!dmaSubtype)
+						continue;
+					const dmaColor = dmaSubtype.color;
+					putDma(cycleX, cycleY, dmaColor);
+				}
 			}
 			// vpos, hpos - https://www.techtravels.org/2012/04/progress-on-amiga-vsc-made-this-weekend-vsync-problem-persists/ 
 			// HPOS counter in Denise counts from 2 to 456, it uses clock CDAC#, when STRLONG is received, it stops counting during two CDAC# cycles.
@@ -225,6 +268,12 @@ export function getScreen(scale: number, model: IProfileModel/*, time*/, state: 
 
 			for(let i = 0; i < 8; i++)
 				pixelPtrs[(cycleY * NR_DMA_REC_HPOS + cycleX) * 8 + i] = bplPtr[i];
+
+			if(freeze) {
+				const color = lastUpdate[bplPtr[0]] | lastUpdate[bplPtr[1]] | lastUpdate[bplPtr[2]] | lastUpdate[bplPtr[3]] 
+				            | lastUpdate[bplPtr[4]] | lastUpdate[bplPtr[5]] | lastUpdate[bplPtr[6]] | lastUpdate[bplPtr[7]];
+				putDma(cycleX, cycleY, color);
+			}
 
 			// BPL1DAT triggers serial->parallel conversion
 			if(dmaRecord.reg === regBPL1DAT) {

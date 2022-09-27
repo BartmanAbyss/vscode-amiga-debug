@@ -156,7 +156,7 @@ const DeniseScreen: FunctionComponent<{
 	const zoomCanvasWidth = 144*2;
 	const zoomCanvasHeight = 144;
 
-	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo(() => getScreen(scale, MODELS[frame], state), [scale, frame/*, time*/, state]);
+	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo(() => getScreen(scale, MODELS[frame], state.freeze !== -1 ? MODELS[state.freeze] : MODELS[frame], time, state), [scale, frame, state.freeze !== -1 ? time : 0, state]);
 
 	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
@@ -258,11 +258,15 @@ export const DeniseView: FunctionComponent<{
 	}, [setState]);
 
 	const [dmaOpacity, setDmaOpacity] = useState(0);
+	const freeze = state.freeze !== -1;
 
 	return (<>
 		<div style={{ flexGrow: 0 }}>
 		<Toolbar>
-			<div>DMA</div><div><input style={{verticalAlign: 'bottom'}} title="DMA Opacity" type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
+			<div title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"}>{freeze ? 'Mem' : 'DMA'}</div><div><input style={{verticalAlign: 'bottom', width: freeze ? '60px' : '100px'}} title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
+			{freeze && <>
+				<div title="Memory Persistence">Prst</div><div><input style={{verticalAlign: 'bottom', width: '60px'}} title="Memory Persistence" type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={state.persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setState({ persistence: parseInt(currentTarget.value) })} /></div>
+			</>}
 			<select class="select" alt="XXX" aria-label="XXX" value={state.freeze} onInput={({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => setState((prev: DeniseState) => ({ ...prev, freeze: parseInt(currentTarget.value) }))}>
 				<option value="-1">Live</option>
 				{MODELS.map((_, index) => <option value={index}>Freeze fr. {index + 1}</option>)}

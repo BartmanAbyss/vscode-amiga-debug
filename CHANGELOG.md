@@ -4,14 +4,15 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 
 ## 1.5.7
 - NEW: icons for `.uss`, `.amigaprofile`, `.shrinklerstats`, `.objdump`
-- CHG: screen: zoom panel size, clipping
 - FIX: fix memory content for multi-frame captures (was wrong after frame 1)
+- CHG: screen: zoom panel size, clipping
 - NEW: screen: show bitplane pointers
 - CHG: screen: improve performance by 40%
+- NEW: screen: mouse click&drag to set time
+- NEW: screen: `Freeze frame` to visualize drawing (+ Memory overlay)
 - CHG: profiler: improve loading performance by >1000%
 - CHG: profiler: multi-frame captures are now loaded in the background for faster startup time
 - CHG: savestate: show progress bar during profiling
-- NEW: screen: mouse click&drag to set time
 - NEW: `Amiga: Clean Temp Files` to delete `.amigaprofile` files from your temp path.
 - FIX: the terminal didn't re-open once closed
 

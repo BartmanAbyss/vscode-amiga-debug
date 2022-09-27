@@ -182,7 +182,7 @@ export const CpuProfileLayout: FunctionComponent<{
 					<TabList>
 						<Tab>Profiler</Tab>
 						<Tab>Assembly</Tab>
-						<Tab>Screen (Beta)</Tab>
+						<Tab>Screen</Tab>
 						<Tab>Resources</Tab>
 						<Tab>Blitter</Tab>
 					</TabList>
