@@ -170,7 +170,7 @@ export const MemoryView: FunctionComponent<{
 				<ToggleButton icon="Reads" label="Show Memory Reads" checked={showReads} onChange={setShowReads} />
 				<ToggleButton icon="Writes" label="Show Memory Writes" checked={showWrites} onChange={setShowWrites} />
 				<ToggleButton icon="Track CPU Data" label="Track CPU Data" checked={trackCpuData} onChange={setTrackCpuData} />
-				<span style={{ width: '1em' }}></span>
+				<span style={{ width: '.5em' }} />
 				<ToggleButton icon=".B" label="Show Bytes" checked={size === 1} onChange={() => setSize(1)} />
 				<ToggleButton icon=".W" label="Show Words" checked={size === 2} onChange={() => setSize(2)} />
 				<ToggleButton icon=".L" label="Show Longwords" checked={size === 4} onChange={() => setSize(4)} />

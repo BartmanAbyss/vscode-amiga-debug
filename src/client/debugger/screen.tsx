@@ -262,18 +262,18 @@ export const DeniseView: FunctionComponent<{
 	return (<>
 		<div style={{ flexGrow: 0 }}>
 		<Toolbar>
-			<div>DMA</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
+			<div>DMA</div><div><input style={{verticalAlign: 'bottom'}} title="DMA Opacity" type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
 			<select class="select" alt="XXX" aria-label="XXX" value={state.freeze} onInput={({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => setState((prev: DeniseState) => ({ ...prev, freeze: parseInt(currentTarget.value) }))}>
 				<option value="-1">Live</option>
-				{MODELS.map((value, index) => <option value={index}>Freeze fr. {index + 1}</option>)}
+				{MODELS.map((_, index) => <option value={index}>Freeze fr. {index + 1}</option>)}
 			</select>
 			<ToggleButton icon="Window" label="Show Display Window" checked={state.window} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, window: checked }))} />
 			<ToggleButton icon="Bitplanes" label="Show Bitplanes" checked={state.planes.some((v) => v)} onChange={showAllPlanes} />
 			{state.planes.map((value, index) => <ToggleButton icon={`${index + 1}`} label={`Show Bitplane ${index + 1}`} checked={value} onChange={(checked) => showPlane(index, checked)} />)}
-			<span style={{ width: '1em' }}></span>
+			<span style={{ width: '.5em' }} />
 			<ToggleButton icon="Sprites" label="Show Sprites" checked={state.sprites.some((v) => v)} onChange={showAllSprites} />
 			{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
-			<span style={{ width: '1em' }}></span>
+			<span style={{ width: '.5em' }} />
 			{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
 		</Toolbar>
 		</div>
