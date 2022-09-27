@@ -1,5 +1,6 @@
 import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import create from 'zustand';
 import { ToggleButton } from '../toggle-button';
 import { Toolbar } from '../filter';
 import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
@@ -226,19 +227,17 @@ const DeniseScreen: FunctionComponent<{
 	</>;
 };
 
+const useStore = create<DeniseState>(() => DefaultDeniseState);
+
 export const DeniseView: FunctionComponent<{
 	frame: number;
 	time: number;
 	setTime?: StateUpdater<number>;
 }> = ({ frame, time, setTime }) => {
-	const [state, setState] = useState<DeniseState>(DefaultDeniseState);
+	const [state, setState] = [useStore(), useStore.setState];
 
 	const showAllPlanes = useCallback((checked: boolean) => {
-		setState((prev: DeniseState) => {
-			const neu = JSON.parse(JSON.stringify(prev)) as DeniseState;
-			neu.planes = [checked, checked, checked, checked, checked, checked, checked, checked];
-			return neu;
-		});
+		setState({ planes: [checked, checked, checked, checked, checked, checked, checked, checked] });
 	}, [setState]);
 	const showPlane = useCallback((index: number, checked: boolean) => {
 		setState((prev: DeniseState) => {
@@ -247,13 +246,8 @@ export const DeniseView: FunctionComponent<{
 			return neu;
 		});
 	}, [setState]);
-
 	const showAllSprites = useCallback((checked: boolean) => {
-		setState((prev: DeniseState) => {
-			const neu = JSON.parse(JSON.stringify(prev)) as DeniseState;
-			neu.sprites = [checked, checked, checked, checked, checked, checked, checked, checked];
-			return neu;
-		});
+		setState({ sprites: [checked, checked, checked, checked, checked, checked, checked, checked] });
 	}, [setState]);
 	const showSprite = useCallback((index: number, checked: boolean) => {
 		setState((prev: DeniseState) => {
@@ -268,9 +262,11 @@ export const DeniseView: FunctionComponent<{
 	return (<>
 		<div style={{ flexGrow: 0 }}>
 		<Toolbar>
-			<div>
-				DMA&nbsp;Overlay</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} />
-			</div>
+			<div>DMA</div><div><input style={{verticalAlign: 'bottom'}} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
+			<select class="select" alt="XXX" aria-label="XXX" value={state.freeze} onInput={({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => setState((prev: DeniseState) => ({ ...prev, freeze: parseInt(currentTarget.value) }))}>
+				<option value="-1">Live</option>
+				{MODELS.map((value, index) => <option value={index}>Freeze fr. {index + 1}</option>)}
+			</select>
 			<ToggleButton icon="Window" label="Show Display Window" checked={state.window} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, window: checked }))} />
 			<ToggleButton icon="Bitplanes" label="Show Bitplanes" checked={state.planes.some((v) => v)} onChange={showAllPlanes} />
 			{state.planes.map((value, index) => <ToggleButton icon={`${index + 1}`} label={`Show Bitplane ${index + 1}`} checked={value} onChange={(checked) => showPlane(index, checked)} />)}

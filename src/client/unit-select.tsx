@@ -12,19 +12,13 @@ export const UnitSelect: FunctionComponent<{
 	type: DisplayUnitType;
 	onChange?: (value: DisplayUnit) => void;
 }> = ({ value, type, onChange }) => {
-	const toggle = useCallback(({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => {
+	const toggle = useCallback(({ currentTarget }: JSX.TargetedEvent<HTMLSelectElement, Event>) => {
 		const u = DisplayUnit[currentTarget.value];
 		onChange?.(u);
 	}, [onChange]);
 
 	return (
-		<select
-			className="select"
-			alt="Display Unit"
-			aria-label="Display Unit"
-			value={DisplayUnit[value]}
-			onInput={toggle}
-		>
+		<select className="select" alt="Display Unit" aria-label="Display Unit" value={DisplayUnit[value]} onInput={toggle}>
 			{type === DisplayUnitType.Time && <>
 				<option value={DisplayUnit[DisplayUnit.Microseconds]}>Microseconds</option>
 				<option value={DisplayUnit[DisplayUnit.Cycles]}>Cycles</option>

@@ -4,6 +4,7 @@ import { displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor
 import { IProfileModel } from "./model";
 
 export interface DeniseState {
+	freeze: number;
 	screenshot: boolean;
 	window: boolean;
 	planes: boolean[];
@@ -11,6 +12,7 @@ export interface DeniseState {
 }
 
 export const DefaultDeniseState: DeniseState = {
+	freeze: -1,
 	screenshot: false,
 	window: true,
 	planes: [true, true, true, true, true, true, true, true],

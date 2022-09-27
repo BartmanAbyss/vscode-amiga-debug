@@ -1,5 +1,5 @@
-import { FunctionComponent, JSX, createContext } from 'preact';
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { FunctionComponent, JSX } from 'preact';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './resources.module.css';
 
@@ -15,6 +15,7 @@ import { DropdownComponent, DropdownOptionProps } from '../dropdown';
 import '../dropdown.css';
 
 import { IZoomProps, ZoomCanvas } from './zoomcanvas';
+import create from 'zustand';
 
 // https://stackoverflow.com/a/54014428
 // input: h in [0,360] and s,v in [0,1] - output: r,g,b in [0,1]
@@ -380,7 +381,7 @@ interface IState {
 	palette?: GfxResourceWithPayload;
 	overlay?: string;
 }
-const Context = createContext<IState>({});
+const useStore = create<IState>(() => ({}));
 
 export const GfxResourcesView: FunctionComponent<{
 	frame: number;
@@ -515,7 +516,7 @@ export const GfxResourcesView: FunctionComponent<{
 		return palettes;
 	}, [frame, time]);
 
-	const state = useContext<IState>(Context);
+	const [state, setState] = [useStore(), useStore.setState];
 	if (state.bitmap === undefined)
 		state.bitmap = bitmaps[0];
 	if (state.palette === undefined)
@@ -523,34 +524,31 @@ export const GfxResourcesView: FunctionComponent<{
 	if (state.overlay === undefined)
 		state.overlay = "";
 
-	const [bitmap, setBitmap] = useState<GfxResourceWithPayload>(state.bitmap);
-	const [palette, setPalette] = useState<GfxResourceWithPayload>(state.palette);
 	// update custom registers palette on time change
-	if(palette.resource.address === Custom.ByName("COLOR00").adr)
-		palette.palette = palettes.find((p) => p.resource.address === Custom.ByName("COLOR00").adr).palette;
-	const onChangeBitmap = (selected: GfxResourceWithPayload) => { state.bitmap = selected; setBitmap(selected); };
-	const onChangePalette = (selected: GfxResourceWithPayload) => { state.palette = selected; setPalette(selected); };
+	if(state.palette.resource.address === Custom.ByName("COLOR00").adr)
+		state.palette.palette = palettes.find((p) => p.resource.address === Custom.ByName("COLOR00").adr).palette;
+	const onChangeBitmap = (selected: GfxResourceWithPayload) => { setState({ bitmap: selected }); };
+	const onChangePalette = (selected: GfxResourceWithPayload) => { setState({ palette: selected }); };
 
-	const [overlay, setOverlay] = useState(state.overlay);
-	const onChangeOverlay = ({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => { const overlay = currentTarget.value; state.overlay = overlay; setOverlay(overlay); };
+	const onChangeOverlay = ({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => { setState({ overlay: currentTarget.value }); };
 
 	return <>
 		<div style={{ fontSize: 'var(--vscode-editor-font-size)', marginBottom: '5px' }}>
 			Bitmap:&nbsp;
-			<GfxResourceDropdown options={bitmaps} value={bitmap} onChange={onChangeBitmap} />
+			<GfxResourceDropdown options={bitmaps} value={state.bitmap} onChange={onChangeBitmap} />
 			&nbsp;
 			Palette:&nbsp;
-			<GfxResourceDropdown options={palettes} value={palette} onChange={onChangePalette} />
+			<GfxResourceDropdown options={palettes} value={state.palette} onChange={onChangePalette} />
 			&nbsp;
 			Overlay:&nbsp;
-			<select className="select" alt="Overlay" aria-label="Overlay" value={overlay} onInput={onChangeOverlay}>
+			<select className="select" alt="Overlay" aria-label="Overlay" value={state.overlay} onInput={onChangeOverlay}>
 				<option value="">None</option>
 				<option value="blitrects">Blit Rects</option>
 				<option value="overdraw">Overdraw</option>
 			</select>
 		</div>
 		<div style={{ overflow: 'auto' }}>
-			<Screen frame={frame} time={time} screen={bitmap.screen} mask={bitmap.mask} palette={palette.palette} flags={bitmap.resource.flags} overlay={overlay} />
+			<Screen frame={frame} time={time} screen={state.bitmap.screen} mask={state.bitmap.mask} palette={state.palette.palette} flags={state.bitmap.resource.flags} overlay={state.overlay} />
 		</div>
 	</>;
 };
