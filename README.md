@@ -11,6 +11,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 ![Debugger](screen_debug.png)
 ![Frame Profiler](screen_profiler_frame.png)
 ![Size Profiler](screen_profiler_size.png)
+![Graphics Debugger](screen_gfx.png)
 
 ## Video
 Here's a video showing off all the new features of v1.1, including the frame profiler and graphics debugger: https://www.youtube.com/watch?v=gQ4tKisnr7Y
