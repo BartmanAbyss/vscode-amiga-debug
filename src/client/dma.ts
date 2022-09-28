@@ -749,11 +749,11 @@ export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: n
 
 export function GetPaletteFromCopper(copper: Copper[]): number[] {
 	const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
-	const palette = new Array(64).fill([]);
+	const palette = new Array<number>(64).fill(0);
 	for(const c of copper) {
 		if(c.insn instanceof CopperMove && c.insn.DA >= regCOLOR00 && c.insn.DA < regCOLOR00 + 32 * 2) {
 			const idx = (c.insn.DA - regCOLOR00) >>> 1;
-			if(palette[idx].length === 0) { // don't overwrite color
+			if(palette[idx] === 0) { // don't overwrite color
 				palette[idx] = GetAmigaColor(c.insn.RD);
 				palette[idx + 32] = GetAmigaColorEhb(c.insn.RD);
 			}

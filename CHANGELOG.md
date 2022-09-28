@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.1
+- FIX: screen: freeze frame memory was wrong
+- FIX: resource: possibly very slow performance when using `Copper Palette`
+
 ## 1.6.0
 - NEW: icons for `.uss`, `.amigaprofile`, `.shrinklerstats`, `.objdump`
 - FIX: fix memory content for multi-frame captures (was wrong after frame 1)
