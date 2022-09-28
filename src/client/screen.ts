@@ -153,6 +153,8 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 		const maxCycle = CpuCyclesToDmaCycles(time);
 		for(let cycle = 0; cycle < maxCycle; cycle++) {
 			const dmaRecord = model.amiga.dmaRecords[cycle];
+			if(dmaRecord.addr === undefined)
+				continue;
 			if(dmaRecord.addr >= 0 && dmaRecord.addr < lastUpdate.byteLength) {
 				if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
 					const color = dmaTypes.get(DmaTypes.CPU).subtypes.get(DmaSubTypes.CPU_DATA).color;
