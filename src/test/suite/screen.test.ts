@@ -12,6 +12,6 @@ suite("screen", function () {
 	test("profile", profile('screen' , function () {
 		const PROFILES = JSON.parse(fs.readFileSync(path.join(testDataDir, 'profile/desertdream-dots.uss-2022.09.12-21.35.45.amigaprofile')).toString()) as ICpuProfileRaw[];
 		const MODELS = [ buildModel(PROFILES[0]) ];
-		const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = getScreen(2, MODELS[0], 0, DefaultDeniseState);
+		const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = getScreen(2, MODELS[0], MODELS[0], 0, DefaultDeniseState);
 	})).timeout(5000);
 });
