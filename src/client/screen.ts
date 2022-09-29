@@ -148,44 +148,47 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 	let window = false;
 	let prevColor = 0xff000000; // HAM
 	let ignoreCopper = 0;
-	const maxCycle = CpuCyclesToDmaCycles(time);
-	let cycle = 0;
-	for(let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
-		for(let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++, cycle++) {
-			// process real memory
-			if(freeze && cycle < maxCycle) {
-				const dmaRecord = model.amiga.dmaRecords[cycle];
-				if(dmaRecord.addr >= 0 && dmaRecord.addr < lastUpdate.byteLength) {
-					if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
-						const color = dmaTypes.get(DmaTypes.CPU).subtypes.get(DmaSubTypes.CPU_DATA).color;
-						const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
-						const len = dmaRecord.reg & 0xff;
-						switch(dmaRecord.reg & 0xff) {
-							case 1: 
-								memory.writeByte(dmaRecord.addr, dmaRecord.dat); 
-								lastUpdate[dmaRecord.addr] = (color & 0xffffff) | (alpha << 24);
-								break;
-							case 2: 
-								memory.writeWord(dmaRecord.addr, dmaRecord.dat); 
-								lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
-								break;
-							case 4: 
-								memory.writeLong(dmaRecord.addr, dmaRecord.dat); 
-								lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = 
-								lastUpdate[dmaRecord.addr + 2] = lastUpdate[dmaRecord.addr + 3] = (color & 0xffffff) | (alpha << 24);
-								break;
-						}
-					} else if(dmaRecord.reg === 0) { // Blitter write
-						const color = dmaTypes.get(DmaTypes.BLITTER).subtypes.get(dmaRecord.extra).color;
-						const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
-						lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
-						memory.writeWord(dmaRecord.addr, dmaRecord.dat);
+	// process real memory
+	if(freeze) {
+		const maxCycle = CpuCyclesToDmaCycles(time);
+		for(let cycle = 0; cycle < maxCycle; cycle++) {
+			const dmaRecord = model.amiga.dmaRecords[cycle];
+			if(dmaRecord.addr === undefined)
+				continue;
+			if(dmaRecord.addr >= 0 && dmaRecord.addr < lastUpdate.byteLength) {
+				if((dmaRecord.reg & 0x1100) === 0x1100) { // CPU write
+					const color = dmaTypes.get(DmaTypes.CPU).subtypes.get(DmaSubTypes.CPU_DATA).color;
+					const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
+					const len = dmaRecord.reg & 0xff;
+					switch(dmaRecord.reg & 0xff) {
+						case 1: 
+							memory.writeByte(dmaRecord.addr, dmaRecord.dat); 
+							lastUpdate[dmaRecord.addr] = (color & 0xffffff) | (alpha << 24);
+							break;
+						case 2: 
+							memory.writeWord(dmaRecord.addr, dmaRecord.dat); 
+							lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
+							break;
+						case 4: 
+							memory.writeLong(dmaRecord.addr, dmaRecord.dat); 
+							lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = 
+							lastUpdate[dmaRecord.addr + 2] = lastUpdate[dmaRecord.addr + 3] = (color & 0xffffff) | (alpha << 24);
+							break;
 					}
+				} else if(dmaRecord.reg === 0) { // Blitter write
+					const color = dmaTypes.get(DmaTypes.BLITTER).subtypes.get(dmaRecord.extra).color;
+					const alpha = (1 - Math.min(Math.max((maxCycle - cycle) / state.persistence, 0), 1)) * 255;
+					lastUpdate[dmaRecord.addr] = lastUpdate[dmaRecord.addr + 1] = (color & 0xffffff) | (alpha << 24);
+					memory.writeWord(dmaRecord.addr, dmaRecord.dat);
 				}
 			}
-
+		}
+	}
+	
+	// process frozen memory
+	for(let cycleY = 0; cycleY < NR_DMA_REC_VPOS; cycleY++) {
+		for(let cycleX = 0; cycleX < NR_DMA_REC_HPOS; cycleX++) {
 			// this is per 2 lores pixels
-			// process frozen memory
 			const dmaRecord = freezeModel.amiga.dmaRecords[cycleY * NR_DMA_REC_HPOS + cycleX];
 			// see dma.ts@GetCustomRegsAfterDma
 			if(!(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)) {

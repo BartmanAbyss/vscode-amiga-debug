@@ -11,6 +11,7 @@ This fully self-contained extension will help you to quickly develop demos, intr
 ![Debugger](screen_debug.png)
 ![Frame Profiler](screen_profiler_frame.png)
 ![Size Profiler](screen_profiler_size.png)
+![Graphics Debugger](screen_gfx.png)
 
 ## Video
 Here's a video showing off all the new features of v1.1, including the frame profiler and graphics debugger: https://www.youtube.com/watch?v=gQ4tKisnr7Y
@@ -297,6 +298,7 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
 
 ### Gfx Debugger
 * blitter doesn't get pointers if not explicitly written by CPU (e.g. reusing pointers after blit)
+* TODO: correctly show blits over 2 frames (second frame is missing blitbox)
 * TODO: show source blitter-rects
 * TODO: show 2 resources
 * TODO: tooltips for blitter-rects?
