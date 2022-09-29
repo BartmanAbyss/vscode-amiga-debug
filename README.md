@@ -268,6 +268,8 @@ diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
   - `gods.uss`: blitrects' height not correct due to planar layout
   - `shadesbeat.uss`: not showing any bitplanes due to not setting them in copper. TODO: get bitplanes from custom registers
   - `brianthelion-rotozoom.uss`: some blitrects missing
+  - `rinkadinkredux-end.uss`: hover over small bits at the right, causes error with 0-sized canvas
+  - `rinkadinkredux-rotozoom.uss`: no end detected for multiple blits (frame 2)
 
 ### Assembly
 * TODO: parser needs to check for comments
