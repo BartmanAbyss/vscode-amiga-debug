@@ -6,17 +6,26 @@
         {
             "label": "compile",
             "type": "shell",
-            "command": "${command:amiga.bin-path}\\gnumake.exe",
-            "args": [
-                "-j4",
-                "program=${config:amiga.program}"
-            ],
+            "windows": {
+                "command": "${command:amiga.bin-path}\\gnumake.exe",
+                "options": {
+                    "cwd": "${workspaceRoot}",
+                    "env": {
+                        "PATH": "${env:PATH};${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                    }
+                },
+            },
+            "command": "make",
             "options": {
                 "cwd": "${workspaceRoot}",
                 "env": {
-                    "PATH": "${env:PATH};${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                    "PATH": "${env:PATH}:${command:amiga.bin-path}/opt/bin:${command:amiga.bin-path}"
                 }
             },
+            "args": [
+                "-j4",
+                "program=${config:amiga.program}",
+            ],
             "problemMatcher": [
                 {
                     "base": "$gcc",

@@ -67,7 +67,7 @@ class SourceContext {
 		let cmd: string, cmdParams: string[], spawnParams: object;
 		if (this.fileName.endsWith('.s')) {
 			//	Spawn the GNU Assembler to validate the file.
-			cmd = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
+			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-as");
 			cmdParams = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
@@ -225,7 +225,7 @@ class SourceContext {
 		// get cycles from disassembly
 		this.cycles.clear();
 		if(fs.existsSync(tmp)) {
-			const objdumpPath = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-objdump.exe");
+			const objdumpPath = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-objdump");
 			try {
 				const objdump = Disassemble(objdumpPath, tmp);
 				// from objdump.tsx

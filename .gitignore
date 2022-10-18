@@ -4,10 +4,11 @@ node_modules
 .vscode-test/
 *.vsix
 *.dmp
-bin/winuae.ini
+bin/win32/winuae.ini
 bin/dh0/runme.exe
-bin/*.uae
-bin/*.uss
+bin/*/*.uae
+bin/*/*.fs-uae
+bin/*/*.uss
 bin/configuration.*
 bin/dh0/s/startup-sequence
 bin/*.ini
@@ -32,3 +33,5 @@ profile
 /build-gcc/
 /gcc/
 /output/
+
+.DS_Store

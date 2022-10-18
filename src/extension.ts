@@ -41,7 +41,7 @@ interface AmigaConfiguration {
 class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	public compilerPath: string;
 	constructor(extensionPath: string) {
-		this.compilerPath = extensionPath + "\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe";
+		this.compilerPath = path.join(extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-gcc");
 	}
 
 	public readonly name = "Amiga C/C++";
@@ -141,7 +141,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
 			vscode.commands.registerCommand('amiga.disassembleElf', (uri: vscode.Uri) => this.disassembleElf(uri)),
-			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
+			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin', process.platform)),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
