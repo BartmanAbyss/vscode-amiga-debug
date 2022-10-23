@@ -289,7 +289,7 @@ class AmigaDebugExtension {
 			void vscode.window.showErrorMessage('Unable to show disassembly.');
 		}
 	}
-	private initProject() {
+	private async initProject() {
 		const copyRecursiveSync = (src: string, dest: string) => {
 			const exists = fs.existsSync(src);
 			const stats = exists && fs.statSync(src);
@@ -317,6 +317,13 @@ class AmigaDebugExtension {
 				return;
 			}
 			copyRecursiveSync(source, dest);
+
+			// Replace compiler path placeholder:
+			const settingsPath = path.join(dest, '.vscode', 'settings.json');
+			const settings = fs.readFileSync(settingsPath).toString();
+			const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
+			const compilerPath = path.join(binPath, "opt", "bin", "m68k-amiga-elf-gcc");
+			fs.writeFileSync(settingsPath, settings.replace('{compilerPath}', compilerPath));
 		} catch(err) {
 			void vscode.window.showErrorMessage(`Failed to init project. ${(err as Error).toString()}`);
 		}
