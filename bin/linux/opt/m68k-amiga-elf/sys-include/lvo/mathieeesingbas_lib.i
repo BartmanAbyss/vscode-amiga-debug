@@ -1,0 +1,18 @@
+* Automatically generated header (sfdc 1.11)! Do not edit!
+     IFND  LVO_MATHIEEESINGBAS_LIB_I
+LVO_MATHIEEESINGBAS_LIB_I   SET   1
+
+_LVOIEEESPFix     EQU   -30
+_LVOIEEESPFlt     EQU   -36
+_LVOIEEESPCmp     EQU   -42
+_LVOIEEESPTst     EQU   -48
+_LVOIEEESPAbs     EQU   -54
+_LVOIEEESPNeg     EQU   -60
+_LVOIEEESPAdd     EQU   -66
+_LVOIEEESPSub     EQU   -72
+_LVOIEEESPMul     EQU   -78
+_LVOIEEESPDiv     EQU   -84
+_LVOIEEESPFloor     EQU   -90
+_LVOIEEESPCeil     EQU   -96
+
+     ENDC  * LVO_MATHIEEESINGBAS_LIB_I
