@@ -380,14 +380,14 @@ class AmigaDebugExtension {
 			void vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
-		const binPath = path.join(this.extensionPath, 'bin/opt/bin');
+		const binPath = path.join(this.extensionPath, 'bin', process.platform, 'opt/bin');
 
 		try {
-			const symbolTable = new SymbolTable(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath);
-			const sourceMap = new SourceMap(path.join(binPath, 'm68k-amiga-elf-addr2line.exe'), uri.fsPath, symbolTable);
+			const symbolTable = new SymbolTable(path.join(binPath, 'm68k-amiga-elf-objdump'), uri.fsPath);
+			const sourceMap = new SourceMap(path.join(binPath, 'm68k-amiga-elf-addr2line'), uri.fsPath, symbolTable);
 			const profiler = new Profiler(sourceMap, symbolTable);
 			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
-			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
+			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump'), uri.fsPath));
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
 		} catch(error) {
 			void vscode.window.showErrorMessage(`Error during size profiling: ${(error as Error).message}`);
@@ -429,7 +429,7 @@ class AmigaDebugExtension {
 			return;
 		const output = uri.fsPath + '.' + result.label + '.shrinkled';
 		const args = [...result.description.split(' '), uri.fsPath, output];
-		const cmd = `${binPath}\\shrinkler.exe`;
+		const cmd = path.join(binPath, 'Shrinkler');
 		return this.runExternalCommand(uri, cmd, args, output, () => {
 			void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
 		});
@@ -439,7 +439,7 @@ class AmigaDebugExtension {
 		const binPath = path.join(this.extensionPath, 'bin');
 		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.adf');
 		const args = [ '-i', uri.fsPath, '-a', output ];
-		const cmd = `${binPath}\\exe2adf.exe`;
+		const cmd = path.join(binPath, 'exe2adf');
 		return this.runExternalCommand(uri, cmd, args, output, null);
 	}
 

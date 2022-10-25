@@ -77,7 +77,7 @@ class SourceContext {
 				'-L', // include local labels
 				'-I', '.', 
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
-				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
 				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).			
 			];
 			spawnParams = {			
@@ -113,7 +113,7 @@ class SourceContext {
 			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
 			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
 			fs.writeFileSync (inFile, this.text);
-			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
+			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "vasmm68k_mot");
 			cmdParams = [
 				'-m68000', 
 				'-Felf', 
@@ -126,7 +126,7 @@ class SourceContext {
 				'-x',
 				'-I', '.', 
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
-				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
 				'-o', tmp, 
 				inFile
 			];
