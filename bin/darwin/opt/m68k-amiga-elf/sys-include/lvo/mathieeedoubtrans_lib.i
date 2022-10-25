@@ -1,0 +1,23 @@
+* Automatically generated header (sfdc 1.11)! Do not edit!
+     IFND  LVO_MATHIEEEDOUBTRANS_LIB_I
+LVO_MATHIEEEDOUBTRANS_LIB_I   SET   1
+
+_LVOIEEEDPAtan     EQU   -30
+_LVOIEEEDPSin     EQU   -36
+_LVOIEEEDPCos     EQU   -42
+_LVOIEEEDPTan     EQU   -48
+_LVOIEEEDPSincos     EQU   -54
+_LVOIEEEDPSinh     EQU   -60
+_LVOIEEEDPCosh     EQU   -66
+_LVOIEEEDPTanh     EQU   -72
+_LVOIEEEDPExp     EQU   -78
+_LVOIEEEDPLog     EQU   -84
+_LVOIEEEDPPow     EQU   -90
+_LVOIEEEDPSqrt     EQU   -96
+_LVOIEEEDPTieee     EQU   -102
+_LVOIEEEDPFieee     EQU   -108
+_LVOIEEEDPAsin     EQU   -114
+_LVOIEEEDPAcos     EQU   -120
+_LVOIEEEDPLog10     EQU   -126
+
+     ENDC  * LVO_MATHIEEEDOUBTRANS_LIB_I
