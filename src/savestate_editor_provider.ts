@@ -82,11 +82,13 @@ class SavestateDocument implements vscode.CustomDocument {
 			return;
 		}
 
-		const winuaePath = path.join(binPath, "winuae-gdb.exe");
-		const winuaeArgs = ['-portable', '-f', configPath];
+		const emuPath = process.platform === "win32"
+			? path.join(binPath, "winuae-gdb.exe")
+			: path.join(binPath, "fs-uae", "fs-uae");
+		const emuArgs = ['-portable', '-f', configPath];
 
-		// launch WinUAE
-		this.winuae = cp.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+		// launch Emulator
+		this.winuae = cp.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true });
 		setStatus('launch');
 		this.winuae.on('exit', (code: number, signal: string) => {
 			this.stop();
