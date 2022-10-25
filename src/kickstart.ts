@@ -229,7 +229,7 @@ static Structures(void) {
 		fs.writeFileSync(this.kickPath + '.asm', asm);
 		const elfPath = path.join(outDir, `kick_${this.hash}.elf`);
 		const as = childProcess.spawnSync(
-			path.join(binDir, "m68k-amiga-elf-as.exe"), 
+			path.join(binDir, "m68k-amiga-elf-as"),
 			[
 				'-', // input from stdin
 				'-o', elfPath, // no object output

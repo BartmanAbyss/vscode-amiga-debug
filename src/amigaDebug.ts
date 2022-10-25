@@ -19,6 +19,7 @@ import { SymbolTable } from './backend/symbols';
 import { Kickstart } from './kickstart';
 import { DisassemblyInstruction, Section, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
+import { dirname } from 'path';
 
 // global debug switch
 const DEBUG = false;
@@ -153,10 +154,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			logger.setup(Logger.LogLevel.Verbose, false);
 
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
-		const dh0Path = path.join(binPath, "dh0");
+		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
+		const dh0Path = path.join(binPath, "..", "dh0");
 
-		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
+		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
 
 		const parseCfg = (str: string) => {
@@ -415,7 +416,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
-		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
+		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath, HOME: gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
 
 		if(DEBUG) {
@@ -685,8 +686,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const numFrames = args?.numFrames || 1;
 
 				const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
-				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line");
+				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
 
 				const date = new Date();
 				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +

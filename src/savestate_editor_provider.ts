@@ -48,7 +48,7 @@ class SavestateDocument implements vscode.CustomDocument {
 		// write config
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const configPath = path.join(binPath, "savestate.uae");
-		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
+		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
 		const config = new Map<string, string>();
 		config.set('use_gui', 'no');

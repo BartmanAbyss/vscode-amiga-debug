@@ -5,7 +5,7 @@ import { FD, Kickstart } from '../../kickstart';
 import { profile } from '.';
 
 const testDataDir = path.resolve(__dirname, "../../../src/test/suite/data");
-const binDir = path.resolve(__dirname, "../../../bin/opt/bin");
+const binDir = path.resolve(__dirname, "../../../bin/" + process.platform + "/opt/bin");
 const symDir = path.resolve(__dirname, "../../../bin/symbols");
 
 suite("kickstart", function () {

@@ -67,7 +67,7 @@ class SourceContext {
 		let cmd: string, cmdParams: string[], spawnParams: object;
 		if (this.fileName.endsWith('.s')) {
 			//	Spawn the GNU Assembler to validate the file.
-			cmd = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-as.exe");
+			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-as");
 			cmdParams = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
@@ -77,7 +77,7 @@ class SourceContext {
 				'-L', // include local labels
 				'-I', '.', 
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
-				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
 				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).			
 			];
 			spawnParams = {			
@@ -113,7 +113,7 @@ class SourceContext {
 			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
 			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
 			fs.writeFileSync (inFile, this.text);
-			cmd = path.join(SourceContext.extensionPath, "bin/vasmm68k_mot_win32.exe");
+			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "vasmm68k_mot");
 			cmdParams = [
 				'-m68000', 
 				'-Felf', 
@@ -126,7 +126,7 @@ class SourceContext {
 				'-x',
 				'-I', '.', 
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
-				'-I', path.join(SourceContext.extensionPath, "bin/opt/m68k-amiga-elf/sys-include"),
+				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
 				'-o', tmp, 
 				inFile
 			];
@@ -225,7 +225,7 @@ class SourceContext {
 		// get cycles from disassembly
 		this.cycles.clear();
 		if(fs.existsSync(tmp)) {
-			const objdumpPath = path.join(SourceContext.extensionPath, "bin/opt/bin/m68k-amiga-elf-objdump.exe");
+			const objdumpPath = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-objdump");
 			try {
 				const objdump = Disassemble(objdumpPath, tmp);
 				// from objdump.tsx
