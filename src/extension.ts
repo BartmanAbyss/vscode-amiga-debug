@@ -436,7 +436,7 @@ class AmigaDebugExtension {
 	}
 
 	private exe2adf(uri: vscode.Uri) {
-		const binPath = path.join(this.extensionPath, 'bin');
+		const binPath = path.join(this.extensionPath, 'bin', process.platform);
 		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.adf');
 		const args = [ '-i', uri.fsPath, '-a', output ];
 		const cmd = path.join(binPath, 'exe2adf');
