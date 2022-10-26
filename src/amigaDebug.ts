@@ -160,7 +160,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const dh0Path = path.join(binPath, "..", "dh0");
 
 		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
-		const gdbArgs = ['-q', '--interpreter=mi2', '--data-directory=' + path.join(binPath, "..", "data-directory")];
+		const gdbArgs = ['-q', '--interpreter=mi2'];
 
 		const parseCfg = (str: string) => {
 			const out = new Map<string, string>();
