@@ -462,10 +462,10 @@ class AmigaDebugExtension {
 					//p = cp.exec(cmd);
 					p = cp.spawn(cmd, args);
 					p.stderr.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
+						writeEmitter.fire(data.toString().replace(/(\r)?\n/g, "\r\n"));
 					});
 					p.stdout.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
+						writeEmitter.fire(data.toString().replace(/(\r)?\n/g, "\r\n"));
 					});
 					p.on('exit', (code: number, signal: string) => {
 						if(signal === 'SIGTERM') {
