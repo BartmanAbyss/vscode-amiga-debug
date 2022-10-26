@@ -405,7 +405,7 @@ class AmigaDebugExtension {
 	}
 
 	private async shrinkler(uri: vscode.Uri) {
-		const binPath = path.join(this.extensionPath, 'bin');
+		const binPath = path.join(this.extensionPath, 'bin', process.platform);
 		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
 		let config: AmigaConfiguration;
