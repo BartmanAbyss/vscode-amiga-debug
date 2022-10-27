@@ -371,6 +371,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 			// nice
 			config.set('automatic_input_grab', "0");
+			config.set('game_mode', '0'); // Removes dependency on dbus-x11 for Linux
 			// filesystems
 			config.set('hard_drive_0', dh0Path);
 			config.set('hard_drive_1', exePath);
