@@ -44,6 +44,21 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "windows": {
+                "command": "${command:amiga.bin-path}\\gnumake.exe"
+            },
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "args": [
+                "clean"
+            ],
+            "problemMatcher": []
         }
     ]
 }
