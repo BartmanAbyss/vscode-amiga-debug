@@ -19,9 +19,12 @@ import { SymbolTable } from './backend/symbols';
 import { Kickstart } from './kickstart';
 import { DisassemblyInstruction, Section, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { hexFormat } from './utils';
+import { dirname } from 'path';
 
 // global debug switch
 const DEBUG = false;
+
+const isWin = process.platform === "win32";
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	config?: string; // A500 (default), A1200, etc.
@@ -78,7 +81,7 @@ class CustomContinuedEvent extends Event implements DebugProtocol.Event {
 	}
 }
 
-let winuae: childProcess.ChildProcess;
+let emu: childProcess.ChildProcess;
 let gdb: childProcess.ChildProcess;
 
 export class AmigaDebugSession extends LoggingDebugSession {
@@ -153,10 +156,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			logger.setup(Logger.LogLevel.Verbose, false);
 
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
-		const dh0Path = path.join(binPath, "dh0");
+		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
+		const dh0Path = path.join(binPath, "..", "dh0");
 
-		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
+		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
 
 		const parseCfg = (str: string) => {
@@ -181,179 +184,296 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return out;
 		};
 
-		const defaultPath = path.join(binPath, "default.uae");
+		const configExt = isWin ? "uae" : "fs-uae";
+		const defaultPath = path.join(binPath, "default." + configExt);
 		let config = new Map<string, string>();
 		try {
 			config = parseCfg(fs.readFileSync(defaultPath, 'utf-8'));
 		} catch(e) { /**/ }
 
-		// mandatory
-		config.set('use_gui', 'no');
-		config.set('win32.start_not_captured', 'yes');
-		config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
-		config.set('boot_rom_uae', 'min'); // so we can control warp mode, KPrintF, debug overlay from within amiga executables
+		const exePath = path.dirname(args.program);
+		const exeName = path.basename(args.program) + ".exe";
+		const debugTrigger = args.endcli ? exeName : ':' + exeName;
+		const machine = args.config?.toLowerCase();
 
-		// WinUAE: built_in_prefs
-		switch(args.config?.toLowerCase()) {
-		case 'a500':
-		default:
-			config.set('quickstart', 'a500,1'); // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
-			break;
-		case 'a1200':
-			config.set('quickstart', 'a1200,0'); // 68020, 2MB Chip
-			break;
-		case 'a1200-fast':
-			config.set('quickstart', 'a1200,1'); // 68020, 2MB Chip 4MB FAST
-			break;
-		case 'a1200-030':
-			config.set('quickstart', 'a1200,2'); // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
-			//config.set('quickstart', 'a1200,4'); // 68060, 2MB Chip 32MB FAST, Blizzard 1260
-			//config.set('quickstart', 'a1200,3'); // 68040, 2MB Chip 32MB FAST, Blizzard 1260
-			break;
-		case 'a3000':
-			config.set('quickstart', 'a3000,2'); // 68030, 2MB Chip
-			break;
-		case 'a4000':
-			config.set('quickstart', 'a4000,0'); // 68030, 68882, 2MB Chip 8MB FAST
-			//config.set('quickstart', 'a4000,1'); // 68040, 2MB Chip 8MB FAST
-			break;
+		if (args.kickstart && !fs.existsSync(args.kickstart)) {
+			this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
+			return;
+		}
+		if (args.cpuboard && !fs.existsSync(args.cpuboard)) {
+			this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
+			return;
 		}
 
-		if(args.kickstart !== undefined) {
-			if (!fs.existsSync(args.kickstart)) {
-				this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
-				return;
+		if (isWin) {
+			// WinUAE:
+
+			// mandatory
+			config.set('use_gui', 'no');
+			config.set('win32.start_not_captured', 'yes');
+			config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
+			config.set('boot_rom_uae', 'min'); // so we can control warp mode, KPrintF, debug overlay from within amiga executables
+
+			// machine configs
+			switch(machine) {
+			case 'a500':
+			default:
+				config.set('quickstart', 'a500,1'); // 1 = KS 1.3, ECS Agnus, 0.5M Chip + 0.5M Slow
+				break;
+			case 'a1200':
+				config.set('quickstart', 'a1200,0'); // 68020, 2MB Chip
+				break;
+			case 'a1200-fast':
+				config.set('quickstart', 'a1200,1'); // 68020, 2MB Chip 4MB FAST
+				break;
+			case 'a1200-030':
+				config.set('quickstart', 'a1200,2'); // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
+				//config.set('quickstart', 'a1200,4'); // 68060, 2MB Chip 32MB FAST, Blizzard 1260
+				//config.set('quickstart', 'a1200,3'); // 68040, 2MB Chip 32MB FAST, Blizzard 1260
+				break;
+			case 'a3000':
+				config.set('quickstart', 'a3000,2'); // 68030, 2MB Chip
+				break;
+			case 'a4000':
+				config.set('quickstart', 'a4000,0'); // 68030, 68882, 2MB Chip 8MB FAST
+				//config.set('quickstart', 'a4000,1'); // 68040, 2MB Chip 8MB FAST
+				break;
 			}
-			config.set('kickstart_rom_file', args.kickstart);
-		} else {
-			config.delete('kickstart_rom_file');
-		}
 
-		if(args.cpuboard !== undefined) {
-			if (!fs.existsSync(args.cpuboard)) {
-				this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
-				return;
+			if(args.kickstart !== undefined) {
+				config.set('kickstart_rom_file', args.kickstart);
+			} else {
+				config.delete('kickstart_rom_file');
 			}
-			config.set('cpuboard_rom_file', args.cpuboard);
+
+			if(args.cpuboard !== undefined) {
+				config.set('cpuboard_rom_file', args.cpuboard);
+			} else {
+				config.delete('cpuboard_rom_file');
+			}
+
+			// nice
+			config.set('cpu_cycle_exact', 'true');
+			config.set('cpu_memory_cycle_exact', 'true');
+			config.set('blitter_cycle_exact', 'true');
+			config.set('cycle_exact', 'true');
+			// optional
+			config.set('input.config', '1');
+			config.set('input.1.keyboard.0.friendlyname', 'WinUAE keyboard');
+			config.set('input.1.keyboard.0.name', 'NULLKEYBOARD');
+			config.set('input.1.keyboard.0.empty', 'false');
+			config.set('input.1.keyboard.0.disabled', 'false');
+			config.set('input.1.keyboard.0.button.41.GRAVE', 'SPC_SINGLESTEP.0');
+			config.set('input.1.keyboard.0.button.201.PREV', 'SPC_WARP.0');
+			// filesystems
+			config.delete('uaehf0');
+			config.delete('uaehf1');
+			// delete old filesystem, then add new filesystem so order is correct in config (otherwise won't boot)
+			config.delete('filesystem');
+			config.delete('filesystem2');
+			config.set('filesystem', 'rw,dh0:' + dh0Path);
+			config.set('filesystem2', 'rw,dh1:dh1:' + exePath + ',-128');
+			// debugging options
+			config.set('debugging_features', 'gdbserver');
+			config.set('debugging_trigger', debugTrigger);
+
+			// safety
+			config.delete('statefile');
+
+			// Optional override memory config
+			switch(args.chipmem?.toLowerCase()) {
+			case '256k':
+				config.set('chipmem_size', '0');
+				break;
+			case '512k':
+				config.set('chipmem_size', '1');
+				break;
+			case '1m':
+				config.set('chipmem_size', '2');
+				break;
+			case '1.5m':
+				config.set('chipmem_size', '3');
+				break;
+			case '2m':
+				config.set('chipmem_size', '4');
+				break;
+			default:
+				config.delete('chipmem_size');
+			}
+			switch(args.fastmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config.set('fastmem_size', '0');
+				break;
+			case '64k':
+				config.set('fastmem_size_k', '64');
+				break;
+			case '128k':
+				config.set('fastmem_size_k', '128');
+				break;
+			case '256k':
+				config.set('fastmem_size_k', '256');
+				break;
+			case '512k':
+			case '0.5m':
+			case '.5m':
+				config.set('fastmem_size_k', '512');
+				break;
+			case '1m':
+				config.set('fastmem_size', '1');
+				break;
+			case '2m':
+				config.set('fastmem_size', '2');
+				break;
+			case '4m':
+				config.set('fastmem_size', '4');
+				break;
+			case '8m':
+				config.set('fastmem_size', '8');
+				break;
+			default:
+				config.delete('fastmem_size');
+			}
+			switch(args.slowmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config.set('bogomem_size', '0');
+				break;
+			case '512k':
+				config.set('bogomem_size', '2');
+				break;
+			case '1m':
+				config.set('bogomem_size', '4');
+				break;
+			case '1.8m':
+				config.set('bogomem_size', '7');
+				break;
+			default:
+				config.delete('bogomem_size');
+			}
 		} else {
-			config.delete('cpuboard_rom_file');
-		}
+			// FS-UAE:
+			switch(machine) {
+			case 'a1200-fast':
+				config.set('amiga_model', 'a1200'); // 68020, 2MB Chip 4MB FAST
+				config.set('fast_memory', '4096');
+				break;
+			case 'a1200-030':
+				config.set('amiga_model', 'A1200/1230'); // 68030, 2MB Chip 32MB FAST, Blizzard 1230-IV
+				config.set('fast_memory', '32768');
+				break;
+			default:
+				config.set('amiga_model', machine || "A500");
+				break;
+			}
 
-		// nice
-		config.set('cpu_cycle_exact', 'true');
-		config.set('cpu_memory_cycle_exact', 'true');
-		config.set('blitter_cycle_exact', 'true');
-		config.set('cycle_exact', 'true');
-		// optional
-		config.set('input.config', '1');
-		config.set('input.1.keyboard.0.friendlyname', 'WinUAE keyboard');
-		config.set('input.1.keyboard.0.name', 'NULLKEYBOARD');
-		config.set('input.1.keyboard.0.empty', 'false');
-		config.set('input.1.keyboard.0.disabled', 'false');
-		config.set('input.1.keyboard.0.button.41.GRAVE', 'SPC_SINGLESTEP.0');
-		config.set('input.1.keyboard.0.button.201.PREV', 'SPC_WARP.0');
-		// filesystems
-		config.delete('uaehf0');
-		config.delete('uaehf1');
-		// delete old filesystem, then add new filesystem so order is correct in config (otherwise won't boot)
-		config.delete('filesystem');
-		config.delete('filesystem2');
-		config.set('filesystem', 'rw,dh0:' + dh0Path);
-		config.set('filesystem2', 'rw,dh1:dh1:' + path.dirname(args.program) + ',-128');
-		// debugging options
-		config.set('debugging_features', 'gdbserver');
-		if(args.endcli)
-			config.set('debugging_trigger', path.basename(args.program) + ".exe");
-		else
-			config.set('debugging_trigger', ':' + path.basename(args.program) + ".exe");
+			// nice
+			config.set('automatic_input_grab', "0");
+			// filesystems
+			config.set('hard_drive_0', dh0Path);
+			config.set('hard_drive_1', exePath);
+			// debugging options
+			config.set('remote_debugger', "1000");
+			config.set('remote_debugger_port', "2345");
+			config.set('remote_debugger_trigger', debugTrigger);
 
-		// safety
-		config.delete('statefile');
+			if(args.kickstart !== undefined) {
+				config.set('kickstart_file', args.kickstart);
+			} else {
+				config.delete('kickstart_file');
+			}
+			// args.cpuboard: no FS-UAE equivalent?
 
-		// Optional override memory config
-		switch(args.chipmem?.toLowerCase()) {
-		case '256k':
-			config.set('chipmem_size', '0');
-			break;
-		case '512k':
-			config.set('chipmem_size', '1');
-			break;
-		case '1m':
-			config.set('chipmem_size', '2');
-			break;
-		case '1.5m':
-			config.set('chipmem_size', '3');
-			break;
-		case '2m':
-			config.set('chipmem_size', '4');
-			break;
-		default:
-			config.delete('chipmem_size');
-		}
-		switch(args.fastmem?.toLowerCase()) {
-		case '0k':
-		case '0m':
-		case '0':
-			config.set('fastmem_size', '0');
-			break;
-		case '64k':
-			config.set('fastmem_size_k', '64');
-			break;
-		case '128k':
-			config.set('fastmem_size_k', '128');
-			break;
-		case '256k':
-			config.set('fastmem_size_k', '256');
-			break;
-		case '512k':
-		case '0.5m':
-		case '.5m':
-			config.set('fastmem_size_k', '512');
-			break;
-		case '1m':
-			config.set('fastmem_size', '1');
-			break;
-		case '2m':
-			config.set('fastmem_size', '2');
-			break;
-		case '4m':
-			config.set('fastmem_size', '4');
-			break;
-		case '8m':
-			config.set('fastmem_size', '8');
-			break;
-		default:
-			config.delete('fastmem_size');
-		}
-		switch(args.slowmem?.toLowerCase()) {
-		case '0k':
-		case '0m':
-		case '0':
-			config.set('bogomem_size', '0');
-			break;
-		case '512k':
-			config.set('bogomem_size', '2');
-			break;
-		case '1m':
-			config.set('bogomem_size', '4');
-			break;
-		case '1.8m':
-			config.set('bogomem_size', '7');
-			break;
-		default:
-			config.delete('bogomem_size');
+			// Optional override memory config
+			switch(args.chipmem?.toLowerCase()) {
+			case '256k':
+				config.set('chip_memory', '256');
+				break;
+			case '512k':
+				config.set('chip_memory', '512');
+				break;
+			case '1m':
+				config.set('chip_memory', '1024');
+				break;
+			case '1.5m':
+				config.set('chip_memory', '1536');
+				break;
+			case '2m':
+				config.set('chip_memory', '2048');
+				break;
+			default:
+				config.delete('chip_memory');
+			}
+			switch(args.fastmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config.set('fast_memory', '0');
+				break;
+			case '64k':
+				config.set('fast_memory', '64');
+				break;
+			case '128k':
+				config.set('fast_memory', '128');
+				break;
+			case '256k':
+				config.set('fast_memory', '256');
+				break;
+			case '512k':
+			case '0.5m':
+			case '.5m':
+				config.set('fast_memory', '512');
+				break;
+			case '1m':
+				config.set('fast_memory', '1024');
+				break;
+			case '2m':
+				config.set('fast_memory', '2048');
+				break;
+			case '4m':
+				config.set('fast_memory', '4096');
+				break;
+			case '8m':
+				config.set('fast_memory', '8192');
+				break;
+			default:
+				config.delete('fast_memory');
+			}
+			switch(args.slowmem?.toLowerCase()) {
+			case '0k':
+			case '0m':
+			case '0':
+				config.set('slow_memory', '0');
+				break;
+			case '512k':
+				config.set('slow_memory', '512');
+				break;
+			case '1m':
+				config.set('slow_memory', '1024');
+				break;
+			case '1.8m':
+				config.set('slow_memory', '1792');
+				break;
+			default:
+				config.delete('slow_memory');
+			}
 		}
 
 		try {
 			fs.writeFileSync(defaultPath, stringifyCfg(config));
 		} catch(e) {
-			this.sendErrorResponse(response, 103, `Unable to write WinUAE config ${defaultPath}.`);
+			this.sendErrorResponse(response, 103, `Unable to write emulator config ${defaultPath}.`);
 			return;
 		}
 
 		// all WinUAE options now in config file
-		const winuaePath = path.join(binPath, "winuae-gdb.exe");
-		const winuaeArgs = [ '-portable' ];
+		const emuPath = isWin
+			? path.join(binPath, "winuae-gdb.exe")
+			: path.join(binPath, "fs-uae", "fs-uae");
+
+		const emuArgs = isWin ? [ '-portable' ] : [ defaultPath ];
 
 		// defaults - from package.json
 		if(args.endcli === undefined)
@@ -380,9 +500,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		try {
 			let startupSequence = '';
 			if(args.endcli)
-				startupSequence += `cd dh1:\nrun >nil: <nil: ${config.get('debugging_trigger')} >nil: <nil:\nendcli >nil:\n`;
+				startupSequence += `cd dh1:\nrun >nil: <nil: ${debugTrigger} >nil: <nil:\nendcli >nil:\n`;
 			else
-				startupSequence += `cd dh1:\n${config.get('debugging_trigger')}\n`;
+				startupSequence += `cd dh1:\n${debugTrigger}\n`;
 
 			// memory leak check
 			//startupSequence = 'avail\n' + startupSequence + 'avail\n';
@@ -400,22 +520,38 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.debugReady = false;
 		this.stopped = false;
 
-		// kill leftover WinUAE & GDB process
-		if(winuae !== undefined) {
-			winuae.kill();
-			winuae = undefined;
+		// kill leftover Emulator & GDB process
+		if(emu !== undefined) {
+			emu.kill();
+			emu = undefined;
 		}
 		if(gdb !== undefined) {
 			gdb.kill();
 			gdb = undefined;
 		}
 
-		// launch WinUAE
-		winuae = childProcess.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+		// launch Emulator
+		const cwd = dirname(emuPath);
+		const env = {
+			...process.env,
+			LD_LIBRARY_PATH: ".", // Allow Linux fs-uae to find bundled .so files
+		};
+		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env, cwd });
+		//emu.stdout.on('data', (data) => { console.log(`stdout: ${data}`); });
+		//emu.stderr.on('data', (data) => { console.log(`stderr: ${data}`); });
+
+		// Handle emulator closing before debugger connects:
+		const handleExit = (code: number, signal: string) => {
+			this.sendErrorResponse(response, 103, `Emulator exited with code/signal ${code ?? signal} before debugger could connect`);
+		};
+		emu.on("exit", handleExit);
+		emu.on("error", (err) => {
+			this.sendErrorResponse(response, 103, `Emulator error. ${err.toString()}`);
+		});
 
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
-		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath }; // to shut up GDB about index cache directory
+		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath, HOME: gdbPath }; // to shut up GDB about index cache directory
 		this.initDebugger();
 
 		if(DEBUG) {
@@ -454,9 +590,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch GDB and connect to WinUAE
-		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
+		await this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
+
+		// Remove emulator close listener now debugger is connected
+		emu.off("exit", handleExit);
 	}
 
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
@@ -685,8 +824,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const numFrames = args?.numFrames || 1;
 
 				const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line.exe");
-				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+				const addr2linePath = path.join(binPath, "opt/bin/m68k-amiga-elf-addr2line");
+				const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
 
 				const date = new Date();
 				const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
@@ -802,9 +941,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		const done = () => {
-			if(winuae) {
-				winuae.kill();
-				winuae = undefined;
+			if(emu) {
+				emu.kill();
+				emu = undefined;
 			}
 			this.sendResponse(response);
 			void vscode.commands.executeCommand("workbench.view.explorer");

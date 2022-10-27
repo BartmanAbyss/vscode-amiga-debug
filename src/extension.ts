@@ -41,7 +41,7 @@ interface AmigaConfiguration {
 class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	public compilerPath: string;
 	constructor(extensionPath: string) {
-		this.compilerPath = extensionPath + "\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe";
+		this.compilerPath = path.join(extensionPath, "bin", process.platform, "opt", "bin", "m68k-amiga-elf-gcc");
 	}
 
 	public readonly name = "Amiga C/C++";
@@ -112,10 +112,12 @@ class AmigaDebugExtension {
 
 	private functionSymbols: SymbolInformation[] | null = null;
 	private extensionPath = '';
+	private binPath = '';
 	private cppToolsApi: CppToolsApi;
 
 	constructor(private context: vscode.ExtensionContext) {
 		this.extensionPath = context.extensionPath;
+		this.binPath = path.join(this.extensionPath, "bin", process.platform);
 		this.registerProvider = new RegisterTreeProvider();
 		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.assemblyLanguageProvider = new AmigaAssemblyLanguageProvider(context.extensionPath);
@@ -141,7 +143,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.profileSize', (uri: vscode.Uri) => this.profileSize(uri)),
 			vscode.commands.registerCommand('amiga.shrinkler', (uri: vscode.Uri) => this.shrinkler(uri)),
 			vscode.commands.registerCommand('amiga.disassembleElf', (uri: vscode.Uri) => this.disassembleElf(uri)),
-			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin')),
+			vscode.commands.registerCommand('amiga.bin-path', () => path.join(this.extensionPath, 'bin', process.platform)),
 			vscode.commands.registerCommand('amiga.initProject', this.initProject.bind(this)),
 			vscode.commands.registerCommand('amiga.terminal', this.openTerminal.bind(this)),
 			vscode.commands.registerCommand('amiga.exe2adf', (uri: vscode.Uri) => this.exe2adf(uri)),
@@ -330,10 +332,15 @@ class AmigaDebugExtension {
 			this.terminal = null;
 		}
 		if(!this.terminal) {
+			const sep = process.platform === "win32" ? ";" : ":";
 			this.terminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				env: {
-					path: `\${env:PATH};${this.extensionPath}\\bin;${this.extensionPath}\\bin\\opt\\bin`
+					path: [
+						"${env:PATH}",
+						this.binPath,
+						path.join(this.binPath, "opt", "bin"),
+					].join(sep)
 				}
 			});
 		}
@@ -346,7 +353,7 @@ class AmigaDebugExtension {
 		let count = 0, size = 0;
 		fs.readdirSync(p)
 		.filter(f => regex.test(f))
-		.map(f => { 
+		.map(f => {
 			size += fs.statSync(path.join(p, f)).size;
 			count++;
 			fs.unlinkSync(path.join(p, f));
@@ -380,14 +387,13 @@ class AmigaDebugExtension {
 			void vscode.window.showErrorMessage(`Error during size profiling: Don't know how to open ${uri.toString()}`);
 			return;
 		}
-		const binPath = path.join(this.extensionPath, 'bin/opt/bin');
 
 		try {
-			const symbolTable = new SymbolTable(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath);
-			const sourceMap = new SourceMap(path.join(binPath, 'm68k-amiga-elf-addr2line.exe'), uri.fsPath, symbolTable);
+			const symbolTable = new SymbolTable(path.join(this.binPath, 'm68k-amiga-elf-objdump'), uri.fsPath);
+			const sourceMap = new SourceMap(path.join(this.binPath, 'm68k-amiga-elf-addr2line'), uri.fsPath, symbolTable);
 			const profiler = new Profiler(sourceMap, symbolTable);
 			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
-			fs.writeFileSync(tmp, profiler.profileSize(path.join(binPath, 'm68k-amiga-elf-objdump.exe'), uri.fsPath));
+			fs.writeFileSync(tmp, profiler.profileSize(path.join(this.binPath, 'm68k-amiga-elf-objdump'), uri.fsPath));
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
 		} catch(error) {
 			void vscode.window.showErrorMessage(`Error during size profiling: ${(error as Error).message}`);
@@ -405,7 +411,6 @@ class AmigaDebugExtension {
 	}
 
 	private async shrinkler(uri: vscode.Uri) {
-		const binPath = path.join(this.extensionPath, 'bin');
 		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
 		let config: AmigaConfiguration;
@@ -416,30 +421,29 @@ class AmigaDebugExtension {
 			void vscode.window.showErrorMessage(`No shrinkler configurations found in '.vscode/amiga.json'`);
 			return;
 		}
-	
+
 		const items: vscode.QuickPickItem[] = [];
-	
+
 		// eslint-disable-next-line guard-for-in
 		for(const key in config.shrinkler) {
 			items.push({ label: key, description: config.shrinkler[key] });
 		}
-	
+
 		const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
 		if(result === undefined)
 			return;
 		const output = uri.fsPath + '.' + result.label + '.shrinkled';
 		const args = [...result.description.split(' '), uri.fsPath, output];
-		const cmd = `${binPath}\\shrinkler.exe`;
+		const cmd = path.join(this.binPath, 'Shrinkler');
 		return this.runExternalCommand(uri, cmd, args, output, () => {
 			void vscode.commands.executeCommand("vscode.open", vscode.Uri.file(output + '.shrinklerstats'), { preview: false } as vscode.TextDocumentShowOptions);
 		});
 	}
 
 	private exe2adf(uri: vscode.Uri) {
-		const binPath = path.join(this.extensionPath, 'bin');
 		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.adf');
 		const args = [ '-i', uri.fsPath, '-a', output ];
-		const cmd = `${binPath}\\exe2adf.exe`;
+		const cmd = path.join(this.binPath, 'exe2adf');
 		return this.runExternalCommand(uri, cmd, args, output, null);
 	}
 
@@ -462,10 +466,10 @@ class AmigaDebugExtension {
 					//p = cp.exec(cmd);
 					p = cp.spawn(cmd, args);
 					p.stderr.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
+						writeEmitter.fire(data.toString().replace(/(\r)?\n/g, "\r\n"));
 					});
 					p.stdout.on('data', (data: Buffer) => {
-						writeEmitter.fire(data.toString());
+						writeEmitter.fire(data.toString().replace(/(\r)?\n/g, "\r\n"));
 					});
 					p.on('exit', (code: number, signal: string) => {
 						if(signal === 'SIGTERM') {
@@ -499,7 +503,7 @@ class AmigaDebugExtension {
 		} catch(error) {
 			void vscode.window.showErrorMessage(`Error running external command: ${error.message}`);
 		}
-	}	
+	}
 
 	private async examineMemory() {
 		function validateValue(address: string) {

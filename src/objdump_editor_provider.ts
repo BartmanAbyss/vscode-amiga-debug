@@ -45,7 +45,7 @@ class ObjdumpDocument implements vscode.CustomDocument {
 
 	public async load() {
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump.exe");
+		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
 		this.content = Disassemble(objdumpPath, this.elfPath);
 	}
 

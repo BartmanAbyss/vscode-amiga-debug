@@ -48,7 +48,7 @@ class SavestateDocument implements vscode.CustomDocument {
 		// write config
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const configPath = path.join(binPath, "savestate.uae");
-		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb.exe");
+		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
 		const config = new Map<string, string>();
 		config.set('use_gui', 'no');
@@ -82,11 +82,13 @@ class SavestateDocument implements vscode.CustomDocument {
 			return;
 		}
 
-		const winuaePath = path.join(binPath, "winuae-gdb.exe");
-		const winuaeArgs = ['-portable', '-f', configPath];
+		const emuPath = process.platform === "win32"
+			? path.join(binPath, "winuae-gdb.exe")
+			: path.join(binPath, "fs-uae", "fs-uae");
+		const emuArgs = ['-portable', '-f', configPath];
 
-		// launch WinUAE
-		this.winuae = cp.spawn(winuaePath, winuaeArgs, { stdio: 'ignore', detached: true });
+		// launch Emulator
+		this.winuae = cp.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true });
 		setStatus('launch');
 		this.winuae.on('exit', (code: number, signal: string) => {
 			this.stop();
