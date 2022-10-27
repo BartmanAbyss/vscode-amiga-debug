@@ -371,7 +371,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 			// nice
 			config.set('automatic_input_grab', "0");
-			config.set('game_mode', '0'); // Removes dependency on dbus-x11 for Linux
 			// filesystems
 			config.set('hard_drive_0', dh0Path);
 			config.set('hard_drive_1', exePath);
@@ -532,13 +531,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
+		const cwd = dirname(emuPath);
 		const env = {
-			LD_LIBRARY_PATH: dirname(emuPath), // Allow Linux fs-uae to find bundled .so files
-			DISPLAY: ":0" // Specify display number for Linux
+			...process.env,
+			LD_LIBRARY_PATH: ".", // Allow Linux fs-uae to find bundled .so files
 		};
-		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env });
+		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env, cwd });
 		//emu.stdout.on('data', (data) => { console.log(`stdout: ${data}`); });
 		//emu.stderr.on('data', (data) => { console.log(`stderr: ${data}`); });
+
 		// Handle emulator closing before debugger connects:
 		const handleExit = (code: number, signal: string) => {
 			this.sendErrorResponse(response, 103, `Emulator exited with code/signal ${code ?? signal} before debugger could connect`);
