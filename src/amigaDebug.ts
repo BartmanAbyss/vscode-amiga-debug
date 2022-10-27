@@ -534,6 +534,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const env = { LD_LIBRARY_PATH: dirname(emuPath) }; // Allow Linux fs-uae to find bundled .so files
 		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env });
 
+		// Handle emulator closing before debugger connects:
+		const handleClose = () => {
+			this.sendErrorResponse(response, 103, `Emulator exited before debugger could connect`);
+		}
+		emu.on("close", handleClose);
+		emu.on("error", (err) => {
+			this.sendErrorResponse(response, 103, `Emulator error. ${(err as Error).toString()}`);
+		});
+
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
 		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath, HOME: gdbPath }; // to shut up GDB about index cache directory
@@ -575,9 +584,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch GDB and connect to WinUAE
-		this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
+		await this.miDebugger.connect(".", this.args.program + ".elf", commands).catch((err: Error) => {
 			this.sendErrorResponse(response, 103, `Failed to launch GDB: ${err.toString()}`);
 		});
+
+		// Remove emulator close listener now debugger is connected
+		emu.off("close", handleClose);
 	}
 
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
