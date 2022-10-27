@@ -537,14 +537,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			DISPLAY: ":0" // Specify display number for Linux
 		};
 		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env });
-
+		//emu.stdout.on('data', (data) => { console.log(`stdout: ${data}`); });
+		//emu.stderr.on('data', (data) => { console.log(`stderr: ${data}`); });
 		// Handle emulator closing before debugger connects:
-		const handleClose = () => {
-			this.sendErrorResponse(response, 103, `Emulator exited before debugger could connect`);
-		}
-		emu.on("close", handleClose);
+		const handleExit = (code: number, signal: string) => {
+			this.sendErrorResponse(response, 103, `Emulator exited with code/signal ${code ?? signal} before debugger could connect`);
+		};
+		emu.on("exit", handleExit);
 		emu.on("error", (err) => {
-			this.sendErrorResponse(response, 103, `Emulator error. ${(err as Error).toString()}`);
+			this.sendErrorResponse(response, 103, `Emulator error. ${err.toString()}`);
 		});
 
 		// init debugger
@@ -593,7 +594,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		});
 
 		// Remove emulator close listener now debugger is connected
-		emu.off("close", handleClose);
+		emu.off("exit", handleExit);
 	}
 
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
