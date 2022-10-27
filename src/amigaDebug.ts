@@ -531,7 +531,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true });
+		const env = { LD_LIBRARY_PATH: dirname(emuPath) }; // Allow Linux fs-uae to find bundled .so files
+		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env });
 
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
