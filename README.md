@@ -1,9 +1,9 @@
 [![Binutils, GDB, and GCC](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/binutils-gdb-gcc.yml)
 [![elf2hunk](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml/badge.svg?branch=master)](https://github.com/BartmanAbyss/vscode-amiga-debug/actions/workflows/elf2hunk.yml)
 
-# _amiga-debug_ Visual Studio Code Extension (Windows only)
+# _amiga-debug_ Visual Studio Code Extension
 
-**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE/FS-UAE.**
 
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
@@ -78,6 +78,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 
 ## Credits
 - Code by [Bartman/Abyss](https://github.com/BartmanAbyss)
+- MacOS/Linux support by [Peter Mackay](https://github.com/petmac) and [Graham Bates](https://github.com/grahambates)
 - Testing by [Pink/Abyss](https://soundcloud.com/pink_abyss)
 
 ## Already used in these productions
@@ -122,6 +123,8 @@ This extension contains binaries of:
   - Copyright (C) 2021 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 - modified [WinUAE 4.9.0](https://github.com/BartmanAbyss/WinUAE)
+- modified [FS-UAE](https://github.com/grahambates/fs-uae/tree/remote_debugger_barto)
+  - License GPLv2: GNU GPL Version 2 <https://www.gnu.org/licenses/old-licenses/gpl-2.0>
 - modified [Shrinkler 4.6](https://github.com/BartmanAbyss/Shrinkler)
   - Copyright 1999-2015 Aske Simon Christensen
   - Modified 2020, Bartman/Abyss
@@ -146,11 +149,8 @@ This extension contains binaries of:
 For development, just install the latest [node.js LTS](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
 To build a `.vsix`, `npm install -g vsce` (once), and then `vsce package`.
 
-## Porting
-Currently this extension only works on Windows due to the included Windows-only binaries of gcc, gdb, elf2hunk and WinUAE.
-Compilation of gcc, gdb and elf2hunk on Linux should be trivial, as gcc and gdb only contain about 10 lines of code modifications. elf2hunk should work on Linux out-of-the-box. However, porting the GDB-server contained in WinUAE to FS-UAE could be a bit more work. 99% of WinUAE changes are contained in `od-win32/barto_gdbserver.cpp|h`.
-
-Here are the command-lines used to compile the external tools (We're building with MinGW on WSL to `c:\amiga-mingw\opt`).
+## Development (Windows)
+Here are the command-lines used to compile the external tools (We're building with MinGW on WSL on Windows 10/11 to `c:\amiga-mingw\opt`).
 Replace the `16` in `make -j16` with your number of CPU cores
 
 ### Ubuntu 22.4 LTS from Microsoft Store
@@ -225,6 +225,9 @@ rm -r /mnt/c/amiga-mingw/opt/include
 rm -r /mnt/c/amiga-mingw/opt/share
 find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
+
+## Development (Linux/MacOS)
+- Have a look at the CI scripts here https://github.com/BartmanAbyss/vscode-amiga-debug/tree/master/ci
 
 ## Internal Development
 

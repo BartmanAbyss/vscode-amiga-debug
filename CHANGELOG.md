@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.2
+- NEW: Linux, MacOS is now supported thanks to [Peter Mackay](https://github.com/petmac) and [Graham Bates](https://github.com/grahambates).
+       Please do report any problems here: https://github.com/BartmanAbyss/vscode-amiga-debug/issues
+
 ## 1.6.1
 - FIX: screen: freeze frame memory was wrong
 - FIX: resource: possibly very slow performance when using `Copper Palette`
