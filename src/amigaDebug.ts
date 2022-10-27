@@ -531,7 +531,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		const env = { LD_LIBRARY_PATH: dirname(emuPath) }; // Allow Linux fs-uae to find bundled .so files
+		const env = {
+			LD_LIBRARY_PATH: dirname(emuPath), // Allow Linux fs-uae to find bundled .so files
+			DISPLAY: ":0" // Specify display number for Linux
+		};
 		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env });
 
 		// Handle emulator closing before debugger connects:
