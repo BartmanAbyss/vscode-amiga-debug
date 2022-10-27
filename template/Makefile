@@ -2,6 +2,11 @@
 # for better annotations add -dA -dP
 # to generate assembler source with LTO, add to LDFLAGS: -save-temps=cwd
 
+ifdef OS
+	WINDOWS = 1
+	SHELL = cmd.exe
+endif
+
 subdirs := $(wildcard */)
 VPATH = $(subdirs)
 cpp_sources := $(wildcard *.cpp) $(wildcard $(addsuffix *.cpp,$(subdirs)))
@@ -22,12 +27,9 @@ OUT = $(program)
 CC = m68k-amiga-elf-gcc
 VASM = vasmm68k_mot
 
-ifdef OS
-	# Windows
-	SHELL = cmd.exe
+ifdef WINDOWS
 	SDKDIR = $(abspath $(dir $(shell where $(CC)))..\m68k-amiga-elf\sys-include)
 else
-	# Unix-like
 	SDKDIR = $(abspath $(dir $(shell which $(CC)))../m68k-amiga-elf/sys-include)
 endif
 
@@ -50,7 +52,11 @@ $(OUT).elf: $(objects)
 
 clean:
 	$(info Cleaning...)
-	@$(RM) obj/* $(OUT).*
+ifdef WINDOWS
+	@del /q obj\* out\*
+else
+	@$(RM) obj/* out/*
+endif
 
 -include $(objects:.o=.d)
 
