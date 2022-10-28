@@ -27,7 +27,7 @@ src/**
 preact-devtools/**
 profile/**
 template/.vscode/settings.json
-!template/obj
+!template/obj/
 !template/obj/DELETE.ME
 template/obj/*
 !template/out/
