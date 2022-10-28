@@ -4,6 +4,7 @@ import { AmigaDebugSession } from './amigaDebug';
 
 import * as cp from 'child_process';
 import * as fs from 'fs';
+import { chmod } from 'fs/promises';
 import * as Net from 'net';
 import * as os from 'os';
 import * as path from 'path';
@@ -199,6 +200,9 @@ class AmigaDebugExtension {
 		this.cppToolsApi.registerCustomConfigurationProvider(provider);
 		await provider.init();
 		this.cppToolsApi.notifyReady(provider);
+		if (process.platform !== "win32") {
+			await this.setPermissions();
+		}
 	}
 
 	public async dispose() {
@@ -613,6 +617,42 @@ class AmigaDebugExtension {
 
 	private receivedContinuedEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugContinued();
+	}
+
+	private async setPermissions() {
+		const exes = [
+			"elf2hunk",
+			"exe2adf",
+			"fs-uae/fs-uae",
+			"opt/bin/m68k-amiga-elf-addr2line",
+			"opt/bin/m68k-amiga-elf-as",
+			"opt/bin/m68k-amiga-elf-gcc",
+			"opt/bin/m68k-amiga-elf-gdb",
+			"opt/bin/m68k-amiga-elf-ld",
+			"opt/bin/m68k-amiga-elf-objdump",
+			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/cc1",
+			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/cc1plus",
+			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/collect2",
+			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/lto-wrapper",
+			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/lto1",
+			"opt/m68k-amiga-elf/bin/ar",
+			"opt/m68k-amiga-elf/bin/as",
+			"opt/m68k-amiga-elf/bin/ld",
+			"opt/m68k-amiga-elf/bin/ld.bfd",
+			"opt/m68k-amiga-elf/bin/nm",
+			"opt/m68k-amiga-elf/bin/objcopy",
+			"opt/m68k-amiga-elf/bin/objdump",
+			"opt/m68k-amiga-elf/bin/ranlib",
+			"opt/m68k-amiga-elf/bin/readelf",
+			"opt/m68k-amiga-elf/bin/strip",
+			"Shrinkler",
+			"vasmm68k_mot",
+		];
+		await Promise.all(
+			exes
+				.map(f => path.join(this.binPath, f))
+				.map(f => chmod(f, 0o755))
+		);
 	}
 }
 
