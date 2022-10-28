@@ -2,6 +2,9 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.3
+- FIX: Linux, MacOS executables lost file permissions
+
 ## 1.6.2
 - NEW: Linux, MacOS is now supported thanks to [Peter Mackay](https://github.com/petmac) and [Graham Bates](https://github.com/grahambates).
        Please do report any problems here: https://github.com/BartmanAbyss/vscode-amiga-debug/issues
