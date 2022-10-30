@@ -2,6 +2,10 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.4
+- FIX: libintl issue in ARM-based Macs [#145](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/145)
+- FIX: 'Profile File Size' broken since last version
+
 ## 1.6.3
 - FIX: Linux, MacOS executables lost file permissions
 
