@@ -35,6 +35,7 @@
 		"onCustomEditor:amiga.savestate",
 		"onLanguage:amiga.assembly",
 		"onLanguage:amiga.assembly.mot",
+		"onLanguage:m68k",
 		"workspaceContains:.vscode/amiga.json"
 	],
 	"main": "./dist/extension.js",
@@ -271,6 +272,9 @@
 			},
 			{
 				"language": "amiga.disassembly"
+			},
+			{
+				"language": "m68k"
 			}
 		],
 		"debuggers": [
