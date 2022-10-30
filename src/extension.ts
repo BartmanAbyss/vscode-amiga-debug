@@ -393,11 +393,11 @@ class AmigaDebugExtension {
 		}
 
 		try {
-			const symbolTable = new SymbolTable(path.join(this.binPath, 'm68k-amiga-elf-objdump'), uri.fsPath);
-			const sourceMap = new SourceMap(path.join(this.binPath, 'm68k-amiga-elf-addr2line'), uri.fsPath, symbolTable);
+			const symbolTable = new SymbolTable(path.join(this.binPath, 'opt/bin/m68k-amiga-elf-objdump'), uri.fsPath);
+			const sourceMap = new SourceMap(path.join(this.binPath, 'opt/bin/m68k-amiga-elf-addr2line'), uri.fsPath, symbolTable);
 			const profiler = new Profiler(sourceMap, symbolTable);
 			const tmp = path.join(os.tmpdir(), `${path.basename(uri.fsPath)}.size.amigaprofile`);
-			fs.writeFileSync(tmp, profiler.profileSize(path.join(this.binPath, 'm68k-amiga-elf-objdump'), uri.fsPath));
+			fs.writeFileSync(tmp, profiler.profileSize(path.join(this.binPath, 'opt/bin/m68k-amiga-elf-objdump'), uri.fsPath));
 			await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp), { preview: false } as vscode.TextDocumentShowOptions);
 		} catch(error) {
 			void vscode.window.showErrorMessage(`Error during size profiling: ${(error as Error).message}`);
