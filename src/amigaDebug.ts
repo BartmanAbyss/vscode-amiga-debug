@@ -535,6 +535,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const env = {
 			...process.env,
 			LD_LIBRARY_PATH: ".", // Allow Linux fs-uae to find bundled .so files
+			DYLD_FALLBACK_LIBRARY_PATH: ".", // Allow Mac fs-uae to find bundled .dylib files
 		};
 		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env, cwd });
 		//emu.stdout.on('data', (data) => { console.log(`stdout: ${data}`); });
