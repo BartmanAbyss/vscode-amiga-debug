@@ -558,9 +558,6 @@
 		"vscode-debugprotocol": "^1.51.0",
 		"vscode-jsonrpc": "^6.0.0"
 	},
-	"extensionDependencies": [
-		"ms-vscode.cpptools"
-	],
 	"vsce": {
 		"dependencies": false,
 		"useYarn": false
