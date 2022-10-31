@@ -2,6 +2,11 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.5
+- FIX: Vasm fixes [PR#148](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/148)
+- CHG: Better stack unwinding for assembly code [PR#145](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/154)
+- FIX: GDB Mac exe without libintl dylib dependency [PR#155](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/155)
+
 ## 1.6.4
 - FIX: libintl issue in ARM-based Macs [#145](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/145)
 - FIX: 'Profile File Size' broken since last version
