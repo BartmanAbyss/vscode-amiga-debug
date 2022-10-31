@@ -25,6 +25,9 @@ jobs:
       - run: ci/gcc/download-prerequisites.sh
       - run: ci/gcc/configure-linux.sh
       - run: ci/gcc/build.sh
+        env:
+          CC:   gcc-9
+          CXX:  g++-9
       - run: ci/gcc/install.sh
       - run: ci/clean-up.sh
       - run: ci/archive-linux.sh
@@ -34,7 +37,7 @@ jobs:
           path: binutils-gdb-gcc-linux.tar
 
   macos:
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
       - run: ci/install-packages-macos.sh
