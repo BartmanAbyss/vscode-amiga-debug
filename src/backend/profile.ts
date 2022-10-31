@@ -119,7 +119,7 @@ export class UnwindTable {
 			r13: -1,
 			ra: -1
 		};
-		const unwind = new Array<Unwind>(this.codeSize).fill(invalidUnwind);
+		let unwind = new Array<Unwind>(this.codeSize).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.elfPath], { maxBuffer: 10 * 1024 * 1024 });
 		if (objdump.status !== 0)
@@ -217,6 +217,20 @@ export class UnwindTable {
 			else
 				line++;
 		}
+
+		// Replace remaining invalid unwinds with default values
+		const defaultUnwind: Unwind = {
+			cfaOfs: 4,
+			cfaReg: 15,
+			r13: -1,
+			ra: -4
+		};
+		unwind = unwind.map((uw) => {
+			return uw === invalidUnwind
+				? defaultUnwind
+				: uw;
+		});
+
 		this.unwind = new Int16Array(unwind.length * 3);
 		let i = 0;
 		for (const u of unwind) {
