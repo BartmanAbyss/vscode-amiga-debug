@@ -206,6 +206,20 @@ class AmigaDebugExtension {
 		if (process.platform !== "win32") {
 			await this.setPermissions();
 		}
+
+		if (vscode.extensions.getExtension('gigabates.m68k-lsp')) {
+			const config = vscode.workspace.getConfiguration();
+			await config.update(
+				"m68k.vasm.binPath",
+				path.join(this.binPath, "vasmm64_mot")
+			);
+			const includePaths = [
+				'.',
+				vscode.workspace.workspaceFolders[0].uri.fsPath,
+				path.join(this.binPath, "opt/m68k-amiga-elf/sys-include"),
+			];
+			await config.update("m68k.includePaths", includePaths);
+		}
 	}
 
 	public async dispose() {
