@@ -130,7 +130,9 @@ class SourceContext {
 				'-o', tmp, 
 				inFile
 			];
-			spawnParams = {};
+			spawnParams = {
+				cwd: vscode.workspace.workspaceFolders[0].uri.fsPath,
+			};
 			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
 			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 			const textLines = this.text.replace(/\r/g, '').split('\n');
