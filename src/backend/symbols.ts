@@ -13,7 +13,7 @@ const SYMBOL_REGEX = /^([0-9a-f]{8})\s([lg !])([w ])([C ])([W ])([I ])([dD ])([F
 // [5] = LMA
 // [6] = File off
 // [7] = Algn
-const SECTION_REGEX1 = /^\s+([0-9]+)\s(\S+)\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+2\*\*([0-9])$/;
+const SECTION_REGEX1 = /^\s+([0-9]+)\s(\S+)\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+([0-9a-f]{8})\s+2\*\*([0-9]+)$/;
 const SECTION_REGEX2 = /^\s+\w+(, \w+)*$/;
 
 const TYPE_MAP: { [id: string]: SymbolType } = {
