@@ -41,10 +41,11 @@ interface Token {
 	type: TokenTypes;
 }
 
-class SourceContext {
+export class SourceContext {
 	public static extensionPath: string;
 	public labels = new Map<string, number>(); // label -> line
 	public cycles = new Map<number, string>(); // line -> cycles text
+	public code = new Map<number, string>(); // line -> disassembled code
 	public tokens: Token[] = [];
 	private text: string;
 
@@ -59,7 +60,7 @@ class SourceContext {
 		const date = new Date();
 		const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 			date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
-		
+
 		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o.tmp`);
 		try {
 			fs.unlinkSync(tmp);
@@ -72,18 +73,18 @@ class SourceContext {
 			cmdParams = [
 				'-', // input from stdin
 				'-o', tmp, // no object output
-				'--register-prefix-optional', 
+				'--register-prefix-optional',
 				'-g', // debug info
 				'-asn', // enable listing to stdout; 's' = symbol table, 'n' = turn off forms
 				'-L', // include local labels
-				'-I', '.', 
+				'-I', '.',
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
 				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
-				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).			
+				'-D'  // More "compatible" mode (allows using the Amiga SDK definition files without too much problems).
 			];
-			spawnParams = {			
+			spawnParams = {
 				input: this.text,
-				maxBuffer: 10*1024*1024 
+				maxBuffer: 10*1024*1024
 			};
 			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
 			const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
@@ -96,7 +97,7 @@ class SourceContext {
 				if(match) {
 					this.labels.set(match[2], parseInt(match[1]) - 1);
 				}
-			}			
+			}
 
 			// get error/warning messages
 			const errors: vscode.Diagnostic[] = [];
@@ -116,19 +117,19 @@ class SourceContext {
 			fs.writeFileSync (inFile, this.text);
 			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "vasmm68k_mot");
 			cmdParams = [
-				'-m68000', 
-				'-Felf', 
-				'-opt-fconst', 
-				'-nowarn=62', 
+				'-m68000',
+				'-Felf',
+				'-opt-fconst',
+				'-nowarn=62',
 				'-dwarf=3',
 				'-Llo', // Show only program labels in the sorted symbol listing.
 				'-Lni', // Do not show included source files in the listing file.
 				'-L', symTmp,
 				'-x',
-				'-I', '.', 
+				'-I', '.',
 				'-I', vscode.workspace.workspaceFolders[0].uri.fsPath,
 				'-I', path.join(SourceContext.extensionPath, "bin", process.platform, "opt/m68k-amiga-elf/sys-include"),
-				'-o', tmp, 
+				'-o', tmp,
 				inFile
 			];
 			spawnParams = {
@@ -158,7 +159,7 @@ class SourceContext {
 						readingSymbols = true;
 					}
 				}
-				
+
 				const symRegExp = new RegExp('^\\s*(' + symbolNames.join('|') + ')[:\\s]{1}');
 				let lineCount = 0;
 				for(const line of textLines)
@@ -215,7 +216,7 @@ class SourceContext {
 					}
 				}
 			}
-			this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);			
+			this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);
 
 			try {
 				fs.unlinkSync(inFile);
@@ -227,6 +228,7 @@ class SourceContext {
 
 		// get cycles from disassembly
 		this.cycles.clear();
+		this.code.clear();
 		if(fs.existsSync(tmp)) {
 			const objdumpPath = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-objdump");
 			try {
@@ -255,9 +257,13 @@ class SourceContext {
 						const rest = insnMatch[4] || '';
 						const insn = new Uint16Array(hex.length);
 						hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
-						if(lineNum !== 0)
+						if(lineNum !== 0) {
 							this.cycles.set(lineNum, GetCycles(insn).map((c) => `${c.total}`).join('-') + 'T');
+							this.code.set(lineNum, "```\n" + opcode + " " + rest + "\n```");
+						}
 						lineNum = 0;
+
+						console.log();
 					}
 				}
 			} catch(e) {}
@@ -289,20 +295,20 @@ class SourceContext {
 	public setDecorations(textEditor: vscode.TextEditor) {
 		if(textEditor === null)
 			return;
-		
+
 		const optionsArray: vscode.DecorationOptions[] = [];
 		const emptyRanges: vscode.Range[] = [];
 		for(let line = 1; line < textEditor.document.lineCount; line++) {
 			const cyclesStr = this.cycles.get(line);
 			const range = new vscode.Range(new vscode.Position(line - 1, 0), new vscode.Position(line - 1, 0));
 			if(cyclesStr !== undefined) {
-				optionsArray.push({ 
-					range, 
-					renderOptions: { 
-						before: { 
+				optionsArray.push({
+					range,
+					renderOptions: {
+						before: {
 							contentText: cyclesStr.padStart(6, ' ')
-						} 
-					} 
+						}
+					}
 				});
 			} else {
 				emptyRanges.push(range);
@@ -329,26 +335,19 @@ class SourceContext {
 	}
 }
 
-export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSemanticTokensProvider, vscode.CompletionItemProvider, vscode.HoverProvider {
+
+export class AmigaAssemblyDocumentMananger {
 	private sourceContexts = new Map<string, SourceContext>();
-	public diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection(this.getLanguageId());
+	public diagnosticCollection = vscode.languages.createDiagnosticCollection("amiga-assembly");
 
-	public static getLanguageIdStatic() {
-		return 'amiga.assembly';
-	}
-
-	public getLanguageId() {
-		return AmigaAssemblyLanguageProvider.getLanguageIdStatic();
-	}
-
-	constructor(extensionPath: string) {
+	constructor(extensionPath: string, selector: vscode.DocumentSelector) {
 		SourceContext.extensionPath = extensionPath;
 
 		const changeTimers = new Map<string, NodeJS.Timeout>(); // Keyed by file name.
 
 		// parse documents that are already open when extension is activated
 		for(const document of vscode.workspace.textDocuments) {
-			if(document.languageId === this.getLanguageId()) {
+			if (vscode.languages.match(selector, document)) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -358,7 +357,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// parse documents when they are opened
 		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
-			if(document.languageId === this.getLanguageId()) {
+			if (vscode.languages.match(selector, document)) {
 				console.log("openTextDocument: initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
 				this.getSourceContext(document.fileName).parse();
@@ -368,7 +367,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 
 		// reparse documents in the background when they are modified
 		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
-			if(event.contentChanges.length > 0 && event.document.languageId === this.getLanguageId()) {
+			if (vscode.languages.match(selector, event.document)) {
 				const fileName = event.document.fileName;
 				this.getSourceContext(event.document.fileName).setText(event.document.getText());
 				if (changeTimers.has(fileName)) {
@@ -393,13 +392,22 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return context;
 	}
 
+	public dispose() {
+		this.diagnosticCollection.dispose();
+	}
+}
+
+export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvider, vscode.DefinitionProvider, vscode.DocumentSemanticTokensProvider, vscode.CompletionItemProvider, vscode.HoverProvider {
+	constructor(protected documentManager: AmigaAssemblyDocumentMananger, private cpuDocs = true) {
+	}
+
 	// CompletionItemProvider
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 		const items: vscode.CompletionItem[] = [];
 		for(const opc of GetCpuInsns()) {
 			items.push(new vscode.CompletionItem({ label: opc, description: GetCpuName(opc) }, vscode.CompletionItemKind.Keyword));
 		}
-		const sourceContext = this.getSourceContext(document.fileName);
+		const sourceContext = this.documentManager.getSourceContext(document.fileName);
 		sourceContext.labels.forEach((value, key) => {
 			items.push(new vscode.CompletionItem({ label: key }, vscode.CompletionItemKind.Function));
 		});
@@ -411,19 +419,9 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		//throw new Error('Method not implemented.');
 	}
 
-	// HoverProvider
-	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
-		const word = document.getText(document.getWordRangeAtPosition(position));
-		//console.log(word);
-		const doc = GetCpuDoc(word) || GetCustomRegDocByName(word);
-		if(doc)
-			return new vscode.Hover(new vscode.MarkdownString(doc));
-		return null;
-	}
-
 	// DocumentSymbolProvider
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
-		const context = this.getSourceContext(document.fileName);
+		const context = this.documentManager.getSourceContext(document.fileName);
 		const symbols: vscode.DocumentSymbol[] = [];
 		context.labels.forEach((value, key) => {
 			symbols.push(new vscode.DocumentSymbol(key, '*DETAIL*', vscode.SymbolKind.Function, new vscode.Range(value, 0, value, 1000), new vscode.Range(value, 0, value, 1000)));
@@ -431,9 +429,9 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return symbols;
 	}
 
-	// DefinitionProvider	
+	// DefinitionProvider
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Location | vscode.Location[] | vscode.LocationLink[]> {
-		const context = this.getSourceContext(document.fileName);
+		const context = this.documentManager.getSourceContext(document.fileName);
 		const word = document.getText(document.getWordRangeAtPosition(position));
 		//console.log(word);
 		const line = context.labels.get(word);
@@ -449,22 +447,31 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 		return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
 	}
 
+	// HoverProvider
+	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+		if (position.character === 0) {
+			const context = this.documentManager.getSourceContext(document.fileName);
+			const code = context.code.get(position.line + 1);
+			if (code)
+				return new vscode.Hover(new vscode.MarkdownString(code));
+		}
+
+		const word = document.getText(document.getWordRangeAtPosition(position));
+		//console.log(word);
+		const doc = this.cpuDocs
+			? GetCpuDoc(word) || GetCustomRegDocByName(word)
+			: GetCustomRegDocByName(word);
+		if(doc)
+			return new vscode.Hover(new vscode.MarkdownString(doc));
+		return null;
+	}
+
 	public provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.SemanticTokens {
-		const context = this.getSourceContext(document.fileName);
+		const context = this.documentManager.getSourceContext(document.fileName);
 		const builder = new vscode.SemanticTokensBuilder();
 		context.tokens.forEach((token) => {
 			builder.push(token.line, token.char, token.length, token.type);
 		});
 		return builder.build();
-	}
-}
-
-export class AmigaMotAssemblyLanguageProvider extends AmigaAssemblyLanguageProvider {
-	public static getLanguageIdStatic() {
-		return 'amiga.assembly.mot';
-	}
-
-	public getLanguageId() {
-		return AmigaMotAssemblyLanguageProvider.getLanguageIdStatic();
 	}
 }
