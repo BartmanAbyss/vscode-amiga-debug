@@ -18,6 +18,7 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 import { randomBytes } from 'crypto';
 import { ISourceLocation } from './client/location-mapping';
 import { Lens, LensData } from './client/types';
+import { normalize } from 'path';
 
 export const bundlePage = (webview: vscode.Webview, title: string, extensionPath: vscode.Uri, constants: { [key: string]: unknown }) => {
 	const nonce = randomBytes(16).toString('hex');
@@ -53,7 +54,8 @@ async function showPosition(doc: vscode.TextDocument, lineNumber: number, column
 }
 
 async function showPositionInFile(location: ISourceLocation, viewColumn?: vscode.ViewColumn) {
-	const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(location.source.path.replace(/\//g, '\\')));
+	const path = normalize(location.source.path);
+	const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(path));
 	await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
 	return true;
 }
