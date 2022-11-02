@@ -340,7 +340,7 @@ class AmigaDebugExtension {
 			this.terminal = vscode.window.createTerminal({
 				name: 'Amiga',
 				env: {
-					path: [
+					PATH: [
 						"${env:PATH}",
 						this.binPath,
 						path.join(this.binPath, "opt", "bin"),
