@@ -126,9 +126,9 @@ export class UnwindTable {
 			throw objdump.error;
 		const outputs = objdump.stdout.toString().replace(/\r/g, '').split('\n');
 		const locStart = 0;
-		let cfaStart = -1;
-		let raStart = -1;
-		let r13Start = -1;
+		let cfaIndex = -1;
+		let raIndex = -1;
+		let r13Index = -1;
 		let line = 0;
 
 		const cieMap: Map<number, Unwind> = new Map();
@@ -137,22 +137,24 @@ export class UnwindTable {
 			if (outputs[line] === "")
 				return;
 			const l = outputs[line++];
-			cfaStart = l.indexOf("CFA");
-			r13Start = l.indexOf("r13");
-			raStart = l.indexOf("ra");
+			const elements = l.trim().split(/\s+/g);
+			cfaIndex = elements.indexOf("CFA");
+			r13Index = elements.indexOf("r13");
+			raIndex = elements.indexOf("ra");
 		};
 
 		const parseLine = (): { loc: number; unwind: Unwind } => {
 			const l = outputs[line++];
-			const loc = parseInt(l.substr(locStart, 8), 16);
-			const cfaStr = l.substr(cfaStart, l.indexOf(" ", cfaStart) - cfaStart);
-			const r13Str = l.substr(r13Start, l.indexOf(" ", r13Start) - r13Start);
-			const raStr = l.substr(raStart, l.indexOf(" ", raStart) - raStart);
+			const elements = l.split(/\s+/g);
+			const loc = parseInt(elements[0], 16);
+			const cfaStr = elements[cfaIndex];
+			const r13Str = elements[r13Index];
+			const raStr = elements[raIndex];
 			const cfaMatch = cfaStr.match(/r([0-9]+)\+([0-9]+)/);
 			const cfaReg = parseInt(cfaMatch[1]);
 			const cfaOfs = parseInt(cfaMatch[2]);
 			const r13 = (() => {
-				if (r13Str.startsWith("c-"))
+				if (r13Str?.startsWith("c-"))
 					return parseInt(r13Str.substr(1));
 				else
 					return -1;
