@@ -1,7 +1,10 @@
 import { FunctionComponent, JSX } from 'preact';
-import { useState, useMemo, useCallback, useRef } from 'preact/hooks';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'preact/hooks';
 import { ToggleButton } from './toggle-button';
+import { Button } from './button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
+import * as Close from './icons/close.svg';
+import * as Sidebar from './icons/layout-sidebar-right-off.svg';
 import * as Regex from './icons/regex.svg';
 import styles from './layout.module.css';
 
@@ -94,7 +97,11 @@ export const CpuProfileLayout: FunctionComponent<{
 		assembly,
 		screen,
 		resources,
-		blitter
+		blitter,
+		// Only if right tab hidden
+		copper,
+		customRegs,
+		memory,
 	}
 	enum RightTab {
 		copper,
@@ -102,8 +109,24 @@ export const CpuProfileLayout: FunctionComponent<{
 		memory,
 	}
 
-	const [leftTab, setLeftTab] = useState(process.env.NODE_ENV === 'development' ? LeftTab.screen : LeftTab.profiler/*profiler*//*assembly*/);
-	const [rightTab, setRightTab] = useState(/*process.env.NODE_ENV === 'development' ? RightTab.memory :*/ RightTab.copper);
+	const defaultLeft = process.env.NODE_ENV === 'development' ? LeftTab.screen : LeftTab.profiler/*profiler*//*assembly*/;
+	const defaultRight = /*process.env.NODE_ENV === 'development' ? RightTab.memory :*/ RightTab.copper;
+	const [leftTab, setLeftTab] = useState(defaultLeft);
+	const [rightTab, setRightTab] = useState(defaultRight);
+	const [showRight, setShowRight] = useState(true);
+
+	useEffect(() => {
+		// Tabs not visible in left panel if right is enabled:
+		const extraTabs = [
+			LeftTab.copper,
+			LeftTab.customRegs,
+			LeftTab.memory,
+		];
+		if (showRight && extraTabs.includes(leftTab)) {
+			// Switch back to default
+			setLeftTab(defaultLeft);
+		}
+	}, [leftTab, showRight]);
 
 	/*useEffect(() => {
 		const token = PubSub.subscribe('showBlit', () => setLeftTab(LeftTab.blitter));
@@ -131,7 +154,7 @@ export const CpuProfileLayout: FunctionComponent<{
 		frameHover.current.src = '';
 	}, [frameHover.current]);
 
-	const colorToHex = (color: number) => '#' + 
+	const colorToHex = (color: number) => '#' +
 		((color >>> 0) & 0xff).toString(16).padStart(2, '0') +
 		((color >>> 8) & 0xff).toString(16).padStart(2, '0') +
 		((color >>> 16) & 0xff).toString(16).padStart(2, '0');
@@ -177,15 +200,25 @@ export const CpuProfileLayout: FunctionComponent<{
 			<div className={styles.rows} style={{flexBasis: `${flameHeight}px`, flexGrow: 0, minHeight: `${flameHeight}px`}}>
 				<FlameGraph frame={frame} data={dataFlame} filter={filter} displayUnit={displayUnit} time={time} setTime={setTime} />
 			</div>
-			{MODELS[0].amiga ? <Split sizes={[70,30]} gutterSize={2} cursor="w-resize" className={styles.split}>
+			{MODELS[0].amiga ? <Split sizes={showRight ? [70, 30] : [100]} key={showRight} gutterSize={2} cursor="w-resize" className={styles.split}>
 				<Tabs selectedIndex={leftTab} onSelect={(tabIndex) => setLeftTab(tabIndex)} className={styles.tabs}>
-					<TabList>
-						<Tab>Profiler</Tab>
-						<Tab>Assembly</Tab>
-						<Tab>Screen</Tab>
-						<Tab>Resources</Tab>
-						<Tab>Blitter</Tab>
-					</TabList>
+					<div style={{ display: "flex", justifyContent: "space-between" }}>
+						<TabList>
+							<Tab>Profiler</Tab>
+							<Tab>Assembly</Tab>
+							<Tab>Screen</Tab>
+							<Tab>Resources</Tab>
+							<Tab>Blitter</Tab>
+							{!showRight && (
+								<>
+									<Tab>Copper</Tab>
+									<Tab>Custom Registers</Tab>
+									<Tab>Memory</Tab>
+								</>
+							)}
+						</TabList>
+						{!showRight && <Button label="Show side panel" onClick={() => setShowRight(true)} icon={Sidebar} />}
+					</div>
 					<TabPanel style={leftTab === LeftTab.profiler ? { overflow: 'auto', display: 'flex', flexDirection: 'column' } : {}}>
 						<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
 					</TabPanel>
@@ -201,13 +234,30 @@ export const CpuProfileLayout: FunctionComponent<{
 					<TabPanel style={{ overflow: 'auto' }}>
 						<BlitterList frame={frame} time={time} />
 					</TabPanel>
+					{!showRight && (
+						<>
+							<TabPanel style={leftTab === LeftTab.copper ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
+								<CopperView frame={frame} time={time} />
+							</TabPanel>
+							<TabPanel style={leftTab === LeftTab.customRegs ? { overflow: 'auto' } : {}}>
+								<CustomRegsView frame={frame} time={time} setTime={setTime} />
+							</TabPanel>
+							<TabPanel style={leftTab === LeftTab.memory ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {  overflow: 'auto' }}>
+								<MemoryView frame={frame} time={time} memoryAddr={memoryAddr} setMemoryAddr={setMemoryAddr} />
+							</TabPanel>
+						</>
+					)}
 				</Tabs>
+				{showRight && (
 				<Tabs selectedIndex={rightTab} onSelect={(tabIndex) => setRightTab(tabIndex)} className={styles.tabs}>
-					<TabList>
-						<Tab>Copper</Tab>
-						<Tab>Custom Registers</Tab>
-						<Tab>Memory</Tab>
-					</TabList>
+					<div style={{ display: "flex", justifyContent: "space-between" }}>
+						<TabList>
+							<Tab>Copper</Tab>
+							<Tab>Custom Registers</Tab>
+							<Tab>Memory</Tab>
+						</TabList>
+						{<Button label="Close side panel" onClick={() => setShowRight(false)} icon={Close} />}
+					</div>
 					<TabPanel style={rightTab === RightTab.copper ? { overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' } : {}}>
 						<CopperView frame={frame} time={time} />
 					</TabPanel>
@@ -218,6 +268,7 @@ export const CpuProfileLayout: FunctionComponent<{
 						<MemoryView frame={frame} time={time} memoryAddr={memoryAddr} setMemoryAddr={setMemoryAddr} />
 					</TabPanel>
 				</Tabs>
+				)}
 			</Split>
 			: <div class={styles.rows}>
 				<TimeView data={dataTable} filter={filter} displayUnit={displayUnit} />
