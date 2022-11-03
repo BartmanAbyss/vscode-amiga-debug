@@ -18,6 +18,9 @@
   font-size: var(--vscode-editor-font-size);
   margin-bottom: 5px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .container {
@@ -201,4 +204,11 @@ a:focus {
 .sr_off {
   text-transform: lowercase;
   opacity: 0.5;
+}
+
+.toolbar {
+  display: flex;
+}
+.toolbar button {
+  color: var(--vscode-editor-foreground);
 }
