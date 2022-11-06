@@ -2,6 +2,14 @@
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
 
+## 1.6.6
+- FIX: Make cpptools a recommendation, not dependency
+- FIX: profiler: Fix section regex to handle multiple digits
+- FIX: profiler: Parse frames-interp output by whitespace
+- FIX: Path env var needs to be uppercase on Mac/Linux
+- FIX: Update libSDL2, libSDL2_ttf dylib version
+- FIX: disassembly: Source links broken for non-windows
+
 ## 1.6.5
 - FIX: Vasm fixes [PR#148](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/148)
 - CHG: Better stack unwinding for assembly code [PR#145](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/154)
