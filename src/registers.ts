@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 
 import { NodeSetting, NumberFormat } from './symbols';
 import { binaryFormat, createMask, extractBits, hexFormat } from './utils';
+import { Custom, CustomData } from './client/custom';
+import { GetCustomRegDoc } from './client/docs';
 
 interface RegisterValue {
 	number: number;
@@ -275,5 +277,119 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	public debugContinued() {
 		/**/
+	}
+}
+
+export class CustomRegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
+	// eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle,id-denylist,id-match
+	public _onDidChangeTreeData: vscode.EventEmitter<TreeNode | undefined> = new vscode.EventEmitter<TreeNode | undefined>();
+	public readonly onDidChangeTreeData: vscode.Event<TreeNode | undefined> = this._onDidChangeTreeData.event;
+
+	private nodes: CustomRegisterNode[] = [];
+
+	constructor() {
+		for (let i = 0; i < 0x1fe; i += 2) {
+			const customReg = Custom.ByOffs(i);
+			const excluded = ["-", "RESERVED"];
+			if (customReg && !excluded.includes(customReg.name)) {
+				this.nodes.push(new CustomRegisterNode(customReg));
+			}
+		}
+	}
+
+	public async refresh(): Promise<void> {
+		if (vscode.debug.activeDebugSession) {
+			const args = { address: 0xdff000, length: 0x1fe };
+			const { bytes } = await vscode.debug.activeDebugSession.customRequest('read-memory', args) as { bytes: number[]};
+
+			this.nodes.forEach((rn) => {
+				let value = bytes[rn.offset] << 8;
+				value |= bytes[rn.offset + 1];
+				rn.setValue(value);
+			});
+			this._onDidChangeTreeData.fire(undefined);
+		}
+	}
+
+	public getTreeItem(element: TreeNode) {
+		return element.node?.getTreeNode() ?? null;
+	}
+
+	public getChildren(element?: TreeNode): vscode.ProviderResult<TreeNode[]> {
+		if (element) {
+			return element.node.getChildren().map((c) => c.getTreeNode()) ;
+		} else {
+			return this.nodes.map((r) => r.getTreeNode());
+		}
+	}
+
+	public debugSessionTerminated() {
+		this._onDidChangeTreeData.fire(undefined);
+	}
+
+	public debugSessionStarted() {
+		this._onDidChangeTreeData.fire(undefined);
+	}
+
+	public debugStopped() {
+		void this.refresh();
+	}
+
+	public debugContinued() {
+		/**/
+	}
+}
+
+export class CustomRegisterNode extends BaseNode {
+	private currentValue?: number;
+	public readonly name: string;
+	public readonly offset: number;
+	public readonly doc: string;
+
+	constructor(customData: CustomData) {
+		super(RecordType.Field);
+		this.name = customData.name;
+		this.offset = customData.adr - 0xdff000;
+		this.doc = GetCustomRegDoc(this.offset);
+	}
+
+	public setValue(newValue: number) {
+		this.currentValue = newValue;
+	}
+
+	public getCopyValue(): string {
+		switch (this.format) {
+			case NumberFormat.Decimal:
+				return this.currentValue.toString();
+			case NumberFormat.Binary:
+				return binaryFormat(this.currentValue, 16);
+			default:
+				return hexFormat(this.currentValue, 4);
+		}
+	}
+
+	public getTreeNode(): TreeNode {
+		if(this.currentValue === undefined)
+			return null;
+
+		const hexOffset = hexFormat(this.offset, 3);
+		let label = `${this.name} (${hexOffset}) = `;
+
+		switch (this.format) {
+			case NumberFormat.Decimal:
+				label += this.currentValue.toString();
+				break;
+			case NumberFormat.Binary:
+				label += binaryFormat(this.currentValue, 16, false, true);
+				break;
+			default:
+				label += hexFormat(this.currentValue, 4);
+				break;
+		}
+
+		const node = new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'register', this);
+		node.tooltip = new vscode.MarkdownString(this.doc);
+
+		return node;
 	}
 }
