@@ -1,10 +1,14 @@
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
-
 import { FunctionComponent } from 'preact';
 import { useCallback } from 'preact/hooks';
-import styles from './toggle-button.module.css';
+import styles from './button.module.css';
+
+export const Button: FunctionComponent<{
+	icon: string;
+	label: string;
+	onClick?: () => void;
+}> = ({ icon, label, onClick }) => {
+	return <button className={styles.button} title={label} aria-label={label} dangerouslySetInnerHTML={{ __html: icon }} onClick={onClick}/>;
+};
 
 export const ToggleButton: FunctionComponent<{
 	icon: string;

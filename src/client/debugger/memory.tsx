@@ -1,6 +1,6 @@
 import { FunctionComponent, JSX } from 'preact';
 import { useEffect, useMemo, useRef, useState, useCallback, StateUpdater } from 'preact/hooks';
-import { ToggleButton } from '../toggle-button';
+import { ToggleButton } from '../button';
 import { Toolbar } from '../filter';
 import '../styles.css';
 import styles from './resources.module.css';
@@ -19,7 +19,7 @@ export const MemoryView: FunctionComponent<{
 	const bogoCanvas = useRef<HTMLCanvasElement>();
 
 	const memInfo = MODELS[0].memory;
-	
+
 	const canvasWidth = 256;
 	const chipCanvasHeight = memInfo.chipMem.length / (8 * canvasWidth);
 	const bogoCanvasHeight = memInfo.bogoMem.length / (8 * canvasWidth);
@@ -65,7 +65,7 @@ export const MemoryView: FunctionComponent<{
 		detailPixels.fill(0xff000000); // black
 
 		const maxCycle = CpuCyclesToDmaCycles(time);
-		
+
 		for(let i = 0; i < maxCycle; i++) {
 			const dmaRecord = MODELS[frame].amiga.dmaRecords[i];
 			if(dmaRecord.addr === undefined || dmaRecord.addr === 0xffffffff)
@@ -194,7 +194,7 @@ export const MemoryView: FunctionComponent<{
 		<div class={styles.memory_fixed}> {/*memory values*/}
 			{[...Array(detailHeight).keys()].map((i) => <div class={styles.memory_line}>
 				{'$' + (memoryAddr + i * detailWidth).toString(16).padStart(8, '0') + ': '}
-				{[...detailMem.slice(i * detailWidth, (i + 1) * detailWidth)].map((v: number, x: number) => 
+				{[...detailMem.slice(i * detailWidth, (i + 1) * detailWidth)].map((v: number, x: number) =>
 					<span class={styles[`memory_span_${size}`]} style={{backgroundColor: GetRgbaColorCss(detailPixels[i * detailWidth + x]) }}>{v.toString(16).padStart(2, '0')}</span>
 				)}
 			</div>)}

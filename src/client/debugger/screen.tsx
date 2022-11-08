@@ -1,7 +1,7 @@
 import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import create from 'zustand';
-import { ToggleButton } from '../toggle-button';
+import { ToggleButton } from '../button';
 import { Toolbar } from '../filter';
 import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 import '../styles.css';
