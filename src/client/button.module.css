@@ -20,6 +20,12 @@
   opacity: 1;
 }
 
+.button[aria-checked='true'] {
+  background: var(--vscode-inputOption-activeBackground);
+  border: 1px solid var(--vscode-inputOption-activeBorder);
+  opacity: 1;
+}
+
 .button > svg {
   width: 1em;
 }

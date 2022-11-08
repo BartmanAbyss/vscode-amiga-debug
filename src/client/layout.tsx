@@ -1,7 +1,6 @@
 import { FunctionComponent, JSX } from 'preact';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'preact/hooks';
-import { ToggleButton } from './toggle-button';
-import { Button } from './button';
+import { ToggleButton, Button } from './button';
 import * as CaseSensitive from './icons/case-sensitive.svg';
 import * as Close from './icons/close.svg';
 import * as Sidebar from './icons/layout-sidebar-right-off.svg';
