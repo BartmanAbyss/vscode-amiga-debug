@@ -16,7 +16,7 @@ import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { AmigaAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
-import { BaseNode as RBaseNode, CustomRegisterTreeProvider, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
+import { BaseNode as RBaseNode, CustomRegisterTreeProvider, FieldNode, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
@@ -551,9 +551,9 @@ class AmigaDebugExtension {
 
 	// Registers
 	private registersSelectedNode(node: RBaseNode): void {
-		if(node.recordType !== RRecordType.Field) { node.expanded = !node.expanded; }
+		if(node instanceof FieldNode === false) { node.expanded = !node.expanded; }
 		this.registerProvider.refresh();
-		this.customRegisterProvider.refresh();
+		void this.customRegisterProvider.refresh();
 	}
 
 	private registersCopyValue(tn: RTreeNode): void {
@@ -573,7 +573,7 @@ class AmigaDebugExtension {
 
 		tn.node.setFormat(result ? result.value : NumberFormat.Auto);
 		this.registerProvider.refresh();
-		this.customRegisterProvider.refresh();
+		void this.customRegisterProvider.refresh();
 	}
 
 	// Debug Events

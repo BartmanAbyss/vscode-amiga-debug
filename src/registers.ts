@@ -5,17 +5,12 @@ import * as vscode from 'vscode';
 
 import { NodeSetting, NumberFormat } from './symbols';
 import { binaryFormat, createMask, extractBits, hexFormat } from './utils';
-import { Custom, CustomData } from './client/custom';
+import { Custom, CustomData, CustomSpecial } from './client/custom';
 import { GetCustomRegDoc } from './client/docs';
 
 interface RegisterValue {
 	number: number;
 	value: number;
-}
-
-export enum RecordType {
-	Register,
-	Field
 }
 
 export class TreeNode extends vscode.TreeItem {
@@ -34,33 +29,80 @@ export class TreeNode extends vscode.TreeItem {
 	}
 }
 
-export class BaseNode {
-	public expanded: boolean;
-	protected format: NumberFormat = NumberFormat.Auto;
+export abstract class BaseNode {
+	public expanded = false;
+	protected format = NumberFormat.Auto;
+	protected width = 32; // width in bits
+	protected value: number|undefined;
+	protected children: BaseNode[] = [];
 
-	constructor(public recordType: RecordType) {
-		this.expanded = false;
+	public getChildren(): BaseNode[] {
+		return this.children;
 	}
 
-	public getChildren(): BaseNode[] { return []; }
-	public getTreeNode(): TreeNode|null { return null; }
-	public getCopyValue(): string|null { return null; }
 	public setFormat(format: NumberFormat) {
 		this.format = format;
 	}
+	public getFormat(): NumberFormat {
+		return this.format;
+	}
+
+	public getValue(): number|undefined {
+		return this.value;
+	}
+
+	public setValue(newValue: number) {
+		this.value = newValue;
+	}
+
+	public getBytes(): number|undefined {
+		return Math.ceil(this.width / 8);
+	}
+
+	public getCopyValue(): string {
+		const value = this.getValue();
+		const nibbles = Math.ceil(this.width / 4);
+		switch (this.getFormat()) {
+			case NumberFormat.Decimal:
+				return value.toString();
+			case NumberFormat.Binary:
+				return binaryFormat(value, this.width);
+			case NumberFormat.Hexidecimal:
+				return hexFormat(value, nibbles, true);
+			default:
+				return this.width >= 4
+					? hexFormat(value, nibbles, true)
+					: binaryFormat(value, this.width);
+		}
+	}
+
+	public getDisplayValue(): string {
+		const value = this.getValue();
+		const nibbles = Math.ceil(this.width / 4);
+		switch (this.getFormat()) {
+			case NumberFormat.Decimal:
+				return value.toString();
+			case NumberFormat.Binary:
+				return binaryFormat(value, this.width, false, true);
+			case NumberFormat.Hexidecimal:
+				return hexFormat(value, nibbles, true);
+			default:
+				return this.width >= 4
+					? hexFormat(value, nibbles, true)
+					: binaryFormat(value, this.width, false, true);
+		}
+	}
+
+	public abstract getTreeNode(): TreeNode;
 }
 
 export class RegisterNode extends BaseNode {
-	private fields: FieldNode[];
-	private width = 32; // width in bits
-	private currentValue: number|undefined;
-
 	constructor(public name: string, public index: number) {
-		super(RecordType.Register);
+		super();
 
 		if (name.toUpperCase() === 'SR') {
 			this.width = 16;
-			this.fields = [
+			this.children = [
 				new FieldNode('Carry (C)', 0, 1, this),
 				new FieldNode('Overflow (V)', 1, 1, this),
 				new FieldNode('Zero (Z)', 2, 1, this),
@@ -74,98 +116,39 @@ export class RegisterNode extends BaseNode {
 	}
 
 	public extractBits(offset: number, width: number): number {
-		return extractBits(this.currentValue, offset, width);
+		return extractBits(this.value, offset, width);
 	}
 
 	public getTreeNode(): TreeNode {
-		if(this.currentValue === undefined)
+		if(this.value === undefined)
 			return null;
-		let label = `${this.name} = `;
-		switch (this.getFormat()) {
-			case NumberFormat.Decimal:
-				label += this.currentValue.toString();
-				break;
-			case NumberFormat.Binary:
-				label += binaryFormat(this.currentValue, this.width, false, true);
-				break;
-			default:
-				label += hexFormat(this.currentValue, this.width / 4);
-				break;
-		}
+		const label = `${this.name} = ${this.getDisplayValue()}`;
+		const collapsibleState = this.children?.length > 0
+			? vscode.TreeItemCollapsibleState.Collapsed
+			: vscode.TreeItemCollapsibleState.None;
 
-		if (this.fields && this.fields.length > 0) {
-			return new TreeNode(label, vscode.TreeItemCollapsibleState.Collapsed, 'register', this);
-		} else {
-			return new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'register', this);
-		}
-	}
-
-	public getChildren(): FieldNode[] {
-		return this.fields;
-	}
-
-	public setValue(newValue: number) {
-		this.currentValue = newValue;
-	}
-
-	public getCopyValue(): string {
-		switch (this.getFormat()) {
-			case NumberFormat.Decimal:
-				return this.currentValue.toString();
-			case NumberFormat.Binary:
-				return binaryFormat(this.currentValue, 32);
-			default:
-				return hexFormat(this.currentValue, 8);
-		}
-	}
-
-	public getFormat(): NumberFormat {
-		return this.format;
+		return new TreeNode(label, collapsibleState, 'register', this);
 	}
 }
 
 export class FieldNode extends BaseNode {
-	constructor(public name: string, private offset: number, private size: number, private register: RegisterNode) {
-		super(RecordType.Field);
+	constructor(public name: string, private offset: number, protected width: number, private register: RegisterNode) {
+		super();
+	}
+
+	public getValue() {
+		return this.register.extractBits(this.offset, this.width);
 	}
 
 	public getTreeNode(): TreeNode {
-		const value = this.register.extractBits(this.offset, this.size);
-		let label = `${this.name} = `;
-		switch (this.getFormat()) {
-			case NumberFormat.Decimal:
-				label += value.toString();
-				break;
-			case NumberFormat.Binary:
-				label += binaryFormat(value, this.size, false, true);
-				break;
-			case NumberFormat.Hexidecimal:
-				label += hexFormat(value, Math.ceil(this.size / 4), true);
-				break;
-			default:
-				label += this.size >= 4 ? hexFormat(value, Math.ceil(this.size / 4), true) : binaryFormat(value, this.size, false, true);
-				break;
-		}
-
+		const label = `${this.name} = ${this.getDisplayValue()}`;
 		return new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'field', this);
 	}
 
-	public getCopyValue(): string {
-		const value = this.register.extractBits(this.offset, this.size);
-		switch (this.getFormat()) {
-			case NumberFormat.Decimal:
-				return value.toString();
-			case NumberFormat.Binary:
-				return binaryFormat(value, this.size);
-			case NumberFormat.Hexidecimal:
-				return hexFormat(value, Math.ceil(this.size / 4), true);
-			default:
-				return this.size >= 4 ? hexFormat(value, Math.ceil(this.size / 4), true) : binaryFormat(value, this.size);
-		}
-	}
-
 	public getFormat(): NumberFormat {
-		if (this.format === NumberFormat.Auto) { return this.register.getFormat(); } else { return this.format; }
+		return this.format === NumberFormat.Auto
+			? this.register.getFormat()
+			: this.format;
 	}
 }
 
@@ -288,11 +271,16 @@ export class CustomRegisterTreeProvider implements vscode.TreeDataProvider<TreeN
 	private nodes: CustomRegisterNode[] = [];
 
 	constructor() {
-		for (let i = 0; i < 0x1fe; i += 2) {
-			const customReg = Custom.ByOffs(i);
+		let offs = 0;
+		while (offs < 0x1fe) {
+			const customReg = Custom.ByOffs(offs);
 			const excluded = ["-", "RESERVED"];
 			if (customReg && !excluded.includes(customReg.name)) {
-				this.nodes.push(new CustomRegisterNode(customReg));
+				const node = new CustomRegisterNode(customReg);
+				this.nodes.push(node);
+				offs += node.getBytes();
+			} else {
+				offs += 2;
 			}
 		}
 	}
@@ -303,8 +291,10 @@ export class CustomRegisterTreeProvider implements vscode.TreeDataProvider<TreeN
 			const { bytes } = await vscode.debug.activeDebugSession.customRequest('read-memory', args) as { bytes: number[]};
 
 			this.nodes.forEach((rn) => {
-				let value = bytes[rn.offset] << 8;
-				value |= bytes[rn.offset + 1];
+				let value = 0;
+				for (let i = 0; i < rn.getBytes(); i++) {
+					value = (value << 8) | bytes[rn.offset + i];
+				}
 				rn.setValue(value);
 			});
 			this._onDidChangeTreeData.fire(undefined);
@@ -341,55 +331,32 @@ export class CustomRegisterTreeProvider implements vscode.TreeDataProvider<TreeN
 }
 
 export class CustomRegisterNode extends BaseNode {
-	private currentValue?: number;
-	public readonly name: string;
+	private name: string;
+	private doc: string;
 	public readonly offset: number;
-	public readonly doc: string;
 
 	constructor(customData: CustomData) {
-		super(RecordType.Field);
-		this.name = customData.name;
+		super();
 		this.offset = customData.adr - 0xdff000;
 		this.doc = GetCustomRegDoc(this.offset);
-	}
-
-	public setValue(newValue: number) {
-		this.currentValue = newValue;
-	}
-
-	public getCopyValue(): string {
-		switch (this.format) {
-			case NumberFormat.Decimal:
-				return this.currentValue.toString();
-			case NumberFormat.Binary:
-				return binaryFormat(this.currentValue, 16);
-			default:
-				return hexFormat(this.currentValue, 4);
+		if (customData.special & CustomSpecial.pth) {
+			this.width = 32;
+			this.name = customData.name.substring(0, customData.name.length - 1);
+		} else {
+			this.width = 16;
+			this.name = customData.name;
 		}
 	}
 
 	public getTreeNode(): TreeNode {
-		if(this.currentValue === undefined)
+		if(this.value === undefined)
 			return null;
 
 		const hexOffset = hexFormat(this.offset, 3);
-		let label = `${this.name} (${hexOffset}) = `;
-
-		switch (this.format) {
-			case NumberFormat.Decimal:
-				label += this.currentValue.toString();
-				break;
-			case NumberFormat.Binary:
-				label += binaryFormat(this.currentValue, 16, false, true);
-				break;
-			default:
-				label += hexFormat(this.currentValue, 4);
-				break;
-		}
+		const label = `${this.name} (${hexOffset}) = ${this.getDisplayValue()}`;
 
 		const node = new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'register', this);
 		node.tooltip = new vscode.MarkdownString(this.doc);
-
 		return node;
 	}
 }
