@@ -16,7 +16,7 @@ import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { AmigaAssemblyLanguageProvider, AmigaMotAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
-import { BaseNode as RBaseNode, RecordType as RRecordType, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
+import { BaseNode as RBaseNode, CustomRegisterTreeProvider, FieldNode, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
@@ -106,6 +106,7 @@ type OnOutputReadyFunction = (output: string) => void;
 
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
+	private customRegisterProvider: CustomRegisterTreeProvider;
 	private outputChannel: vscode.OutputChannel;
 	private objdumpEditorProvider: ObjdumpEditorProvider;
 	private assemblyLanguageProvider: AmigaAssemblyLanguageProvider;
@@ -120,6 +121,7 @@ class AmigaDebugExtension {
 		this.extensionPath = context.extensionPath;
 		this.binPath = path.join(this.extensionPath, "bin", process.platform);
 		this.registerProvider = new RegisterTreeProvider();
+		this.customRegisterProvider = new CustomRegisterTreeProvider();
 		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.assemblyLanguageProvider = new AmigaAssemblyLanguageProvider(context.extensionPath);
 		this.motAssemblyLanguageProvider = new AmigaMotAssemblyLanguageProvider(context.extensionPath);
@@ -157,6 +159,7 @@ class AmigaDebugExtension {
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
+			vscode.window.registerTreeDataProvider('amiga.customRegisters', this.customRegisterProvider),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
 			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true } }),
@@ -548,8 +551,9 @@ class AmigaDebugExtension {
 
 	// Registers
 	private registersSelectedNode(node: RBaseNode): void {
-		if(node.recordType !== RRecordType.Field) { node.expanded = !node.expanded; }
+		if(node instanceof FieldNode === false) { node.expanded = !node.expanded; }
 		this.registerProvider.refresh();
+		void this.customRegisterProvider.refresh();
 	}
 
 	private registersCopyValue(tn: RTreeNode): void {
@@ -569,6 +573,7 @@ class AmigaDebugExtension {
 
 		tn.node.setFormat(result ? result.value : NumberFormat.Auto);
 		this.registerProvider.refresh();
+		void this.customRegisterProvider.refresh();
 	}
 
 	// Debug Events
@@ -579,6 +584,7 @@ class AmigaDebugExtension {
 
 		session.customRequest('get-arguments').then((args) => {
 			this.registerProvider.debugSessionStarted();
+			this.customRegisterProvider.debugSessionStarted();
 		}, (error) => {
 			// TODO: Error handling for unable to get arguments
 		});
@@ -588,6 +594,7 @@ class AmigaDebugExtension {
 		if(session.type !== 'amiga') { return; }
 
 		this.registerProvider.debugSessionTerminated();
+		this.customRegisterProvider.debugSessionTerminated();
 	}
 
 	private receivedCustomEvent(e: vscode.DebugSessionCustomEvent) {
@@ -613,10 +620,12 @@ class AmigaDebugExtension {
 
 	private receivedStopEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugStopped();
+		this.customRegisterProvider.debugStopped();
 	}
 
 	private receivedContinuedEvent(e: vscode.DebugSessionCustomEvent) {
 		this.registerProvider.debugContinued();
+		this.customRegisterProvider.debugContinued();
 	}
 
 	private async setPermissions() {

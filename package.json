@@ -420,11 +420,15 @@
 				},
 				{
 					"command": "amiga.registers.copyValue",
+					"when": "view == amiga.customRegisters && viewItem == register"
+				},
+				{
+					"command": "amiga.registers.copyValue",
 					"when": "view == amiga.registers && viewItem == field"
 				},
 				{
 					"command": "amiga.registers.setFormat",
-					"when": "view == amiga.registers"
+					"when": "view == amiga.registers || view == amiga.customRegisters"
 				}
 			],
 			"debug/toolBar": [
@@ -465,7 +469,12 @@
 			"debug": [
 				{
 					"id": "amiga.registers",
-					"name": "Registers",
+					"name": "CPU Registers",
+					"when": "debugType == amiga"
+				},
+				{
+					"id": "amiga.customRegisters",
+					"name": "Custom Registers",
 					"when": "debugType == amiga"
 				}
 			]
