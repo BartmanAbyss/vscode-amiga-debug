@@ -97,7 +97,7 @@ export const CopperView: FunctionComponent<{
 	// cursor navigation
 	useEffect(() => {
 		const listener = (evt: KeyboardEvent) => {
-			if((evt.key === 'f' && evt.ctrlKey) || evt.key === 'F3') {
+			if((evt.key === 'f' && (evt.metaKey || evt.ctrlKey)) || evt.key === 'F3') {
 				// open search bar
 				findRef.current('open');
 				evt.preventDefault();
