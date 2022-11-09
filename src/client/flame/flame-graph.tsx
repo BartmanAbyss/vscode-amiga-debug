@@ -1281,7 +1281,7 @@ const Tooltip: FunctionComponent<{
 				</>)}
 			</dl>
 			{(label/* || isBlit*/) && (<div className={styles.hint}>
-				Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to {isBlit ? 'blit' : 'file'}
+				{navigator.platform.startsWith('Mac') ? 'Cmd' : 'Ctrl'}+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to {isBlit ? 'blit' : 'file'}
 			</div>)}
 			</div>
 		{(isBlit && (amiga.blit.BLTCON0 & BLTCON0Flags.USED)) && <div class={styles.tooltip} style={{ lineHeight: 0, left: tooltipLeft + tooltipWidth + 4, top: tooltipTop, bottom: 'initial' }}>
