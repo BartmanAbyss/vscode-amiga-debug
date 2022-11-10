@@ -1374,6 +1374,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			const maxDepth = await this.miDebugger.getStackDepth(args.threadId);
 			const highFrame = Math.min(maxDepth, args.startFrame + args.levels) - 1;
 			const stack = await this.miDebugger.getStack(args.threadId, args.startFrame, highFrame);
+
+			if (stack[0]) {
+				const pcDisassembly = await this.getDisassemblyForAddresses(Number(stack[0].address), 100);
+				await vscode.commands.executeCommand(
+					'amiga.setDisassembledMemory',
+					pcDisassembly
+				);
+			}
+
 			const ret: StackFrame[] = [];
 			for (const element of stack) {
 				const stackId = (args.threadId << 8 | (element.level & 0xFF)) & 0xFFFF;
@@ -2035,6 +2044,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		let stack: Variable[];
 		try {
 			stack = await this.miDebugger.getStackVariables(threadId, frameId);
+
 			for (const variable of stack) {
 				try {
 					const varObjName = `var_${variable.name}`;
