@@ -44,6 +44,8 @@ class ExtendedVariable {
 }
 
 const GLOBAL_HANDLE_ID = 0xFE;
+const SYMBOL_HANDLE_ID = 0xFD;
+const CONSTANT_HANDLE_ID = 0xFC;
 const STACK_HANDLES_START = 0x100;
 const STACK_HANDLES_FINISH = 0xFFFF;
 const STATIC_HANDLES_START = 0x010000;
@@ -1468,6 +1470,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
 		scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
 		scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
+		scopes.push(new Scope('Symbols', SYMBOL_HANDLE_ID, false));
+		scopes.push(new Scope('Constants', CONSTANT_HANDLE_ID, false));
 
 		response.body = {
 			scopes
@@ -1481,6 +1485,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (args.variablesReference === GLOBAL_HANDLE_ID) {
 			return this.globalVariablesRequest(response, args);
+		} else if (args.variablesReference === SYMBOL_HANDLE_ID) {
+			return this.symbolVariablesRequest(response, args);
+		} else if (args.variablesReference === CONSTANT_HANDLE_ID) {
+			return this.constantsVariablesRequest(response, args);
 		} else if (args.variablesReference >= STATIC_HANDLES_START && args.variablesReference <= STATIC_HANDLES_FINISH) {
 			const frameId = args.variablesReference & 0xFF;
 			const threadId = (args.variablesReference & 0xFF00) >>> 8;
@@ -1907,6 +1915,36 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		response.body = { variables: globals };
+		this.sendResponse(response);
+	}
+
+	private symbolVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
+		const symbols = this.symbolTable.getSymbolVariables();
+		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => ({
+			name: symbol.name,
+			value: "0x" + (symbol.base + symbol.address).toString(16),
+			variablesReference: -1,
+			presentationHint: {
+				attributes: [ "constant",  "readOnly" ],
+			},
+		}));
+		response.body = { variables };
+		this.sendResponse(response);
+	}
+
+	private constantsVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
+		const symbols = this.symbolTable.getConstVariables();
+		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => ({
+			name: symbol.name,
+			value: symbol.address.toString(),
+			variablesReference: -1,
+			presentationHint: {
+				attributes: [ "constant",  "readOnly" ],
+			},
+		}));
+		response.body = { variables };
 		this.sendResponse(response);
 	}
 
