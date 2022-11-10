@@ -169,6 +169,7 @@ export class SymbolTable {
 		const matches = this.symbols.filter((s) =>
 			s.type === SymbolType.Normal &&
 			s.size === 0 &&
+			s.name &&
 			s.base > 0
 		);
 		return matches;
@@ -178,6 +179,8 @@ export class SymbolTable {
 		const matches = this.symbols.filter((s) =>
 			s.type === SymbolType.Normal &&
 			s.size === 0 &&
+			s.scope === SymbolScope.Local &&
+			s.name &&
 			!s.name.startsWith(".") &&
 			s.base === 0
 		);

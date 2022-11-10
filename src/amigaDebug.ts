@@ -492,7 +492,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find executable file at ${args.program}.exe.`);
 			return;
 		}
-	
+
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
 		this.breakpointMap = new Map();
@@ -700,6 +700,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		case 'start-profile':
 			void this.customStartProfileRequest(response, args, true);
 			break;
+		case 'lookup-symbol':
+			const symbol = this.symbolTable.getSymbolVariables().find((s) => s.name === args.symbol);
+			const address = symbol ? symbol.address + symbol.base : null;
+			response.body = { address };
+			this.sendResponse(response);
+			break;
 		default:
 			response.body = { error: 'Invalid command.' };
 			this.sendResponse(response);
@@ -877,7 +883,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				}
 				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
 				const profiler = new Profiler(sourceMap, this.symbolTable, kickSymTable);
-	
+
 				progress.report({ message: 'Writing profile...'});
 				const disasm = Disassemble(objdumpPath, this.args.program + ".elf");
 				if(numFrames > 1) {
@@ -887,7 +893,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				} else {
 					fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile, disasm));
 				}
-					
+
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 				this.miDebugger.off('msg', debuggerProgress);
@@ -1921,14 +1927,18 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	private symbolVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
 		if(!this.stopped) return;
 		const symbols = this.symbolTable.getSymbolVariables();
-		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => ({
-			name: symbol.name,
-			value: "0x" + (symbol.base + symbol.address).toString(16),
-			variablesReference: -1,
-			presentationHint: {
-				attributes: [ "constant",  "readOnly" ],
-			},
-		}));
+		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => {
+			const value = hexFormat(symbol.base + symbol.address, 8, true);
+			return {
+				name: symbol.name,
+				value,
+				memoryReference: value,
+				variablesReference: -1,
+				presentationHint: {
+					attributes: [ "constant",  "readOnly" ],
+				},
+			};
+		});
 		response.body = { variables };
 		this.sendResponse(response);
 	}
