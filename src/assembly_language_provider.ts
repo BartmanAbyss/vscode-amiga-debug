@@ -65,6 +65,7 @@ class SourceContext {
 			fs.unlinkSync(tmp);
 		} catch(e) {}
 		let cmd: string, cmdParams: string[], spawnParams: object;
+		let inFile: string;
 		if (this.fileName.endsWith('.s')) {
 			//	Spawn the GNU Assembler to validate the file.
 			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-as");
@@ -110,7 +111,7 @@ class SourceContext {
 		}
 		else if (this.fileName.endsWith('.asm')) {
 			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
-			const inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
+			inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
 			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
 			fs.writeFileSync (inFile, this.text);
 			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "vasmm68k_mot");
@@ -233,10 +234,16 @@ class SourceContext {
 				// from objdump.tsx
 				const lines = objdump.replace(/\r/g, '').split('\n');
 				let lineNum = 0;
+				let sourceFile = '';
 				for(const line of lines) {
 					const locMatch = line.match(/^(\S.+):([0-9]+)( \(discriminator [0-9]+\))?$/); // C:/Users/Chuck/Documents/Visual_Studio_Code/amiga-debug/template/support/gcc8_c_support.c:62 (discriminator 1)
 					if(locMatch) {
+						sourceFile = path.normalize(locMatch[1]);
 						lineNum = parseInt(locMatch[2]);
+						continue;
+					}
+					// Only process source lines from current file, ignore includes
+					if (!sourceFile.includes('{standard input}') && sourceFile !== inFile) {
 						continue;
 					}
 					//                                PC             HEX WORDS           OPCODE REST
