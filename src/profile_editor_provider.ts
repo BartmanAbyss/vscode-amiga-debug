@@ -48,16 +48,24 @@ export const bundlePage = (webview: vscode.Webview, title: string, extensionPath
 	return html;
 };
 
-async function showPosition(doc: vscode.TextDocument, lineNumber: number, columnNumber: number, viewColumn?: vscode.ViewColumn) {
-	const pos = new vscode.Position(Math.max(0, lineNumber - 1), Math.max(0, columnNumber - 1));
-	await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
-}
+let openDoc: vscode.TextDocument;
 
 async function showPositionInFile(location: ISourceLocation, viewColumn?: vscode.ViewColumn) {
 	const path = normalize(location.source.path);
-	const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(path));
-	await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
+	openDoc = await vscode.workspace.openTextDocument(vscode.Uri.file(path));
+	await vscode.window.showTextDocument(openDoc, {
+		viewColumn,
+		preserveFocus: true,
+		selection: new vscode.Range(location.lineNumber - 1, 0, location.lineNumber, 0)
+	});
 	return true;
+}
+
+async function closeDocument(viewColumn?: vscode.ViewColumn) {
+	if (openDoc) {
+		await vscode.window.showTextDocument(openDoc, { viewColumn });
+		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+	}
 }
 
 class ProfileDocument implements vscode.CustomDocument {
@@ -105,6 +113,10 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 			case 'openDocument':
 				void showPositionInFile(message.location, message.toSide ? webviewPanel.viewColumn + 1 : webviewPanel.viewColumn);
 				return;
+			case 'closeDocument': {
+				void closeDocument(webviewPanel.viewColumn + 1);
+				return;
+			}
 			case 'setCodeLenses':
 				this.lenses.registerLenses(this.createLensCollection(message.lenses));
 				return;

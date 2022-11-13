@@ -18,6 +18,7 @@ import { resolvePath } from './pathResolve';
 import { GetCpuDoc } from './docs';
 import Markdown from 'markdown-to-jsx';
 import { FindCallback, Find } from './find';
+import { ToggleButton } from './button';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -209,6 +210,8 @@ export const ObjdumpView: FunctionComponent<{
 		return new ObjdumpModel(MODELS[0].base.objdump, MODELS[0].base.cpuCycleUnit === 256 ? true : false, MODELS[frame].amiga.pcTrace); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
+	const [showSource, setShowSource] = useState(false);
+	const [showRegisters, setShowRegisters] = useState(true);
 
 	const [content, functions, jumps] = useMemo(() => {
 		const pcMap = new Map<number, number>(); // pc -> row index
@@ -492,6 +495,40 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, [content, row, scroller, rowHeight, listRef.current, find, findResult]);
 
+	// Open source file corresponding to row
+	const openSource = useCallback((row: number) => {
+		const firstWithSrc = content.findIndex((c) => c.loc);
+		let r = row >= firstWithSrc ? row : firstWithSrc;
+
+		while(content[r].loc === undefined && r > firstWithSrc)
+			r--;
+		if(content[r]?.loc) {
+			VsCodeApi.postMessage<IOpenDocumentMessage>({
+				type: 'openDocument',
+				location: {
+					lineNumber: content[r].loc.line,
+					columnNumber: 0,
+					source: { path: content[r].loc.file }
+				},
+				toSide: true,
+			});
+		}
+	}, [content, row]);
+
+	// Open source on row change
+	useEffect(() => {
+		if (frame >= 0 && showSource) {
+			openSource(row);
+		}
+	}, [row, showSource, openSource]);
+
+	// Close doc when source disabled
+	useEffect(() => {
+		if (frame >= 0 && !showSource) {
+			VsCodeApi.postMessage({ type: 'closeDocument' });
+		}
+	}, [showSource]);
+
 	// cursor navigation
 	useEffect(() => {
 		const navStack: number[] = [];
@@ -581,11 +618,12 @@ export const ObjdumpView: FunctionComponent<{
 		} else {
 			const scrollTo = (sel - 2) * rowHeight; // -2: function line
 			scroller.setScrollPositionSmooth(scrollTo);
+			openSource(sel);
 		}
 	}, [content, scroller]);
 
 	const onClickContainer = useCallback((evt: JSX.TargetedMouseEvent<HTMLElement>) => {
-		if(frame === -1) {
+		if(frame === -1 || showSource) {
 			for(let elem = evt.target as HTMLElement; elem; elem = elem.parentElement) {
 				if(elem.getAttribute('data-row')) {
 					const row = parseInt(elem.getAttribute('data-row'));
@@ -620,7 +658,7 @@ export const ObjdumpView: FunctionComponent<{
 	return <>
 		<div class={styles.wrapper}>
 			<Find ref={findRef} curFind={curFind} findResultLength={findResult.length} callback={findCallback}  />
-			{regs?.length > 0 && <div class={styles.registers}>
+			{regs?.length > 0 && showRegisters && <div class={styles.registers}>
 					{[0, 1, 2, 3, 4, 5, 6, 7].map((_, i: number) => <>
 						D{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.D0 + i])}>${regs[Register.D0 + i].toString(16).padStart(8, '0')}</a>&nbsp;
 						A{i}: <a href="#" onClick={() => setMemoryAddr(regs[Register.A0 + i])}>${regs[Register.A0 + i].toString(16).padStart(8, '0')}</a>
@@ -638,8 +676,18 @@ export const ObjdumpView: FunctionComponent<{
 					<span class={(regs[Register.SR] & (1 << 1)) ? styles.sr_on : styles.sr_off} title='Overflow'>V</span>
 					<span class={(regs[Register.SR] & (1 << 0)) ? styles.sr_on : styles.sr_off} title='Carry'>C</span>
 			</div>}
+			<span>
 			Function:&nbsp;
 			<FunctionDropdown alwaysChange={true} options={functions} value={func} onChange={onChangeFunction} />
+			</span>
+			<span className={styles.toolbar}>
+				{regs?.length > 0 && (
+					<ToggleButton checked={showRegisters} onChange={setShowRegisters} icon="Registers" label="Show Registers" />
+				)}
+				{frame >= 0 && (
+					<ToggleButton checked={showSource} onChange={setShowSource} icon="Source" label="Show Source" />
+				)}
+			</span>
 		</div>
 		<VirtualListLine ref={listRef} class={styles.container} style={{opacity}} rows={content} renderRow={renderRow} rowHeight={rowHeight} absolutes={jumps} renderAbsolute={renderJump} overscanCount={50} onclick={onClickContainer} />
 		{hovered.markdown !== '' && (createPortal(
