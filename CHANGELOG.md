@@ -1,6 +1,16 @@
 # Change Log
 
 All notable changes to the "amiga-debug" extension will be documented in this file.
+See PR links for more information.
+
+## 1.6.7
+- NEW: profiler: Toggle right panel [PR#167](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/167)
+- NEW: debugger: New panel for custom registers [PR#166](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/166)
+- FIX: profiler: Fix mac rendering bug [PR#169](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/169)
+- FIX: profiler: Mac keyboard shortcuts [PR#170](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/170)
+- NEW: vasm: memory type suffix in section names [PR#171](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/171)
+- FIX: assembly: Check cycle counts are for current file [PR#173](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/173)
+- NEW: profiler: Track source from profile disassembly view [PR#168](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/168)
 
 ## 1.6.6
 - FIX: Make cpptools a recommendation, not dependency
