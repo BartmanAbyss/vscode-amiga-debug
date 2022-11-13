@@ -44,6 +44,8 @@ class ExtendedVariable {
 }
 
 const GLOBAL_HANDLE_ID = 0xFE;
+const SYMBOL_HANDLE_ID = 0xFD;
+const CONSTANT_HANDLE_ID = 0xFC;
 const STACK_HANDLES_START = 0x100;
 const STACK_HANDLES_FINISH = 0xFFFF;
 const STATIC_HANDLES_START = 0x010000;
@@ -490,7 +492,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find executable file at ${args.program}.exe.`);
 			return;
 		}
-	
+
 		this.args = args;
 		this.symbolTable = new SymbolTable(objdumpPath, args.program + ".elf");
 		this.breakpointMap = new Map();
@@ -698,6 +700,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		case 'start-profile':
 			void this.customStartProfileRequest(response, args, true);
 			break;
+		case 'lookup-symbol':
+			const symbol = this.symbolTable.getSymbolVariables().find((s) => s.name === args.symbol);
+			const address = symbol ? symbol.address + symbol.base : null;
+			response.body = { address };
+			this.sendResponse(response);
+			break;
 		default:
 			response.body = { error: 'Invalid command.' };
 			this.sendResponse(response);
@@ -875,7 +883,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				}
 				const sourceMap = new SourceMap(addr2linePath, this.args.program + ".elf", this.symbolTable);
 				const profiler = new Profiler(sourceMap, this.symbolTable, kickSymTable);
-	
+
 				progress.report({ message: 'Writing profile...'});
 				const disasm = Disassemble(objdumpPath, this.args.program + ".elf");
 				if(numFrames > 1) {
@@ -885,7 +893,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				} else {
 					fs.writeFileSync(tmp + ".amigaprofile", profiler.profileTime(profileFile, disasm));
 				}
-					
+
 				// open output
 				await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(tmp + ".amigaprofile"), { preview: false } as vscode.TextDocumentShowOptions);
 				this.miDebugger.off('msg', debuggerProgress);
@@ -1468,6 +1476,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		scopes.push(new Scope('Local', parseInt(args.frameId as any), false));
 		scopes.push(new Scope('Global', GLOBAL_HANDLE_ID, false));
 		scopes.push(new Scope('Static', STATIC_HANDLES_START + parseInt(args.frameId as any), false));
+		scopes.push(new Scope('Symbols', SYMBOL_HANDLE_ID, false));
+		scopes.push(new Scope('Constants', CONSTANT_HANDLE_ID, false));
 
 		response.body = {
 			scopes
@@ -1481,6 +1491,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (args.variablesReference === GLOBAL_HANDLE_ID) {
 			return this.globalVariablesRequest(response, args);
+		} else if (args.variablesReference === SYMBOL_HANDLE_ID) {
+			return this.symbolVariablesRequest(response, args);
+		} else if (args.variablesReference === CONSTANT_HANDLE_ID) {
+			return this.constantsVariablesRequest(response, args);
 		} else if (args.variablesReference >= STATIC_HANDLES_START && args.variablesReference <= STATIC_HANDLES_FINISH) {
 			const frameId = args.variablesReference & 0xFF;
 			const threadId = (args.variablesReference & 0xFF00) >>> 8;
@@ -1907,6 +1921,40 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		response.body = { variables: globals };
+		this.sendResponse(response);
+	}
+
+	private symbolVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
+		const symbols = this.symbolTable.getSymbolVariables();
+		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => {
+			const value = hexFormat(symbol.base + symbol.address, 8, true);
+			return {
+				name: symbol.name,
+				value,
+				memoryReference: value,
+				variablesReference: -1,
+				presentationHint: {
+					attributes: [ "constant",  "readOnly" ],
+				},
+			};
+		});
+		response.body = { variables };
+		this.sendResponse(response);
+	}
+
+	private constantsVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+		if(!this.stopped) return;
+		const symbols = this.symbolTable.getConstVariables();
+		const variables: DebugProtocol.Variable[] = symbols.map((symbol) => ({
+			name: symbol.name,
+			value: symbol.address.toString(),
+			variablesReference: -1,
+			presentationHint: {
+				attributes: [ "constant",  "readOnly" ],
+			},
+		}));
+		response.body = { variables };
 		this.sendResponse(response);
 	}
 

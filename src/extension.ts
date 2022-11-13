@@ -22,6 +22,8 @@ import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
 import { SavestateEditorProvider } from './savestate_editor_provider';
+import { hexFormat } from './utils';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 /*
  * Set the following compile time flag to true if the
@@ -138,7 +140,9 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
 			vscode.commands.registerCommand('amiga.registers.copyValue', this.registersCopyValue.bind(this)),
 			vscode.commands.registerCommand('amiga.registers.setFormat', this.registersSetFormat.bind(this)),
-			vscode.commands.registerCommand('amiga.examineMemory', this.examineMemory.bind(this)),
+			vscode.commands.registerCommand('amiga.examineMemory', this.examineMemoryInput.bind(this)),
+			vscode.commands.registerCommand('amiga.examineMemoryVariable', (ctx) => this.examineVariableMemory(ctx.variable, false)),
+			vscode.commands.registerCommand('amiga.examineMemoryVariableIndirect', (ctx) => this.examineVariableMemory(ctx.variable, true)),
 			vscode.commands.registerCommand('amiga.viewDisassembly', this.showDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.setForceDisassembly', this.setForceDisassembly.bind(this)),
 			vscode.commands.registerCommand('amiga.startProfile', this.startProfile.bind(this)),
@@ -512,35 +516,75 @@ class AmigaDebugExtension {
 		}
 	}
 
-	private async examineMemory() {
-		function validateValue(address: string) {
-			if(/^0x[0-9a-f]{1,8}$/i.test(address)) {
-				return address;
-			} else if(/^[0-9]+$/i.test(address)) {
-				return address;
+	private async examineVariableMemory(variable: DebugProtocol.Variable, indirection = false) {
+		if(!variable.memoryReference) {
+			void vscode.window.showErrorMessage('No memory reference for variable');
+			return;
+		}
+		return this.examineMemory(variable.memoryReference, indirection);
+	}
+
+	private async examineMemoryInput() {
+		async function lookupAddress(input: string) {
+			if(/^0x[0-9a-f]{1,8}$/i.test(input)) {
+				return input;
+			} else if(/^[0-9]+$/i.test(input)) {
+				return input;
 			} else {
-				return null;
+				// Try looking up address from symbol name
+				const symbol = input;
+				const { address } = await session.customRequest('lookup-symbol', { symbol }) as { address: number | null };
+				return address ? hexFormat(address) : null;
 			}
 		}
 
-		if(!vscode.debug.activeDebugSession) {
+		const session = vscode.debug.activeDebugSession;
+		if (!session) {
+			void vscode.window.showErrorMessage('No debugging session available');
+			return;
+		}
+
+		const input = await vscode.window.showInputBox({
+			placeHolder: 'Prefix with 0x for hexidecimal, & for indirection',
+			ignoreFocusOut: true,
+			prompt: 'Memory Address or Symbol'
+		});
+
+		const indirection = input.startsWith('&');
+		const address = await lookupAddress(indirection ? input.substring(1) : input);
+		if(!address) {
+			void vscode.window.showErrorMessage('Invalid memory address entered');
+			return;
+		}
+
+		return this.examineMemory(address, indirection);
+	}
+
+	private async examineMemory(address: string, indirection: boolean) {
+		const session = vscode.debug.activeDebugSession;
+		if (!session) {
 			void vscode.window.showErrorMessage('No debugging session available');
 			return;
 		}
 
 		try {
-			const address = await vscode.window.showInputBox({
-				placeHolder: 'Prefix with 0x for hexidecimal format',
-				ignoreFocusOut: true,
-				prompt: 'Memory Address'
-			});
-
-			if(!validateValue(address)) {
+			if(!address) {
 				void vscode.window.showErrorMessage('Invalid memory address entered');
 				return;
 			}
 
-			const result = await vscode.commands.executeCommand("workbench.debug.viewlet.action.viewMemory", {
+			if (indirection) {
+				const args = {
+					address: Number(address),
+					length: 4,
+				};
+				const { bytes } = await session.customRequest('read-memory', args) as { bytes?: number[] };
+				address = bytes
+					? '0x' + bytes.map((v) => hexFormat(v, 2, false)).join('')
+					: null;
+			}
+
+			await vscode.commands.executeCommand("workbench.debug.viewlet.action.viewMemory", {
 				sessionId: vscode.debug.activeDebugSession.id,
 				variable: {
 					memoryReference: address

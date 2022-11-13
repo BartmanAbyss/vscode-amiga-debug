@@ -101,7 +101,7 @@ export class SymbolTable {
 					throw new Error(`Section ${sectionName} not found. Symbol: ${name}`);
 
 				this.symbols.push({
-					address: parseInt(match[1], 16) - section?.lma,
+					address: parseInt(match[1], 16) - (section?.lma ?? 0),
 					base: 0,
 					type,
 					scope,
@@ -162,6 +162,28 @@ export class SymbolTable {
 
 	public getGlobalVariables(): SymbolInformation[] {
 		const matches = this.symbols.filter((s) => s.type === SymbolType.Object && s.scope === SymbolScope.Global);
+		return matches;
+	}
+
+	public getSymbolVariables(): SymbolInformation[] {
+		const matches = this.symbols.filter((s) =>
+			s.type === SymbolType.Normal &&
+			s.size === 0 &&
+			s.name &&
+			s.base > 0
+		);
+		return matches;
+	}
+
+	public getConstVariables(): SymbolInformation[] {
+		const matches = this.symbols.filter((s) =>
+			s.type === SymbolType.Normal &&
+			s.size === 0 &&
+			s.scope === SymbolScope.Local &&
+			s.name &&
+			!s.name.startsWith(".") &&
+			s.base === 0
+		);
 		return matches;
 	}
 

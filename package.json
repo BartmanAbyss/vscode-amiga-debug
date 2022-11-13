@@ -59,6 +59,16 @@
 			},
 			{
 				"category": "Amiga",
+				"command": "amiga.examineMemoryVariable",
+				"title": "View Memory"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.examineMemoryVariableIndirect",
+				"title": "View Memory (pointer)"
+			},
+			{
+				"category": "Amiga",
 				"command": "amiga.viewDisassembly",
 				"title": "View Disassembly (Function)"
 			},
@@ -438,6 +448,16 @@
 				},
 				{
 					"command": "amiga.startProfile",
+					"when": "debugType == amiga"
+				}
+			],
+			"debug/variables/context": [
+				{
+					"command": "amiga.examineMemoryVariable",
+					"when": "debugType == amiga"
+				},
+				{
+					"command": "amiga.examineMemoryVariableIndirect",
 					"when": "debugType == amiga"
 				}
 			],
