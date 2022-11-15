@@ -210,16 +210,19 @@ class AmigaDebugExtension {
 
 		if (vscode.extensions.getExtension('gigabates.m68k-lsp')) {
 			const config = vscode.workspace.getConfiguration();
-			await config.update(
-				"m68k.vasm.binPath",
-				path.join(this.binPath, "vasmm64_mot")
-			);
-			const includePaths = [
-				'.',
-				vscode.workspace.workspaceFolders[0].uri.fsPath,
-				path.join(this.binPath, "opt/m68k-amiga-elf/sys-include"),
-			];
-			await config.update("m68k.includePaths", includePaths);
+			// Ensure m68k.includePaths contains the bundled system includes dir
+			const sysIncDir = path.join("opt", "m68k-amiga-elf", "sys-include");
+			const sysIncPath = path.join(this.binPath, sysIncDir);
+			const currentIncludePaths: string[] = config.get('m68k.includePaths');
+			if (!currentIncludePaths.includes(sysIncPath)) {
+				await config.update("m68k.includePaths", [
+					// Remove any old paths to sys-include:
+					// The location may change between environments and extension versions
+					...currentIncludePaths.filter((inc) => !inc.endsWith(sysIncDir)),
+					// Add new sys-include path
+					sysIncPath,
+				]);
+			}
 		}
 	}
 
