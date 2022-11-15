@@ -126,7 +126,7 @@ class AmigaDebugExtension {
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		const lenses = new ProfileCodeLensProvider();
-		const assemblyLanguagesInt: vscode.DocumentFilter[] = [ { language: 'amiga.assembly' }, { language: 'amiga.assembly.mot' } ];
+		const assemblyLanguagesInt: vscode.DocumentFilter[] = [ { language: 'amiga.assembly' } ];
 		const assemblyLanguagesExt: vscode.DocumentFilter[] = [ { language: 'm68k' } ];
 		this.assemblyLanguageSelector = [
 			...assemblyLanguagesInt,
