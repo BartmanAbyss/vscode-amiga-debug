@@ -566,6 +566,7 @@
 		"zustand": "^4.1.1"
 	},
 	"dependencies": {
+		"m68kdecode": "^1.1.4",
 		"vscode-cpptools": "^5.0.0",
 		"vscode-debugadapter": "^1.51.0",
 		"vscode-debugprotocol": "^1.51.0",

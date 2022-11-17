@@ -1,7 +1,7 @@
 import { Component, FunctionComponent, JSX, Ref } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
-import { Cycles, GetCycles, GetJump, JumpType } from "./68k";
+import { GetJump, JumpType } from "./68k";
 import { DropdownComponent, DropdownOptionProps } from './dropdown';
 import { Icon } from './icons';
 import * as SymbolMethod from './icons/symbol-method.svg';
@@ -19,6 +19,8 @@ import { GetCpuDoc } from './docs';
 import Markdown from 'markdown-to-jsx';
 import { FindCallback, Find } from './find';
 import { ToggleButton } from './button';
+import { InstructionTiming, instructionTimings } from '../m68ktimings';
+import { decodeInstruction } from 'm68kdecode';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -44,7 +46,7 @@ export interface Line {
 	pc?: number;
 	traceHits?: number;
 	traceCycles?: number;
-	theoreticalCycles?: Cycles[];
+	theoreticalCycles?: InstructionTiming;
 	opcode?: string;
 	rest?: string;
 	text: string;
@@ -146,7 +148,12 @@ export class ObjdumpModel {
 				const opcode = insnMatch[3];
 				const rest = insnMatch[4] || '';
 				const insn = new Uint16Array(hex.length);
-				hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
+				const bytes = new Uint8Array(hex.length * 2);
+				hex.forEach((h, i) => {
+					insn[i] = parseInt(h, 16);
+					bytes[i * 2] = parseInt(h.substring(0, 2), 16);
+					bytes[i * 2 + 1] = parseInt(h.substring(2, 4), 16);
+				});
 				const jump = GetJump(pc, insn);
 				if(jump) {
 					const jumpInfo = funcJumps.find((j) => j.end === jump.target && j.type === jump.type);
@@ -155,12 +162,21 @@ export class ObjdumpModel {
 					else
 						funcJumps.push({ start: [pc], end: jump.target, level: -1, type: jump.type });
 				}
+				let timings: InstructionTiming | undefined;
+				if (theoreticalCycles) {
+					try {
+						const decoded = decodeInstruction(bytes);
+						timings = instructionTimings(decoded.instruction);
+					} catch (err) {
+						console.log(err);
+					}
+				}
 				this.content.push({
 					pc,
 					text: `${pc.toString(16).padStart(8, ' ')}: ${opcode.padEnd(7, ' ')} ${rest}`,
 					opcode,
 					rest,
-					theoreticalCycles: theoreticalCycles ? GetCycles(insn) : undefined,
+					theoreticalCycles: timings,
 					loc,
 					traceHits: hits.get(pc),
 					traceCycles: cycles.get(pc)
@@ -322,11 +338,11 @@ export const ObjdumpView: FunctionComponent<{
 		const rect = evt.currentTarget.getBoundingClientRect();
 		const markdown = GetCpuDoc(opcode);
 		if(markdown) {
-			const hov = { 
-				markdown, 
-				x: Math.min(rect.left, window.innerWidth - 530), 
+			const hov = {
+				markdown,
+				x: Math.min(rect.left, window.innerWidth - 530),
 				y: rect.bottom < window.innerHeight - 260 ? rect.bottom + 10 : rect.top - 260,
-				justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end' 
+				justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end'
 			};
 			setHovered(hov);
 		}
@@ -349,7 +365,7 @@ export const ObjdumpView: FunctionComponent<{
 					return content[i].loc;
 			}
 		}
-	
+
 		if(index === row) {
 			extra.push(styles.cur);
 		} else if(row !== -1 && content[row].pc !== undefined && content[index].pc !== undefined) {
@@ -362,14 +378,14 @@ export const ObjdumpView: FunctionComponent<{
 			}
 		}
 
-		const text = (find.internal && findResult.length > 0) 
+		const text = (find.internal && findResult.length > 0)
 		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
-		: (c.opcode 
+		: (c.opcode
 			? <>
 				<span>{c.pc.toString(16).padStart(8, ' ')}: </span>
 				<span class={styles.opcode} data={c.opcode} onMouseEnter={onMouseEnterOpcode} onMouseLeave={onMouseLeaveOpcode} onWheel={onWheelOpcode}>{c.opcode}</span>
 				<span>{' '.repeat(Math.max(0, 7 - c.opcode.length))} {c.rest}</span>
-			</> 
+			</>
 			: c.text);
 
 		return (c.pc === undefined
@@ -379,7 +395,7 @@ export const ObjdumpView: FunctionComponent<{
 					{c.traceHits > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceHits > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 				</> : ''}
-				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.map((c) => `${c.total}`).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
+				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
 			</div>
 			{text}
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
@@ -402,9 +418,9 @@ export const ObjdumpView: FunctionComponent<{
 		const loopCycles = (() => {
 			if(jump.level === 0 && jump.start.length === 1 && jump.end < jump.start[0]) {
 				const loop = content.slice(jump.end, jump.start[0] + 1).map((l) => l.theoreticalCycles);
-				if(loop.every((l) => l?.length > 0)) {
-					const minCycles = loop.map((l) => Math.min(...l.map((c) => c.total))).reduce((p, c) => p + c);
-					const maxCycles = loop.map((l) => Math.max(...l.map((c) => c.total))).reduce((p, c) => p + c);
+				if(loop.every((l) => l?.values.length > 0)) {
+					const minCycles = loop.map((l) => Math.min(...l.values.map((c) => c[0]))).reduce((p, c) => p + c);
+					const maxCycles = loop.map((l) => Math.max(...l.values.map((c) => c[0]))).reduce((p, c) => p + c);
 					const text = minCycles === maxCycles ? `${minCycles}T` : `${minCycles}-${maxCycles}T`;
 					return <text transform={`translate(${indent + 2}, ${endY + 3 + ((jump.start[0] - min) * rowHeight + rowMiddle - (endY + 3)) / 2}) rotate(-90)`} textAnchor="middle" dominant-baseline="hanging" class={styles.jumpduration} stroke="none">{text}</text>;
 				}
@@ -558,7 +574,7 @@ export const ObjdumpView: FunctionComponent<{
 				else if(evt.key === 'ArrowRight') {
 					setCurRow((curRow) => {
 						const jump = jumps.find((j) => j.start.includes(curRow));
-						if(jump) { 
+						if(jump) {
 							navStack.push(curRow);
 							return jump.end;
 						}
@@ -588,7 +604,7 @@ export const ObjdumpView: FunctionComponent<{
 			const listener = (e: MessageEvent) => {
 				const { type, body } = e.data;
 				switch(type) {
-				case 'findLocation': 
+				case 'findLocation':
 					console.log("Message", type, body);
 					const loc = `${body.file}:${body.line}`;
 					// open search bar
@@ -611,7 +627,7 @@ export const ObjdumpView: FunctionComponent<{
 		}
 	}, [findRef, setFind, setModel, frame]);
 
-	const onChangeFunction = useCallback((selected: Function) => { 
+	const onChangeFunction = useCallback((selected: Function) => {
 		const sel = content.findIndex((c: Line) => c.pc === selected.pc);
 		if(frame === -1) {
 			setCurRow(sel);
@@ -654,7 +670,7 @@ export const ObjdumpView: FunctionComponent<{
 		}
 		return true;
 	}, [setFind, listRef.current, curFind, findResult]);
-	
+
 	return <>
 		<div class={styles.wrapper}>
 			<Find ref={findRef} curFind={curFind} findResultLength={findResult.length} callback={findCallback}  />
