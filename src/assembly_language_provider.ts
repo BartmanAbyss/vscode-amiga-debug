@@ -292,9 +292,9 @@ class SourceContext {
 		
 		const optionsArray: vscode.DecorationOptions[] = [];
 		const emptyRanges: vscode.Range[] = [];
-		for(let line = 1; line < textEditor.document.lineCount; line++) {
-			const cyclesStr = this.cycles.get(line);
-			const range = new vscode.Range(new vscode.Position(line - 1, 0), new vscode.Position(line - 1, 0));
+		for(let line = 0; line < textEditor.document.lineCount; line++) {
+			const cyclesStr = this.cycles.get(line + 1);
+			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
 			if(cyclesStr !== undefined) {
 				optionsArray.push({ 
 					range, 
