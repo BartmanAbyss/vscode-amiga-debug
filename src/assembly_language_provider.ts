@@ -4,10 +4,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { Disassemble } from './backend/profile';
-import { GetCycles } from './client/68k';
 import { GetCpuDoc, GetCpuInsns, GetCpuName, GetCustomRegDocByName } from './client/docs';
-import { stringify } from 'querystring';
-import { arrayBuffer } from 'stream/consumers';
+import { decodeInstruction, instructionToString } from 'm68kdecode';
+import { instructionTimings, Timing } from './m68ktimings';
 
 enum TokenTypes {
 	function,
@@ -45,7 +44,7 @@ export class SourceContext {
 	public static extensionPath: string;
 	public labels = new Map<string, number>(); // label -> line
 	public cycles = new Map<number, string>(); // line -> cycles text
-	public code = new Map<number, string>(); // line -> disassembled code
+	public hoverText = new Map<number, string>(); // line -> hover text
 	public tokens: Token[] = [];
 	private text: string;
 
@@ -228,7 +227,7 @@ export class SourceContext {
 
 		// get cycles from disassembly
 		this.cycles.clear();
-		this.code.clear();
+		this.hoverText.clear();
 		if(fs.existsSync(tmp)) {
 			const objdumpPath = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-objdump");
 			try {
@@ -244,27 +243,58 @@ export class SourceContext {
 						lineNum = parseInt(locMatch[2]);
 						continue;
 					}
+					if (lineNum === 0) {
+						continue;
+					}
 					// Only process source lines from current file, ignore includes
 					if (!sourceFile.includes('{standard input}') && sourceFile !== inFile) {
 						continue;
 					}
 					//                                PC             HEX WORDS           OPCODE REST
-					const insnMatch = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )+)\s*(\S+)(?:\s(.*))?$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
-					if(insnMatch) {
-						const pc = parseInt(insnMatch[1], 16);
-						const hex = insnMatch[2].split(' ');
-						const opcode = insnMatch[3];
-						const rest = insnMatch[4] || '';
-						const insn = new Uint16Array(hex.length);
-						hex.forEach((h, i) => { insn[i] = parseInt(h, 16); });
-						if(lineNum !== 0) {
-							this.cycles.set(lineNum, GetCycles(insn).map((c) => `${c.total}`).join('-') + 'T');
-							this.code.set(lineNum, "```\n" + opcode + " " + rest + "\n```");
-						}
-						lineNum = 0;
-
-						console.log();
+					const insnMatch: RegExpMatchArray = line.match(/^ *([0-9a-f]+):\t((?:[0-9a-f]{4} )+)\s*(\S+)(?:\s(.*))?$/); //      cce:	0c40 a00e      	cmpi.w #-24562,d0
+					if (!insnMatch) {
+						continue;
 					}
+
+					// Get bytes from hex
+					const hex = insnMatch[2].replace(/\s/g, '');
+					const bytes: number[] = [];
+					for (let i = 0; i < hex.length; i += 2) {
+						bytes.push(parseInt(hex.substring(i, i + 2), 16));
+					}
+					const code = Uint8Array.from(bytes);
+
+					try {
+						const inst = decodeInstruction(code);
+						const timings = instructionTimings(inst.instruction);
+
+						if (timings?.values) {
+							const cycles = timings.values.map((v) => v[0]);
+							const min = Math.min(...cycles);
+							const max = Math.max(...cycles);
+							const cycleText =  min !== max ? `${min}-${max}`: min.toString();
+							this.cycles.set(lineNum, cycleText + "T");
+
+							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n";
+							if (timings.labels.length) {
+								detail += "| | Clock | Read | Write |\n";
+								detail += "|-|:-----:|:----:|:-----:|\n";
+								for (let i = 0; i < timings.labels.length; i++) {
+									const label = timings.labels[i];
+									const [c, r, w] = timings.values[i];
+									detail += `| ${label} | ${c} | ${r} | ${w} |\n`;
+								}
+							} else {
+								const [c, r, w] = timings.values[0];
+								detail += "| Clock | Read | Write |\n";
+								detail += "|:-----:|:----:|:-----:|\n";
+								detail += `| ${c} | ${r} | ${w} |\n`;
+							}
+							this.hoverText.set(lineNum, detail);
+						}
+					} catch (err) {}
+
+					lineNum = 0;
 				}
 			} catch(e) {}
 			try {
@@ -451,7 +481,7 @@ export class AmigaAssemblyLanguageProvider implements vscode.DocumentSymbolProvi
 	public provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
 		if (position.character === 0) {
 			const context = this.documentManager.getSourceContext(document.fileName);
-			const code = context.code.get(position.line + 1);
+			const code = context.hoverText.get(position.line + 1);
 			if (code)
 				return new vscode.Hover(new vscode.MarkdownString(code));
 		}
