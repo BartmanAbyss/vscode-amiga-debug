@@ -290,14 +290,14 @@ export class SourceContext {
 							const cycleText =  min !== max ? `${min}-${max}`: min.toString();
 							this.cycles.set(lineNum, cycleText + "T");
 
-							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n";
+							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n---\n";
 							if (timings.labels.length) {
 								detail += "| | Clock | Read | Write |\n";
 								detail += "|-|:-----:|:----:|:-----:|\n";
 								for (let i = 0; i < timings.labels.length; i++) {
 									const label = timings.labels[i];
 									const [c, r, w] = timings.values[i];
-									detail += `| ${label} | ${c} | ${r} | ${w} |\n`;
+									detail += `|**${label}**| ${c} | ${r} | ${w} |\n`;
 								}
 							} else {
 								const [c, r, w] = timings.values[0];
@@ -305,6 +305,7 @@ export class SourceContext {
 								detail += "|:-----:|:----:|:-----:|\n";
 								detail += `| ${c} | ${r} | ${w} |\n`;
 							}
+							detail += `---\n${bytes.length} bytes`;
 							this.hoverText.set(lineNum, detail);
 						}
 					} catch (err) {}
@@ -333,7 +334,7 @@ export class SourceContext {
 		before: {
 			textDecoration: 'none; white-space: pre; padding: 0 10px 0 10px',
 			margin: '0 10px 0 10px',
-			contentText: '      '
+			contentText: '        '
 		}
 	});
 
@@ -351,7 +352,7 @@ export class SourceContext {
 					range,
 					renderOptions: {
 						before: {
-							contentText: cyclesStr.padStart(6, ' ')
+							contentText: cyclesStr.padStart(8, ' ')
 						}
 					}
 				});
