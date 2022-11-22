@@ -324,16 +324,16 @@ export class SourceContext {
 	// theoretical 68000 cycle decorations
 	private static decoration = vscode.window.createTextEditorDecorationType({
 		before: {
-			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px',
+			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px; position: absolute; line-height: 1rem;',
 			backgroundColor: new vscode.ThemeColor("badge.background"),
 			color: new vscode.ThemeColor("badge.foreground"),
-			margin: '0 10px 0 10px'
+			margin: '2px 10px 2px 0',
 		}
 	});
 	private static decorationEmpty = vscode.window.createTextEditorDecorationType({
 		before: {
 			textDecoration: 'none; white-space: pre; padding: 0 10px 0 10px',
-			margin: '0 10px 0 10px',
+			margin: '0 10px 0 0',
 			contentText: '        '
 		}
 	});
@@ -343,7 +343,6 @@ export class SourceContext {
 			return;
 
 		const optionsArray: vscode.DecorationOptions[] = [];
-		const emptyRanges: vscode.Range[] = [];
 		for(let line = 0; line < textEditor.document.lineCount; line++) {
 			const cyclesStr = this.cycles.get(line + 1);
 			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
@@ -356,11 +355,19 @@ export class SourceContext {
 						}
 					}
 				});
-			} else {
-				emptyRanges.push(range);
 			}
 		}
 		textEditor.setDecorations(SourceContext.decoration, optionsArray);
+	}
+
+	public setEmptyDecorations(textEditor: vscode.TextEditor) {
+		if(textEditor === null)
+			return;
+		const emptyRanges: vscode.Range[] = [];
+		for(let line = 0; line < textEditor.document.lineCount; line++) {
+			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
+			emptyRanges.push(range);
+		}
 		textEditor.setDecorations(SourceContext.decorationEmpty, emptyRanges);
 	}
 
@@ -396,6 +403,7 @@ export class AmigaAssemblyDocumentMananger {
 			if (vscode.languages.match(selector, document)) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
+				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
 				void this.getSourceContext(document.fileName).parse().then(() => {
 					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
 				});
@@ -406,6 +414,7 @@ export class AmigaAssemblyDocumentMananger {
 		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
 			if (vscode.languages.match(selector, document)) {
 				console.log("openTextDocument: initial parse " + document.fileName);
+				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
 				this.getSourceContext(document.fileName).setText(document.getText());
 				void this.getSourceContext(document.fileName).parse().then(() => {
 					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
@@ -417,6 +426,7 @@ export class AmigaAssemblyDocumentMananger {
 		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
 			if (vscode.languages.match(selector, event.document)) {
 				const fileName = event.document.fileName;
+				this.getSourceContext(event.document.fileName).setEmptyDecorations(getEditorForDocument(event.document));
 				this.getSourceContext(event.document.fileName).setText(event.document.getText());
 				if (changeTimers.has(fileName)) {
 					clearTimeout(changeTimers.get(fileName));
