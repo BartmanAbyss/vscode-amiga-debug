@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCpuDoc, GetCpuInsns, GetCpuName, GetCustomRegDocByName } from './client/docs';
@@ -33,6 +33,20 @@ export function getEditorForDocument(doc: vscode.TextDocument): vscode.TextEdito
 	return null;
 }
 
+const spawnAsync = (cmd: string, args?: string[], options?: childProcess.SpawnOptionsWithoutStdio) =>
+	new Promise<{ stdout: Buffer; stderr: Buffer }>((res, rej) => {
+		const proc = childProcess.spawn(cmd, args, options);
+		const stdout = [];
+		const stderr = [];
+		proc.stdout.on('data', (data) => stdout.push(data));
+		proc.stderr.on('data', (data) => stderr.push(data));
+		proc.on('close', () => res({
+			stdout: Buffer.concat(stdout),
+			stderr: Buffer.concat(stderr),
+		}));
+		proc.on('error', rej);
+	});
+
 interface Token {
 	line: number;
 	char: number;
@@ -55,14 +69,14 @@ export class SourceContext {
 		this.text = text;
 	}
 
-	public parse() {
+	public async parse() {
 		const date = new Date();
 		const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 			date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
 
 		const tmp = path.join(os.tmpdir(), `amiga-as-${dateString}.o.tmp`);
 		try {
-			fs.unlinkSync(tmp);
+			await fsp.unlink(tmp);
 		} catch(e) {}
 		let cmd: string, cmdParams: string[], spawnParams: object;
 		let inFile: string;
@@ -85,7 +99,7 @@ export class SourceContext {
 				input: this.text,
 				maxBuffer: 10*1024*1024
 			};
-			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const as = await spawnAsync(cmd, cmdParams, spawnParams);
 			const stdout = as.stdout.toString().replace(/\r/g, '').split('\n');
 			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 
@@ -113,7 +127,7 @@ export class SourceContext {
 			//	Spawn VASM to validate the file. VASM does not accept input from the stdin, hence we need to create a temporary file for it.
 			inFile = path.join(os.tmpdir(), `amiga-as-${dateString}.s.tmp`);
 			const symTmp = path.join(os.tmpdir(), `amiga-as-${dateString}.l.tmp`);
-			fs.writeFileSync (inFile, this.text);
+			await fsp.writeFile(inFile, this.text);
 			cmd = path.join(SourceContext.extensionPath, "bin", process.platform, "vasmm68k_mot");
 			cmdParams = [
 				'-m68000',
@@ -134,11 +148,11 @@ export class SourceContext {
 			spawnParams = {
 				cwd: vscode.workspace.workspaceFolders[0].uri.fsPath,
 			};
-			const as = childProcess.spawnSync(cmd, cmdParams, spawnParams);
+			const as = await spawnAsync(cmd, cmdParams, spawnParams);
 			const stderr = as.stderr.toString().replace(/\r/g, '').split('\n');
 			const textLines = this.text.replace(/\r/g, '').split('\n');
 			try {
-				const stdout = fs.readFileSync(symTmp).toString().replace(/\r/g, '').split('\n');
+				const stdout = (await fsp.readFile(symTmp)).toString().replace(/\r/g, '').split('\n');
 
 				// get labels
 				this.labels.clear();
@@ -218,17 +232,18 @@ export class SourceContext {
 			this.diagnosticCollection.set(vscode.Uri.file(this.fileName), errors);
 
 			try {
-				fs.unlinkSync(inFile);
+				await fsp.unlink(inFile);
 			} catch(e) {}
 			try {
-				fs.unlinkSync(symTmp);
+				await fsp.unlink(symTmp);
 			} catch(e) {}
 		}
 
 		// get cycles from disassembly
 		this.cycles.clear();
 		this.hoverText.clear();
-		if(fs.existsSync(tmp)) {
+		const tmpExists = await fsp.access(tmp).then(() => true, () => false);
+		if (tmpExists) {
 			const objdumpPath = path.join(SourceContext.extensionPath, "bin", process.platform, "opt/bin/m68k-amiga-elf-objdump");
 			try {
 				const objdump = Disassemble(objdumpPath, tmp);
@@ -298,7 +313,7 @@ export class SourceContext {
 				}
 			} catch(e) {}
 			try {
-				fs.unlinkSync(tmp);
+				await fsp.unlink(tmp);
 			} catch(e) {}
 		}
 
@@ -380,8 +395,9 @@ export class AmigaAssemblyDocumentMananger {
 			if (vscode.languages.match(selector, document)) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
-				this.getSourceContext(document.fileName).parse();
-				this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
+				void this.getSourceContext(document.fileName).parse().then(() => {
+					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
+				});
 			}
 		}
 
@@ -390,8 +406,9 @@ export class AmigaAssemblyDocumentMananger {
 			if (vscode.languages.match(selector, document)) {
 				console.log("openTextDocument: initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
-				this.getSourceContext(document.fileName).parse();
-				this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
+				void this.getSourceContext(document.fileName).parse().then(() => {
+					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
+				});
 			}
 		});
 
@@ -406,8 +423,9 @@ export class AmigaAssemblyDocumentMananger {
 				changeTimers.set(fileName, setTimeout(() => {
 					changeTimers.delete(fileName);
 					console.log("reparse " + event.document.fileName);
-					this.getSourceContext(event.document.fileName).parse();
-					this.getSourceContext(event.document.fileName).setDecorations(getEditorForDocument(event.document));
+					void this.getSourceContext(event.document.fileName).parse().then(() => {
+						this.getSourceContext(event.document.fileName).setDecorations(getEditorForDocument(event.document));
+					});
 				}, 300));
 			}
 		});
