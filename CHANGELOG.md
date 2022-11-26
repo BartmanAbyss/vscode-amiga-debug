@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.6.8
+- FIX: WinUAE: don't enable "Full stack frame tracking" (caused WinUAE to crash due to stack overflow in certain situations)
+
 ## 1.6.7
 - NEW: profiler: Toggle right panel [PR#167](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/167)
 - NEW: debugger: New panel for custom registers [PR#166](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/166)
