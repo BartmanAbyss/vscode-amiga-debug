@@ -4,7 +4,7 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 See PR links for more information.
 
 ## 1.6.8
-- NEW: update gcc to 12.2.0
+- NEW: update gcc to 12.2.0, binutils, GNU gdb (GDB) 13.0.50.20221127-git
 - FIX: WinUAE: don't enable "Full stack frame tracking" (caused WinUAE to crash due to stack overflow in certain situations)
 - NEW: assembly: View memory for symbols in assembly [PR#174](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/174)
 - NEW: assembly: Support other Motorola assembly language providers [PR#175](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/175)

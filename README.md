@@ -119,8 +119,8 @@ This extension contains binaries of:
 - modified [GCC 12.2.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.2.0) (patch included)
   - Copyright (C) 2022 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU gdb (GDB) 13.0.50.20220509-git](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2021 Free Software Foundation, Inc.
+- modified [GNU gdb (GDB) 13.0.50.20221127-git](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2022 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 - modified [WinUAE 4.9.0](https://github.com/BartmanAbyss/WinUAE)
 - modified [FS-UAE](https://github.com/grahambates/fs-uae/tree/remote_debugger_barto)
@@ -164,6 +164,9 @@ wsl --install -d ubuntu
 ```bash
 sudo apt install build-essential flex bison expect dejagnu texinfo mingw-w64
 sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+# statically link pthread (for GDB) - see https://stackoverflow.com/a/72903594
+sudo mv /usr/x86_64-w64-mingw32/lib/libwinpthread.dll.a /usr/x86_64-w64-mingw32/lib/libwinpthread.dll.a.bak
+sudo mv /usr/x86_64-w64-mingw32/lib/libpthread.dll.a /usr/x86_64-w64-mingw32/lib/libpthread.dll.a.bak
 ```
 
 ### Binutils+GDB
