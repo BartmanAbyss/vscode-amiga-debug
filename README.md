@@ -3,7 +3,7 @@
 
 # _amiga-debug_ Visual Studio Code Extension
 
-**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.1 with the bundled WinUAE/FS-UAE.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 12.2 with the bundled WinUAE/FS-UAE.**
 
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
@@ -116,7 +116,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - `68k-dis.ts` is based on [binutils-gdb/include/opcode/m68k.h](https://github.com/BartmanAbyss/binutils-gdb/blob/master/include/opcode/m68k.h), Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 
 This extension contains binaries of:
-- modified [GCC 12.1.0](ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-12.1.0/) (patch included)
+- modified [GCC 12.2.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.2.0) (patch included)
   - Copyright (C) 2022 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 - modified [GNU gdb (GDB) 13.0.50.20220509-git](https://github.com/BartmanAbyss/binutils-gdb)
@@ -181,15 +181,15 @@ make install
 
 ### GCC
 ```bash
-wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.1.0/gcc-12.1.0.tar.xz
-tar -xf gcc-12.1.0.tar.xz
-cd gcc-12.1.0
+wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-12.2.0/gcc-12.2.0.tar.xz
+tar -xf gcc-12.2.0.tar.xz
+cd gcc-12.2.0
 patch -p1 < ../gcc-barto.patch
 bash ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-12.1.0
-cd build-gcc-12.1.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.1.0/configure \
+mkdir -p build-gcc-12.2.0
+cd build-gcc-12.2.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.2.0/configure \
   --target=m68k-amiga-elf \
   --disable-nls \
   --enable-languages=c,c++ \
@@ -247,7 +247,7 @@ WinUAE builds with Visual Studio 2022.
 
 ### Create new GCC patch
 ```bash
-diff -ruN gcc-12.1.0 gcc-12.1.0-barto > gcc-barto.patch
+diff -ruN gcc-12.2.0 gcc-12.2.0-barto > gcc-barto.patch
 ```
 
 ## Known Issues/TODOs

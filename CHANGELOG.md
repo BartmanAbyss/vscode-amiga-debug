@@ -4,7 +4,13 @@ All notable changes to the "amiga-debug" extension will be documented in this fi
 See PR links for more information.
 
 ## 1.6.8
+- NEW: update gcc to 12.2.0
 - FIX: WinUAE: don't enable "Full stack frame tracking" (caused WinUAE to crash due to stack overflow in certain situations)
+- NEW: assembly: View memory for symbols in assembly [PR#174](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/174)
+- NEW: assembly: Support other Motorola assembly language providers [PR#175](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/175)
+* FIX: assembly: Cycle count was missing on last line of source [PR#176](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/176)
+* CHG: disassembly: New CPU cycle count implementation with improved accuracy [PR#179](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/179)
+* FIX: assembly: Async parsing [PR#180](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/180)
 
 ## 1.6.7
 - NEW: profiler: Toggle right panel [PR#167](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/167)
