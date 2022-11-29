@@ -15,7 +15,10 @@ cd build-binutils-gdb
     --disable-libcc \
     --disable-shared \
     --disable-werror \
-	--without-guile \
+    --without-guile \
+    --without-expat \
+    --without-zstd \
+    --without-lzma \
     --enable-static \
     --prefix="$PREFIX" \
     --target=m68k-amiga-elf
