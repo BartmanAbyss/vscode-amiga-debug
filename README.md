@@ -193,24 +193,23 @@ cd ..
 mkdir -p build-gcc-12.2.0
 cd build-gcc-12.2.0
 LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.2.0/configure \
-  --target=m68k-amiga-elf \
+  --disable-clocale \
+  --disable-gcov \
+  --disable-libada \
+  --disable-libgomp \
+  --disable-libsanitizer \
+  --disable-libssp \
+  --disable-libvtv \
+  --disable-multilib \
+  --disable-threads \
   --disable-nls \
   --enable-languages=c,c++ \
   --enable-lto \
+  --enable-static \
   --prefix=/mnt/c/amiga-mingw/opt \
-  --disable-libssp \
-  --disable-gcov \
-  --disable-multilib \
-  --disable-threads \
+  --target=m68k-amiga-elf \
   --with-cpu=68000 \
-  --disable-libsanitizer \
-  --disable-libada \
-  --disable-libgomp \
-  --disable-libvtv \
-  --disable-nls \
-  --disable-clocale \
-  --host=x86_64-w64-mingw32 \
-  --enable-static
+  --host=x86_64-w64-mingw32
 make all-gcc -j16
 sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
 mv gcc/Makefile.tmp gcc/Makefile
