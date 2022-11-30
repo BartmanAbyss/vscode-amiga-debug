@@ -179,7 +179,7 @@ void* doynaxdepack(const void* input, void* output) { // returns end of output d
 	register volatile       void* _a1 ASM("a1") = output;
 	__asm volatile (
 		"movem.l %%d0-%%d7/%%a2-%%a6,-(%%sp)\n"
-		"jsr _doynaxdepack_asm\n"
+		"jsr _doynaxdepack_vasm\n"
 		"movem.l (%%sp)+,%%d0-%%d7/%%a2-%%a6"
 	: "+rf"(_a0), "+rf"(_a1)
 	:

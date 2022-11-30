@@ -51,7 +51,7 @@ DOY_REFILL2 macro						;This swaps in the new bits ahead of the
 		endm
 
 		;Entry point. Wind up the decruncher
-doynaxdepack_vasm:
+_doynaxdepack_vasm:
 		movea.l	(a0)+,a2				;Unaligned literal buffer at the end of
 		adda.l	a0,a2					;the stream
 		move.l	a2,a3
@@ -192,5 +192,5 @@ doy_return:
 		dc.w	0						;(Empty hole)
 		DOY_OFFSET 13,1+16+128+1024		;Long D
 
-		xdef doynaxdepack_vasm
+		xdef _doynaxdepack_vasm
 		
