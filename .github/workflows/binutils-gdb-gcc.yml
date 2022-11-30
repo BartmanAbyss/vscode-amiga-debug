@@ -15,7 +15,10 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
+    env:
+      CC:   gcc-9
+      CXX:  g++-9
     steps:
       - uses: actions/checkout@v3
       - run: ci/install-packages-linux.sh
@@ -28,9 +31,6 @@ jobs:
       - run: ci/gcc/download-prerequisites.sh
       - run: ci/gcc/configure-linux.sh
       - run: ci/gcc/build.sh
-        env:
-          CC:   gcc-9
-          CXX:  g++-9
       - run: ci/binutils-gdb/install.sh
       - run: ci/gcc/install.sh
       - run: ci/clean-up.sh
