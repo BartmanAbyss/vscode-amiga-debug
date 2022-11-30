@@ -33,9 +33,13 @@ export function getEditorForDocument(doc: vscode.TextDocument): vscode.TextEdito
 	return null;
 }
 
-const spawnAsync = (cmd: string, args?: string[], options?: childProcess.SpawnOptionsWithoutStdio) =>
+const spawnAsync = (cmd: string, args?: string[], options?: childProcess.SpawnSyncOptions) =>
 	new Promise<{ stdout: Buffer; stderr: Buffer }>((res, rej) => {
 		const proc = childProcess.spawn(cmd, args, options);
+		if (options.input) {
+			proc.stdin.write(options.input);
+			proc.stdin.end();
+		}
 		const stdout = [];
 		const stderr = [];
 		proc.stdout.on('data', (data) => stdout.push(data));
