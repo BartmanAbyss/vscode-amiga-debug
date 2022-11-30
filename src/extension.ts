@@ -232,6 +232,7 @@ class AmigaDebugExtension {
 					sysIncPath,
 				]);
 			}
+			await config.update("m68k.vasm.provideDiagnostics", false);
 		}
 	}
 
