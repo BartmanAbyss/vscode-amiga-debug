@@ -17,13 +17,14 @@ import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
 import { AmigaAssemblyDocumentMananger, AmigaAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
 import { BaseNode as RBaseNode, CustomRegisterTreeProvider, FieldNode, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
-import { NumberFormat, SymbolInformation, SymbolScope } from './symbols';
+import { NumberFormat, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
 import { SourceMap, Profiler } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
 import { SavestateEditorProvider } from './savestate_editor_provider';
 import { hexFormat } from './utils';
 import { DebugProtocol } from 'vscode-debugprotocol';
+import { DisassembledMemoryProvider } from './disassembled_memory_provider';
 
 /*
  * Set the following compile time flag to true if the
@@ -109,6 +110,7 @@ type OnOutputReadyFunction = (output: string) => void;
 class AmigaDebugExtension {
 	private registerProvider: RegisterTreeProvider;
 	private customRegisterProvider: CustomRegisterTreeProvider;
+	private disassembledMemoryProvider: DisassembledMemoryProvider;
 	private outputChannel: vscode.OutputChannel;
 	private objdumpEditorProvider: ObjdumpEditorProvider;
 	private assemblyLanguageSelector: vscode.DocumentSelector;
@@ -124,6 +126,7 @@ class AmigaDebugExtension {
 		this.binPath = path.join(this.extensionPath, "bin", process.platform);
 		this.registerProvider = new RegisterTreeProvider();
 		this.customRegisterProvider = new CustomRegisterTreeProvider();
+		this.disassembledMemoryProvider = new DisassembledMemoryProvider();
 		this.objdumpEditorProvider = new ObjdumpEditorProvider(context);
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
@@ -167,10 +170,12 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/ColorReducer'))),
 			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/BLTCONCheatSheet'))),
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => vscode.commands.executeCommand('simpleBrowser.show', 'http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html')),
+			vscode.commands.registerCommand('amiga.setDisassembledMemory', (lines: SourceLineWithDisassembly[]) => this.disassembledMemoryProvider.setDisassembledMemory(lines)),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
 			vscode.window.registerTreeDataProvider('amiga.customRegisters', this.customRegisterProvider),
+			vscode.window.registerTreeDataProvider('amiga.disassembledMemory', this.disassembledMemoryProvider),
 			vscode.window.onDidChangeActiveTextEditor(this.activeEditorChanged.bind(this)),
 			vscode.window.onDidChangeTextEditorSelection(this.editorSelectionChanged.bind(this)),
 			vscode.window.registerCustomEditorProvider('amiga.profile', new ProfileEditorProvider(context, lenses), { webviewOptions: { retainContextWhenHidden: true } }),

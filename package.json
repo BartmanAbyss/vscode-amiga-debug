@@ -79,6 +79,11 @@
 			},
 			{
 				"category": "Amiga",
+				"command": "amiga.setDisassembledMemory",
+				"title": "Set Disassembled Memory"
+			},
+			{
+				"category": "Amiga",
 				"command": "amiga.initProject",
 				"title": "Init Project"
 			},
@@ -471,6 +476,11 @@
 		},
 		"views": {
 			"debug": [
+				{
+					"id": "amiga.disassembledMemory",
+					"name": "Disassembled Memory",
+					"when": "debugType == amiga"
+				},
 				{
 					"id": "amiga.registers",
 					"name": "CPU Registers",
