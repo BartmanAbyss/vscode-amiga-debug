@@ -290,14 +290,14 @@ export class SourceContext {
 							const cycleText =  min !== max ? `${min}-${max}`: min.toString();
 							this.cycles.set(lineNum, cycleText + "T");
 
-							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n";
+							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n---\n";
 							if (timings.labels.length) {
 								detail += "| | Clock | Read | Write |\n";
 								detail += "|-|:-----:|:----:|:-----:|\n";
 								for (let i = 0; i < timings.labels.length; i++) {
 									const label = timings.labels[i];
 									const [c, r, w] = timings.values[i];
-									detail += `| ${label} | ${c} | ${r} | ${w} |\n`;
+									detail += `|**${label}**| ${c} | ${r} | ${w} |\n`;
 								}
 							} else {
 								const [c, r, w] = timings.values[0];
@@ -305,6 +305,7 @@ export class SourceContext {
 								detail += "|:-----:|:----:|:-----:|\n";
 								detail += `| ${c} | ${r} | ${w} |\n`;
 							}
+							detail += `---\n${bytes.length} bytes`;
 							this.hoverText.set(lineNum, detail);
 						}
 					} catch (err) {}
@@ -323,17 +324,17 @@ export class SourceContext {
 	// theoretical 68000 cycle decorations
 	private static decoration = vscode.window.createTextEditorDecorationType({
 		before: {
-			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px',
+			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px; position: absolute; line-height: 1rem;',
 			backgroundColor: new vscode.ThemeColor("badge.background"),
 			color: new vscode.ThemeColor("badge.foreground"),
-			margin: '0 10px 0 10px'
+			margin: '2px 10px 2px 0',
 		}
 	});
 	private static decorationEmpty = vscode.window.createTextEditorDecorationType({
 		before: {
 			textDecoration: 'none; white-space: pre; padding: 0 10px 0 10px',
-			margin: '0 10px 0 10px',
-			contentText: '      '
+			margin: '0 10px 0 0',
+			contentText: '        '
 		}
 	});
 
@@ -342,7 +343,6 @@ export class SourceContext {
 			return;
 
 		const optionsArray: vscode.DecorationOptions[] = [];
-		const emptyRanges: vscode.Range[] = [];
 		for(let line = 0; line < textEditor.document.lineCount; line++) {
 			const cyclesStr = this.cycles.get(line + 1);
 			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
@@ -351,15 +351,23 @@ export class SourceContext {
 					range,
 					renderOptions: {
 						before: {
-							contentText: cyclesStr.padStart(6, ' ')
+							contentText: cyclesStr.padStart(8, ' ')
 						}
 					}
 				});
-			} else {
-				emptyRanges.push(range);
 			}
 		}
 		textEditor.setDecorations(SourceContext.decoration, optionsArray);
+	}
+
+	public setEmptyDecorations(textEditor: vscode.TextEditor) {
+		if(textEditor === null)
+			return;
+		const emptyRanges: vscode.Range[] = [];
+		for(let line = 0; line < textEditor.document.lineCount; line++) {
+			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
+			emptyRanges.push(range);
+		}
 		textEditor.setDecorations(SourceContext.decorationEmpty, emptyRanges);
 	}
 
@@ -395,6 +403,7 @@ export class AmigaAssemblyDocumentMananger {
 			if (vscode.languages.match(selector, document)) {
 				console.log("initial parse " + document.fileName);
 				this.getSourceContext(document.fileName).setText(document.getText());
+				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
 				void this.getSourceContext(document.fileName).parse().then(() => {
 					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
 				});
@@ -405,6 +414,7 @@ export class AmigaAssemblyDocumentMananger {
 		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
 			if (vscode.languages.match(selector, document)) {
 				console.log("openTextDocument: initial parse " + document.fileName);
+				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
 				this.getSourceContext(document.fileName).setText(document.getText());
 				void this.getSourceContext(document.fileName).parse().then(() => {
 					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
@@ -416,6 +426,7 @@ export class AmigaAssemblyDocumentMananger {
 		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
 			if (vscode.languages.match(selector, event.document)) {
 				const fileName = event.document.fileName;
+				this.getSourceContext(event.document.fileName).setEmptyDecorations(getEditorForDocument(event.document));
 				this.getSourceContext(event.document.fileName).setText(event.document.getText());
 				if (changeTimers.has(fileName)) {
 					clearTimeout(changeTimers.get(fileName));

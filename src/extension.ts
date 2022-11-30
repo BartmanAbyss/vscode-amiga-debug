@@ -236,6 +236,7 @@ class AmigaDebugExtension {
 
 	private activeEditorChanged(editor: vscode.TextEditor) {
 		if(vscode.languages.match(this.assemblyLanguageSelector, editor?.document)) {
+			this.assemblyDocumentManager.getSourceContext(editor.document.fileName).setEmptyDecorations(getEditorForDocument(editor.document));
 			this.assemblyDocumentManager.getSourceContext(editor.document.fileName).setDecorations(getEditorForDocument(editor.document));
 			return;
 		}
