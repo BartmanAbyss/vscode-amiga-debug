@@ -693,6 +693,7 @@ class AmigaDebugExtension {
 	}
 
 	private async setPermissions() {
+		const version = "12.2.0";
 		const exes = [
 			"elf2hunk",
 			"exe2adf",
@@ -703,11 +704,11 @@ class AmigaDebugExtension {
 			"opt/bin/m68k-amiga-elf-gdb",
 			"opt/bin/m68k-amiga-elf-ld",
 			"opt/bin/m68k-amiga-elf-objdump",
-			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/cc1",
-			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/cc1plus",
-			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/collect2",
-			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/lto-wrapper",
-			"opt/libexec/gcc/m68k-amiga-elf/12.1.0/lto1",
+			`opt/libexec/gcc/m68k-amiga-elf/${version}/cc1`,
+			`opt/libexec/gcc/m68k-amiga-elf/${version}/cc1plus`,
+			`opt/libexec/gcc/m68k-amiga-elf/${version}/collect2`,
+			`opt/libexec/gcc/m68k-amiga-elf/${version}/lto-wrapper`,
+			`opt/libexec/gcc/m68k-amiga-elf/${version}/lto1`,
 			"opt/m68k-amiga-elf/bin/ar",
 			"opt/m68k-amiga-elf/bin/as",
 			"opt/m68k-amiga-elf/bin/ld",
