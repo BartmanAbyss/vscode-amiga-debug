@@ -679,6 +679,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			if(!this.stopped) return;
 			this.customReadRegisterListRequest(response);
 			break;
+		case 'get-symbols':
+			if(!this.stopped) return;
+			response.body = this.symbolTable.symbols;
+			this.sendResponse(response);
+			break;
+		case 'get-global-variables':
+			if(!this.stopped) return;
+			void this.globalVariablesRequest(response as DebugProtocol.VariablesResponse);
+			break;
 		case 'amiga-disassemble':
 			void this.customDisassembleRequest(response, args);
 			break;
@@ -1890,7 +1899,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		return lines;
 	}
 
-	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
+	private async globalVariablesRequest(response: DebugProtocol.VariablesResponse, args?: DebugProtocol.VariablesArguments): Promise<void> {
 		if(!this.stopped) return;
 		const symbolInfo = this.symbolTable.getGlobalVariables();
 
@@ -2044,7 +2053,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		let stack: Variable[];
 		try {
 			stack = await this.miDebugger.getStackVariables(threadId, frameId);
-
 			for (const variable of stack) {
 				try {
 					const varObjName = `var_${variable.name}`;

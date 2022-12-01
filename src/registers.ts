@@ -3,14 +3,21 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { NodeSetting, NumberFormat } from './symbols';
+import { NodeSetting, NumberFormat, SymbolInformation } from './symbols';
 import { binaryFormat, createMask, extractBits, hexFormat } from './utils';
 import { Custom, CustomData, CustomSpecial } from './client/custom';
 import { GetCustomRegDoc } from './client/docs';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 interface RegisterValue {
-	number: number;
-	value: number;
+	// eslint-disable-next-line id-denylist
+	number: string;
+	value: string;
+}
+
+interface SymbolAddress {
+	name: string;
+	address: number;
 }
 
 export class TreeNode extends vscode.TreeItem {
@@ -34,6 +41,7 @@ export abstract class BaseNode {
 	protected format = NumberFormat.Auto;
 	protected width = 32; // width in bits
 	protected value: number|undefined;
+	protected label: string|undefined;
 	protected children: BaseNode[] = [];
 
 	public getChildren(): BaseNode[] {
@@ -53,6 +61,14 @@ export abstract class BaseNode {
 
 	public setValue(newValue: number) {
 		this.value = newValue;
+	}
+
+	public getLabel(): string|undefined {
+		return this.label;
+	}
+
+	public setLabel(newLabel: string|undefined) {
+		this.label = newLabel;
 	}
 
 	public getBytes(): number|undefined {
@@ -77,6 +93,14 @@ export abstract class BaseNode {
 	}
 
 	public getDisplayValue(): string {
+		let value = this.getDisplayNumber();
+		if (this.label) {
+			value += " <" + this.label + ">";
+		}
+		return value;
+	}
+
+	protected getDisplayNumber(): string {
 		const value = this.getValue();
 		const nibbles = Math.ceil(this.width / 4);
 		switch (this.getFormat()) {
@@ -180,14 +204,20 @@ export class RegisterTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	public _refreshRegisterValues() {
-		void vscode.debug.activeDebugSession.customRequest('read-registers').then((data) => {
-			data.forEach((reg) => {
+		void Promise.all([
+			vscode.debug.activeDebugSession.customRequest('read-registers'),
+			getSymbolAddresses(),
+		]).then(([data, addresses]) => {
+			(data as RegisterValue[]).forEach((reg) => {
 				const index = parseInt(reg.number, 10);
+				const regNode = this.registerMap[index];
 				if(reg.value === "<unavailable>")
 					return;
 				const value = parseInt(reg.value, 16);
-				const regNode = this.registerMap[index];
-				if (regNode) { regNode.setValue(value); }
+				if (regNode) {
+					regNode.setValue(value);
+					regNode.setLabel(offsetLabel(addresses, value));
+				}
 			});
 			this._onDidChangeTreeData.fire(undefined);
 		});
@@ -289,13 +319,16 @@ export class CustomRegisterTreeProvider implements vscode.TreeDataProvider<TreeN
 		if (vscode.debug.activeDebugSession) {
 			const args = { address: 0xdff000, length: 0x1fe };
 			const { bytes } = await vscode.debug.activeDebugSession.customRequest('read-memory', args) as { bytes: number[]};
-
+			const addresses = await getSymbolAddresses();
 			this.nodes.forEach((rn) => {
 				let value = 0;
 				for (let i = 0; i < rn.getBytes(); i++) {
 					value = (value << 8) | bytes[rn.offset + i];
 				}
 				rn.setValue(value);
+				if (rn.getBytes() === 4) {
+					rn.setLabel(offsetLabel(addresses, value));
+				}
 			});
 			this._onDidChangeTreeData.fire(undefined);
 		}
@@ -358,5 +391,40 @@ export class CustomRegisterNode extends BaseNode {
 		const node = new TreeNode(label, vscode.TreeItemCollapsibleState.None, 'register', this);
 		node.tooltip = new vscode.MarkdownString(this.doc);
 		return node;
+	}
+}
+
+async function getSymbolAddresses(): Promise<SymbolAddress[]> {
+	const session = vscode.debug.activeDebugSession;
+	const symbols = await session.customRequest('get-symbols') as SymbolInformation[];
+	const { variables } = await session.customRequest('get-global-variables') as DebugProtocol.VariablesResponse["body"];
+	const symbolAddresses = symbols
+		.filter((s) => s.name !== "" && s.base > 0)
+		.map((s) => ({
+			name: s.name,
+			address: s.base + s.address,
+		}));
+	const variableAddresses = variables
+		.filter((v) => v.memoryReference)
+		.map((v) => ({
+			name: v.name,
+			address: parseInt(v.memoryReference, 16),
+		}));
+	return [...symbolAddresses, ...variableAddresses]
+		.sort((a, b) => a.address - b.address);
+}
+
+function offsetLabel(addresses: SymbolAddress[], registerValue: number): string | undefined {
+	const symbol = addresses.find(s => s.address >= registerValue);
+	if (symbol) {
+		const offset = symbol.address - registerValue;
+		const maxOffset = 256;
+		if (offset < maxOffset) {
+			let label = symbol.name;
+			if (offset) {
+				label += "+" + offset.toString();
+			}
+			return label;
+		}
 	}
 }
