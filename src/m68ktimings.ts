@@ -866,3 +866,22 @@ export const lookupTimes: Record<string, [Timing, Timing]> = {
 	// Immediate:
 	["IMM"]:      [[4, 1, 0],  [8, 2, 0]],
 };
+
+export function formatTimingTable(timings: InstructionTiming): string {
+	let markdown = "";
+	if (timings.labels.length) {
+		markdown += "| | Clock | Read | Write |\n";
+		markdown += "|-|:-----:|:----:|:-----:|\n";
+		for (let i = 0; i < timings.labels.length; i++) {
+			const label = timings.labels[i];
+			const [c, r, w] = timings.values[i];
+			markdown += `|**${label}**| ${c} | ${r} | ${w} |\n`;
+		}
+	} else {
+		const [c, r, w] = timings.values[0];
+		markdown += "| Clock | Read | Write |\n";
+		markdown += "|:-----:|:----:|:-----:|\n";
+		markdown += `| ${c} | ${r} | ${w} |\n`;
+	}
+	return markdown;
+}

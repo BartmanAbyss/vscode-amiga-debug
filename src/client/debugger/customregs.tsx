@@ -12,9 +12,9 @@ import { CustomReadWrite, CustomSpecial, FormatCustomRegData, Custom } from '../
 import { GetCustomRegsAfterDma, SymbolizeAddress, GetPrevCustomRegWriteTime, GetNextCustomRegWriteTime, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles } from '../dma';
 import { GetCustomRegDoc } from '../docs';
 import { createPortal } from 'preact/compat';
-import Markdown from 'markdown-to-jsx';
 import { useWheelHack } from '../useWheelHack';
 import { Scrollable } from '../scrollable';
+import { StyledMarkdown } from '../styledMarkdown';
 
 export const CustomRegsView: FunctionComponent<{
 	frame: number;
@@ -118,7 +118,7 @@ export const CustomRegsView: FunctionComponent<{
 		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
 				<div ref={tooltipRef} class={styles.tooltip}>
-					<Markdown>{hovered.markdown}</Markdown>
+					<StyledMarkdown>{hovered.markdown}</StyledMarkdown>
 				</div>
 			</div>, document.body))}
 	</>;

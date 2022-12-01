@@ -84,6 +84,7 @@ svg .jumpduration {
 
 .dim2 {
   opacity: 0.6;
+  cursor: help;
 }
 
 .file {
@@ -169,13 +170,22 @@ a:focus {
 .tooltip {
 	vertical-align: bottom;
 	max-height: 250px;
-	width: 500px;
+	width: 550px;
 	box-sizing: border-box;
 	box-shadow: 0 .25em .5em 0 black;
 	padding: 5px;
 	background: var(--vscode-editorWidget-background);
 	border: 1px solid var(--vscode-editorWidget-border);
 	overflow-y: auto;
+}
+
+.timing_tooltip {
+  border: none;
+  padding: 0;
+  width: auto;
+}
+.timing_tooltip table {
+  margin: 0;
 }
 
 /* registers */

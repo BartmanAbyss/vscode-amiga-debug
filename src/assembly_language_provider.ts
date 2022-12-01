@@ -6,7 +6,7 @@ import * as os from 'os';
 import { Disassemble } from './backend/profile';
 import { GetCpuDoc, GetCpuInsns, GetCpuName, GetCustomRegDocByName } from './client/docs';
 import { decodeInstruction, instructionToString } from 'm68kdecode';
-import { instructionTimings, Timing } from './m68ktimings';
+import { formatTimingTable, instructionTimings, Timing } from './m68ktimings';
 
 enum TokenTypes {
 	function,
@@ -295,20 +295,7 @@ export class SourceContext {
 							this.cycles.set(lineNum, cycleText + "T");
 
 							let detail = "```m68k\n" + instructionToString(inst.instruction) + "\n```\n---\n";
-							if (timings.labels.length) {
-								detail += "| | Clock | Read | Write |\n";
-								detail += "|-|:-----:|:----:|:-----:|\n";
-								for (let i = 0; i < timings.labels.length; i++) {
-									const label = timings.labels[i];
-									const [c, r, w] = timings.values[i];
-									detail += `|**${label}**| ${c} | ${r} | ${w} |\n`;
-								}
-							} else {
-								const [c, r, w] = timings.values[0];
-								detail += "| Clock | Read | Write |\n";
-								detail += "|:-----:|:----:|:-----:|\n";
-								detail += `| ${c} | ${r} | ${w} |\n`;
-							}
+							detail += formatTimingTable(timings);
 							detail += `---\n${bytes.length} bytes`;
 							this.hoverText.set(lineNum, detail);
 						}
