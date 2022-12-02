@@ -2,7 +2,6 @@ import { Component, FunctionComponent, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
 import styles from './copper.module.css';
-import Markdown from 'markdown-to-jsx';
 
 import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
@@ -18,6 +17,7 @@ import { VirtualList } from '../virtual_list';
 import { useCssVariables } from '../useCssVariables';
 import { Find, FindCallback } from '../find';
 import Highlighter from 'react-highlight-words';
+import { StyledMarkdown } from '../styledMarkdown';
 class VirtualListCopper extends VirtualList<Copper> {}
 
 export const CopperView: FunctionComponent<{
@@ -177,7 +177,7 @@ export const CopperView: FunctionComponent<{
 		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
 				<div ref={tooltipRef} class={styles.tooltip}>
-					<Markdown>{hovered.markdown}</Markdown>
+					<StyledMarkdown>{hovered.markdown}</StyledMarkdown>
 				</div>
 			</div>, document.body))}
 	</>;

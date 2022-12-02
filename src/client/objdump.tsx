@@ -16,11 +16,11 @@ import { VsCodeApi } from "./vscodeApi";
 import Highlighter from 'react-highlight-words';
 import { resolvePath } from './pathResolve';
 import { GetCpuDoc } from './docs';
-import Markdown from 'markdown-to-jsx';
 import { FindCallback, Find } from './find';
 import { ToggleButton } from './button';
-import { InstructionTiming, instructionTimings } from '../m68ktimings';
+import { formatTimingTable, InstructionTiming, instructionTimings } from '../m68ktimings';
 import { decodeInstruction } from 'm68kdecode';
+import { StyledMarkdown } from './styledMarkdown';
 
 // messages from webview to vs code
 export interface IOpenDocumentMessageObjview {
@@ -329,7 +329,8 @@ export const ObjdumpView: FunctionComponent<{
 		});
 	}, []);
 
-	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string}>({ markdown: '', x: -1, y: -1, justify: '' });
+	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string; width?: number; }>({ markdown: '', x: -1, y: -1, justify: '' });
+	const [hoveredTimings, setHoveredTimings] = useState<{ markdown: string; x: number; y: number; justify: string; }>({ markdown: '', x: -1, y: -1, justify: '' });
 	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
 	const onMouseEnterOpcode = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
@@ -337,12 +338,14 @@ export const ObjdumpView: FunctionComponent<{
 		const opcode = evt.currentTarget.attributes['data'].nodeValue as string;
 		const rect = evt.currentTarget.getBoundingClientRect();
 		const markdown = GetCpuDoc(opcode);
+		const width = 550;
+		const maxHeight = 260;
 		if(markdown) {
 			const hov = {
 				markdown,
-				x: Math.min(rect.left, window.innerWidth - 530),
-				y: rect.bottom < window.innerHeight - 260 ? rect.bottom + 10 : rect.top - 260,
-				justify: rect.bottom < window.innerHeight - 260 ? 'flex-start' : 'flex-end'
+				x: Math.min(rect.left, window.innerWidth - width + 30),
+				y: rect.bottom < window.innerHeight - maxHeight ? rect.bottom + 10 : rect.top - maxHeight,
+				justify: rect.bottom < window.innerHeight - maxHeight ? 'flex-start' : 'flex-end'
 			};
 			setHovered(hov);
 		}
@@ -355,6 +358,25 @@ export const ObjdumpView: FunctionComponent<{
 		tooltipRef.current.scroller ??= new Scrollable(tooltipRef.current, 135);
 		tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
 	}, [tooltipRef.current]);
+
+	const onMouseEnterTiming = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>, timings: InstructionTiming) => {
+		const rect = evt.currentTarget.getBoundingClientRect();
+		const markdown = formatTimingTable(timings);
+		const maxHeight = 100;
+		if(markdown) {
+			const hov = {
+				markdown,
+				maxHeight,
+				x: rect.left,
+				y: rect.bottom < window.innerHeight - maxHeight ? rect.bottom + 10 : rect.top - maxHeight,
+				justify: rect.bottom < window.innerHeight - maxHeight ? 'flex-start' : 'flex-end'
+			};
+			setHoveredTimings(hov);
+		}
+	}, []);
+	const onMouseLeaveTiming = useCallback(() => {
+		setHoveredTimings({ markdown: '', x: -1, y: -1, justify: '' });
+	}, []);
 
 	const renderRow = useCallback((c: Line, index: number) => {
 		const extra: string[] = [];
@@ -395,7 +417,7 @@ export const ObjdumpView: FunctionComponent<{
 					{c.traceHits > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceHits > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
 				</> : ''}
-				<span class={styles.dim2}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(6, ' ') + 'T' : ''.padStart(7)}</span>
+				<span class={styles.dim2} onMouseEnter={(e) => onMouseEnterTiming(e, c.theoreticalCycles)} onMouseLeave={onMouseLeaveTiming}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(8, ' ') + 'T' : ''.padStart(9)}</span>
 			</div>
 			{text}
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
@@ -709,7 +731,13 @@ export const ObjdumpView: FunctionComponent<{
 		{hovered.markdown !== '' && (createPortal(
 			<div class={styles.tooltip_parent} style={{justifyContent: hovered.justify, left: hovered.x, top: hovered.y }}>
 				<div ref={tooltipRef} class={styles.tooltip}>
-					<Markdown>{hovered.markdown}</Markdown>
+					<StyledMarkdown>{hovered.markdown}</StyledMarkdown>
+				</div>
+			</div>, document.body))}
+		{hoveredTimings.markdown !== '' && (createPortal(
+			<div class={styles.tooltip_parent} style={{justifyContent: hoveredTimings.justify, left: hoveredTimings.x, top: hoveredTimings.y, height: "100px" }}>
+				<div class={[styles.tooltip, styles.timing_tooltip].join(" ")} style={{ maxHeight: "100px" }}>
+					<StyledMarkdown>{hoveredTimings.markdown}</StyledMarkdown>
 				</div>
 			</div>, document.body))}
 	</>;

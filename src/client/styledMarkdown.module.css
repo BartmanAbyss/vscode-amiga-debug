@@ -1,0 +1,31 @@
+.container h1 {
+  font-size: 1.5em;
+  margin: 0 0 0.5em;
+}
+.container h2 {
+  font-size: 1em;
+  margin: 0.5em 0 0;
+}
+.container h3 {
+  font-size: 1em;
+  margin: 0.3em 0 0;
+}
+.container p {
+  margin: 0 0 0.5em;
+}
+.container table {
+  margin: 0.8em 0;
+  border-collapse: collapse;
+}
+.container th {
+  text-align: left;
+  white-space: nowrap;
+}
+.container tbody tr:nth-child(odd) {
+  background-color: var(--vscode-tree-tableOddRowsBackground);
+}
+.container td,
+.container th {
+  padding: 2px;
+  border: 1px solid var(--vscode-tree-tableColumnsBorder);
+}
