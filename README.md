@@ -213,7 +213,9 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-12.2.0/configure \
 make all-gcc -j16
 sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
 mv gcc/Makefile.tmp gcc/Makefile
+# at this point, you're getting an error about not finding gcc-cross. This is okay.
 gcc/gcc-cross.exe -dumpspecs >gcc/specs
+# continue the build
 make all-gcc -j16
 make install-gcc
 ```
