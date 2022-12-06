@@ -10,8 +10,11 @@ See PR links for more information.
 - NEW: assembly: Support other Motorola assembly language providers [PR#175](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/175)
 - FIX: assembly: Cycle count was missing on last line of source [PR#176](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/176)
 - NEW: assembly: Cycle decoration improvements [PR#184](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/184)
-- CHG: disassembly: New CPU cycle count implementation with improved accuracy [PR#179](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/179)
 - FIX: assembly: Async parsing [PR#180](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/180)
+- CHG: disassembly: New CPU cycle count implementation with improved accuracy [PR#179](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/179)
+- NEW: disassembly: Tooltip improvements [PR#190](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/190)
+- NEW: debugger: Disassembled memory view [PR#185](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/185)
+- NEW: debugger: Add symbol offset labels to registers [PR#189](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/189)
 
 ## 1.6.7
 - NEW: profiler: Toggle right panel [PR#167](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/167)
