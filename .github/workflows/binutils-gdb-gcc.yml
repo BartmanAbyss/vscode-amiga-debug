@@ -57,6 +57,7 @@ jobs:
       - run: ci/binutils-gdb/install.sh
       - run: ci/gcc/install.sh
       - run: ci/clean-up.sh
+      - run: ci/bundle-macos.sh
       - run: ci/archive-macos.sh
       - uses: actions/upload-artifact@v3
         with:
