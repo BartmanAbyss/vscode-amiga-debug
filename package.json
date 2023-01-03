@@ -516,6 +516,11 @@
 						"type": "string",
 						"default": "c:/amiga/KICK31.rom",
 						"description": "Path to the Kickstart ROM for A4000 models."
+					},
+					"amiga.shrinkler.options": {
+						"type": "string",
+						"default": "-h -f dff180 -9 -t Decrunching...",
+						"description": "Additional arguments when packing Shrinkler targets."
 					}
 				}
 			}
@@ -545,7 +550,7 @@
 		"devtools-protocol": "^0.0.940865",
 		"eslint": "^8.2.0",
 		"eslint-config-prettier": "^8.3.0",
-		"eslint-plugin-import": "^2.25.3",
+		"eslint-plugin-import": "^2.24.1",
 		"eslint-plugin-jsdoc": "^37.0.3",
 		"eslint-plugin-prefer-arrow": "^1.2.3",
 		"fork-ts-checker-webpack-plugin": "^7.2.13",
@@ -563,7 +568,7 @@
 		"react-tabs": "^4.2.1",
 		"source-map-loader": "^4.0.0",
 		"style-loader": "^3.3.1",
-		"svg-inline-loader": "^0.8.2",
+		"svg-inline-loader": "^0.2.3",
 		"terser-webpack-plugin": "^5.2.5",
 		"ts-loader": "^9.2.6",
 		"ts-node": "^10.9.1",
@@ -576,6 +581,7 @@
 		"zustand": "^4.1.1"
 	},
 	"dependencies": {
+		"child_process": "^1.0.2",
 		"m68kdecode": "^1.1.4",
 		"vscode-cpptools": "^5.0.0",
 		"vscode-debugadapter": "^1.51.0",

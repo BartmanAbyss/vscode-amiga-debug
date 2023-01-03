@@ -24,7 +24,11 @@
             },
             "args": [
                 "-j4",
-                "program=${config:amiga.program}",
+                "program=${workspaceFolder}\\${config:amiga.program}-rel",
+                "targetName=Release",
+                "ccExtraOptions=-gdwarf-3 -Ofast -DDEBUG",
+                "vasmExtraOptions=-dwarf=3 -DDEBUG",
+                "programFolder=${command:amiga.programFolder}"
             ],
             "problemMatcher": [
                 {
@@ -44,6 +48,126 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "compile-debug",
+            "type": "shell",
+            "windows": {
+                "command": "${command:amiga.bin-path}\\gnumake.exe",
+                "options": {
+                    "cwd": "${workspaceRoot}",
+                    "env": {
+                        "PATH": "${env:PATH};${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                    }
+                },
+            },
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}",
+                "env": {
+                    "PATH": "${env:PATH}:${command:amiga.bin-path}/opt/bin:${command:amiga.bin-path}"
+                }
+            },
+            "args": [
+                "-j4",
+                "program=${workspaceFolder}\\${config:amiga.program}-dbg",
+                "targetName=Debug",
+                "ccExtraOptions=-gdwarf-3 -DDEBUG",
+                "vasmExtraOptions=-dwarf=3 -DDEBUG",
+                "programFolder=${command:amiga.programFolder}"
+            ],
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "compile-final",
+            "type": "shell",
+            "windows": {
+                "command": "${command:amiga.bin-path}\\gnumake.exe",
+                "options": {
+                    "cwd": "${workspaceRoot}",
+                    "env": {
+                        "PATH": "${env:PATH};${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                    }
+                },
+            },
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}",
+                "env": {
+                    "PATH": "${env:PATH}:${command:amiga.bin-path}/opt/bin:${command:amiga.bin-path}"
+                }
+            },
+            "args": [
+                "-j4",
+                "program=${workspaceFolder}\\${config:amiga.program}",
+                "targetName=Final",
+                "ccExtraOptions=-Ofast -DNDEBUG",
+                "vasmExtraOptions=-DNDEBUG",
+                "programFolder=${command:amiga.programFolder}"
+            ],
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label"  : "compile-shrinkled",
+            "type"   : "shell",
+            "windows": 
+            {
+                "command": "${workspaceRoot}/mkfinal.bat"
+            },
+            "args"   : [ "${workspaceFolder}\\${config:amiga.program}.exe", "${command:amiga.bin-path}", "${config:amiga.shrinkler.options}" ],
+            "options": 
+            {
+                "cwd": "${workspaceRoot}",
+                "env": {
+                    "PATH": "${command:amiga.bin-path}\\opt\\bin;${command:amiga.bin-path}"
+                }
+            },
+            "problemMatcher": [ { "base": "$gcc", "fileLocation": "absolute" } ],
+            "presentation"  : 
+            {
+                "echo"      : true,
+                "reveal"    : "silent",
+                "focus"     : false,
+                "panel"     : "shared",
+                "showReuseMessage": false,
+                "clear"     : true
+            },
+            "group": { "kind": "build", "isDefault": false },
+            "dependsOn": [ "compile-final" ]
         },
         {
             "label": "clean",
