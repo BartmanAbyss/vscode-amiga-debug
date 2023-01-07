@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.6.9
+- FIX: debugger: fixed crash on launch when using encrypted Kickstart [#199](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/199)
+
 ## 1.6.8
 - NEW: update gcc to 12.2.0, binutils, GNU gdb (GDB) 13.0.50.20221127-git
 - FIX: WinUAE/FS-UAE: don't enable "Full stack frame tracking" (caused WinUAE to crash due to stack overflow in certain situations) [PR#183](https://github.com/BartmanAbyss/vscode-amiga-debug/pull/183)
