@@ -88,6 +88,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [The Bitmap Rasters](https://www.pouet.net/prod.php?which=91776) by Abyss
   - [Done](https://www.pouet.net/prod.php?which=91911) by Abyss
   - [Primer](https://www.pouet.net/prod.php?which=91928) by Architect
+  - [30 Years](https://www.pouet.net/prod.php?which=93079) by Crass
 
 - Games
   - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
