@@ -107,6 +107,11 @@ export enum BPLCON2Flags {
 	PF1P0   = 1 <<  0,
 }
 
+export enum BPLCON3Flags {
+	BANK    = 7 << 13,
+	// ... TODO
+}
+
 export enum FMODEFlags {
 	SSCAN2  = 1 << 15,
 	BSCAN2  = 1 << 14,

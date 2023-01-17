@@ -667,6 +667,7 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
 			} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write)
 				customRegsAfter[dmaRecord.reg >>> 1] = dmaRecord.dat;
+				// TODO: AGA colors
 		}
 	}
 

@@ -1,6 +1,6 @@
 import { swizzle } from "../utils";
-import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags } from "./custom";
-import { CpuCyclesToDmaCycles, displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, GetMemoryAfterDma, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
+import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags, BPLCON3Flags } from "./custom";
+import { ChipsetFlags, CpuCyclesToDmaCycles, displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, GetMemoryAfterDma, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
 import { IProfileModel } from "./model";
 
 export interface DeniseState {
@@ -78,6 +78,8 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 
 	console.time('denise');
 
+	const chipsetFlags = model.amiga.chipsetFlags;
+
 	// Denise emulator - see https://github.com/MiSTer-devel/Minimig-AGA_MiSTer/blob/MiSTer/rtl/denise.v
 	const bplDat        = [0, 0, 0, 0, 0, 0, 0, 0];
 	const bplDatHi      = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -92,6 +94,7 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 	const regBPLCON0 = Custom.ByName("BPLCON0").adr - 0xdff000;
 	const regBPLCON1 = Custom.ByName("BPLCON1").adr - 0xdff000;
 	const regBPLCON2 = Custom.ByName("BPLCON2").adr - 0xdff000;
+	const regBPLCON3 = Custom.ByName("BPLCON3").adr - 0xdff000;
 	const regBPL1DAT = Custom.ByName("BPL1DAT").adr - 0xdff000;
 	const regBPL8DAT = Custom.ByName("BPL8DAT").adr - 0xdff000;
 	const bplStride  = Custom.ByName("BPL2DAT").adr - Custom.ByName("BPL1DAT").adr;
@@ -219,7 +222,10 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 					else
 						customRegs[regDMACON >>> 1] &= ~dmaRecord.dat;
 				} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write) {
-					customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
+					if(dmaRecord.reg >= regCOLOR00 && dmaRecord.reg < regCOLOR00 + 32 * 2 && (chipsetFlags & ChipsetFlags.AGA) && ((customRegs[regBPLCON3 >>> 1] >>> 13) !== 0))
+						void 0;
+					else
+						customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
 				}
 				if(!freeze) {
 					const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
