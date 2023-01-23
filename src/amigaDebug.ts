@@ -377,7 +377,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config.set('hard_drive_0', dh0Path);
 			config.set('hard_drive_1', exePath);
 			// debugging options
-			config.set('remote_debugger', "1000");
+			config.set('remote_debugger', "20");
 			config.set('remote_debugger_port', "2345");
 			config.set('remote_debugger_trigger', debugTrigger);
 
