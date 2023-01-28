@@ -1,5 +1,5 @@
 import { DmaRecord } from "../backend/profile_types";
-import { Custom, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags } from './custom';
+import { Custom, CustomReadWrite, DMACONFlags, FMODEFlags, BPLCON0Flags, BPLCON3Flags } from './custom';
 import { CopperInstruction, CopperMove, CopperInstructionType } from "./copperDisassembler";
 import { IAmigaProfileBase, IAmigaProfileExtra, ICpuProfileRaw } from "./types";
 
@@ -667,11 +667,54 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 					customRegsAfter[regDMACON >>> 1] &= ~dmaRecord.dat;
 			} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write)
 				customRegsAfter[dmaRecord.reg >>> 1] = dmaRecord.dat;
-				// TODO: AGA colors
 		}
 	}
 
 	return customRegsAfter;
+}
+
+export function GetAgaColorsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): Uint32Array {
+	const regDMACON  = Custom.ByName("DMACON") .adr - 0xdff000;
+	const regCOPJMP1 = Custom.ByName("COPJMP1").adr - 0xdff000;
+	const regCOPJMP2 = Custom.ByName("COPJMP2").adr - 0xdff000;
+	const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
+	const regBPLCON3 = Custom.ByName("BPLCON3").adr - 0xdff000;
+	let bplcon3 = customRegs[regBPLCON3 >>> 1];
+	const colors = new Uint32Array(256);
+
+	let i = 0;
+	let ignoreCopper = 0;
+
+	for(let y = 0; y < NR_DMA_REC_VPOS && i <= endCycle; y++) {
+		for(let x = 0; x < NR_DMA_REC_HPOS && i <= endCycle; x++, i++) {
+			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(dmaRecord.reg === undefined)
+				continue;
+
+			// fix fake instructions after copper jump
+			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER) {
+				if(ignoreCopper > 0) {
+					ignoreCopper--;
+					continue;
+				}
+				if(dmaRecord.reg === regCOPJMP1 || dmaRecord.reg === regCOPJMP2)
+					ignoreCopper = 2;
+			}
+
+			if(dmaRecord.reg === regBPLCON3)
+				bplcon3 = dmaRecord.dat;
+			// get AGA color
+			if(dmaRecord.reg >= regCOLOR00 && dmaRecord.reg < regCOLOR00 + 32 * 2) {
+				const c = ((dmaRecord.reg - regCOLOR00) >>> 1) + (bplcon3 >>> 13) * 32;
+				if(!(bplcon3 & BPLCON3Flags.LOCT))
+					colors[c] = OcsToAga(dmaRecord.dat);
+				else
+					colors[c] = (colors[c] & 0xf0f0f0) | (OcsToAga(dmaRecord.dat) & 0x0f0f0f);
+			}
+		}
+	}
+
+	return colors;
 }
 
 export function GetPrevCustomRegWriteTime(index: number, cycle: number, dmaRecords: DmaRecord[]): number | undefined {
@@ -701,24 +744,30 @@ export function GetNextCustomRegWriteTime(index: number, cycle: number, dmaRecor
 	return undefined;
 }
 
-// AABBGGRR
-export const GetAmigaColor = (color: number): number => 
-	((((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 0) | // RR
-	 (((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
-	 (((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 16) | // BB
-	 0xff000000) >>> 0; // AA;
+export const OcsToAga = (color: number): number => 
+	(((((color >>> 8) & 0xf) << 4) | ((color >>> 8) & 0xf)) << 16) | // RR
+	(((((color >>> 4) & 0xf) << 4) | ((color >>> 4) & 0xf)) << 8) | // GG
+	(((((color >>> 0) & 0xf) << 4) | ((color >>> 0) & 0xf)) << 0); // BB
+
+export const GetAgaColor = (color: number): number =>
+	(color & 0xffffff) | // RRGGBB
+	0xff000000; // AA
+
+// AARRGGBB
+export const GetOcsColor = (color: number): number => 
+	OcsToAga(color) | // RRGGBB
+	0xff000000; // AA;
 
 // AABBGGRR <-> AARRGGBB
-const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
+export const ColorSwap = (color: number): number => (((color >>> 16) & 0xff) | (((color >>> 0) & 0xff) << 16) | (color & 0xff00ff00)) >>> 0;
 
-// AABBGGRR
-export const GetColorCss = (color: number): string => '#' + (ColorSwap(color) & 0xffffff).toString(16).padStart(6, '0');
-export const GetRgbaColorCss = (color: number): string => `rgba(${color & 0xff}, ${(color >>> 8) & 0xff}, ${(color >>> 16) & 0xff}, ${((color >>> 24) & 0xff) / 255})`;
+// AARRGGBB
+export const GetColorCss = (color: number): string => '#' + (color & 0xffffff).toString(16).padStart(6, '0');
+export const GetRgbaColorCss = (color: number): string => `rgba(${(color >>> 16) & 0xff},  ${(color >>> 8) & 0xff}, ${color & 0xff}, ${((color >>> 24) & 0xff) / 255})`;
 
-// 0RGB
-export const GetAmigaColorCss = (color: number): string => '#' + (ColorSwap(GetAmigaColor(color)) & 0xffffff).toString(16).padStart(6, '0');
-
-export const GetAmigaColorEhb = (color: number): number => GetAmigaColor((color & 0xeee) >>> 1);
+export const GetOcsColorCss = (color: number): string => '#' + (GetOcsColor(color) & 0xffffff).toString(16).padStart(6, '0');
+export const GetAgaColorCss = (color: number): string => '#' + (GetAgaColor(color) & 0xffffff).toString(16).padStart(6, '0');
+export const GetEhbColor = (color: number): number => GetOcsColor((color & 0xeee) >>> 1);
 
 // returns 64-element array of 32-bit ABGR colors (0x00-0xff)
 export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
@@ -727,8 +776,8 @@ export function GetPaletteFromCustomRegs(customRegs: Uint16Array): number[] {
 	const palette: number[] = [], ehbPalette: number[] = [];
 	for(let i = 0; i < 32; i++) {
 		const color = customReg(regCOLOR + i * 2);
-		palette.push(GetAmigaColor(color));
-		ehbPalette.push(GetAmigaColorEhb(color));
+		palette.push(GetOcsColor(color));
+		ehbPalette.push(GetEhbColor(color));
 	}
 	return [...palette, ...ehbPalette];
 }
@@ -738,8 +787,8 @@ export function GetPaletteFromMemory(memory: Memory, addr: number, numEntries: n
 	for(let i = 0; i < 32; i++) {
 		if(i < numEntries) {
 			const color = memory.readWord(addr + i * 2);
-			palette.push(GetAmigaColor(color));
-			ehbPalette.push(GetAmigaColorEhb(color));
+			palette.push(GetOcsColor(color));
+			ehbPalette.push(GetEhbColor(color));
 		} else {
 			palette.push(0);
 			ehbPalette.push(0);
@@ -755,8 +804,8 @@ export function GetPaletteFromCopper(copper: Copper[]): number[] {
 		if(c.insn instanceof CopperMove && c.insn.DA >= regCOLOR00 && c.insn.DA < regCOLOR00 + 32 * 2) {
 			const idx = (c.insn.DA - regCOLOR00) >>> 1;
 			if(palette[idx] === 0) { // don't overwrite color
-				palette[idx] = GetAmigaColor(c.insn.RD);
-				palette[idx + 32] = GetAmigaColorEhb(c.insn.RD);
+				palette[idx] = GetOcsColor(c.insn.RD);
+				palette[idx + 32] = GetEhbColor(c.insn.RD);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 import { swizzle } from "../utils";
-import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags, BPLCON3Flags } from "./custom";
-import { ChipsetFlags, CpuCyclesToDmaCycles, displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetAmigaColor, GetAmigaColorEhb, GetMemoryAfterDma, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from "./dma";
+import { CustomReadWrite, Custom, DMACONFlags, FMODEFlags, BPLCON3Flags, BPLCON0Flags, BPLCON2Flags, BPLCON0Bits } from "./custom";
+import { ChipsetFlags, CpuCyclesToDmaCycles, displayLeft, displayTop, DmaSubTypes, dmaTypes, DmaTypes, GetOcsColor, GetEhbColor, GetMemoryAfterDma, Memory, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, OcsToAga, GetAgaColor, ColorSwap } from "./dma";
 import { IProfileModel } from "./model";
 
 export interface DeniseState {
@@ -142,6 +142,7 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 	const customRegs = freezeModel.amiga.customRegs.slice(); // initial copy
 	const memory = new Memory(model.memory.chipMem.slice(), new Uint8Array()); // initial copy
 	const lastUpdate = new Uint32Array(memory.chipMem.byteLength);
+	const colors = new Uint32Array(256);
 
 	let vpos = -1;
 	let hpos = 0;
@@ -222,10 +223,19 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 					else
 						customRegs[regDMACON >>> 1] &= ~dmaRecord.dat;
 				} else if(Custom.ByOffs(dmaRecord.reg)?.rw & CustomReadWrite.write) {
-					if(dmaRecord.reg >= regCOLOR00 && dmaRecord.reg < regCOLOR00 + 32 * 2 && (chipsetFlags & ChipsetFlags.AGA) && ((customRegs[regBPLCON3 >>> 1] >>> 13) !== 0))
-						void 0;
-					else
+					if(dmaRecord.reg >= regCOLOR00 && dmaRecord.reg < regCOLOR00 + 32 * 2) {
+						if(chipsetFlags & ChipsetFlags.AGA) {
+							const c = ((dmaRecord.reg - regCOLOR00) >>> 1) + (customRegs[regBPLCON3 >>> 1] >>> 13) * 32;
+							if(!(customRegs[regBPLCON3 >>> 1] & BPLCON3Flags.LOCT))
+								colors[c] = OcsToAga(dmaRecord.dat);
+							else
+								colors[c] = (colors[c] & 0xf0f0f0) | (OcsToAga(dmaRecord.dat) & 0x0f0f0f);
+						} else {
+							colors[(dmaRecord.reg - regCOLOR00) >>> 1] = OcsToAga(dmaRecord.dat);
+						}
+					} else {
 						customRegs[dmaRecord.reg >>> 1] = dmaRecord.dat;
+					}
 				}
 				if(!freeze) {
 					const dmaType = dmaTypes.get(dmaRecord.type ?? 0);
@@ -343,12 +353,13 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 
 			//const displayStart = 0x2c;
 			//const lineStart = 29; // minimig: first visible line on PAL is 26
-			const hires = (customRegs[regBPLCON0 >>> 1] & (1 << 15)) ? true : false;
-			const numPlanes = (customRegs[regBPLCON0 >>> 1] >>> 12) & 0b111;
-			const ham = (customRegs[regBPLCON0 >>> 1] & (1 << 11)) ? true : false;
-			const dualPlayfield = (customRegs[regBPLCON0 >>> 1] & (1 << 10)) ? true : false;
-			const ehb = numPlanes === 6 && !ham && !dualPlayfield;
-			const playfield2Priority = (customRegs[regBPLCON2 >>> 1] & (1 << 6)) ? true : false;
+			const bplcon0 = customRegs[regBPLCON0 >>> 1];
+			const hires = (bplcon0 & BPLCON0Flags.HIRES) ? true : false;
+			const bpu = swizzle(bplcon0, BPLCON0Bits.BPU0, 0) | swizzle(bplcon0, BPLCON0Bits.BPU1, 1) | swizzle(bplcon0, BPLCON0Bits.BPU2, 2) | ((chipsetFlags & ChipsetFlags.AGA) ? swizzle(bplcon0, BPLCON0Bits.BPU3, 3) : 0);
+			const ham = (bplcon0 & BPLCON0Flags.HAM) ? true : false;
+			const dualPlayfield = (bplcon0 & BPLCON0Flags.DPF) ? true : false;
+			const ehb = bpu === 6 && !ham && !dualPlayfield;
+			const playfield2Priority = (customRegs[regBPLCON2 >>> 1] & BPLCON2Flags.PF2PRI) ? true : false;
 			const scroll2 = hires ? [scroll[0] << 1, scroll[1] << 1] : scroll;
 
 			// per pixel stuff in here!
@@ -425,7 +436,7 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 					//if(cycleY===100)console.log(`      draw scroller[1]: ${scroller[1].toString(2).padStart(16, '0')} shifter[1]: ${shifter[1].toString(2).padStart(16, '0')} ***${scroller[1] & (1 << scroll_delayed[0]) ? '1' : '0'}`);
 
 					let bpldata = 0;
-					for(let p = 0; p < numPlanes; p++) {
+					for(let p = 0; p < bpu; p++) {
 						if((bplScroller[p] & (1 << scroll2[p & 1])) && state.planes[p])
 							bpldata |= 1 << p;
 					}
@@ -484,34 +495,34 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 							bpldata = 16 + (sprcode - 1) * 4 + sprdata;
 					}
 
-					let color = GetAmigaColor(customRegs[(regCOLOR00 >>> 1)]); // 0xAABBGGRR
+					let color = GetAgaColor(colors[0]); // 0xAARRGGBB
 					if(ham && !sprsel) {
 						// TODO: HAM8
 						switch(bpldata >> 4) {
 						case 0: // set
-							color = 0xff000000 | GetAmigaColor(customRegs[(regCOLOR00 >>> 1) + (bpldata & 0xf)]);
+							color = 0xff000000 | GetAgaColor(colors[bpldata & 0xf]);
 							break;
 						case 1: // modify blue
-							color = (prevColor & ~0xff0000) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 16);
+							color = (prevColor & ~0x0000ff) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 0);
 							break;
 						case 3: // modify green
 							color = (prevColor & ~0x00ff00) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 8);
 							break;
 						case 2: // modify red
-							color = (prevColor & ~0x0000ff) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 0);
+							color = (prevColor & ~0xff0000) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 16);
 							break;
 						}
 						prevColor = color;
 					} else {
 						if(ehb && (bpldata & (1 << 5)))
-							color = GetAmigaColorEhb(customRegs[(regCOLOR00 >>> 1) + (bpldata & 0x1f)]); // no AGA yet
+							color = GetEhbColor(colors[bpldata & 0x1f]); // no AGA yet
 						else
-							color = GetAmigaColor(customRegs[(regCOLOR00 >>> 1) + (bpldata & 0x1f)]); // no AGA yet
+							color = GetAgaColor(colors[bpldata]);
 					}
 
 					if(hpos - 2 >= displayLeft && vpos >= displayTop) {
-						if((window || !state.window) && numPlanes)
-							putPixel((hpos - 2) * 2 + i,         vpos, bpldata, color, sprsel ? sprsource : playfieldsource);
+						if((window || !state.window) && bpu)
+							putPixel((hpos - 2) * 2 + i,         vpos, bpldata, ColorSwap(color), sprsel ? sprsource : playfieldsource);
 						else
 							putPixel((hpos - 2) * 2 + i,         vpos, bpldata, 0, !window ? PixelSource.outsideWindow : PixelSource.noPlanes);
 					}

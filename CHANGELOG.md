@@ -6,6 +6,7 @@ See PR links for more information.
 ## 1.6.9
 - FIX: debugger: fixed crash on launch when using encrypted Kickstart [#199](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/199)
 - FIX: screen: don't overwrite OCS colors with AGA colors from different banks
+- NEW: screen: support AGA colors, show BPLCON3 (TODO: get AGA colors from .profile file)
 
 ## 1.6.8
 - NEW: update gcc to 12.2.0, binutils, GNU gdb (GDB) 13.0.50.20221127-git

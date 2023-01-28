@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { CopperInstructionType, CopperMove } from '../copperDisassembler';
-import { Copper, CpuCyclesToDmaCycles, GetAmigaColorCss } from '../dma';
+import { Copper, CpuCyclesToDmaCycles, GetOcsColorCss } from '../dma';
 import { createPortal } from 'preact/compat';
 import { GetCustomRegDoc } from '../docs';
 import { FormatCustomRegData } from '../custom';
@@ -165,7 +165,7 @@ export const CopperView: FunctionComponent<{
 
 		return <div class={styles.row + ' ' + (curInsn !== -1 && i === curInsn ? styles.cur : (c.cycle > dmaTime ? styles.future : styles.past))}>
 			{text}
-			{c.insn.instructionType === CopperInstructionType.MOVE && (c.insn as CopperMove).label.startsWith('COLOR') && <span style={{marginLeft: 4, background: GetAmigaColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span>}
+			{c.insn.instructionType === CopperInstructionType.MOVE && (c.insn as CopperMove).label.startsWith('COLOR') && <span style={{marginLeft: 4, background: GetOcsColorCss((c.insn as CopperMove).RD)}}>&nbsp;&nbsp;</span>}
 		</div>;
 	}, [frame, onMouseEnter, onMouseLeave, onWheel, curInsn]);
 
