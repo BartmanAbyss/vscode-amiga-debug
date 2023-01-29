@@ -51,23 +51,42 @@ export enum BLTCON1Flags {
 	SING    = 1 << 1,
 }
 
+export enum BPLCON0Bits {
+	HIRES   = 15,
+	BPU2    = 14,
+	BPU1    = 13,
+	BPU0    = 12,
+	HAM     = 11,
+	DPF     = 10,
+	COLOR   =  9,
+	GAUD    =  8,
+	UHRES   =  7,
+	SHRES   =  6,
+	BYPASS  =  5,
+	BPU3    =  4,
+	LPEN    =  3,
+	LACE    =  2,
+	ERSY    =  1,
+	ECSENA  =  0,
+}
+
 export enum BPLCON0Flags {
-	HIRES   = 1 << 15,
-	BPU2    = 1 << 14,
-	BPU1    = 1 << 13,
-	BPU0    = 1 << 12,
-	HAM     = 1 << 11,
-	DPF     = 1 << 10,
-	COLOR   = 1 <<  9,
-	GAUD    = 1 <<  8,
-	UHRES   = 1 <<  7,
-	SHRES   = 1 <<  6,
-	BYPASS  = 1 <<  5,
-	BPU3    = 1 <<  4,
-	LPEN    = 1 <<  3,
-	LACE    = 1 <<  2,
-	ERSY    = 1 <<  1,
-	ECSENA  = 1 <<  0,
+	HIRES   = 1 << BPLCON0Bits.HIRES,
+	BPU2    = 1 << BPLCON0Bits.BPU2,
+	BPU1    = 1 << BPLCON0Bits.BPU1,
+	BPU0    = 1 << BPLCON0Bits.BPU0,
+	HAM     = 1 << BPLCON0Bits.HAM,
+	DPF     = 1 << BPLCON0Bits.DPF,
+	COLOR   = 1 << BPLCON0Bits.COLOR,
+	GAUD    = 1 << BPLCON0Bits.GAUD,
+	UHRES   = 1 << BPLCON0Bits.UHRES,
+	SHRES   = 1 << BPLCON0Bits.SHRES,
+	BYPASS  = 1 << BPLCON0Bits.BYPASS,
+	BPU3    = 1 << BPLCON0Bits.BPU3,
+	LPEN    = 1 << BPLCON0Bits.LPEN,
+	LACE    = 1 << BPLCON0Bits.LACE,
+	ERSY    = 1 << BPLCON0Bits.ERSY,
+	ECSENA  = 1 << BPLCON0Bits.ECSENA,
 }
 
 export enum BPLCON1Flags {
@@ -105,6 +124,40 @@ export enum BPLCON2Flags {
 	PF1P2   = 1 <<  2,
 	PF1P1   = 1 <<  1,
 	PF1P0   = 1 <<  0,
+}
+
+export enum BPLCON3Bits {
+	BANK2   = 15,
+	BANK1   = 14,
+	BANK0   = 13,
+	PF2OF2  = 12,
+	PF2OF1  = 11,
+	PF2OF0  = 10,
+	LOCT    =  9,
+	SPRRES1 =  7,
+	SPRRES0 =  6,
+	BRDRBLNK=  5,
+	BRDNTRAN=  4,
+	ZDCLKEN =  2,
+	BRDSPRT =  1,
+	EXTBLKEN=  0,
+}
+
+export enum BPLCON3Flags {
+	BANK2   = 1 << BPLCON3Bits.BANK2,
+	BANK1   = 1 << BPLCON3Bits.BANK1,
+	BANK0   = 1 << BPLCON3Bits.BANK0,
+	PF2OF2  = 1 << BPLCON3Bits.PF2OF2,
+	PF2OF1  = 1 << BPLCON3Bits.PF2OF1,
+	PF2OF0  = 1 << BPLCON3Bits.PF2OF0,
+	LOCT    = 1 << BPLCON3Bits.LOCT,
+	SPRRES1 = 1 << BPLCON3Bits.SPRRES1,
+	SPRRES0 = 1 << BPLCON3Bits.SPRRES0,
+	BRDRBLNK= 1 << BPLCON3Bits.BRDRBLNK,
+	BRDNTRAN= 1 << BPLCON3Bits.BRDNTRAN,
+	ZDCLKEN = 1 << BPLCON3Bits.ZDCLKEN,
+	BRDSPRT = 1 << BPLCON3Bits.BRDSPRT,
+	EXTBLKEN= 1 << BPLCON3Bits.EXTBLKEN,
 }
 
 export enum FMODEFlags {

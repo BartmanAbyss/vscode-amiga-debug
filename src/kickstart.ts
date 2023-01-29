@@ -151,7 +151,7 @@ export class Kickstart {
 		//console.log(`${path.basename(kickPath)}: ${this.hash}`);
 
 		// scan libraries
-		for(let offset = 0; offset < this.data.byteLength; offset += 2) {
+		for(let offset = 0; offset < this.data.byteLength - 16; offset += 2) {
 			if(this.data.readInt16BE(offset) === RTC_MATCHWORD && this.data.readInt32BE(offset + 2) === this.base + offset && this.data[offset + 12] === NT_LIBRARY) {
 				const version = this.data[offset + 11];
 				const getString = (offset: number) => {

@@ -3,16 +3,16 @@ import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 
 import create from 'zustand';
 import { ToggleButton } from '../button';
 import { Toolbar } from '../filter';
-import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 import '../styles.css';
 import styles from './resources.module.css';
+import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 
-import { IProfileModel } from '../model';
-import { ICpuProfileRaw } from '../types';
-import { getScreen, PixelSource, DeniseState, DefaultDeniseState } from '../screen';
-import { BPLCON0Flags, BPLCON2Flags, Custom, DMACONFlags, FMODEFlags } from '../custom';
-import { DmaCyclesToCpuCycles, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS, CpuCyclesToDmaCycles, GetCustomRegsAfterDma, ChipsetFlags, GetAmigaColorCss } from '../dma';
 import { swizzle } from '../../utils';
+import { BPLCON0Bits, BPLCON0Flags, BPLCON2Flags, BPLCON3Bits, Custom, DMACONFlags, FMODEFlags } from '../custom';
+import { ChipsetFlags, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles, GetAgaColorCss, GetAgaColorsAfterDma, GetCustomRegsAfterDma, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { IProfileModel } from '../model';
+import { DefaultDeniseState, DeniseState, getScreen, PixelSource } from '../screen';
+import { ICpuProfileRaw } from '../types';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -33,14 +33,19 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 
 		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
 		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
+		const colors = GetAgaColorsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 
 		const regDMACON = Custom.ByName("DMACON").adr - 0xdff000;
 		const regBPLCON0 = Custom.ByName("BPLCON0").adr - 0xdff000;
 		const regBPLCON1 = Custom.ByName("BPLCON1").adr - 0xdff000;
 		const regBPLCON2 = Custom.ByName("BPLCON2").adr - 0xdff000;
+		const regBPLCON3 = Custom.ByName("BPLCON3").adr - 0xdff000;
 		const regFMODE = Custom.ByName("FMODE").adr - 0xdff000; // ECS
-		const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
-		const colorRgb = customRegs[(regCOLOR00 >>> 1) + color];
+		const colorRgb = colors[color];
+
+		const aga = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.AGA) !== 0;
+		const ecs = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.ECSDenise) !== 0;
+		const ecsAga = aga || ecs;
 
 		interface Bit {
 			name: string;
@@ -63,12 +68,13 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		// BPLCON0
 		const bplcon0 = customRegs[regBPLCON0 >>> 1];
 		const bplcon0Bits: Bit[] = [];
-		const bpu = swizzle(bplcon0, 12, 0) | swizzle(bplcon0, 13, 1) | swizzle(bplcon0, 14, 2) | swizzle(bplcon0, 4, 3);
+		const bpu = swizzle(bplcon0, BPLCON0Bits.BPU0, 0) | swizzle(bplcon0, BPLCON0Bits.BPU1, 1) | swizzle(bplcon0, BPLCON0Bits.BPU2, 2) | (aga ? swizzle(bplcon0, BPLCON0Bits.BPU3, 3) : 0);
 		bplcon0Bits.push({ name: `BPU: ${bpu}`, enabled: bpu > 0 });
 		bplcon0Bits.push({ name: "Hires", enabled: !!(bplcon0 & BPLCON0Flags.HIRES) });
 		bplcon0Bits.push({ name: "HAM", enabled: !!(bplcon0 & BPLCON0Flags.HAM) });
 		bplcon0Bits.push({ name: "DPF", enabled: !!(bplcon0 & BPLCON0Flags.DPF) });
-		bplcon0Bits.push({ name: "ECSENA", enabled: !!(bplcon0 & BPLCON0Flags.ECSENA) });
+		if(ecsAga)
+			bplcon0Bits.push({ name: "ECSENA", enabled: !!(bplcon0 & BPLCON0Flags.ECSENA) });
 
 		// BPLCON1
 		const bplcon1 = customRegs[regBPLCON1 >>> 1];
@@ -88,6 +94,14 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		bplcon2Bits.push({ name: `PF2P: ${pf2p}`, enabled: pf2p > 0 });
 		bplcon2Bits.push({ name: `PF1P: ${pf1p}`, enabled: pf1p > 0 });
 
+		// BPLCON3
+		const bplcon3 = customRegs[regBPLCON3 >>> 1];
+		const bplcon3Bits: Bit[] = [];
+		const bank = swizzle(bplcon3, BPLCON3Bits.BANK0, 0) | swizzle(bplcon3, BPLCON3Bits.BANK1, 1) | swizzle(bplcon3, BPLCON3Bits.BANK2, 2);
+		const sprres = ['ECS', 'LORES', 'HIRES', 'SHRES'][swizzle(bplcon3, BPLCON3Bits.SPRRES0, 0) | swizzle(bplcon3, BPLCON3Bits.SPRRES1, 1)];
+		bplcon3Bits.push({ name: `BANK: ${bank}`, enabled: bank > 0 });
+		bplcon3Bits.push({ name: `SPRRES: ${sprres}`, enabled: sprres !== 'ECS' });
+
 		// FMODE
 		const fmode = customRegs[regFMODE >>> 1];
 		const fmodeBits: Bit[] = [];
@@ -95,8 +109,6 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		fmodeBits.push({ name: "SPR32", enabled: !!(fmode & FMODEFlags.SPR32) });
 		fmodeBits.push({ name: "BPAGEM", enabled: !!(fmode & FMODEFlags.BPAGEM) });
 		fmodeBits.push({ name: "BPL32", enabled: !!(fmode & FMODEFlags.BPL32) });
-
-		const ecsAga = (MODELS[0].amiga.chipsetFlags & (ChipsetFlags.AGA | ChipsetFlags.ECSDenise)) !== 0;
 
 		return <div>
 			<dl>
@@ -112,7 +124,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				</>}
 				{color !== undefined && <>
 					<dt>Color</dt>
-					<dd class={styles.container}>{color.toString().padStart(2, '0')} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(8/*TODO*/, '0')} ${(colorRgb & 0xfff).toString(16).padStart(3, '0')}<span style={{marginLeft: 4, background: GetAmigaColorCss(colorRgb)}}>&nbsp;&nbsp;</span></dd>
+					<dd class={styles.container}>{color.toString().padStart(aga? 3 : 2, '0')} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(8/*TODO*/, '0')} ${(colorRgb & 0xffffff).toString(16).padStart(6, '0')}<span style={{marginLeft: 4, background: GetAgaColorCss(colorRgb), opacity: 1.0}}>&nbsp;&nbsp;</span></dd>
 				</>}
 				<dt>Denise</dt>
 				<dd>H:{hpos} V:{vpos}</dd>
@@ -126,7 +138,9 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				<dd>{bplcon1Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				<dt>BPLCON2</dt>
 				<dd>{bplcon2Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
-				{ecsAga && <>
+				{aga && <>
+					<dt>BPLCON3</dt>
+					<dd>{bplcon3Bits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 					<dt>FMODE</dt>
 					<dd>{fmodeBits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				</>}
@@ -155,6 +169,8 @@ const DeniseScreen: FunctionComponent<{
 	const zoomCanvasScale = 8;
 	const zoomCanvasWidth = 144*2;
 	const zoomCanvasHeight = 144;
+
+	const aga = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.AGA) !== 0;
 
 	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo(() => getScreen(scale, MODELS[frame], state.freeze !== -1 ? MODELS[state.freeze] : MODELS[frame], time, state), [scale, frame, state.freeze !== -1 ? time : 0, state]);
 
@@ -222,7 +238,7 @@ const DeniseScreen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
-			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={370} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
+			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={aga ? 430 : 370} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
 		</div>
 	</>;
 };

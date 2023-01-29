@@ -88,6 +88,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [The Bitmap Rasters](https://www.pouet.net/prod.php?which=91776) by Abyss
   - [Done](https://www.pouet.net/prod.php?which=91911) by Abyss
   - [Primer](https://www.pouet.net/prod.php?which=91928) by Architect
+  - [30 Years](https://www.pouet.net/prod.php?which=93079) by Crass
 
 - Games
   - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
@@ -313,3 +314,4 @@ diff -ruN gcc-12.2.0 gcc-12.2.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites, multi-frame
 * Denise: `turrican2-level1.uss`, `desertdream-dots.uss`: sprites 2 pixels too far left
+* TODO: AGA colors (256 colors and 24bit)
