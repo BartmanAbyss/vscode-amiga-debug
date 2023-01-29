@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.0
+- CHG: update to [latest WinUAE (41010)](https://github.com/tonioni/WinUAE/commit/239062dc7c49838b41ac54e5901522eeb78f0ef0)
+- NEW: profiler: get AGA colors from WinUAE
+
 ## 1.6.9
 - FIX: debugger: fixed crash on launch when using encrypted Kickstart [#199](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/199)
 - FIX: screen: don't overwrite OCS colors with AGA colors from different banks

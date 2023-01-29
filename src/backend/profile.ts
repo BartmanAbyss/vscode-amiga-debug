@@ -282,6 +282,7 @@ struct barto_debug_resource {
 export class ProfileFrame {
 	public chipsetFlags: number; // see dma.ts@ChipsetFlags
 	public customRegs: Uint16Array;
+	public agaColors: Uint32Array; // only if AGA
 	public dmaRecords: DmaRecord[] = [];
 	public gfxResources: GfxResource[] = [];
 	public profileCycles: number;
@@ -316,7 +317,8 @@ export class ProfileFile {
 	public frames: ProfileFrame[] = [];
 
 	private static customRegsLen = 256 * 2 + 4 /*chipsetFlags*/ + 4/*RefPtr*/;
-	private static sizeofDmaRec = 49;
+	private static agaColorsLen = 256 * 4;
+	private static sizeofDmaRec = 58;
 	private static sizeofResource = 52;
 
 	constructor(private buffer: Buffer) {
@@ -362,6 +364,19 @@ export class ProfileFile {
 			}
 			bufferOffset = customRegsOffset + customRegsLen;
 
+			// AGA colors
+			const agaColorsLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
+			const agaColorsOffset = bufferOffset;
+			if (agaColorsLen !== ProfileFile.agaColorsLen && agaColorsLen !== 0)
+				throw new Error(`<internal error> agaColorsLen mismatch (want ${ProfileFile.agaColorsLen} or 0, got ${agaColorsLen})`);
+			if(agaColorsLen === ProfileFile.agaColorsLen) {
+				frame.agaColors = new Uint32Array(256);
+				for (let i = 0; i < 256; i++) {
+					frame.agaColors[i] = buffer.readUInt32BE(bufferOffset); bufferOffset += 4;
+				}
+				bufferOffset = agaColorsOffset + agaColorsLen;
+			}
+
 			// DMA
 			const dmaLen = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
 			const dmaCount = buffer.readUInt32LE(bufferOffset); bufferOffset += 4;
@@ -377,20 +392,23 @@ export class ProfileFile {
 				const size = dmaBuffer.readUInt16LE(i * dmaLen + 10);
 				const addr = dmaBuffer.readUInt32LE(i * dmaLen + 12);
 				const evt = dmaBuffer.readUInt32LE(i * dmaLen + 16);
-				const evtdata = dmaBuffer.readUInt32LE(i * dmaLen + 20);
-				const evtdataset = dmaBuffer.readInt8(i * dmaLen + 24);
-				const type = dmaBuffer.readInt16LE(i * dmaLen + 25);
-				const extra = dmaBuffer.readUInt16LE(i * dmaLen + 27);
-				const intlev = dmaBuffer.readInt8(i * dmaLen + 29);
-				const ipl = dmaBuffer.readInt8(i * dmaLen + 30);
-				const cf_reg = dmaBuffer.readUInt16LE(i * dmaLen + 31);
-				const cf_dat = dmaBuffer.readUInt16LE(i * dmaLen + 33);
-				const cf_addr = dmaBuffer.readUInt16LE(i * dmaLen + 35);
-				const ciareg = dmaBuffer.readUInt32LE(i * dmaLen + 37);
-				const ciamask = dmaBuffer.readUInt32LE(i * dmaLen + 41);
-				const ciarw = dmaBuffer.readInt8(i * dmaLen + 45);
-				const ciavalue = dmaBuffer.readUInt16LE(i * dmaLen + 46);
-				const end = dmaBuffer.readInt8(i * dmaLen + 48);
+				const evt2 = dmaBuffer.readUInt32LE(i * dmaLen + 20);
+				const evtdata = dmaBuffer.readUInt32LE(i * dmaLen + 24);
+				const evtdataset = dmaBuffer.readInt8(i * dmaLen + 28);
+				const type = dmaBuffer.readInt16LE(i * dmaLen + 29);
+				const extra = dmaBuffer.readUInt16LE(i * dmaLen + 31);
+				const intlev = dmaBuffer.readInt8(i * dmaLen + 33);
+				const ipl = dmaBuffer.readInt8(i * dmaLen + 34);
+				const ipl2 = dmaBuffer.readInt8(i * dmaLen + 35);
+				const cf_reg = dmaBuffer.readUInt16LE(i * dmaLen + 36);
+				const cf_dat = dmaBuffer.readUInt16LE(i * dmaLen + 38);
+				const cf_addr = dmaBuffer.readUInt16LE(i * dmaLen + 40);
+				const ciareg = dmaBuffer.readUInt32LE(i * dmaLen + 42);
+				const ciamask = dmaBuffer.readUInt32LE(i * dmaLen + 46);
+				const ciarw = dmaBuffer.readInt8(i * dmaLen + 50);
+				const ciaphase = dmaBuffer.readInt8(i * dmaLen + 51);
+				const ciavalue = dmaBuffer.readUInt16LE(i * dmaLen + 55);
+				const end = dmaBuffer.readInt8(i * dmaLen + 57);
 
 				if (reg !== 0xffff) {
 					frame.dmaRecords.push({ reg, dat, datHi, size, addr, evt, type, extra, intlev });

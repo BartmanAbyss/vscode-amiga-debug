@@ -170,6 +170,8 @@ const DeniseScreen: FunctionComponent<{
 	const zoomCanvasWidth = 144*2;
 	const zoomCanvasHeight = 144;
 
+	const aga = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.AGA) !== 0;
+
 	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo(() => getScreen(scale, MODELS[frame], state.freeze !== -1 ? MODELS[state.freeze] : MODELS[frame], time, state), [scale, frame, state.freeze !== -1 ? time : 0, state]);
 
 	useEffect(() => { // screen canvas
@@ -236,7 +238,7 @@ const DeniseScreen: FunctionComponent<{
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
-			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={370} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
+			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={aga ? 430 : 370} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
 		</div>
 	</>;
 };
