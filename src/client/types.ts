@@ -71,6 +71,7 @@ export interface IAmigaProfileBase {
 export interface IAmigaProfileExtra {
 	chipsetFlags: number;
 	customRegs: number[];
+	agaColors: number[];
 	dmaRecords: DmaRecord[];
 	gfxResources: GfxResource[];
 	idleCycles: number;
