@@ -83,6 +83,18 @@
 	height: 6px;
 }
 
+.palette_aga {
+	display: inline-grid;
+	grid-template-columns: 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px    5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px 5px;
+	gap: 1px;
+	vertical-align: super;
+}
+
+.palette_aga>div {
+	width: 5px;
+	height: 6px;
+}
+
 :root {
 	--stripe1: rgba(255, 255, 255, 0.1);
 	--stripe2: rgba(255, 255, 255, 0.2);

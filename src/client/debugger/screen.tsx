@@ -33,7 +33,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 
 		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
 		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
-		const colors = GetAgaColorsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
+		const colors = GetAgaColorsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.agaColors, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 
 		const regDMACON = Custom.ByName("DMACON").adr - 0xdff000;
 		const regBPLCON0 = Custom.ByName("BPLCON0").adr - 0xdff000;
@@ -126,6 +126,8 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 					<dt>Color</dt>
 					<dd class={styles.container}>{color.toString().padStart(aga? 3 : 2, '0')} ${color.toString(16).padStart(2, '0')} %{color.toString(2).padStart(8/*TODO*/, '0')} ${(colorRgb & 0xffffff).toString(16).padStart(6, '0')}<span style={{marginLeft: 4, background: GetAgaColorCss(colorRgb), opacity: 1.0}}>&nbsp;&nbsp;</span></dd>
 				</>}
+				<dt>Palette</dt>
+				<dd><div class={styles.palette_aga}>{colors.slice(0, 2 ** bpu).map((p) => <div style={{ backgroundColor: GetAgaColorCss(p) }} />)}</div></dd>
 				<dt>Denise</dt>
 				<dd>H:{hpos} V:{vpos}</dd>
 				<dt>Agnus</dt>

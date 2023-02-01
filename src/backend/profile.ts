@@ -591,6 +591,7 @@ export class Profiler {
 			endTime: totalCycles,
 			$amiga: {
 				customRegs: Array.from(frame.customRegs),
+				agaColors: frame.agaColors ? Array.from(frame.agaColors) : [],
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,
 				idleCycles: frame.idleCycles,
@@ -762,6 +763,7 @@ export class Profiler {
 			$amiga: {
 				chipsetFlags: frame.chipsetFlags,
 				customRegs: Array.from(frame.customRegs),
+				agaColors: frame.agaColors ? Array.from(frame.agaColors) : [],
 				dmaRecords: frame.dmaRecords,
 				gfxResources: frame.gfxResources,
 				idleCycles: frame.idleCycles,

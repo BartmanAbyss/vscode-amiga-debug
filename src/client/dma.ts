@@ -673,14 +673,14 @@ export function GetCustomRegsAfterDma(customRegs: number[], dmaRecords: DmaRecor
 	return customRegsAfter;
 }
 
-export function GetAgaColorsAfterDma(customRegs: number[], dmaRecords: DmaRecord[], endCycle: number): Uint32Array {
+export function GetAgaColorsAfterDma(customRegs: number[], agaColors: number[], dmaRecords: DmaRecord[], endCycle: number): number[] {
 	const regDMACON  = Custom.ByName("DMACON") .adr - 0xdff000;
 	const regCOPJMP1 = Custom.ByName("COPJMP1").adr - 0xdff000;
 	const regCOPJMP2 = Custom.ByName("COPJMP2").adr - 0xdff000;
 	const regCOLOR00 = Custom.ByName("COLOR00").adr - 0xdff000;
 	const regBPLCON3 = Custom.ByName("BPLCON3").adr - 0xdff000;
-	let bplcon3 = customRegs[regBPLCON3 >>> 1];
-	const colors = new Uint32Array(256);
+	let bplcon3 = agaColors ? customRegs[regBPLCON3 >>> 1] : 0; // no AGA stuff for OCS
+	const colors = agaColors ? new Array(...agaColors) : new Array<number>(256);
 
 	let i = 0;
 	let ignoreCopper = 0;
@@ -701,7 +701,7 @@ export function GetAgaColorsAfterDma(customRegs: number[], dmaRecords: DmaRecord
 					ignoreCopper = 2;
 			}
 
-			if(dmaRecord.reg === regBPLCON3)
+			if(dmaRecord.reg === regBPLCON3 && agaColors)
 				bplcon3 = dmaRecord.dat;
 			// get AGA color
 			if(dmaRecord.reg >= regCOLOR00 && dmaRecord.reg < regCOLOR00 + 32 * 2) {
