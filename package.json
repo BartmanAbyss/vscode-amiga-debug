@@ -363,6 +363,20 @@
 									"1M",
 									"1.8M"
 								]
+							},
+							"ntsc": {
+								"type": "boolean",
+								"description": "NTSC mode",
+								"default": false
+							},
+							"emuargs": {
+								"type": "array",
+								"items": {
+									"type": "string",
+									"title": "argument"
+								},
+								"description": "Addtional CLI arguments for emulator",
+								"default": []
 							}
 						}
 					}
