@@ -145,6 +145,15 @@ class AmigaDebugExtension {
 		context.subscriptions.push(
 			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
+			vscode.workspace.onDidOpenTextDocument(({ languageId }) => {
+				if (languageId === 'm68k') {
+					const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+					const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+					if (fs.existsSync(jsonPath)) {
+						return this.configureM68k();
+					}
+				}
+			}),
 
 			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
@@ -216,24 +225,24 @@ class AmigaDebugExtension {
 		if (process.platform !== "win32") {
 			await this.setPermissions();
 		}
+	}
 
-		if (vscode.extensions.getExtension('gigabates.m68k-lsp')) {
-			const config = vscode.workspace.getConfiguration();
-			// Ensure m68k.includePaths contains the bundled system includes dir
-			const sysIncDir = path.join("opt", "m68k-amiga-elf", "sys-include");
-			const sysIncPath = path.join(this.binPath, sysIncDir);
-			const currentIncludePaths: string[] = config.get('m68k.includePaths');
-			if (!currentIncludePaths.includes(sysIncPath)) {
-				await config.update("m68k.includePaths", [
-					// Remove any old paths to sys-include:
-					// The location may change between environments and extension versions
-					...currentIncludePaths.filter((inc) => !inc.endsWith(sysIncDir)),
-					// Add new sys-include path
-					sysIncPath,
-				]);
-			}
-			await config.update("m68k.vasm.provideDiagnostics", false);
+	private async configureM68k() {
+		const config = vscode.workspace.getConfiguration();
+		// Ensure m68k.includePaths contains the bundled system includes dir
+		const sysIncDir = path.join("opt", "m68k-amiga-elf", "sys-include");
+		const sysIncPath = path.join(this.binPath, sysIncDir);
+		const currentIncludePaths: string[] = config.get('m68k.includePaths');
+		if (!currentIncludePaths.includes(sysIncPath)) {
+			await config.update("m68k.includePaths", [
+				// Remove any old paths to sys-include:
+				// The location may change between environments and extension versions
+				...currentIncludePaths.filter((inc) => !inc.endsWith(sysIncDir)),
+				// Add new sys-include path
+				sysIncPath,
+			]);
 		}
+		await config.update("m68k.vasm.provideDiagnostics", false);
 	}
 
 	public async dispose() {
