@@ -307,6 +307,11 @@
 								"description": "Run with EndCLI so you can call CloseWorkBench()",
 								"default": false
 							},
+							"stack": {
+								"type": "string",
+								"description": "Override stack size (in bytes)",
+								"default": ""
+							},
 							"uaelog": {
 								"type": "boolean",
 								"description": "Show WinUAE log output in debug console",

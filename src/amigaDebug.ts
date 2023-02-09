@@ -32,6 +32,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
+	stack?: string;
 	uaelog?: boolean;
 	chipmem?: string; // '256k', '512k', '1m', '1.5m' or '2m'
 	fastmem?: string; // '0', '64k', '128k', '256k', '512k', '1M', '2M', '4M', '8M'
@@ -480,6 +481,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		// defaults - from package.json
 		if(args.endcli === undefined)
 			args.endcli = false;
+		if(args.stack === undefined)
+			args.stack = '';
 		if(args.uaelog === undefined)
 			args.uaelog = true;
 
@@ -501,6 +504,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
 			let startupSequence = '';
+			if(args.stack !== '')
+				startupSequence += `stack ${args.stack}\n`;
 			if(args.endcli)
 				startupSequence += `cd dh1:\nrun >nil: <nil: ${debugTrigger} >nil: <nil:\nendcli >nil:\n`;
 			else
