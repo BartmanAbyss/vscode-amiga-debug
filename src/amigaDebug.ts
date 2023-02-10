@@ -473,6 +473,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			? path.join(binPath, "winuae-gdb.exe")
 			: path.join(binPath, "fs-uae", "fs-uae");
 
+		if(args.emuargs === undefined)
+			args.emuargs = [];
+
 		const emuArgs = [
 			...(isWin
 				// all WinUAE options now in config file
