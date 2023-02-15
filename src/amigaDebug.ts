@@ -394,6 +394,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config.set('remote_debugger_trigger', debugTrigger);
 			// video
 			config.set('ntsc_mode', args.ntsc ? '1' : '0');
+			// specify savestate dir so we don't overwrite user's default FS-UAE save slots
+			config.set('state_dir', path.join(binPath, "fs-uae"));
 
 			if(args.kickstart !== undefined) {
 				config.set('kickstart_file', args.kickstart);

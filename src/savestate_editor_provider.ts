@@ -35,62 +35,82 @@ class SavestateDocument implements vscode.CustomDocument {
 		this.stop();
 	}
 
-	private winuae: cp.ChildProcess;
+	private emulator: cp.ChildProcess;
 	private gdb: cp.ChildProcess;
 	private miDebugger: MI2;
 	private currentThreadId = 1;
 	private ready = false;
 
 	public async start(setStatus: (status: string) => void) {
-		if(this.winuae || this.gdb || this.miDebugger)
+		if(this.emulator || this.gdb || this.miDebugger)
 			return;
 
-		// write config
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
-		const configPath = path.join(binPath, "savestate.uae");
 		const gdbPath = path.join(binPath, "opt/bin/m68k-amiga-elf-gdb");
 		const gdbArgs = ['-q', '--interpreter=mi2'];
+		let emuPath: string;
+		let emuArgs: string[];
 		const config = new Map<string, string>();
-		config.set('use_gui', 'no');
-		config.set('win32.start_not_captured', 'yes');
-		config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
-		config.set('debugging_features', 'gdbserver');
-		config.set('debugging_trigger', '');
-		if(this.ussFile) {
-			// save temp copy of state file with setCycleExact
-			const tmp = path.join(os.tmpdir(), `amiga-profile.uss`);
-			this.ussFile.setCycleExact();
-			this.ussFile.write(tmp);
-			config.set('statefile', tmp);
+
+		if (process.platform === "win32") {
+			// write config
+			const configPath = path.join(binPath, "savestate.uae");
+			config.set('use_gui', 'no');
+			config.set('win32.start_not_captured', 'yes');
+			config.set('win32.nonotificationicon', 'yes'); // tray icons remain after killing WinUAE, so just disable altogether
+			config.set('debugging_features', 'gdbserver');
+			config.set('debugging_trigger', '');
+			if(this.ussFile) {
+				// save temp copy of state file with setCycleExact
+				const tmp = path.join(os.tmpdir(), `amiga-profile.uss`);
+				this.ussFile.setCycleExact();
+				this.ussFile.write(tmp);
+				config.set('statefile', tmp);
+			} else {
+				config.set('statefile', this.ussPath);
+			}
+
+			// copy from amigaDebug.cpp
+			const stringifyCfg = (cfg: Map<string, string>) => {
+				let out = "";
+				cfg.forEach((value, key) => {
+					out += `${key}=${value}\r\n`;
+				});
+				return out;
+			};
+
+			try {
+				fs.writeFileSync(configPath, stringifyCfg(config));
+			} catch(e) {
+				void vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
+				return;
+			}
+
+			emuPath = path.join(binPath, "winuae-gdb.exe");
+			emuArgs = ['-portable', '-f', configPath];
 		} else {
-			config.set('statefile', this.ussPath);
+			config.set('automatic_input_grab', "0");
+			config.set('remote_debugger', "20");
+			config.set('remote_debugger_port', "2345");
+			config.set('remote_debugger_trigger', "");
+
+			// FS-UAE only allows us to set the savestate dir. The filename is fixed so we always need to copy.
+			if (this.ussFile) {
+				// save temp copy of state file with setCycleExact
+				const tmp = path.join(os.tmpdir(), `FS-UAE.uss`);
+				this.ussFile.setCycleExact();
+				this.ussFile.write(tmp);
+				config.set('state_dir', os.tmpdir());
+			}
+
+			emuPath = path.join(binPath, "fs-uae", "fs-uae");
+			emuArgs = [...config].map(([k, v]) => `--${k}=${v}`);
 		}
-
-		// copy from amigaDebug.cpp
-		const stringifyCfg = (cfg: Map<string, string>) => {
-			let out = "";
-			cfg.forEach((value, key) => {
-				out += `${key}=${value}\r\n`;
-			});
-			return out;
-		};
-
-		try {
-			fs.writeFileSync(configPath, stringifyCfg(config));
-		} catch(e) {
-			void vscode.window.showErrorMessage(`Unable to write WinUAE config ${configPath}.`);
-			return;
-		}
-
-		const emuPath = process.platform === "win32"
-			? path.join(binPath, "winuae-gdb.exe")
-			: path.join(binPath, "fs-uae", "fs-uae");
-		const emuArgs = ['-portable', '-f', configPath];
 
 		// launch Emulator
-		this.winuae = cp.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true });
+		this.emulator = cp.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true });
 		setStatus('launch');
-		this.winuae.on('exit', (code: number, signal: string) => {
+		this.emulator.on('exit', (code: number, signal: string) => {
 			this.stop();
 			setStatus('stop');
 		});
@@ -190,10 +210,10 @@ class SavestateDocument implements vscode.CustomDocument {
 	public stop() {
 		// disconnect debugger / kill WinUAE
 		this.miDebugger?.stop();
-		this.winuae?.kill();
+		this.emulator?.kill();
 
 		this.ready = false;
-		this.winuae = undefined;
+		this.emulator = undefined;
 		this.miDebugger = undefined;
 		this.gdb = undefined;
 	}
