@@ -153,6 +153,11 @@
 				"category": "Amiga",
 				"command": "amiga.exe2adf",
 				"title": "Amiga: Convert EXE to ADF"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.toggleCounts",
+				"title": "Toggle Cycle Counts"
 			}
 		],
 		"languages": [
