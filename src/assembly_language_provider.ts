@@ -437,17 +437,21 @@ export class AmigaAssemblyDocumentMananger implements vscode.Disposable {
 	constructor(extensionPath: string, private selector: vscode.DocumentSelector) {
 		SourceContext.extensionPath = extensionPath;
 
+		// parse documents that are already open when extension is activated
 		vscode.workspace.textDocuments.map((document) => {
-			this.decorators.set(document, new Decorator(document));
-			// parse documents that are already open when extension is activated
-			this.processDocument(document);
+			if (vscode.languages.match(selector, document)) {
+				this.decorators.set(document, new Decorator(document));
+				this.processDocument(document);
+			}
 		});
 
 		// parse documents when they are opened
 		this.subscriptions.push(
 			vscode.workspace.onDidOpenTextDocument((document) => {
-				this.decorators.set(document, new Decorator(document));
-				this.processDocument(document);
+				if (vscode.languages.match(selector, document)) {
+					this.decorators.set(document, new Decorator(document));
+					this.processDocument(document);
+				}
 			})
 		);
 
