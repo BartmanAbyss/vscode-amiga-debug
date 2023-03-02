@@ -547,7 +547,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		const cwd = dirname(emuPath);
+		const cwd = isWin
+			? dirname(emuPath)
+			// CWD determines location for debug_save/debug_load on FS-UAE
+			: vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const env = {
 			...process.env,
 			LD_LIBRARY_PATH: ".", // Allow Linux fs-uae to find bundled .so files
