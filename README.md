@@ -89,6 +89,8 @@ Here's a video showing off all the new features of v1.1, including the frame pro
   - [Done](https://www.pouet.net/prod.php?which=91911) by Abyss
   - [Primer](https://www.pouet.net/prod.php?which=91928) by Architect
   - [30 Years](https://www.pouet.net/prod.php?which=93079) by Crass
+  - [Monotropic](https://www.pouet.net/prod.php?which=94120) by Desire
+  - [Bantam](https://www.pouet.net/prod.php?which=94126) by Cosmic Orbs
 
 - Games
   - [Tiny Invaders](http://www.pouet.net/prod.php?which=85458) by Abyss
