@@ -15,7 +15,7 @@ import { CancellationToken } from 'vscode-jsonrpc';
 import { DisassemblyContentProvider } from './disassembly_content_provider';
 import { ProfileCodeLensProvider } from './profile_codelens_provider';
 import { ProfileEditorProvider } from './profile_editor_provider';
-import { AmigaAssemblyDocumentMananger, AmigaAssemblyLanguageProvider, getEditorForDocument } from './assembly_language_provider';
+import { AmigaAssemblyDocumentMananger, AmigaAssemblyLanguageProvider } from './assembly_language_provider';
 import { BaseNode as RBaseNode, CustomRegisterTreeProvider, FieldNode, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
@@ -25,6 +25,7 @@ import { SavestateEditorProvider } from './savestate_editor_provider';
 import { hexFormat } from './utils';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DisassembledMemoryProvider } from './disassembled_memory_provider';
+import { CountCodeLensProvider } from './counts_codelens_provider';
 
 /*
  * Set the following compile time flag to true if the
@@ -131,6 +132,7 @@ class AmigaDebugExtension {
 		this.outputChannel = vscode.window.createOutputChannel('Amiga');
 
 		const lenses = new ProfileCodeLensProvider();
+		const countsLens = new CountCodeLensProvider();
 		const assemblyLanguagesInt: vscode.DocumentFilter[] = [ { language: 'amiga.assembly' } ];
 		const assemblyLanguagesExt: vscode.DocumentFilter[] = [ { language: 'm68k' } ];
 		this.assemblyLanguageSelector = [
@@ -145,6 +147,15 @@ class AmigaDebugExtension {
 		context.subscriptions.push(
 			// text editors
 			vscode.workspace.registerTextDocumentContentProvider('disassembly', new DisassemblyContentProvider()),
+			vscode.workspace.onDidOpenTextDocument(({ languageId }) => {
+				if (languageId === 'm68k') {
+					const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+					const jsonPath = path.join(workspaceFolder, ".vscode", "amiga.json");
+					if (fs.existsSync(jsonPath)) {
+						return this.configureM68k();
+					}
+				}
+			}),
 
 			// commands
 			vscode.commands.registerCommand('amiga.registers.selectedNode', this.registersSelectedNode.bind(this)),
@@ -172,6 +183,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => vscode.commands.executeCommand('simpleBrowser.show', 'http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html')),
 			vscode.commands.registerCommand('amiga.programFolder', () => path.dirname(vscode.workspace.getConfiguration('amiga').get('program')?.toString().replace(path.sep, '/'))),
 			vscode.commands.registerCommand('amiga.setDisassembledMemory', (lines: SourceLineWithDisassembly[]) => this.disassembledMemoryProvider.setDisassembledMemory(lines)),
+			vscode.commands.registerCommand('amiga.toggleCounts', () => this.assemblyDocumentManager.toggleCounts()),
 
 			// window
 			vscode.window.registerTreeDataProvider('amiga.registers', this.registerProvider),
@@ -199,8 +211,11 @@ class AmigaDebugExtension {
 			vscode.languages.registerDefinitionProvider(assemblyLanguagesInt, assemblyLanguageProvider),
 			vscode.languages.registerHoverProvider(assemblyLanguagesInt, assemblyLanguageProvider),
 			vscode.languages.registerCompletionItemProvider(assemblyLanguagesInt, assemblyLanguageProvider),
+			vscode.languages.registerCodeLensProvider(assemblyLanguagesInt, countsLens),
 			// assembly language (extensions)
 			vscode.languages.registerHoverProvider(assemblyLanguagesExt, assemblyLanguageProviderExt),
+			vscode.languages.registerCodeLensProvider(assemblyLanguagesExt, countsLens),
+
 			this.assemblyDocumentManager,
 
 			// output channel
@@ -217,24 +232,24 @@ class AmigaDebugExtension {
 		if (process.platform !== "win32") {
 			await this.setPermissions();
 		}
+	}
 
-		if (vscode.extensions.getExtension('gigabates.m68k-lsp')) {
-			const config = vscode.workspace.getConfiguration();
-			// Ensure m68k.includePaths contains the bundled system includes dir
-			const sysIncDir = path.join("opt", "m68k-amiga-elf", "sys-include");
-			const sysIncPath = path.join(this.binPath, sysIncDir);
-			const currentIncludePaths: string[] = config.get('m68k.includePaths');
-			if (!currentIncludePaths.includes(sysIncPath)) {
-				await config.update("m68k.includePaths", [
-					// Remove any old paths to sys-include:
-					// The location may change between environments and extension versions
-					...currentIncludePaths.filter((inc) => !inc.endsWith(sysIncDir)),
-					// Add new sys-include path
-					sysIncPath,
-				]);
-			}
-			await config.update("m68k.vasm.provideDiagnostics", false);
+	private async configureM68k() {
+		const config = vscode.workspace.getConfiguration();
+		// Ensure m68k.includePaths contains the bundled system includes dir
+		const sysIncDir = path.join("opt", "m68k-amiga-elf", "sys-include");
+		const sysIncPath = path.join(this.binPath, sysIncDir);
+		const currentIncludePaths: string[] = config.get('m68k.includePaths');
+		if (!currentIncludePaths.includes(sysIncPath)) {
+			await config.update("m68k.includePaths", [
+				// Remove any old paths to sys-include:
+				// The location may change between environments and extension versions
+				...currentIncludePaths.filter((inc) => !inc.endsWith(sysIncDir)),
+				// Add new sys-include path
+				sysIncPath,
+			]);
 		}
+		await config.update("m68k.vasm.provideDiagnostics", false);
 	}
 
 	public async dispose() {
@@ -242,11 +257,6 @@ class AmigaDebugExtension {
 	}
 
 	private activeEditorChanged(editor: vscode.TextEditor) {
-		if(vscode.languages.match(this.assemblyLanguageSelector, editor?.document)) {
-			this.assemblyDocumentManager.getSourceContext(editor.document.fileName).setEmptyDecorations(getEditorForDocument(editor.document));
-			this.assemblyDocumentManager.getSourceContext(editor.document.fileName).setDecorations(getEditorForDocument(editor.document));
-			return;
-		}
 		if(editor !== undefined && vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.type === 'amiga') {
 			const uri = editor.document.uri;
 			if(uri.scheme === 'file') {
