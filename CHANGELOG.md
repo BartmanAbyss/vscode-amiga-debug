@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.2
+- NEW: update gcc to 13.1.0, binutils, GNU gdb (GDB) 14.0.50.20230511-git
+- CHG: replaced MicroKnight debug font with Topaz [#227](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/227)
+
 ## 1.7.1
 - FIX: 1.7.0 would not start debugging if launch.json was missing `emuargs` [#211](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/211)
 
