@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-VERSION=12.2.0
+VERSION=13.1.0
 
 cd output
 find bin -type f -perm +111 -exec ../ci/make_portable.sh {} ../lib \;
