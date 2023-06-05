@@ -170,7 +170,7 @@ class AmigaDebugExtension {
 			vscode.commands.registerCommand('amiga.externalResources.colorReducer', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/ColorReducer'))),
 			vscode.commands.registerCommand('amiga.externalResources.bltconCheatSheet', () => vscode.env.openExternal(vscode.Uri.parse('http://deadliners.net/BLTCONCheatSheet'))),
 			vscode.commands.registerCommand('amiga.externalResources.amigaHRM', () => vscode.commands.executeCommand('simpleBrowser.show', 'http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html')),
-			vscode.commands.registerCommand('amiga.programFolder', () => path.dirname(vscode.workspace.getConfiguration('amiga').get('program')?.toString().replace(path.sep, '/'))),
+			vscode.commands.registerCommand('amiga.programFolder', () => path.dirname(vscode.workspace.getConfiguration('amiga').get('program')?.toString().replace('\\', '/'))),
 			vscode.commands.registerCommand('amiga.setDisassembledMemory', (lines: SourceLineWithDisassembly[]) => this.disassembledMemoryProvider.setDisassembledMemory(lines)),
 
 			// window
