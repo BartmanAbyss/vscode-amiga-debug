@@ -32,10 +32,13 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	kickstart?: string; // An absolute path to a Kickstart ROM; if not specified, AROS will be used
 	cpuboard?: string; // An absolute path to a CPU Board Expansion ROM
 	endcli?: boolean;
+	stack?: string;
 	uaelog?: boolean;
 	chipmem?: string; // '256k', '512k', '1m', '1.5m' or '2m'
 	fastmem?: string; // '0', '64k', '128k', '256k', '512k', '1M', '2M', '4M', '8M'
 	slowmem?: string; // '0', '512k', '1M', '1.8M'
+	ntsc?: boolean; // NTSC mode
+	emuargs?: string[]; // Additional CLI arguments for emulator
 }
 
 class ExtendedVariable {
@@ -186,12 +189,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return out;
 		};
 
-		const configExt = isWin ? "uae" : "fs-uae";
-		const defaultPath = path.join(binPath, "default." + configExt);
+		const defaultPath = path.join(binPath, "default.uae");
 		let config = new Map<string, string>();
-		try {
-			config = parseCfg(fs.readFileSync(defaultPath, 'utf-8'));
-		} catch(e) { /**/ }
 
 		const exePath = path.dirname(args.program);
 		const exeName = path.basename(args.program) + ".exe";
@@ -209,6 +208,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		if (isWin) {
 			// WinUAE:
+
+			try {
+				config = parseCfg(fs.readFileSync(defaultPath, 'utf-8'));
+			} catch(e) { /**/ }
 
 			// mandatory
 			config.set('use_gui', 'no');
@@ -278,6 +281,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			// debugging options
 			config.set('debugging_features', 'gdbserver');
 			config.set('debugging_trigger', debugTrigger);
+			// video
+			config.set('ntsc', args.ntsc ? 'true' : 'false');
 
 			// safety
 			config.delete('statefile');
@@ -355,6 +360,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			default:
 				config.delete('bogomem_size');
 			}
+
+			try {
+				fs.writeFileSync(defaultPath, stringifyCfg(config));
+			} catch(e) {
+				this.sendErrorResponse(response, 103, `Unable to write emulator config ${defaultPath}.`);
+				return;
+			}
 		} else {
 			// FS-UAE:
 			switch(machine) {
@@ -380,11 +392,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config.set('remote_debugger', "20");
 			config.set('remote_debugger_port', "2345");
 			config.set('remote_debugger_trigger', debugTrigger);
+			// video
+			config.set('ntsc_mode', args.ntsc ? '1' : '0');
+			// specify savestate dir so we don't overwrite user's default FS-UAE save slots
+			config.set('state_dir', path.join(binPath, "fs-uae"));
 
 			if(args.kickstart !== undefined) {
 				config.set('kickstart_file', args.kickstart);
-			} else {
-				config.delete('kickstart_file');
 			}
 			// args.cpuboard: no FS-UAE equivalent?
 
@@ -405,8 +419,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '2m':
 				config.set('chip_memory', '2048');
 				break;
-			default:
-				config.delete('chip_memory');
 			}
 			switch(args.fastmem?.toLowerCase()) {
 			case '0k':
@@ -440,8 +452,6 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '8m':
 				config.set('fast_memory', '8192');
 				break;
-			default:
-				config.delete('fast_memory');
 			}
 			switch(args.slowmem?.toLowerCase()) {
 			case '0k':
@@ -458,28 +468,30 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			case '1.8m':
 				config.set('slow_memory', '1792');
 				break;
-			default:
-				config.delete('slow_memory');
 			}
 		}
 
-		try {
-			fs.writeFileSync(defaultPath, stringifyCfg(config));
-		} catch(e) {
-			this.sendErrorResponse(response, 103, `Unable to write emulator config ${defaultPath}.`);
-			return;
-		}
-
-		// all WinUAE options now in config file
 		const emuPath = isWin
 			? path.join(binPath, "winuae-gdb.exe")
 			: path.join(binPath, "fs-uae", "fs-uae");
 
-		const emuArgs = isWin ? [ '-portable' ] : [ defaultPath ];
+		if(args.emuargs === undefined)
+			args.emuargs = [];
+
+		const emuArgs = [
+			...(isWin
+				// all WinUAE options now in config file
+				? [ '-portable' ]
+				// FS-UAE options as args
+				: [...config].map(([k, v]) => `--${k}=${v}`)),
+			...args.emuargs
+		];
 
 		// defaults - from package.json
 		if(args.endcli === undefined)
 			args.endcli = false;
+		if(args.stack === undefined)
+			args.stack = '';
 		if(args.uaelog === undefined)
 			args.uaelog = true;
 
@@ -501,6 +513,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
 			let startupSequence = '';
+			if(args.stack !== '')
+				startupSequence += `stack ${args.stack}\n`;
 			if(args.endcli)
 				startupSequence += `cd dh1:\nrun >nil: <nil: ${debugTrigger} >nil: <nil:\nendcli >nil:\n`;
 			else
@@ -533,11 +547,13 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		const cwd = dirname(emuPath);
+		const cwd = isWin
+			? dirname(emuPath)
+			// CWD determines location for debug_save/debug_load on FS-UAE
+			: vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const env = {
 			...process.env,
 			LD_LIBRARY_PATH: ".", // Allow Linux fs-uae to find bundled .so files
-			DYLD_FALLBACK_LIBRARY_PATH: ".", // Allow Mac fs-uae to find bundled .dylib files
 		};
 		emu = childProcess.spawn(emuPath, emuArgs, { stdio: 'ignore', detached: true, env, cwd });
 		//emu.stdout.on('data', (data) => { console.log(`stdout: ${data}`); });

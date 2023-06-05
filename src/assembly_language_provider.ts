@@ -25,14 +25,6 @@ function split_with_offset(str: string, re: RegExp) {
 	return results;
 }
 
-export function getEditorForDocument(doc: vscode.TextDocument): vscode.TextEditor {
-	for(const textEditor of vscode.window.visibleTextEditors) {
-		if(textEditor.document === doc)
-			return textEditor;
-	}
-	return null;
-}
-
 const spawnAsync = (cmd: string, args?: string[], options?: childProcess.SpawnSyncOptions) =>
 	new Promise<{ stdout: Buffer; stderr: Buffer }>((res, rej) => {
 		const proc = childProcess.spawn(cmd, args, options);
@@ -69,11 +61,8 @@ export class SourceContext {
 	constructor(public fileName: string, private diagnosticCollection: vscode.DiagnosticCollection) {
 	}
 
-	public setText(text: string) {
+	public async parse(text: string) {
 		this.text = text;
-	}
-
-	public async parse() {
 		const date = new Date();
 		const dateString = date.getFullYear().toString() + "." + (date.getMonth()+1).toString().padStart(2, '0') + "." + date.getDate().toString().padStart(2, '0') + "-" +
 			date.getHours().toString().padStart(2, '0') + "." + date.getMinutes().toString().padStart(2, '0') + "." + date.getSeconds().toString().padStart(2, '0');
@@ -312,56 +301,6 @@ export class SourceContext {
 		this.tokens = this.getTokens();
 	}
 
-	// theoretical 68000 cycle decorations
-	private static decoration = vscode.window.createTextEditorDecorationType({
-		before: {
-			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px; position: absolute; line-height: 1rem;',
-			backgroundColor: new vscode.ThemeColor("badge.background"),
-			color: new vscode.ThemeColor("badge.foreground"),
-			margin: '2px 10px 2px 0',
-		}
-	});
-	private static decorationEmpty = vscode.window.createTextEditorDecorationType({
-		before: {
-			textDecoration: 'none; white-space: pre; padding: 0 10px 0 10px',
-			margin: '0 10px 0 0',
-			contentText: '        '
-		}
-	});
-
-	public setDecorations(textEditor: vscode.TextEditor) {
-		if(textEditor === null)
-			return;
-
-		const optionsArray: vscode.DecorationOptions[] = [];
-		for(let line = 0; line < textEditor.document.lineCount; line++) {
-			const cyclesStr = this.cycles.get(line + 1);
-			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
-			if(cyclesStr !== undefined) {
-				optionsArray.push({
-					range,
-					renderOptions: {
-						before: {
-							contentText: cyclesStr.padStart(8, ' ')
-						}
-					}
-				});
-			}
-		}
-		textEditor.setDecorations(SourceContext.decoration, optionsArray);
-	}
-
-	public setEmptyDecorations(textEditor: vscode.TextEditor) {
-		if(textEditor === null)
-			return;
-		const emptyRanges: vscode.Range[] = [];
-		for(let line = 0; line < textEditor.document.lineCount; line++) {
-			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
-			emptyRanges.push(range);
-		}
-		textEditor.setDecorations(SourceContext.decorationEmpty, emptyRanges);
-	}
-
 	private getTokens(): Token[] {
 		const tokens: Token[] = [];
 
@@ -379,58 +318,176 @@ export class SourceContext {
 	}
 }
 
+export class Decorator implements vscode.Disposable {
+	private cycles = new Map<number, string>();
+	private visible = true;
+	private subscriptions: vscode.Disposable[];
 
-export class AmigaAssemblyDocumentMananger {
-	private sourceContexts = new Map<string, SourceContext>();
-	public diagnosticCollection = vscode.languages.createDiagnosticCollection("amiga-assembly");
+	// theoretical 68000 cycle decorations
+	private static decoration = vscode.window.createTextEditorDecorationType({
+		before: {
+			textDecoration: 'none; white-space: pre; border-radius: 6px; padding: 0 10px 0 10px; position: absolute; line-height: 1rem;',
+			backgroundColor: new vscode.ThemeColor("badge.background"),
+			color: new vscode.ThemeColor("badge.foreground"),
+			margin: '2px 10px 2px 0',
+		}
+	});
+	private static decorationEmpty = vscode.window.createTextEditorDecorationType({
+		before: {
+			textDecoration: 'none; white-space: pre; padding: 0 10px 0 10px',
+			margin: '0 10px 0 0',
+			contentText: '        '
+		}
+	});
 
-	constructor(extensionPath: string, selector: vscode.DocumentSelector) {
-		SourceContext.extensionPath = extensionPath;
+	constructor (private document: vscode.TextDocument) {
+		this.subscriptions = [
+			vscode.workspace.onDidChangeTextDocument((event) => {
+				if (this.visible && event.document === this.document) {
+					// Immediately set placeholder decorations for each line to create space and avoid delay / jumping.
+					// Once the cycles have been counted, setCycles will be called to populate the values.
+					this.setEmptyDecorations();
+				}
+			}),
+			vscode.window.onDidChangeVisibleTextEditors((editors) => {
+				if (this.visible && editors.some((e) => e.document === this.document)) {
+					this.show();
+				}
+			}),
+		];
+		this.show();
+	}
 
-		const changeTimers = new Map<string, NodeJS.Timeout>(); // Keyed by file name.
+	public dispose() {
+		this.subscriptions.forEach((subscription) => {
+			subscription.dispose();
+		});
+	}
 
-		// parse documents that are already open when extension is activated
-		for(const document of vscode.workspace.textDocuments) {
-			if (vscode.languages.match(selector, document)) {
-				console.log("initial parse " + document.fileName);
-				this.getSourceContext(document.fileName).setText(document.getText());
-				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
-				void this.getSourceContext(document.fileName).parse().then(() => {
-					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
+	public setCycles(cycles: Map<number, string>) {
+		this.cycles = cycles;
+		if (this.visible) {
+			this.setDecorations();
+		}
+	}
+
+	public toggle(): void {
+		return this.visible ? this.hide() : this.show();
+	}
+
+	public hide(): void {
+		this.visible = false;
+		this.getTextEditors().forEach((editor) => {
+			editor.setDecorations(Decorator.decorationEmpty, []);
+			editor.setDecorations(Decorator.decoration, []);
+		});
+	}
+
+	public show(): void {
+		this.visible = true;
+		this.setEmptyDecorations();
+		this.setDecorations();
+	}
+
+	private setEmptyDecorations() {
+		const emptyRanges: vscode.Range[] = [];
+		for(let line = 0; line < this.document.lineCount; line++) {
+			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
+			emptyRanges.push(range);
+		}
+		this.getTextEditors().forEach((editor) => {
+			editor.setDecorations(Decorator.decorationEmpty, emptyRanges);
+		});
+	}
+
+	private setDecorations() {
+		const optionsArray: vscode.DecorationOptions[] = [];
+		for(let line = 0; line < this.document.lineCount; line++) {
+			const cyclesStr = this.cycles.get(line + 1);
+			const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 0));
+			if(cyclesStr !== undefined) {
+				optionsArray.push({
+					range,
+					renderOptions: {
+						before: {
+							contentText: cyclesStr.padStart(8, ' ')
+						}
+					}
 				});
 			}
 		}
+		this.getTextEditors().forEach((editor) => {
+			editor.setDecorations(Decorator.decoration, optionsArray);
+		});
+	}
+
+	private getTextEditors(): vscode.TextEditor[] {
+		return vscode.window.visibleTextEditors.filter((e) => e.document === this.document);
+	}
+}
+
+
+export class AmigaAssemblyDocumentMananger implements vscode.Disposable {
+	private sourceContexts = new Map<string, SourceContext>();
+	private decorators = new Map<vscode.TextDocument,Decorator>();
+	private subscriptions: vscode.Disposable[] = [];
+	private changeTimers = new Map<string, NodeJS.Timeout>(); // Keyed by file name.
+	public diagnosticCollection = vscode.languages.createDiagnosticCollection("amiga-assembly");
+
+	constructor(extensionPath: string, private selector: vscode.DocumentSelector) {
+		SourceContext.extensionPath = extensionPath;
+
+		// parse documents that are already open when extension is activated
+		vscode.workspace.textDocuments.map((document) => {
+			if (vscode.languages.match(selector, document)) {
+				this.decorators.set(document, new Decorator(document));
+				this.processDocument(document);
+			}
+		});
 
 		// parse documents when they are opened
-		vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
-			if (vscode.languages.match(selector, document)) {
-				console.log("openTextDocument: initial parse " + document.fileName);
-				this.getSourceContext(document.fileName).setEmptyDecorations(getEditorForDocument(document));
-				this.getSourceContext(document.fileName).setText(document.getText());
-				void this.getSourceContext(document.fileName).parse().then(() => {
-					this.getSourceContext(document.fileName).setDecorations(getEditorForDocument(document));
-				});
-			}
-		});
+		this.subscriptions.push(
+			vscode.workspace.onDidOpenTextDocument((document) => {
+				if (vscode.languages.match(selector, document)) {
+					this.decorators.set(document, new Decorator(document));
+					this.processDocument(document);
+				}
+			})
+		);
 
 		// reparse documents in the background when they are modified
-		vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
-			if (vscode.languages.match(selector, event.document)) {
-				const fileName = event.document.fileName;
-				this.getSourceContext(event.document.fileName).setEmptyDecorations(getEditorForDocument(event.document));
-				this.getSourceContext(event.document.fileName).setText(event.document.getText());
-				if (changeTimers.has(fileName)) {
-					clearTimeout(changeTimers.get(fileName));
+		this.subscriptions.push(
+			vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
+				if (vscode.languages.match(selector, event.document)) {
+					const fileName = event.document.fileName;
+					if (this.changeTimers.has(fileName)) {
+						clearTimeout(this.changeTimers.get(fileName));
+					}
+					this.changeTimers.set(fileName, setTimeout(() => {
+						this.changeTimers.delete(fileName);
+						console.log("reparse " + event.document.fileName);
+						this.processDocument(event.document);
+					}, 300));
 				}
-				changeTimers.set(fileName, setTimeout(() => {
-					changeTimers.delete(fileName);
-					console.log("reparse " + event.document.fileName);
-					void this.getSourceContext(event.document.fileName).parse().then(() => {
-						this.getSourceContext(event.document.fileName).setDecorations(getEditorForDocument(event.document));
-					});
-				}, 300));
-			}
-		});
+			})
+		);
+
+		// clean up on document close
+		this.subscriptions.push(
+			vscode.workspace.onDidCloseTextDocument((document) => {
+				this.decorators.delete(document);
+				this.sourceContexts.delete(document.fileName);
+			})
+		);
+	}
+
+	private processDocument(document: vscode.TextDocument) {
+		if (vscode.languages.match(this.selector, document)) {
+			const ctx = this.getSourceContext(document.fileName);
+			void ctx.parse(document.getText()).then(() => {
+				this.decorators.get(document).setCycles(ctx.cycles);
+			});
+		}
 	}
 
 	public getSourceContext(fileName: string): SourceContext {
@@ -442,8 +499,17 @@ export class AmigaAssemblyDocumentMananger {
 		return context;
 	}
 
+	public toggleCounts() {
+		const decorator = this.decorators.get(vscode.window.activeTextEditor.document);
+		if (decorator) {
+			decorator.toggle();
+		}
+	}
+
 	public dispose() {
 		this.diagnosticCollection.dispose();
+		this.decorators.forEach((decorator) => decorator.dispose());
+		this.changeTimers.forEach(clearTimeout);
 	}
 }
 

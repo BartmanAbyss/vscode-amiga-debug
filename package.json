@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "https://github.com/BartmanAbyss/vscode-amiga-debug"
 	},
-	"version": "1.7.0",
+	"version": "1.7.1",
 	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.46.0"
@@ -153,6 +153,11 @@
 				"category": "Amiga",
 				"command": "amiga.exe2adf",
 				"title": "Amiga: Convert EXE to ADF"
+			},
+			{
+				"category": "Amiga",
+				"command": "amiga.toggleCounts",
+				"title": "Toggle Cycle Counts"
 			}
 		],
 		"languages": [
@@ -307,6 +312,11 @@
 								"description": "Run with EndCLI so you can call CloseWorkBench()",
 								"default": false
 							},
+							"stack": {
+								"type": "string",
+								"description": "Override stack size (in bytes)",
+								"default": ""
+							},
 							"uaelog": {
 								"type": "boolean",
 								"description": "Show WinUAE log output in debug console",
@@ -363,6 +373,20 @@
 									"1M",
 									"1.8M"
 								]
+							},
+							"ntsc": {
+								"type": "boolean",
+								"description": "NTSC mode",
+								"default": false
+							},
+							"emuargs": {
+								"type": "array",
+								"items": {
+									"type": "string",
+									"title": "argument"
+								},
+								"description": "Addtional CLI arguments for emulator",
+								"default": []
 							}
 						}
 					}
