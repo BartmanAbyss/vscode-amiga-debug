@@ -259,7 +259,7 @@ __attribute__((always_inline)) inline USHORT* copWaitY(USHORT* copListEnd,USHORT
 }
 
 __attribute__((always_inline)) inline USHORT* copSetColor(USHORT* copListCurrent,USHORT index,USHORT color) {
-	*copListCurrent++=offsetof(struct Custom, color[index]);
+	*copListCurrent++=offsetof(struct Custom, color) + sizeof(UWORD) * index;
 	*copListCurrent++=color;
 	return copListCurrent;
 }
@@ -428,7 +428,7 @@ int main() {
 	// set bitplane pointers
 	const UBYTE* planes[5];
 	for(int a=0;a<5;a++)
-		planes[a]=(UBYTE*)(image + lineSize * a);
+		planes[a]=(UBYTE*)image + lineSize * a;
 	copPtr = copSetPlanes(0, copPtr, planes, 5);
 
 	// set colors
@@ -463,7 +463,7 @@ int main() {
 		custom->bltcon0 = A_TO_D | DEST;
 		custom->bltcon1 = 0;
 		custom->bltadat = 0;
-		custom->bltdpt = (APTR)image + 320 / 8 * 200 * 5;
+		custom->bltdpt = (UBYTE*)image + 320 / 8 * 200 * 5;
 		custom->bltdmod = 0;
 		custom->bltafwm = custom->bltalwm = 0xffff;
 		custom->bltsize = ((56 * 5) << HSIZEBITS) | (320/16);
@@ -472,7 +472,7 @@ int main() {
 		for(short i = 0; i < 16; i++) {
 			const short x = i * 16 + sinus32[(frameCounter + i) % sizeof(sinus32)] * 2;
 			const short y = sinus40[((frameCounter + i) * 2) & 63] / 2;
-			const APTR src = (APTR)bob + 32 / 8 * 10 * 16 * (i % 6);
+			UBYTE* src = (UBYTE*)bob + 32 / 8 * 10 * 16 * (i % 6);
 
 			WaitBlit();
 			custom->bltcon0 = 0xca | SRCA | SRCB | SRCC | DEST | ((x & 15) << ASHIFTSHIFT); // A = source, B = mask, C = background, D = destination
@@ -481,7 +481,7 @@ int main() {
 			custom->bltamod = 32 / 8;
 			custom->bltbpt = src + 32 / 8 * 1;
 			custom->bltbmod = 32 / 8;
-			custom->bltcpt = custom->bltdpt = (APTR)image + 320 / 8 * 5 * (200 + y) + x / 8;
+			custom->bltcpt = custom->bltdpt = (UBYTE*)image + 320 / 8 * 5 * (200 + y) + x / 8;
 			custom->bltcmod = custom->bltdmod = (320 - 32) / 8;
 			custom->bltafwm = custom->bltalwm = 0xffff;
 			custom->bltsize = ((16 * 5) << HSIZEBITS) | (32/16);
