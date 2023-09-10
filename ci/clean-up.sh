@@ -4,7 +4,7 @@ IFS=$'\n\t'
 set -x
 
 # also change in download.sh
-export GCC_VERSION="12.2.0"
+export GCC_VERSION="13.2.0"
 
 cd output
 rm -rf include

@@ -3,7 +3,7 @@
 
 # _amiga-debug_ Visual Studio Code Extension
 
-**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 13.1 with the bundled WinUAE/FS-UAE and GDB.**
+**One-stop Visual Studio Code Extention to compile, debug and profile Amiga C/C++ programs compiled by the bundled gcc 13.2 with the bundled WinUAE/FS-UAE and GDB.**
 
 ## Overview
 This fully self-contained extension will help you to quickly develop demos, intros, games, etc. for the Amiga 500, 1200, 4000. It supports C and C++, however no standard library is available. It comes with advanced productivity features like debug overlay, frame profiler, graphics debugger and size profiler.
@@ -120,7 +120,7 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - `68k-dis.ts` is based on [binutils-gdb/include/opcode/m68k.h](https://github.com/BartmanAbyss/binutils-gdb/blob/master/include/opcode/m68k.h), Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 
 This extension contains binaries of:
-- modified [GCC 13.1.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.1.0) (patch included)
+- modified [GCC 13.2.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.2.0) (patch included)
   - Copyright (C) 2023 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 - modified [GNU gdb (GDB) 14.0.50.20230511-git](https://github.com/BartmanAbyss/binutils-gdb)
@@ -188,15 +188,15 @@ make install
 
 ### GCC
 ```bash
-wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.1.0/gcc-13.1.0.tar.xz
-tar -xf gcc-13.1.0.tar.xz
-cd gcc-13.1.0
+wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.2.0/gcc-13.2.0.tar.xz
+tar -xf gcc-13.2.0.tar.xz
+cd gcc-13.2.0
 patch -p1 < ../gcc-barto.patch
 bash ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-13.1.0
-cd build-gcc-13.1.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-13.1.0/configure \
+mkdir -p build-gcc-13.2.0
+cd build-gcc-13.2.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-13.2.0/configure \
   --disable-clocale \
   --disable-gcov \
   --disable-libada \
@@ -215,9 +215,9 @@ LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-13.1.0/configure \
   --with-cpu=68000 \
   --host=x86_64-w64-mingw32
 make all-gcc -j16
+# at this point, you're getting an error about not finding gcc-cross. This is okay.
 sed 's/selftest # srcextra/# selftest srcextra/' gcc/Makefile >gcc/Makefile.tmp
 mv gcc/Makefile.tmp gcc/Makefile
-# at this point, you're getting an error about not finding gcc-cross. This is okay.
 gcc/gcc-cross.exe -dumpspecs >gcc/specs
 # continue the build
 make all-gcc -j16
@@ -255,7 +255,7 @@ WinUAE builds with Visual Studio 2022.
 
 ### Create new GCC patch
 ```bash
-diff -ruN gcc-13.1.0 gcc-13.1.0-barto > gcc-barto.patch
+diff -ruN gcc-13.2.0 gcc-13.2.0-barto > gcc-barto.patch
 ```
 
 ## Known Issues/TODOs

@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.3
+- NEW: update gcc to 13.2.0
+
 ## 1.7.2
 - NEW: update gcc to 13.1.0, binutils, GNU gdb (GDB) 14.0.50.20230511-git
 - CHG: replaced MicroKnight debug font with Topaz [#227](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/227)
