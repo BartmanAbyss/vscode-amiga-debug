@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.4
+- FIX: 1.7.3 was broken for Linux/MacOS
+
 ## 1.7.3
 - NEW: update gcc to 13.2.0
 
