@@ -30,3 +30,4 @@ template/obj/**
 !template/obj/DELETE.ME
 template/out/**
 !template/out/DELETE.ME
+template/.vscode/settings.json
