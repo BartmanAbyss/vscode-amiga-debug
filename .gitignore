@@ -15,7 +15,9 @@ bin/**/*.ini
 bin/**/winuaebootlog.txt
 bin/**/debug
 template/obj8mingw
-template/obj
+!template/obj/
+template/obj/*
+!template/obj/DELETE.ME
 template/.vscode/settings.json
 !template/out/
 template/out/*
