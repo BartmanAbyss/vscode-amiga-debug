@@ -70,12 +70,16 @@ void debug_save(const void* addr, unsigned int size, const char* name);
     const void* name = &incbin_ ## name ## _start;
 
 inline unsigned int muluw(unsigned short a, unsigned short b) {
+    int r; 
     asm("muluw %1,%0":"+d"(a): "mid"(b): "cc");
-    return a;
+	asm("" : "=d"(r) : "d"(a));
+    return r;
 }
 inline int mulsw(short a, short b) {
+    int r; 
     asm("mulsw %1,%0":"+d"(a): "mid"(b): "cc");
-    return a;
+	asm("" : "=d"(r) : "d"(a));
+    return r;
 }
 inline unsigned short divuw(unsigned int a, unsigned short b) {
     asm("divuw %1,%0":"+d"(a): "mid"(b): "cc");
