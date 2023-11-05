@@ -69,19 +69,19 @@ void debug_save(const void* addr, unsigned int size, const char* name);
 	extern const void* incbin_ ## name ## _end;\
     const void* name = &incbin_ ## name ## _start;
 
-inline unsigned int muluw(unsigned short a, unsigned short b) {
+__attribute__((always_inline)) inline unsigned int muluw(unsigned short a, unsigned short b) {
     asm("muluw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline int mulsw(short a, short b) {
+__attribute__((always_inline)) inline int mulsw(short a, short b) {
     asm("mulsw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline unsigned short divuw(unsigned int a, unsigned short b) {
+__attribute__((always_inline)) inline unsigned short divuw(unsigned int a, unsigned short b) {
     asm("divuw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }
-inline short divsw(int a, short b) {
+__attribute__((always_inline)) inline short divsw(int a, short b) {
     asm("divsw %1,%0":"+d"(a): "mid"(b): "cc");
     return a;
 }

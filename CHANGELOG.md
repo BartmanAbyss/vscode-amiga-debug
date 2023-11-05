@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.5
+- FIX: fixed missing `obj` and `out` directories in template project
+- FIX: `__attribute__((always_inline))` in `gcc8_c_support.h` for `-Ofast`
+
 ## 1.7.4
 - FIX: 1.7.3 was broken for Linux/MacOS
 
