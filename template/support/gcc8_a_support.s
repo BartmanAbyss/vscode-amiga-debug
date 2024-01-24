@@ -1,5 +1,5 @@
 	.cfi_sections .debug_frame
-	.text
+	.section .text.__mulsi3,"ax",@progbits
 	.type __mulsi3, function
 	.globl	__mulsi3
 __mulsi3:
@@ -18,7 +18,7 @@ __mulsi3:
 	.cfi_endproc
 	.size __mulsi3, .-__mulsi3
 
-	.text
+	.section .text.__udivsi3,"ax",@progbits
 	.type __udivsi3, function
 	.globl	__udivsi3
 __udivsi3:
@@ -71,7 +71,7 @@ __udivsi3:
 	.cfi_endproc
 	.size __udivsi3, .-__udivsi3
 
-	.text
+	.section .text.__divsi3,"ax",@progbits
 	.type __divsi3, function
 	.globl	__divsi3
  __divsi3:
@@ -107,7 +107,7 @@ __udivsi3:
 	.cfi_endproc
 	.size __divsi3, .-__divsi3
 
-	.text
+	.section .text.__modsi3,"ax",@progbits
 	.type __modsi3, function
 	.globl	__modsi3
 __modsi3:
@@ -136,7 +136,7 @@ __modsi3:
 	.cfi_endproc
 	.size __modsi3, .-__modsi3
 
-	.text
+	.section .text.__umodsi3,"ax",@progbits
 	.type __umodsi3, function
 	.globl	__umodsi3
 __umodsi3:
@@ -166,7 +166,7 @@ __umodsi3:
 	.size __umodsi3, .-__umodsi3
 
 	
-	.text
+	.section .text.KPutCharX,"ax",@progbits
 	.type KPutCharX, function
 	.globl	KPutCharX
 
@@ -182,7 +182,7 @@ KPutCharX:
 	.cfi_endproc
 	.size KPutCharX, .-KPutCharX
 
-	.text
+	.section .text.PutChar,"ax",@progbits
 	.type PutChar, function
 	.globl	PutChar
 

@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.6
+- NEW: modified template project to include `-ffunction-sections`, `-fdata-sections`, `--gc-sections` flags and changed assembly files to use unique sections so linker can better strip unused code/data
+
 ## 1.7.5
 - FIX: fixed missing `obj` and `out` directories in template project
 - FIX: `__attribute__((always_inline))` in `gcc8_c_support.h` for `-Ofast`

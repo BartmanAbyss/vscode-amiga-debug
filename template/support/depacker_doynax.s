@@ -52,6 +52,7 @@
 .endm
 
 	|Entry point. Wind up the decruncher
+	.section .text.depacker_doynax,"ax",@progbits
 	.type _doynaxdepack_asm,function
 	.globl _doynaxdepack_asm
 _doynaxdepack_asm:
