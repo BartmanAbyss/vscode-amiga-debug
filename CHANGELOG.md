@@ -6,6 +6,7 @@ See PR links for more information.
 ## 1.7.6
 - NEW: modified template project to include `-ffunction-sections`, `-fdata-sections`, `--gc-sections` flags and changed assembly files to use unique sections so linker can better strip unused code/data
 - NEW: updated `type_traits` include
+- FIX: fix [MacOS issue](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/243)
 
 ## 1.7.5
 - FIX: fixed missing `obj` and `out` directories in template project
