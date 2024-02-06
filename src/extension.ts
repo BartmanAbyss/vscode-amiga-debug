@@ -47,6 +47,8 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 	public compilerPath: string;
 	constructor(extensionPath: string) {
 		this.compilerPath = path.join(extensionPath, "bin", process.platform, "opt", "bin", "m68k-amiga-elf-gcc");
+		if(process.platform === "win32")
+			this.compilerPath += ".exe";
 	}
 
 	public readonly name = "Amiga C/C++";
@@ -87,8 +89,9 @@ class AmigaCppConfigurationProvider implements CustomConfigurationProvider {
 		return true;
 	}
 	public async provideBrowseConfiguration(token?: CancellationToken) {
+		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		const config: WorkspaceBrowseConfiguration = {
-			browsePath: [],
+			browsePath: [workspaceFolder],
 			compilerPath: this.compilerPath,
 		};
 		return config;
@@ -228,9 +231,8 @@ class AmigaDebugExtension {
 		this.cppToolsApi.registerCustomConfigurationProvider(provider);
 		await provider.init();
 		this.cppToolsApi.notifyReady(provider);
-		if (process.platform !== "win32") {
+		if (process.platform !== "win32")
 			await this.setPermissions();
-		}
 	}
 
 	private async configureM68k() {

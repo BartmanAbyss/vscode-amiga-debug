@@ -1,5 +1,5 @@
 {
-    "includePath": [ "${workspaceFolder}/**" ],
+    "includePath": [ "${workspaceFolder}" ],
     "defines": [ ],
     "shrinkler": {
         "fast": "-h -o -1",
