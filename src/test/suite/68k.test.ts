@@ -1,3 +1,4 @@
+import { suite, test } from 'mocha';
 import * as assert from 'assert';
 import { decodeInstruction } from 'm68kdecode';
 

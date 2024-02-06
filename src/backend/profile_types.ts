@@ -31,6 +31,7 @@ export enum GfxResourceType {
 
 // needs to match gcc8_c_support.h
 export enum GfxResourceFlags {
+	none = 0,
 	bitmap_interleaved = 1 << 0,
 	bitmap_masked = 1 << 1, 
 	bitmap_ham = 1 << 2, 

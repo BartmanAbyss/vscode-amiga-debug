@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-const { transform } = require('ts-transform-react-jsx-source')
+//const { transform } = require('ts-transform-react-jsx-source') // outdated, not compatible with Typescript 5.0+
 
 module.exports = (env, argv) => {
 	var commonConfig = {

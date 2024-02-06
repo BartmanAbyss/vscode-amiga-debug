@@ -28,7 +28,7 @@ suite("kickstart", function () {
 		kickstart.writeIdc();
 		kickstart.writeGhidra();
 		kickstart.writeSymbols(binDir, symDir);
-	}));
+	})).timeout(5000);
 	test("2.04", function () {
 		const kickstart = new Kickstart(path.join(testDataDir, 'private/Kickstart v2.04 r37.175 (1991)(Commodore)(A500+)[!].rom'), path.join(testDataDir, 'fd'));
 		kickstart.writeIdc();

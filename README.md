@@ -153,6 +153,7 @@ This extension contains binaries of:
 ## Contributing
 For development, just install the latest [node.js LTS](https://nodejs.org/en/), create a new directory, clone the repository `git clone https://github.com/BartmanAbyss/vscode-amiga-debug.git`, then install the dependencies with `npm install`. To build, open the directory in VS Code and hit `F5`. You can then test the extension without building a `.vsix`.
 To build a `.vsix`, `npm install -g vsce` (once), and then `vsce package`.
+For better testing, install the [Mocha Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-mocha-test-adapter) extension. The tests should then show up in your `Testing` tab.
 
 ## Development (Windows)
 Here are the command-lines used to compile the external tools (We're building with MinGW on WSL on Windows 10/11 to `c:\amiga-mingw\opt`).
@@ -250,6 +251,12 @@ git clone https://github.com/preactjs/preact-devtools.git
 npm install
 npm run build:inline
 <copy dist/inline/* to preact-devtools>
+```
+
+### Updating node_modules
+```bash
+npm install -g npm-check
+npm-check -u
 ```
 
 WinUAE builds with Visual Studio 2022.
