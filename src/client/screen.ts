@@ -505,11 +505,11 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 						case 1: // modify blue
 							color = (prevColor & ~0x0000ff) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 0);
 							break;
-						case 3: // modify green
-							color = (prevColor & ~0x00ff00) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 8);
-							break;
 						case 2: // modify red
 							color = (prevColor & ~0xff0000) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 16);
+							break;
+						case 3: // modify green
+							color = (prevColor & ~0x00ff00) | ((((bpldata & 0xf) << 4) | (bpldata & 0xf)) << 8);
 							break;
 						}
 						prevColor = color;

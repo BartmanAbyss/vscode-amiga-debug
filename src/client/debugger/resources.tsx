@@ -7,7 +7,7 @@ import { IProfileModel } from '../model';
 declare const MODELS: IProfileModel[];
 
 import { Custom } from '../custom';
-import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss, ScreenType, displayLeft, displayTop } from '../dma';
+import { GetMemoryAfterDma, GetPaletteFromCustomRegs, IScreen, GetScreenFromCopper, GetPaletteFromMemory, GetPaletteFromCopper, BlitterChannel, NR_DMA_REC_VPOS, NR_DMA_REC_HPOS, GetCustomRegsAfterDma, CpuCyclesToDmaCycles, GetColorCss, ScreenType, displayLeft, displayTop, ColorSwap } from '../dma';
 import { GfxResourceType, GfxResource, GfxResourceFlags } from '../../backend/profile_types';
 import { createPortal } from 'preact/compat';
 
@@ -129,7 +129,7 @@ export const Screen: FunctionComponent<{
 					//console.log(`  y:${y} a:${data.toString(16).padStart(4, '0')} b:${datb.toString(16).padStart(4, '0')}`);
 					for(let x = 0; x < 16; x++) {
 						const pixel = (data >>> 15 & 0b01) | ((datb >>> 15) << 1);
-						putPixel(hstart + x - displayLeft, y - displayTop, pixel ? palette[16 + pixel] : 0);
+						putPixel(hstart + x - displayLeft, y - displayTop, pixel ? ColorSwap(palette[16 + pixel]) : 0);
 						data = (data << 1) & 0xffff;
 						datb = (datb << 1) & 0xffff;
 					}
@@ -159,7 +159,7 @@ export const Screen: FunctionComponent<{
 									pixelMask |= 1 << p;
 							}
 							pixel &= pixelMask;
-							putPixel(x * 16 + i, y, pixel ? palette[pixel] : 0); // color 0 is transparent
+							putPixel(x * 16 + i, y, pixel ? ColorSwap(palette[pixel]) : 0); // color 0 is transparent
 						} else {
 							if(flags & GfxResourceFlags.bitmap_ham) {
 								let color = palette[0]; // 0xAABBGGRR
@@ -180,7 +180,7 @@ export const Screen: FunctionComponent<{
 								putPixel(x * 16 + i, y, color);
 								prevColor = color;
 							} else {
-								putPixel(x * 16 + i, y, palette[pixel]);
+								putPixel(x * 16 + i, y, ColorSwap(palette[pixel]));
 							}
 						}
 					}
