@@ -195,5 +195,12 @@ window.onerror = (event: Event | string, source?: string, lineno?: number, colno
 	});
 };
 
+// disable text selection with shift+click. disturbs multi-select in objdump. https://stackoverflow.com/a/54101500
+["keyup", "keydown"].forEach((event) => {
+	window.addEventListener(event, (e: KeyboardEvent) => {
+		document.onselectstart = () => !(e.key === "Shift" && e.shiftKey);
+	});
+});
+
 // eslint-disable-next-line no-unused-expressions, @typescript-eslint/no-unused-expressions
 TryProfiler() || TryObjdump() || TrySavestate();

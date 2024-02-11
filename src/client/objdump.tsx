@@ -222,7 +222,6 @@ export const ObjdumpView: FunctionComponent<{
 	const [model, setModel] = useState<ObjdumpModel>(() => {
 		if(frame === -1)
 			return new ObjdumpModel(OBJDUMP);
-
 		return new ObjdumpModel(MODELS[0].base.objdump, MODELS[0].base.cpuCycleUnit === 256 ? true : false, MODELS[frame].amiga.pcTrace); // theoretical cycles only for 7MHz (68000)
 	});
 	const [opacity, setOpacity] = useState(1.0);
@@ -235,7 +234,6 @@ export const ObjdumpView: FunctionComponent<{
 			if(line.pc !== undefined)
 				pcMap.set(line.pc, index);
 		});
-
 
 		const jumps: JumpAbsolute[] = model.jumps.filter((jump) =>
 			[...jump.start, jump.end].every((pc) => pcMap.has(pc))
@@ -255,6 +253,28 @@ export const ObjdumpView: FunctionComponent<{
 	}, [model, rowHeight]);
 
 	const [curRow, setCurRow] = useState(0);
+	const [selRow, setSelRow] = useState(0);
+
+	const cycleSums = useMemo(() : number[][] => {
+		if(curRow === selRow)
+			return [];
+		const ret: number[][] = [];
+		const sum = [0, 0];
+		for(let i = Math.min(curRow, selRow); i <= Math.max(curRow, selRow); i++) {
+			if(model.content[i].theoreticalCycles) {
+				const c = model.content[i].theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b);
+				if(c.length > 1) {
+					sum[0] += c[0];
+					sum[1] += c[1];
+				} else {
+					sum[0] += c[0];
+					sum[1] += c[0];
+				}
+			}
+			ret.push([...sum]);
+		}
+		return ret;
+	}, [model, curRow, selRow]);
 
 	// Find
 	const [find, setFind] = useState<{ text: string; internal: boolean }>({ text: '', internal: true });
@@ -283,6 +303,7 @@ export const ObjdumpView: FunctionComponent<{
 		if(result.length > 0) {
 			setCurFind(0);
 			setCurRow(result[0]);
+			setSelRow(result[0]);
 		}
 		console.timeEnd("findResult");
 		return result;
@@ -292,6 +313,7 @@ export const ObjdumpView: FunctionComponent<{
 		const [row, regs] = (() => {
 			if(frame === -1 || findResult.length)
 				return [curRow, []];
+			// get PC and regs from traces from time
 			const pcTrace = MODELS[frame].amiga.pcTrace;
 			let t = 0;
 			let pc = 0;
@@ -329,10 +351,11 @@ export const ObjdumpView: FunctionComponent<{
 		});
 	}, []);
 
-	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string; width?: number; }>({ markdown: '', x: -1, y: -1, justify: '' });
-	const [hoveredTimings, setHoveredTimings] = useState<{ markdown: string; x: number; y: number; justify: string; }>({ markdown: '', x: -1, y: -1, justify: '' });
+	const [hovered, setHovered] = useState<{ markdown: string; x: number; y: number; justify: string; width?: number }>({ markdown: '', x: -1, y: -1, justify: '' });
+	const [hoveredTimings, setHoveredTimings] = useState<{ markdown: string; x: number; y: number; justify: string }>({ markdown: '', x: -1, y: -1, justify: '' });
 	const tooltipRef = useRef<HTMLDivElement & { scroller: Scrollable }>();
 
+	// opcode tooltip
 	const onMouseEnterOpcode = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
 		const opcode = evt.currentTarget.attributes['data'].nodeValue as string;
@@ -359,6 +382,7 @@ export const ObjdumpView: FunctionComponent<{
 		tooltipRef.current.scroller.setScrollPositionSmooth(tooltipRef.current.scroller.getFutureScrollPosition() + evt.deltaY);
 	}, [tooltipRef.current]);
 
+	// timing tooltip
 	const onMouseEnterTiming = useCallback((evt: JSX.TargetedMouseEvent<HTMLSpanElement>, timings: InstructionTiming) => {
 		const rect = evt.currentTarget.getBoundingClientRect();
 		const markdown = formatTimingTable(timings);
@@ -379,7 +403,7 @@ export const ObjdumpView: FunctionComponent<{
 	}, []);
 
 	const renderRow = useCallback((c: Line, index: number) => {
-		const extra: string[] = [];
+		const extraStyles: string[] = [];
 
 		function getLoc(row: number) {
 			for(let i = row; i > 0; i--) {
@@ -388,42 +412,52 @@ export const ObjdumpView: FunctionComponent<{
 			}
 		}
 
+		let cycleSum = '';
+		if(cycleSums.length > 0 && index >= Math.min(row, selRow) && index < Math.min(row, selRow) + cycleSums.length) {
+			const s = cycleSums[index - Math.min(row, selRow)];
+			if(s[0] < 900)
+				cycleSum = s.join('-').padStart(8, ' ') + 'Σ';
+			else
+				cycleSum = Math.max(...s).toString().padStart(8, ' ') + 'Σ'; // not enough space for both min and max, just show maximum
+			console.log(cycleSum);
+		}
+
 		if(index === row) {
-			extra.push(styles.cur);
+			extraStyles.push(styles.cur);
 		} else if(row !== -1 && content[row].pc !== undefined && content[index].pc !== undefined) {
 			// highlight rows with the same source location as the current row
 			const curLoc = getLoc(row);
 			if(curLoc) {
 				const loc = getLoc(index);
 				if(loc === curLoc)
-					extra.push(styles.cur_same_loc);
+					extraStyles.push(styles.cur_same_loc);
 			}
 		}
 
 		const text = (find.internal && findResult.length > 0)
 		? <Highlighter searchWords={[find.text]} autoEscape={true} highlightClassName={styles.find_hit} textToHighlight={c.text} />
-		: (c.opcode
-			? <>
+		: (c.opcode ? <>
 				<span>{c.pc.toString(16).padStart(8, ' ')}: </span>
 				<span class={styles.opcode} data={c.opcode} onMouseEnter={onMouseEnterOpcode} onMouseLeave={onMouseLeaveOpcode} onWheel={onWheelOpcode}>{c.opcode}</span>
 				<span>{' '.repeat(Math.max(0, 7 - c.opcode.length))} {c.rest}</span>
-			</>
-			: c.text);
+			</> : c.text);
 
 		return (c.pc === undefined
-		? <div class={[styles.row, ...extra].join(' ')} data-row={index}>{text}{'\n'}</div>
-		: <div class={[styles.row, c.traceHits === 0 ? styles.zero : '', ...extra].join(' ')} data-row={index}>
+		? <div class={[styles.row, ...extraStyles].join(' ')} data-row={index}>{text}{'\n'}</div>
+		: <div class={[styles.row, c.traceHits === 0 ? styles.zero : '', ...extraStyles].join(' ')} data-row={index}>
 			<div class={styles.duration}>{frame !== -1 ? <>
 					{c.traceHits > 0 ? (integerFormat.format(c.traceCycles).padStart(7, ' ') + 'cy') : ''.padStart(9, ' ')}
 					<span class={styles.dim1}>{c.traceHits > 0 ? (integerFormat.format(c.traceHits).padStart(6) + 'x ' + integerFormat.format(c.traceCycles / c.traceHits).padStart(3, ' ') + '⌀') : ''.padStart(8 + 4, ' ')}</span>
-				</> : ''}
-				<span class={styles.dim2} onMouseEnter={(e) => onMouseEnterTiming(e, c.theoreticalCycles)} onMouseLeave={onMouseLeaveTiming}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(8, ' ') + 'T' : ''.padStart(9)}</span>
+				</> : '' }
+				{cycleSum.length 
+				? <span>{cycleSum}</span>
+				: <span class={styles.dim2} onMouseEnter={(e) => onMouseEnterTiming(e, c.theoreticalCycles)} onMouseLeave={onMouseLeaveTiming}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(8, ' ') + 'T' : ''.padStart(9)}</span>}
 			</div>
 			{text}
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}
 			{'\n'}
 		</div>);
-	}, [onClickLoc, row, content, frame, findResult, find, curFind, onMouseEnterOpcode, onMouseLeaveOpcode, onWheelOpcode]);
+	}, [onClickLoc, row, selRow, content, frame, findResult, find, curFind, cycleSums, onMouseEnterOpcode, onMouseLeaveOpcode, onWheelOpcode]);
 
 	const renderJump = useCallback((jump: JumpAbsolute) => {
 		const right = 70; // needs to match CSS
@@ -555,17 +589,9 @@ export const ObjdumpView: FunctionComponent<{
 
 	// Open source on row change
 	useEffect(() => {
-		if (frame >= 0 && showSource) {
+		if (frame >= 0 && showSource)
 			openSource(row);
-		}
 	}, [row, showSource, openSource]);
-
-	// Close doc when source disabled
-	useEffect(() => {
-		if (frame >= 0 && !showSource) {
-			VsCodeApi.postMessage({ type: 'closeDocument' });
-		}
-	}, [showSource]);
 
 	// cursor navigation
 	useEffect(() => {
@@ -581,40 +607,60 @@ export const ObjdumpView: FunctionComponent<{
 				evt.preventDefault();
 			}
 			if(frame === -1) {
-				if(evt.key === 'ArrowDown')
-					setCurRow((curRow) => Math.min(content.length - 1, curRow + 1));
-				else if(evt.key === 'ArrowUp')
-					setCurRow((curRow) => Math.max(0, curRow - 1));
-				else if(evt.key === 'PageDown')
-					setCurRow((curRow) => Math.min(content.length - 1, Math.floor(curRow + (window.innerHeight / rowHeight * 0.9))));
-				else if(evt.key === 'PageUp')
-					setCurRow((curRow) => Math.max(0, Math.floor(curRow - (window.innerHeight / rowHeight * 0.9))));
-				else if(evt.key === 'Home')
+				// wraps curRow update callback to also update selRow depending on shift key
+				const shiftWrap = (func: (row: number) => number) => (row: number) => {
+					const newRow = func(row);
+					if(!evt.shiftKey)
+						setSelRow(newRow);
+					return newRow;
+				};
+
+				switch(evt.key) {
+				case 'ArrowDown':
+					setCurRow(shiftWrap((curRow) => Math.min(content.length - 1, curRow + 1)));
+					break;
+				case 'ArrowUp':
+					setCurRow(shiftWrap((curRow) => Math.max(0, curRow - 1)));
+					break;
+				case 'PageDown':
+					setCurRow(shiftWrap((curRow) => Math.min(content.length - 1, Math.floor(curRow + (window.innerHeight / rowHeight * 0.9)))));
+					break;
+				case 'PageUp':
+					setCurRow(shiftWrap((curRow) => Math.max(0, Math.floor(curRow - (window.innerHeight / rowHeight * 0.9)))));
+					break;
+				case 'Home':
 					setCurRow(0);
-				else if(evt.key === 'End')
+					setSelRow(0);
+					break;
+				case 'End':
 					setCurRow(content.length - 1);
-				else if(evt.key === 'ArrowRight') {
-					setCurRow((curRow) => {
+					setSelRow(content.length - 1);
+					break;
+				case 'ArrowRight':
+					setCurRow(shiftWrap((curRow) => {
 						const jump = jumps.find((j) => j.start.includes(curRow));
 						if(jump) {
 							navStack.push(curRow);
 							return jump.end;
 						}
 						return curRow;
-					});
-				} else if(evt.key === 'ArrowLeft') {
-					setCurRow((curRow) => {
+					}));
+					break;
+				case 'ArrowLeft':
+					setCurRow(shiftWrap((curRow) => {
 						if(navStack.length)
 							return navStack.pop();
 						return curRow;
-					});
-				} else
+					}));
+					break;
+				default:
 					return;
+				}
 				evt.preventDefault();
 			}
 		};
 		// make list accept keyboard events
-		(listRef.current.base as HTMLElement).tabIndex = -1;
+		(listRef.current?.base as HTMLElement).tabIndex = -1;
 		(listRef.current?.base as HTMLElement)?.focus();
 		listRef.current?.base?.addEventListener('keydown', listener);
 		return () => listRef.current?.base?.removeEventListener('keydown', listener);
@@ -653,6 +699,7 @@ export const ObjdumpView: FunctionComponent<{
 		const sel = content.findIndex((c: Line) => c.pc === selected.pc);
 		if(frame === -1) {
 			setCurRow(sel);
+			setSelRow(sel);
 		} else {
 			const scrollTo = (sel - 2) * rowHeight; // -2: function line
 			scroller.setScrollPositionSmooth(scrollTo);
@@ -666,6 +713,12 @@ export const ObjdumpView: FunctionComponent<{
 				if(elem.getAttribute('data-row')) {
 					const row = parseInt(elem.getAttribute('data-row'));
 					setCurRow(row);
+					if(frame === -1) {
+						if(!evt.shiftKey)
+							setSelRow(row);
+						else
+							document.getSelection().removeAllRanges();
+					}
 					return;
 				}
 			}
@@ -678,12 +731,14 @@ export const ObjdumpView: FunctionComponent<{
 				const n = (curFind + findResult.length - 1) % findResult.length;
 				setCurFind(n);
 				setCurRow(findResult[n]);
+				setSelRow(findResult[n]);
 			}
 		} else if(action === 'next') {
 			if(findResult.length) {
 				const n = (curFind + 1) % findResult.length;
 				setCurFind(n);
 				setCurRow(findResult[n]);
+				setSelRow(findResult[n]);
 			}
 		} else {
 			setFind({ text: text ?? '', internal: true });
@@ -723,7 +778,7 @@ export const ObjdumpView: FunctionComponent<{
 					<ToggleButton checked={showRegisters} onChange={setShowRegisters} icon="Registers" label="Show Registers" />
 				)}
 				{frame >= 0 && (
-					<ToggleButton checked={showSource} onChange={setShowSource} icon="Source" label="Show Source" />
+					<ToggleButton checked={showSource} onChange={(checked) => { setShowSource(checked); if(!checked) VsCodeApi.postMessage({ type: 'closeDocument' }); }} icon="Source" label="Show Source" />
 				)}
 			</span>
 		</div>
