@@ -11,13 +11,13 @@ unsigned long strlen(const char* s) {
 
 void memclr(void* dest, unsigned long len) { // dest: 16bit-aligned, len: multiple of 2
 	__asm volatile (
-		"cmp.l #256, %[len]\n"
-		"blt 2f\n"
 		"add.l %[len], %[dest]\n"
 		"moveq #0, %%d0\n"
 		"moveq #0, %%d1\n"
 		"moveq #0, %%d2\n"
 		"moveq #0, %%d3\n"
+		"cmp.l #256, %[len]\n"
+		"blt 2f\n"
 		"1:\n"
 		".rept 256/16\n"
 		"movem.l %%d0-%%d3, -(%[dest])\n"
@@ -36,14 +36,14 @@ void memclr(void* dest, unsigned long len) { // dest: 16bit-aligned, len: multip
 		"3:\n" // <64
 		"lsr.w #2, %[len]\n" // 4
 		"bcc 4f\n" // stray word
-		"clr.w -(%[dest])\n"
+		"move.w %%d0,-(%[dest])\n"
 		"4:\n"
-		"moveq #64>>2, %%d0\n"
-		"sub.w %[len], %%d0\n"
-		"add.w %%d0, %%d0\n"
-		"jmp (2, %%d0.w, %%pc)\n"
+		"moveq #64>>2, %%d1\n"
+		"sub.w %[len], %%d1\n"
+		"add.w %%d1, %%d1\n"
+		"jmp (2, %%d1.w, %%pc)\n"
 		".rept 64/4\n"
-		"clr.l -(%[dest])\n"
+		"move.l %%d0,-(%[dest])\n"
 		".endr\n"
 	: [dest]"+a"(dest), [len]"+d"(len)
 	:
