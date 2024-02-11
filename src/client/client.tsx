@@ -4,7 +4,7 @@ declare const setup: {
 };
 
 if(process.env.NODE_ENV === 'development') {
-	// Must use require here as import statements are only allowed to exist at the top of a file.
+	// Must use require here as import statements are only allowed at the top of a file.
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	require("preact/debug");
 
@@ -37,7 +37,6 @@ import { ISetCodeLenses, ICpuProfileRaw, IErrorMessage, IAmigaProfileSplit } fro
 import { DisplayUnit } from './display';
 import { ObjdumpView } from './objdump';
 import { SavestateView } from './savestate';
-import { GetBlits, GetCopper } from './dma';
 
 // from HTML page
 declare const OBJDUMP: string;

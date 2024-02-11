@@ -476,7 +476,7 @@ class AmigaDebugExtension {
 		const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select shrinkler configuration', matchOnDescription: true, ignoreFocusOut: true });
 		if(result === undefined)
 			return;
-		const output = uri.fsPath + '.' + result.label + '.shrinkled';
+		const output = path.join(path.dirname(uri.fsPath), path.basename(uri.fsPath, path.extname(uri.fsPath)) + '.shrinkled_' + result.label + path.extname(uri.fsPath));
 		const args = [...result.description.split(' '), uri.fsPath, output];
 		const cmd = path.join(this.binPath, 'Shrinkler');
 		return this.runExternalCommand(uri, cmd, args, output, () => {

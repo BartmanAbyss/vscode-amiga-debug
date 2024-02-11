@@ -70,11 +70,17 @@ async function closeDocument(viewColumn?: vscode.ViewColumn) {
 
 class ProfileDocument implements vscode.CustomDocument {
 	constructor(public uri: vscode.Uri) {
+		const fsPath = this.uri.fsPath;
+		this.watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(path.dirname(fsPath), path.basename(fsPath)), true, false, true);
 	}
 
 	// we don't need the content of the document, we just pass the URL to the WebView
+	public timers: NodeJS.Timeout[] = [];
+	public watcher: vscode.FileSystemWatcher;
 
-	public dispose() { /**/ }
+	public dispose() {
+		this.watcher.dispose();
+	}
 }
 
 export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvider<ProfileDocument> {
@@ -101,22 +107,14 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 		};
 		this.updateWebview(document, webviewPanel.webview);
 
-		// rebuild HTML when document changes (this is usually when file is externally modified, as our editor is read-only)
-/*		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
-			if (e.document.uri.toString() === document.uri.toString()) {
-				this.updateWebview(e.document, webviewPanel.webview);
-			}
-		});*/
-
 		webviewPanel.webview.onDidReceiveMessage((message) => {
 			switch (message.type) {
 			case 'openDocument':
 				void showPositionInFile(message.location, message.toSide ? webviewPanel.viewColumn + 1 : webviewPanel.viewColumn);
 				return;
-			case 'closeDocument': {
+			case 'closeDocument':
 				void closeDocument(webviewPanel.viewColumn + 1);
 				return;
-			}
 			case 'setCodeLenses':
 				this.lenses.registerLenses(this.createLensCollection(message.lenses));
 				return;
@@ -124,6 +122,17 @@ export class ProfileEditorProvider implements vscode.CustomReadonlyEditorProvide
 				void vscode.window.showErrorMessage(message.text, { modal: true });
 				return;
 			}
+		});
+
+		document.watcher.onDidChange(async (e) => {
+			// wait 500ms before reloading, file may not be written completely
+			console.log(`ProfileEditorProvider: onDidChange(${e.fsPath}) -- wait 500 msec`);
+			document.timers.forEach((t) => clearTimeout(t));
+			document.timers = [];
+			document.timers.push(setTimeout(() => {
+				document.timers = [];
+				this.updateWebview(document, webviewPanel.webview);
+			}, 500));
 		});
 	}
 

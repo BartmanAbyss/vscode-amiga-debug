@@ -5,6 +5,9 @@ See PR links for more information.
 
 ## 1.7.7
 - FIX: Resource bitmap colors red & blue swapped [#226](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/226)
+- FIX: auto-reload `.size.amigaprofile`, `.shrinklerstats` if changed on disk [#247](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/247)
+- CHG: changed shrinkler output name from `a.exe.config.shrinkler` to `a.shrinkler_config.exe` so you can use `EXE2ADF` on the resulting shrinkled file
+- CHG: `Makefile`: don't strip symbol names (`-s`) in `elf2hunk` so Shrinkler can display nicer `shrinklerstats`
 
 ## 1.7.6
 - NEW: modified template project to include `-ffunction-sections`, `-fdata-sections`, `--gc-sections` flags and changed assembly files to use unique sections so linker can better strip unused code/data

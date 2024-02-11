@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { bundlePage } from './profile_editor_provider';
 import { Disassemble } from './backend/profile';
-import * as fs from 'fs';
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -82,7 +81,7 @@ export class ObjdumpEditorProvider implements vscode.CustomReadonlyEditorProvide
 		webview.html = html;
 	}
 
-	public async resolveCustomEditor(document: ObjdumpDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken): Promise<void> {
+	public resolveCustomEditor(document: ObjdumpDocument, webviewPanel: vscode.WebviewPanel, token: vscode.CancellationToken) {
 		this.webviews.add(document.uri, webviewPanel); // Add the webview to our internal set of active webviews 
 
 		// Setup initial content for the webview

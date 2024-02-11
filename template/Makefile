@@ -43,7 +43,7 @@ all: $(OUT).exe
 
 $(OUT).exe: $(OUT).elf
 	$(info Elf2Hunk $(program).exe)
-	@elf2hunk $(OUT).elf $(OUT).exe -s
+	@elf2hunk $(OUT).elf $(OUT).exe
 
 $(OUT).elf: $(objects)
 	$(info Linking $(program).elf)

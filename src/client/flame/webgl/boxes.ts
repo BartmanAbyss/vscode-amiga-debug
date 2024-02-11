@@ -63,6 +63,7 @@ export const setupGl = ({
 	// Get A WebGL context
 	const gl = canvas.getContext('webgl2');
 	if (!gl) {
+		console.log("can't get webgl2 context");
 		return;
 	}
 
