@@ -451,7 +451,7 @@ export const ObjdumpView: FunctionComponent<{
 				</> : '' }
 				{cycleSum.length 
 				? <span>{cycleSum}</span>
-				: <span class={styles.dim2} onMouseEnter={(e) => onMouseEnterTiming(e, c.theoreticalCycles)} onMouseLeave={onMouseLeaveTiming}>{c.theoreticalCycles ? c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(8, ' ') + 'T' : ''.padStart(9)}</span>}
+				: c.theoreticalCycles ? <span class={styles.dim2} onMouseEnter={(e) => onMouseEnterTiming(e, c.theoreticalCycles)} onMouseLeave={onMouseLeaveTiming}>{c.theoreticalCycles.values.map((c) => c[0]).sort((a, b) => a - b).join('-').padStart(8, ' ') + 'T'}</span> : ''.padStart(9, ' ')}
 			</div>
 			{text}
 			{(c.loc !== undefined && frame !== -1) ? <div class={styles.file}><a href='#' data-file={c.loc.file} data-line={c.loc.line} onClick={onClickLoc}>{c.loc.file}:{c.loc.line}</a></div> : ''}

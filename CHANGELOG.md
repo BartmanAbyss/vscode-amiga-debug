@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.8
+- FIX: disassembly: fix error message when hovering over the cycle counts of an illegal instruction
+
 ## 1.7.7
 - FIX: Resource bitmap colors red & blue swapped [#226](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/226)
 - FIX: auto-reload `.size.amigaprofile`, `.shrinklerstats` if changed on disk [#247](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/247)
