@@ -25,6 +25,7 @@ objects := $(cpp_objects) $(c_objects) $(s_objects) $(vasm_objects)
 program = out/a
 OUT = $(program)
 CC = m68k-amiga-elf-gcc
+AS = m68k-amiga-elf-as
 VASM = vasmm68k_mot
 
 ifdef WINDOWS
@@ -33,10 +34,10 @@ else
 	SDKDIR = $(abspath $(dir $(shell which $(CC)))../m68k-amiga-elf/sys-include)
 endif
 
-CCFLAGS = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno-volatile-register-var -fomit-frame-pointer -fno-tree-loop-distribution -flto -fwhole-program -fno-exceptions -ffunction-sections -fdata-sections
-CPPFLAGS= $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
-ASFLAGS = -Wa,-g,--register-prefix-optional,-I$(SDKDIR),-D
-LDFLAGS = -Wl,--emit-relocs,--gc-sections,-Ttext=0,-Map=$(OUT).map
+CCFLAGS   = -g -MP -MMD -m68000 -Ofast -nostdlib -Wextra -Wno-unused-function -Wno-volatile-register-var -fomit-frame-pointer -fno-tree-loop-distribution -flto -fwhole-program -fno-exceptions -ffunction-sections -fdata-sections
+CPPFLAGS  = $(CCFLAGS) -fno-rtti -fcoroutines -fno-use-cxa-atexit
+ASFLAGS   = -mcpu=68000 -g --register-prefix-optional -I$(SDKDIR)
+LDFLAGS   = -Wl,--emit-relocs,--gc-sections,-Ttext=0,-Map=$(OUT).map
 VASMFLAGS = -m68000 -Felf -opt-fconst -nowarn=62 -dwarf=3 -quiet -x -I. -I$(SDKDIR)
 
 all: $(OUT).exe
@@ -70,7 +71,7 @@ $(c_objects) : obj/%.o : %.c
 
 $(s_objects): obj/%.o : %.s
 	$(info Assembling $<)
-	@$(CC) $(CCFLAGS) $(ASFLAGS) -c -o $@ $(CURDIR)/$<
+	@$(AS) $(ASFLAGS) --MD $(@D)/$*.d -o $@ $(CURDIR)/$<
 
 $(vasm_objects): obj/%.o : %.asm
 	$(info Assembling $<)

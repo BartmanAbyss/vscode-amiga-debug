@@ -5,6 +5,7 @@ See PR links for more information.
 
 ## 1.7.8
 - FIX: disassembly: fix error message when hovering over the cycle counts of an illegal instruction
+- NEW: Makefile: support dependency tracking for GNU-assembler sources (`.s`)
 
 ## 1.7.7
 - FIX: Resource bitmap colors red & blue swapped [#226](https://github.com/BartmanAbyss/vscode-amiga-debug/issues/226)
