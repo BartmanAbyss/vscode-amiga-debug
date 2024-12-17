@@ -27,12 +27,16 @@ static APTR SystemIrq;
  
 struct View *ActiView;
 
+static ULONG SupervisorGetVBR(void) {
+	__asm__ __volatile__("movec.l %%vbr, %%d0 ; rte" : : : "%d0");
+	__builtin_unreachable();
+}
+
 static APTR GetVBR(void) {
 	APTR vbr = 0;
-	UWORD getvbr[] = { 0x4e7a, 0x0801, 0x4e73 }; // MOVEC.L VBR,D0 RTE
 
 	if (SysBase->AttnFlags & AFF_68010) 
-		vbr = (APTR)Supervisor((ULONG (*)())getvbr);
+		vbr = (APTR)Supervisor(SupervisorGetVBR);
 
 	return vbr;
 }
