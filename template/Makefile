@@ -75,4 +75,4 @@ $(s_objects): obj/%.o : %.s
 
 $(vasm_objects): obj/%.o : %.asm
 	$(info Assembling $<)
-	@$(VASM) $(VASMFLAGS) -o $@ $(CURDIR)/$<
+	@$(VASM) $(VASMFLAGS) -dependall=make -depfile $(@D)/$*.d -o $@ $(CURDIR)/$<

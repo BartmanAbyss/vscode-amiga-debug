@@ -173,6 +173,15 @@ sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw3
 # statically link pthread (for GDB) - see https://stackoverflow.com/a/72903594
 sudo mv /usr/x86_64-w64-mingw32/lib/libwinpthread.dll.a /usr/x86_64-w64-mingw32/lib/libwinpthread.dll.a.bak
 sudo mv /usr/x86_64-w64-mingw32/lib/libpthread.dll.a /usr/x86_64-w64-mingw32/lib/libpthread.dll.a.bak
+# expat for gdb's tartget.xml support
+wget https://github.com/libexpat/libexpat/releases/download/R_2_6_0/expat-2.6.0.tar.gz
+tar xzf expat-2.6.0.tar.gz
+cd expat-2.6.0
+./configure --host=x86_64-w64-mingw32 --prefix=/usr/x86_64-w64-mingw32/
+make -j16 # ignore errors
+sudo make install # ignore errors
+sudo mv /usr/x86_64-w64-mingw32/lib/libexpat.dll.a /usr/x86_64-w64-mingw32/lib/libexpat.dll.a.bak # statically link expat
+sudo mv /usr/x86_64-w64-mingw32/lib/libexpat.la libexpat.la.bak
 ```
 
 ### Binutils+GDB
@@ -183,22 +192,22 @@ bash ./contrib/download_prerequisites
 cd ..
 mkdir build-binutils-gdb
 cd build-binutils-gdb
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../binutils-gdb/configure --prefix=/mnt/c/amiga-mingw/opt --target=m68k-amiga-elf --disable-werror -enable-static --disable-shared --disable-interprocess-agent --disable-libcc --host=x86_64-w64-mingw32 --with-expat
 make -j16
 make install
 ```
 
 ### GCC
 ```bash
-wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.2.0/gcc-13.2.0.tar.xz
-tar -xf gcc-13.2.0.tar.xz
-cd gcc-13.2.0
+wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-14.2.0/gcc-14.2.0.tar.xz
+tar -xf gcc-14.2.0.tar.xz
+cd gcc-14.2.0
 patch -p1 < ../gcc-barto.patch
 bash ./contrib/download_prerequisites
 cd ..
-mkdir -p build-gcc-13.2.0
-cd build-gcc-13.2.0
-LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-13.2.0/configure \
+mkdir -p build-gcc-14.2.0
+cd build-gcc-14.2.0
+LDFLAGS="-static -static-libgcc -static-libstdc++" ../gcc-14.2.0/configure \
   --disable-clocale \
   --disable-gcov \
   --disable-libada \

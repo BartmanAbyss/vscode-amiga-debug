@@ -3,6 +3,9 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.7.9
+- NEW: update gcc to 14.2.0, binutils, GNU gdb (GDB) 17.0.50.20250202-git
+
 ## 1.7.8
 - FIX: disassembly: fix error message when hovering over the cycle counts of an illegal instruction
 - NEW: Makefile: support dependency tracking for GNU-assembler sources (`.s`)
