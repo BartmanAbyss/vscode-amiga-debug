@@ -121,11 +121,11 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 - `68k-dis.ts` is based on [binutils-gdb/include/opcode/m68k.h](https://github.com/BartmanAbyss/binutils-gdb/blob/master/include/opcode/m68k.h), Copyright (C) 1989-2021 Free Software Foundation, Inc. GPLv3
 
 This extension contains binaries of:
-- modified [GCC 13.2.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-13.2.0) (patch included)
-  - Copyright (C) 2023 Free Software Foundation, Inc.
+- modified [GCC 14.2.0](https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-14.2.0) (patch included)
+  - Copyright (C) 2025 Free Software Foundation, Inc.
   - This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-- modified [GNU gdb (GDB) 14.0.50.20230511-git](https://github.com/BartmanAbyss/binutils-gdb)
-  - Copyright (C) 2023 Free Software Foundation, Inc.
+- modified [GNU gdb (GDB) 17.0.50.20250202-git](https://github.com/BartmanAbyss/binutils-gdb)
+  - Copyright (C) 2025 Free Software Foundation, Inc.
   - License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 - modified [WinUAE 4.9.0](https://github.com/BartmanAbyss/WinUAE)
 - modified [FS-UAE](https://github.com/grahambates/fs-uae/tree/remote_debugger_barto)
