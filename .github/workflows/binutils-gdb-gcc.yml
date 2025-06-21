@@ -15,6 +15,7 @@ on:
 
 jobs:
   linux:
+    if: false
     runs-on: ubuntu-22.04
     env:
       CC:   gcc-9
@@ -41,8 +42,10 @@ jobs:
           path: binutils-gdb-gcc-linux.tar
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
+      - run: |
+           arch  # confirm architecture (should be arm64)
       - uses: actions/checkout@v3
       - run: ci/install-packages-macos.sh
       - run: ci/binutils-gdb/clone.sh
