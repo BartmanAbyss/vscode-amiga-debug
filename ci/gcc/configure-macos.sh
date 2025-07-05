@@ -3,7 +3,10 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-export LDFLAGS="-static-libstdc++" # -static is not supported
+# Universal binary support for both Intel x64 and Apple Silicon arm64
+export CFLAGS="-arch x86_64 -arch arm64"
+export CXXFLAGS="-arch x86_64 -arch arm64"
+export LDFLAGS="-static-libstdc++ -arch x86_64 -arch arm64" # -static is not supported
 export PREFIX="`pwd`/output"
 
 rm -rf build-gcc

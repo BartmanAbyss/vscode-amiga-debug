@@ -41,7 +41,7 @@ jobs:
           path: binutils-gdb-gcc-linux.tar
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
       - run: ci/install-packages-macos.sh
@@ -61,5 +61,5 @@ jobs:
       - run: ci/archive-macos.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: binutils-gdb-gcc-macos
-          path: binutils-gdb-gcc-macos.tar
+          name: binutils-gdb-gcc-macos-universal
+          path: binutils-gdb-gcc-macos-universal.tar

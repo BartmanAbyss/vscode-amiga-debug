@@ -4,4 +4,4 @@ IFS=$'\n\t'
 set -x
 
 cd output
-tar --create --verbose --file ../binutils-gdb-gcc-macos.tar .
+tar --create --verbose --file ../binutils-gdb-gcc-macos-universal.tar .

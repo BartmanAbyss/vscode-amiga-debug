@@ -3,8 +3,11 @@ set -euo pipefail
 IFS=$'\n\t'
 set -x
 
-export LDFLAGS="-L`brew --prefix bison`/lib -static-libstdc++" # -static is not supported, use homebrew bison
-export PATH="`brew --prefix bison`/bin:$PATH" # System bison is too old, use homebrew bison
+# Universal binary support for both Intel x64 and Apple Silicon arm64
+export CFLAGS="-arch x86_64 -arch arm64"
+export CXXFLAGS="-arch x86_64 -arch arm64"
+export LDFLAGS="-L`brew --prefix bison`/lib -static-libstdc++ -arch x86_64 -arch arm64" # -static is not supported, use homebrew bison
+export PATH="`brew --prefix bison`/bin:$PATH" # System bison is too old, use homebrew bison
 export PREFIX="`pwd`/output"
 
 rm -rf build-binutils-gdb
