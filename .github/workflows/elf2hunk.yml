@@ -1,3 +1,4 @@
+hecker
 name: elf2hunk
 
 on:
@@ -8,7 +9,7 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
-jobs:
+jobs:nzmsmmznz
   linux:
     runs-on: ubuntu-22.04
     steps:
