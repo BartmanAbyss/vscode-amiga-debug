@@ -17,8 +17,8 @@ jobs:
   linux:
     runs-on: ubuntu-22.04
     env:
-      CC:   gcc-9
-      CXX:  g++-9
+      CC:   gcc-10
+      CXX:  g++-10
     steps:
       - uses: actions/checkout@v3
       - run: ci/install-packages-linux.sh
