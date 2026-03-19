@@ -757,6 +757,11 @@ export namespace Custom {
 	export const ByAddr = (addr: number) => customByAddr.get(addr);
 	export const ByOffs = (offs: number) => customByOffs.get(offs);
 	export const ByIndex = (index: number) => customByOffs.get(index << 1);
+	export const IsSprite = (offs: number) => offs >= 0x120 && offs <= 0x017E; // OCS only
+	export const IsBlitter = (offs: number) => offs >= 0x040 && offs <= 0x074;
+	export const IsBitplane = (offs: number) => offs >= 0x0E0 && offs <= 0x11e;
+	export const IsColor = (offs: number) => offs >= 0x180 && offs <= 0x1BE;
+	export const IsAudio = (offs: number) => offs >= 0x0A0 && offs <= 0x0DA;
 }
 
 // from 68k-dis.ts; make signed

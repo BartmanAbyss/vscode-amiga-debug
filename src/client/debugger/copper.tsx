@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { Component, FunctionComponent, JSX } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import '../styles.css';
@@ -37,10 +38,8 @@ export const CopperView: FunctionComponent<{
 
 	// find
 	const renderRowText = useCallback((c: Copper) => {
-		return `L${c.vpos.toString().padStart(3, '0')}C${c.hpos.toString().padStart(3, '0')}: $${c.address.toString(16).padStart(8, '0')}: ` + (
-			c.insn.instructionType === CopperInstructionType.MOVE 
-			? `${c.insn.getAsmInstruction()}; ${(c.insn as CopperMove).label} = ${FormatCustomRegData((c.insn as CopperMove).label, (c.insn as CopperMove).RD)}`
-			: c.insn.toString());
+		// eslint-disable-next-line @typescript-eslint/no-base-to-string
+		return `L${c.vpos.toString().padStart(3, '0')}C${c.hpos.toString().padStart(3, '0')}: $${c.address.toString(16).padStart(8, '0')}: ` + c.insn.toString();
 	}, [frame]);
 
 	const [find, setFind] = useState('');

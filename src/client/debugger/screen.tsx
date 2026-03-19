@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { FunctionComponent, JSX } from 'preact';
 import { StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import create from 'zustand';
@@ -8,11 +9,12 @@ import styles from './resources.module.css';
 import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 
 import { swizzle } from '../../utils';
-import { BPLCON0Bits, BPLCON0Flags, BPLCON2Flags, BPLCON3Bits, Custom, DMACONFlags, FMODEFlags } from '../custom';
-import { ChipsetFlags, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles, GetAgaColorCss, GetAgaColorsAfterDma, GetCustomRegsAfterDma, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { BPLCON0Bits, BPLCON0Flags, BPLCON2Flags, BPLCON3Bits, Custom, DMACONFlags, FMODEFlags, FormatCustomRegData } from '../custom';
+import { ChipsetFlags, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles, DmaSubTypes, DmaTypes, GetAgaColorCss, GetAgaColorsAfterDma, GetCustomRegsAfterDma, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
 import { IProfileModel } from '../model';
 import { DefaultDeniseState, DeniseState, getScreen, PixelSource } from '../screen';
 import { ICpuProfileRaw } from '../types';
+import { CopperInstruction, CopperInstructionType, CopperMove } from '../copperDisassembler';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -31,7 +33,7 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const cck = (props.x >> 2);
 		const color = props.pixels?.at(props.y * NR_DMA_REC_HPOS * 4 + props.x);
 
-		const dmaTime = (props.x >> 1) + props.y * NR_DMA_REC_HPOS;
+		const dmaTime = cck + props.y * NR_DMA_REC_HPOS;
 		const customRegs = GetCustomRegsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 		const colors = GetAgaColorsAfterDma(MODELS[props.frame].amiga.customRegs, MODELS[props.frame].amiga.agaColors, MODELS[props.frame].amiga.dmaRecords, dmaTime);
 
@@ -40,8 +42,25 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 		const regBPLCON1 = Custom.ByName("BPLCON1").adr - 0xdff000;
 		const regBPLCON2 = Custom.ByName("BPLCON2").adr - 0xdff000;
 		const regBPLCON3 = Custom.ByName("BPLCON3").adr - 0xdff000;
+		const regCOPINS  = Custom.ByName("COPINS").adr - 0xdff000;
 		const regFMODE = Custom.ByName("FMODE").adr - 0xdff000; // ECS
 		const colorRgb = colors[color];
+
+		// Copper
+		let copper = '--';
+		if(dmaTime >= 0) {
+			const dmaRecord = MODELS[props.frame].amiga.dmaRecords[dmaTime];
+			if(dmaRecord && dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS)
+				copper = 'COPINS';
+		}
+		if(dmaTime >= 2) {
+			const dmaRecord = MODELS[props.frame].amiga.dmaRecords[dmaTime - 2];
+			if(dmaRecord && dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS) {
+				const first = MODELS[props.frame].memory.readWord(dmaRecord.addr);
+				const second = MODELS[props.frame].memory.readWord(dmaRecord.addr + 2);
+				copper = CopperInstruction.parse(first, second).toString().substring(13);
+			}
+		}
 
 		const aga = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.AGA) !== 0;
 		const ecs = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.ECSDenise) !== 0;
@@ -132,6 +151,8 @@ const DeniseZoomInfo: FunctionComponent<IZoomProps> = (props: DeniseZoomProps) =
 				<dd>H:{hpos} V:{vpos}</dd>
 				<dt>Agnus</dt>
 				<dd>Line:{line} CCK:{cck}</dd>
+				<dt>Copper</dt>
+				<dd>{copper}</dd>
 				<dt>DMACON</dt>
 				<dd>{dmaconBits.map((d) => (<div class={d.enabled ? styles.biton : styles.bitoff}>{d.name}</div>))}</dd>
 				<dt>BPLCON0</dt>

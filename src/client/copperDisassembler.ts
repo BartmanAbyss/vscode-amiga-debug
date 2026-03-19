@@ -1,5 +1,5 @@
 //import { StringUtils } from "./stringUtils";
-import { Custom } from "./custom";
+import { Custom, FormatCustomRegData } from "./custom";
 
 /** Type of copper instruction */
 export enum CopperInstructionType {
@@ -61,7 +61,7 @@ export class CopperMove extends CopperInstruction {
 			l = `$${this.format(this.DA)}`;
 		}
 		const inst = this.getAsmInstruction();
-		const value = `$${this.format(this.RD)}`;
+		const value = FormatCustomRegData(l, this.RD);
 		return `${inst}; ${l} = ${value}`;
 	}
 }

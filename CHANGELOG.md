@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.8.2
+- NEW: copper visualizer in "Screen" tab
+- CHG: "Copper" now shows position of instructions when they are executed (was: when instructions are fetched)
+
 ## 1.8.1
 - FIX: fix `GetVBR` for 68040 (thanks to Ferris and Sniper)
 - FIX: `Disassemble ELF File` now supports 68040 instructions

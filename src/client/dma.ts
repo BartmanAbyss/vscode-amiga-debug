@@ -395,11 +395,13 @@ export function GetCopper(chipMem: Uint8Array, dmaRecords: DmaRecord[]): Copper[
 	const insns: Copper[] = [];
 	const regCOPINS = Custom.ByName("COPINS").adr - 0xdff000;
 
-	let i = 0;
+	let i = -2;
 	let lastinsn: CopperInstruction = null;
 	for(let y = 0; y < NR_DMA_REC_VPOS; y++) {
 		for(let x = 0; x < NR_DMA_REC_HPOS; x++, i++) {
-			const dmaRecord = dmaRecords[y * NR_DMA_REC_HPOS + x];
+			if(i <= 0)
+				continue;
+			const dmaRecord = dmaRecords[i];
 			if(dmaRecord.type === DmaTypes.COPPER && dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg === regCOPINS) {
 				const first = (chipMem[dmaRecord.addr + 0] << 8) | chipMem[dmaRecord.addr + 1];
 				const second = (chipMem[dmaRecord.addr + 2] << 8) | chipMem[dmaRecord.addr + 3];
