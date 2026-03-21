@@ -10,11 +10,11 @@ import { IZoomProps, ZoomCanvas } from "./zoomcanvas";
 
 import { swizzle } from '../../utils';
 import { BPLCON0Bits, BPLCON0Flags, BPLCON2Flags, BPLCON3Bits, Custom, DMACONFlags, FMODEFlags, FormatCustomRegData } from '../custom';
-import { ChipsetFlags, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles, DmaSubTypes, DmaTypes, GetAgaColorCss, GetAgaColorsAfterDma, GetCustomRegsAfterDma, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
+import { ChipsetFlags, ColorSwap, CpuCyclesToDmaCycles, DmaCyclesToCpuCycles, DmaSubTypes, dmaTypes, DmaTypes, GetAgaColorCss, GetAgaColorsAfterDma, GetColorCss, GetCustomRegsAfterDma, GetRgbaColorCss, NR_DMA_REC_HPOS, NR_DMA_REC_VPOS } from '../dma';
 import { IProfileModel } from '../model';
-import { DefaultDeniseState, DeniseState, getScreen, PixelSource } from '../screen';
+import { DefaultDeniseState, DeniseState, getScreen, PixelSource, copperTypes } from '../screen';
 import { ICpuProfileRaw } from '../types';
-import { CopperInstruction, CopperInstructionType, CopperMove } from '../copperDisassembler';
+import { CopperInstruction } from '../copperDisassembler';
 declare let PROFILES: ICpuProfileRaw[];
 declare const MODELS: IProfileModel[];
 
@@ -183,6 +183,7 @@ const DeniseScreen: FunctionComponent<{
 }> = ({ scale = 2, frame, time, setTime, state, dmaOpacity }) => {
 	const canvas = useRef<HTMLCanvasElement>();
 	const dmaCanvas = useRef<HTMLCanvasElement>();
+	const copperCanvas = useRef<HTMLCanvasElement>();
 	const timeCanvas = useRef<HTMLCanvasElement>();
 	const canvasScaleX = scale / 2;
 	const canvasScaleY = scale;
@@ -195,7 +196,7 @@ const DeniseScreen: FunctionComponent<{
 
 	const aga = (MODELS[0].amiga.chipsetFlags & ChipsetFlags.AGA) !== 0;
 
-	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma] = useMemo(() => getScreen(scale, MODELS[frame], state.freeze !== -1 ? MODELS[state.freeze] : MODELS[frame], time, state), [scale, frame, state.freeze !== -1 ? time : 0, state]);
+	const [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma, pixelsCopper] = useMemo(() => getScreen(scale, MODELS[frame], state.freeze !== -1 ? MODELS[state.freeze] : MODELS[frame], time, state), [scale, frame, state.freeze !== -1 ? time : 0, state]);
 
 	useEffect(() => { // screen canvas
 		const context = canvas.current?.getContext('2d');
@@ -238,6 +239,16 @@ const DeniseScreen: FunctionComponent<{
 		}
 	}, [dmaCanvas.current, pixelsDma]);
 
+	useEffect(() => { // Copper overlay canvas
+		if(pixelsCopper && state.copper) {
+			const context = copperCanvas.current?.getContext('2d');
+			const imgData = context.createImageData(canvasWidth, canvasHeight);
+			const data = new Uint32Array(imgData.data.buffer);
+			data.set(pixelsCopper);
+			context.putImageData(imgData, 0, 0);
+		}
+	}, [copperCanvas.current, pixelsCopper, state.copper]);
+
 	useEffect(() => { // time overlay canvas
 		const context = timeCanvas.current?.getContext('2d');
 		context.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -260,6 +271,7 @@ const DeniseScreen: FunctionComponent<{
 		<div class={styles.screen}>
 			<canvas ref={canvas} width={canvasWidth} height={canvasHeight} class={styles.screen_canvas} data-canvasScaleX={canvasScaleX} data-canvasScaleY={canvasScaleY} />
 			{dmaOpacity > 0 && <canvas class={styles.overdraw_canvas} style={{opacity: dmaOpacity}} ref={dmaCanvas} width={canvasWidth} height={canvasHeight} />}
+			{state.copper && <canvas class={styles.overdraw_canvas} ref={copperCanvas} width={canvasWidth} height={canvasHeight} />}
 			<canvas class={styles.overdraw_canvas} ref={timeCanvas} width={canvasWidth} height={canvasHeight} />
 			<ZoomCanvas canvas={canvas} scale={zoomCanvasScale} width={zoomCanvasWidth} height={zoomCanvasHeight} infoWidth={310} infoHeight={aga ? 430 : 370} ZoomInfo={DeniseZoomInfo} zoomExtraProps={{ pixelSources, pixelPtrs, pixels, frame }} onClick={zoomClick} />
 		</div>
@@ -299,26 +311,52 @@ export const DeniseView: FunctionComponent<{
 	const [dmaOpacity, setDmaOpacity] = useState(0);
 	const freeze = state.freeze !== -1;
 
+	const [showHelp, setShowHelp] = useState(true);
+
 	return (<>
-		<div style={{ flexGrow: 0 }}>
-		<Toolbar>
-			<div title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"}>{freeze ? 'Mem' : 'DMA'}</div><div><input style={{verticalAlign: 'bottom', width: freeze ? '60px' : '100px'}} title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
-			{freeze && <>
-				<div title="Memory Persistence">Prst</div><div><input style={{verticalAlign: 'bottom', width: '60px'}} title="Memory Persistence" type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={state.persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setState({ persistence: parseInt(currentTarget.value) })} /></div>
-			</>}
-			<select class="select" alt="XXX" aria-label="XXX" value={state.freeze} onInput={({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => setState((prev: DeniseState) => ({ ...prev, freeze: parseInt(currentTarget.value) }))}>
-				<option value="-1">Live</option>
-				{MODELS.map((_, index) => <option value={index}>Freeze fr. {index + 1}</option>)}
-			</select>
-			<ToggleButton icon="Window" label="Show Display Window" checked={state.window} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, window: checked }))} />
-			<ToggleButton icon="Bitplanes" label="Show Bitplanes" checked={state.planes.some((v) => v)} onChange={showAllPlanes} />
-			{state.planes.map((value, index) => <ToggleButton icon={`${index + 1}`} label={`Show Bitplane ${index + 1}`} checked={value} onChange={(checked) => showPlane(index, checked)} />)}
-			<span style={{ width: '.5em' }} />
-			<ToggleButton icon="Sprites" label="Show Sprites" checked={state.sprites.some((v) => v)} onChange={showAllSprites} />
-			{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
-			<span style={{ width: '.5em' }} />
-			{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
-		</Toolbar>
+		<div style={{ position: "relative", flexGrow: 0 }}>
+			{showHelp && (dmaOpacity > 0 || state.copper) && <div class={styles.help}>
+				<dl>
+					{dmaOpacity > 0 && <div class={styles.help_container}>
+						<h3>DMA</h3>
+						<div>
+							{[...dmaTypes.entries()].map(([dmaKey, dmaType]) => dmaType.name !== '-' && <>
+								<span style={{ marginRight: 4, paddingLeft: "1.5em", background: GetColorCss(ColorSwap(dmaType.subtypes.get(0).color)) }}></span>
+								{dmaType.name}<br/>
+							</>)}
+						</div>
+					</div>}
+					{state.copper && <div class={styles.help_container}>
+						<h3>Copper</h3>
+						<div>
+							{[...copperTypes.entries()].map(([copperKey, copperType]) => <>
+								<span style={{ marginRight: 4, paddingLeft: "1.5em", background: GetColorCss(ColorSwap(copperType.color)) }}></span>
+								{copperType.name}<br/>
+							</>)}
+						</div>
+					</div>}
+				</dl>
+			</div>}
+			<Toolbar>
+				<div title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"}>{freeze ? 'Mem' : 'DMA'}</div><div><input style={{verticalAlign: 'bottom', width: freeze ? '60px' : '100px'}} title={state.freeze === -1 ? "DMA Opacity" : "Memory Opacity"} type="range" min="0" max="100" value={dmaOpacity * 100} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setDmaOpacity(parseInt(currentTarget.value) / 100)} /></div>
+				{freeze && <>
+					<div title="Memory Persistence">Prst</div><div><input style={{verticalAlign: 'bottom', width: '60px'}} title="Memory Persistence" type="range" min="1" max={NR_DMA_REC_HPOS * NR_DMA_REC_VPOS} value={state.persistence} class="slider" onInput={({currentTarget}: JSX.TargetedEvent<HTMLInputElement, Event>) => setState({ persistence: parseInt(currentTarget.value) })} /></div>
+				</>}
+				<select class="select" alt="XXX" aria-label="XXX" value={state.freeze} onInput={({currentTarget}: JSX.TargetedEvent<HTMLSelectElement, Event>) => setState((prev: DeniseState) => ({ ...prev, freeze: parseInt(currentTarget.value) }))}>
+					<option value="-1">Live</option>
+					{MODELS.map((_, index) => <option value={index}>Freeze fr. {index + 1}</option>)}
+				</select>
+				<ToggleButton icon="Copper" label="Show Copper" checked={state.copper} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, copper: checked }))} />
+				<ToggleButton icon="Window" label="Show Display Window" checked={state.window} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, window: checked }))} />
+				<ToggleButton icon="Bitplanes" label="Show Bitplanes" checked={state.planes.some((v) => v)} onChange={showAllPlanes} />
+				{state.planes.map((value, index) => <ToggleButton icon={`${index + 1}`} label={`Show Bitplane ${index + 1}`} checked={value} onChange={(checked) => showPlane(index, checked)} />)}
+				<span style={{ width: '.5em' }} />
+				<ToggleButton icon="Sprites" label="Show Sprites" checked={state.sprites.some((v) => v)} onChange={showAllSprites} />
+				{state.sprites.map((value, index) => <ToggleButton icon={`${index}`} label={`Show Sprite ${index}`} checked={value} onChange={(checked) => showSprite(index, checked)} />)}
+				<span style={{ width: '.5em' }} />
+				{PROFILES[frame].screenshot?.length > 22 && <ToggleButton icon="Reference" label="Show Reference Screenshot" checked={state.screenshot} onChange={(checked) => setState((prev: DeniseState) => ({ ...prev, screenshot: checked }))} />}
+				<ToggleButton checked={showHelp} onChange={setShowHelp} icon="Help" label="Show Help" style="margin-left: auto" />
+			</Toolbar>
 		</div>
 		<div style={{ overflow: 'auto' }}>
 			<DeniseScreen frame={frame} time={time} setTime={setTime} state={state} dmaOpacity={dmaOpacity} />

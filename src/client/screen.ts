@@ -7,6 +7,7 @@ import { IProfileModel } from "./model";
 export interface DeniseState {
 	freeze: number;
 	screenshot: boolean;
+	copper: boolean;
 	window: boolean;
 	planes: boolean[];
 	sprites: boolean[];
@@ -16,6 +17,7 @@ export interface DeniseState {
 export const DefaultDeniseState: DeniseState = {
 	freeze: -1,
 	screenshot: false,
+	copper: false,
 	window: true,
 	planes: [true, true, true, true, true, true, true, true],
 	sprites: [true, true, true, true, true, true, true, true],
@@ -57,7 +59,7 @@ enum CopperTypes {
 	SPRITE,
 }
 
-const copperTypes: Map<number, CopperType> = new Map([
+export const copperTypes: Map<number, CopperType> = new Map([
 	[CopperTypes.WAIT_SKIP, {
 		name: 'Wait/Skip',
 		color: 0xff0000ff
@@ -101,7 +103,7 @@ function GetCopperTypeForReg(reg: number): CopperType {
 	return copperTypes.get(CopperTypes.MOVE);
 }
 
-export function getScreen(scale: number, model: IProfileModel, freezeModel: IProfileModel, time: number, state: DeniseState): [Uint8Array, Uint32Array, Uint8Array, Uint32Array, Uint32Array] {
+export function getScreen(scale: number, model: IProfileModel, freezeModel: IProfileModel, time: number, state: DeniseState): [Uint8Array, Uint32Array, Uint8Array, Uint32Array, Uint32Array, Uint32Array] {
 	const canvasScaleX = scale / 2;
 	const canvasScaleY = scale;
 	const canvasWidth = NR_DMA_REC_HPOS * 4 * canvasScaleX;
@@ -112,11 +114,21 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 	const pixels = new Uint8Array(NR_DMA_REC_HPOS * 4 * NR_DMA_REC_VPOS);
 	const pixelsRgb = new Uint32Array(canvasWidth * canvasHeight);
 	const pixelsDma = new Uint32Array(canvasWidth * canvasHeight);
+	const pixelsCopper = new Uint32Array(canvasWidth * canvasHeight);
 	const putDma = (x: number, y: number, rgb: number) => {
 		for (let yy = 0; yy < canvasScaleY; yy++) {
 			for (let xx = 0; xx < canvasScaleX * 4; xx++) {
 				const offset = (((y * canvasScaleY + yy) * canvasWidth) + x * canvasScaleX * 4 + xx);
 				pixelsDma[offset] = rgb;
+			}
+		}
+	};
+
+	const putCopper = (x: number, y: number, rgb: number) => {
+		for (let yy = 0; yy < canvasScaleY; yy++) {
+			for (let xx = 0; xx < canvasScaleX * 4; xx++) {
+				const offset = (((y * canvasScaleY + yy) * canvasWidth) + x * canvasScaleX * 4 + xx);
+				pixelsCopper[offset] = rgb;
 			}
 		}
 	};
@@ -310,9 +322,9 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 				}
 				if(dmaRecord.type === DmaTypes.COPPER) {
 					if(dmaRecord.extra === DmaSubTypes.COPPER_WAIT)
-						putDma(cycleX, cycleY, copperTypes.get(CopperTypes.WAIT_SKIP).color);
+						putCopper(cycleX, cycleY, copperTypes.get(CopperTypes.WAIT_SKIP).color);
 					else if(dmaRecord.extra === DmaSubTypes.COPPER && dmaRecord.reg !== regCOPINS)
-						putDma(cycleX, cycleY, GetCopperTypeForReg(dmaRecord.reg).color);
+						putCopper(cycleX, cycleY, GetCopperTypeForReg(dmaRecord.reg).color);
 				}
 			}
 			// vpos, hpos - https://www.techtravels.org/2012/04/progress-on-amiga-vsc-made-this-weekend-vsync-problem-persists/ 
@@ -599,5 +611,5 @@ export function getScreen(scale: number, model: IProfileModel, freezeModel: IPro
 		}
 	}
 	console.timeEnd('denise');
-	return [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma];
+	return [pixelSources, pixelPtrs, pixels, pixelsRgb, pixelsDma, pixelsCopper];
 }

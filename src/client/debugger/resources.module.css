@@ -238,3 +238,48 @@
 .bplptr_on:nth-child(3n+1), .bplptr_off:nth-child(3n+1) {
 	clear:left;
 }
+
+/* screen help */
+.help {
+  position: absolute;
+  z-index: 1;
+  min-width: 10px;
+  max-width: 90%;
+  right: 16px;
+  top: 34px;
+  padding: 4px;
+  box-shadow: 0 .25em .5em 0 black;
+  background: var(--vscode-sideBar-background);
+  color: var(--vscode-editor-foreground);
+  line-height: 150%;
+  margin: -5px;
+}
+
+.help > div {
+	margin-left: 6px;
+	margin-right: 6px;
+	margin-bottom: 3px;
+}
+
+.help dl {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-column-gap: 1.0em;
+}
+
+.help_container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+  
+.help dd {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+  
+.help dt {
+	font-weight: bold;
+	margin-right: 0.5em;
+}

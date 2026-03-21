@@ -14,13 +14,14 @@ export const ToggleButton: FunctionComponent<{
 	icon: string;
 	label: string;
 	checked: boolean;
+	style?: string;
 	onChange?: (checked: boolean) => void;
 	onClick?: () => void;
-}> = ({ icon, label, checked, onChange, onClick }) => {
+}> = ({ icon, label, checked, style, onChange, onClick }) => {
 	const toggle = useCallback(() => {
 		onClick?.();
 		onChange?.(!checked);
 	}, [checked, onClick, onChange]);
 
-	return <button className={styles.button} type="button" role="switch" alt={label} title={label} aria-label={label} aria-checked={checked ? 'true' : 'false'} dangerouslySetInnerHTML={{ __html: icon }} onClick={toggle}/>
+	return <button className={styles.button} type="button" role="switch" style={style} alt={label} title={label} aria-label={label} aria-checked={checked ? 'true' : 'false'} dangerouslySetInnerHTML={{ __html: icon }} onClick={toggle}/>;
 };
