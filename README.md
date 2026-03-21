@@ -333,4 +333,8 @@ diff -ruN gcc-15.1.0 gcc-15.1.0-barto > gcc-barto.patch
 * TODO: tooltips for blitter-rects?
 * Denise: TODO: glitches, blitrects, overdraw, ECS/AGA scrolling, AGA sprites, multi-frame
 * Denise: `turrican2-level1.uss`, `desertdream-dots.uss`: sprites 2 pixels too far left
+* Denise: `megatyphoondemo.uss`: screen empty
+* Denise: `arte plasma.uss`: COPJMP, WAIT timing wrong
+* Denise: `fightin.uss`: wrong palette
 * TODO: AGA colors (256 colors and 24bit)
+
