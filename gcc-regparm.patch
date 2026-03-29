@@ -1,0 +1,145 @@
+Adds support for explicit asm("reg") register parameters in function
+declarations for the m68k-amiga-elf (Bartman/Abyss) toolchain.
+
+Enables vbcc-style AmigaOS register parameter syntax on the callee side:
+
+  void DevOpen(struct Library *dev  asm("a6"),
+               struct IORequest *io asm("a1"),
+               ULONG unit           asm("d0"),
+               ULONG flags          asm("d1"));
+
+When a function is compiled with register-constrained parameters, each
+argument arrives directly in the named register with no stack frame slot.
+
+Note: this patch covers the callee (function being compiled) side.
+Calls to register-parameter functions from C still use the existing
+inline-asm macro stubs in the NDK headers, as before.
+
+Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
+
+  patch -p1 < gcc-barto.patch
+  patch -p1 < gcc-regparm.patch
+
+--- a/gcc/config/m68k/m68k.h	2026-03-29 07:45:50.000000000 +0000
++++ b/gcc/config/m68k/m68k.h	2026-03-29 09:36:44.444382911 +0000
+@@ -487,16 +487,29 @@
+    XXX This macro is m68k specific and used only for m68kemb.h.  */
+ #define NEEDS_UNTYPED_CALL 0
+ 
+-/* On the m68k, all arguments are usually pushed on the stack.  */
+-#define FUNCTION_ARG_REGNO_P(N) 0
++/* Data registers d0-d7 (hard regs 0-7) and address registers a0-a6
++   (hard regs 8-14) may be used as explicit parameter registers via an
++   asm("reg") constraint on the parameter declaration.  The frame pointer
++   (a5, reg 13), stack pointer (sp/a7, reg 15), and the virtual arg
++   pointer (reg 24) are excluded.  */
++#define FUNCTION_ARG_REGNO_P(N)					\
++  (((N) >= D0_REG && (N) <= D0_REG + 7)			\
++   || ((N) >= A0_REG && (N) <= A6_REG			\
++       && (N) != FRAME_POINTER_REGNUM))
+ 
+-/* On the m68k, this is a single integer, which is a number of bytes
+-   of arguments scanned so far.  */
+-#define CUMULATIVE_ARGS int
++/* For the m68k we track both the number of stack bytes consumed and the
++   parameter index so that m68k_function_arg can look up the PARM_DECL
++   (and its optional asm("reg") constraint) by position in the parameter
++   list of current_function_decl.  */
++struct m68k_args {
++  int bytes;   /* stack bytes consumed by non-register args */
++  int parmno;  /* 0-based index of the next parameter to process */
++};
++#define CUMULATIVE_ARGS struct m68k_args
+ 
+-/* On the m68k, the offset starts at 0.  */
++/* Initialise both fields to zero.  */
+ #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
+- ((CUM) = 0)
++ ((CUM).bytes = 0, (CUM).parmno = 0)
+ 
+ #define FUNCTION_PROFILER(FILE, LABELNO)  \
+   asm_fprintf (FILE, "\tlea %LLP%d,%Ra0\n\tjsr mcount\n", (LABELNO))
+--- a/gcc/config/m68k/m68k.cc	2026-03-29 07:45:50.000000000 +0000
++++ b/gcc/config/m68k/m68k.cc	2026-03-29 09:37:04.365378470 +0000
+@@ -1465,11 +1465,65 @@
+   return false;
+ }
+ 
+-/* On the m68k all args are always pushed.  */
++/* If the PARM_DECL at position PARMNO in current_function_decl's argument
++   list carries an explicit asm("reg") register constraint, return the hard
++   register number.  Return -1 in all other cases.
++
++   This implements the caller/callee agreement for the AmigaOS register
++   parameter calling convention.  When a parameter has an asm() spec:
++     - (callee) it arrives in that register on function entry
++     - (caller) it is placed in that register before the call
++   with no stack slot in either direction.
++
++   Note: this works for the callee (function being compiled) side.
++   Outgoing calls to register-parameter functions still use the
++   existing inline-asm stub approach via the NDK headers.
++
++   The frame pointer (a5), stack pointer (sp), and the virtual arg
++   pointer are rejected to prevent silent frame corruption.  */
++
++static int
++m68k_get_parm_regno_at (int parmno)
++{
++  if (!current_function_decl)
++    return -1;
++  int i = 0;
++  for (const_tree parm = DECL_ARGUMENTS (current_function_decl);
++       parm; parm = DECL_CHAIN (parm), i++)
++    {
++      if (i != parmno)
++	continue;
++      if (TREE_CODE (parm) != PARM_DECL)
++	return -1;
++      if (!DECL_ASSEMBLER_NAME_SET_P (parm))
++	return -1;
++      /* DECL_ASSEMBLER_NAME requires a non-const tree.  */
++      const char *name =
++	IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (CONST_CAST_TREE (parm)));
++      if (!name || *name == '\0')
++	return -1;
++      int regno = decode_reg_name (name);
++      if (regno < 0 || regno >= FIRST_PSEUDO_REGISTER)
++	return -1;
++      if (regno == FRAME_POINTER_REGNUM
++	  || regno == STACK_POINTER_REGNUM
++	  || regno == ARG_POINTER_REGNUM)
++	return -1;
++      return regno;
++    }
++  return -1;
++}
++
++/* On the m68k, args are pushed on the stack unless the parameter
++   carries an explicit asm("reg") register constraint.  */
+ 
+ static rtx
+-m68k_function_arg (cumulative_args_t, const function_arg_info &)
++m68k_function_arg (cumulative_args_t cum_v, const function_arg_info &arg)
+ {
++  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
++  int regno = m68k_get_parm_regno_at (cum->parmno);
++  if (regno >= 0)
++    return gen_rtx_REG (arg.mode, regno);
+   return NULL_RTX;
+ }
+ 
+@@ -1479,7 +1533,12 @@
+ {
+   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+ 
+-  *cum += (arg.promoted_size_in_bytes () + 3) & ~3;
++  /* Register-constrained parameters consume no stack space.  */
++  if (m68k_get_parm_regno_at (cum->parmno) < 0)
++    cum->bytes += (arg.promoted_size_in_bytes () + 3) & ~3;
++
++  /* Always advance the parameter index.  */
++  cum->parmno++;
+ }
+ 
+ /* Convert X to a legitimate function call memory reference and return the
