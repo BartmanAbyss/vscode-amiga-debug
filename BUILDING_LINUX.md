@@ -209,7 +209,7 @@ static void *my_OpenLibrary(const char *name, unsigned long ver)
 }
 ```
 
-### Using asm() vs __asm__()
+### Using asm() vs `__asm__()`
 
 Both syntaxes are supported by the patch:
 
