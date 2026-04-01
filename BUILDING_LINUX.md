@@ -192,15 +192,35 @@ Register parameter test PASSED!
 
 ### NDK headers and library calls
 
-When writing programs for this toolchain without a C runtime, the NDK 3.2 `proto/` inline stubs do not generate correct library call code with GCC 15.x. Use direct `inline asm` wrappers instead:
+The bundled NDK 3.9 inline stubs (and raw NDK 3.2 stubs) generate incorrect
+library call code with GCC 15.x — producing `jsr (a0)` instead of
+`jsr -N(a6)` — causing runtime crashes (AmigaOS alert `#80000003`).
+
+**The recommended solution** is to use the NDK 3.2R4 headers included in
+this repository under `ndk32r4/sys-include/`. These were regenerated from
+the NDK 3.2R4 SFD files using sfdc 1.12 and paired with the existing
+`macros.h` which already contains the correct explicit `a6` constraint.
+See `ndk32r4/README.md` for full details.
+
+```bash
+# Point your project at the fixed headers
+NDK=~/AMIGA_GCC/vscode-amiga-debug/ndk32r4/sys-include
+m68k-amiga-elf-gcc -I$NDK ...
+```
+
+With these headers `#include <proto/exec.h>` works correctly and generates
+proper `jsr -N(a6)` calls — no inline asm wrappers needed.
+
+**Alternative workaround** (if you cannot use the NDK 3.2R4 headers):
+write direct inline asm wrappers for each library call:
 
 ```c
 static void *my_OpenLibrary(const char *name, unsigned long ver)
 {
-    register void         *result __asm("d0");
-    register struct ExecBase *sb  __asm("a6") = SysBase;
-    register const char   *n      __asm("a1") = name;
-    register unsigned long v      __asm("d0") = ver;
+    register void            *result __asm("d0");
+    register struct ExecBase *sb     __asm("a6") = SysBase;
+    register const char      *n      __asm("a1") = name;
+    register unsigned long    v      __asm("d0") = ver;
     __asm volatile ("jsr -552(%%a6)"
         : "=r"(result)
         : "r"(sb), "r"(n), "r"(v)
@@ -209,7 +229,20 @@ static void *my_OpenLibrary(const char *name, unsigned long ver)
 }
 ```
 
-### Using asm() vs `__asm__()`
+### KS 1.3 compatibility guard
+
+When targeting Kickstart 1.3, include `ks13_compat.h` from the NDK 3.2R4
+headers to catch any accidental use of KS 2.0+ functions at compile time:
+
+```c
+#include <ks13_compat.h>   /* produces a compile error for KS 2.0+ calls */
+#include <proto/exec.h>
+
+AllocMem(100, 0);   /* fine — exists since KS 1.2                    */
+AllocVec(100, 0);   /* error: attempt to use poisoned 'AllocVec'     */
+```
+
+### Using `asm()` vs `__asm__()`
 
 Both syntaxes are supported by the patch:
 
@@ -217,7 +250,7 @@ Both syntaxes are supported by the patch:
 // vbcc/SAS-C style
 void foo(int x asm("d0"), int y asm("d1"));
 
-// Always-portable GCC style  
+// Always-portable GCC style
 void foo(int x __asm__("d0"), int y __asm__("d1"));
 ```
 
