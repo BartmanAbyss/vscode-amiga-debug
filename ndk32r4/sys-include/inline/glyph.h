@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GLYPH_BASE_NAME */
 
 #define GLYPH_GetClass() \
-      LP0(0x1e, Class, *GLYPH_GetClass ,\
+      LP0(0x1e, Class *, GLYPH_GetClass ,\
       , GLYPH_BASE_NAME)
 
 #endif /* !_INLINE_GLYPH_H */

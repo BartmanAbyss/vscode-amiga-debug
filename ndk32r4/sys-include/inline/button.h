@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !BUTTON_BASE_NAME */
 
 #define BUTTON_GetClass() \
-      LP0(0x1e, Class, *BUTTON_GetClass ,\
+      LP0(0x1e, Class *, BUTTON_GetClass ,\
       , BUTTON_BASE_NAME)
 
 #endif /* !_INLINE_BUTTON_H */

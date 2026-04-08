@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !BULLET_BASE_NAME */
 
 #define OpenEngine() \
-      LP0(0x1e, struct GlyphEngine, *OpenEngine ,\
+      LP0(0x1e, struct GlyphEngine *, OpenEngine ,\
       , BULLET_BASE_NAME)
 
 #define CloseEngine(___glyphEngine) \

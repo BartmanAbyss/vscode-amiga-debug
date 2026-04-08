@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !SPACE_BASE_NAME */
 
 #define SPACE_GetClass() \
-      LP0(0x1e, Class, *SPACE_GetClass ,\
+      LP0(0x1e, Class *, SPACE_GetClass ,\
       , SPACE_BASE_NAME)
 
 #endif /* !_INLINE_SPACE_H */

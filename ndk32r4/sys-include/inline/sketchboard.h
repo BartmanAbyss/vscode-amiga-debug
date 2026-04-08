@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !SKETCHBOARD_BASE_NAME */
 
 #define SKETCHBOARD_GetClass() \
-      LP0(0x1e, Class, *SKETCHBOARD_GetClass ,\
+      LP0(0x1e, Class *, SKETCHBOARD_GetClass ,\
       , SKETCHBOARD_BASE_NAME)
 
 #endif /* !_INLINE_SKETCHBOARD_H */

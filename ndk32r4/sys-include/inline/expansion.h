@@ -33,7 +33,7 @@ typedef ULONG _sfdc_vararg;
       , EXPANSION_BASE_NAME)
 
 #define AllocConfigDev() \
-      LP0(0x30, struct ConfigDev, *AllocConfigDev ,\
+      LP0(0x30, struct ConfigDev *, AllocConfigDev ,\
       , EXPANSION_BASE_NAME)
 
 #define AllocExpansionMem(___numSlots, ___slotAlign) \
@@ -49,7 +49,7 @@ typedef ULONG _sfdc_vararg;
       , EXPANSION_BASE_NAME)
 
 #define FindConfigDev(___oldConfigDev, ___manufacturer, ___product) \
-      LP3(0x48, struct ConfigDev, *FindConfigDev , CONST struct ConfigDev *, ___oldConfigDev, a0, LONG, ___manufacturer, d0, LONG, ___product, d1,\
+      LP3(0x48, struct ConfigDev *, FindConfigDev , CONST struct ConfigDev *, ___oldConfigDev, a0, LONG, ___manufacturer, d0, LONG, ___product, d1,\
       , EXPANSION_BASE_NAME)
 
 #define FreeBoardMem(___startSlot, ___slotSpec) \
@@ -97,7 +97,7 @@ typedef ULONG _sfdc_vararg;
       , EXPANSION_BASE_NAME)
 
 #define MakeDosNode(___parmPacket) \
-      LP1(0x90, struct DeviceNode, *MakeDosNode , CONST_APTR, ___parmPacket, a0,\
+      LP1(0x90, struct DeviceNode *, MakeDosNode , CONST_APTR, ___parmPacket, a0,\
       , EXPANSION_BASE_NAME)
 
 #define AddDosNode(___bootPri, ___flags, ___deviceNode) \

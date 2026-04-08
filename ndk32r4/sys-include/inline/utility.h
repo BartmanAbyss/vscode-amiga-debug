@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !UTILITY_BASE_NAME */
 
 #define FindTagItem(___tagVal, ___tagList) \
-      LP2(0x1e, struct TagItem, *FindTagItem , Tag, ___tagVal, d0, CONST struct TagItem *, ___tagList, a0,\
+      LP2(0x1e, struct TagItem *, FindTagItem , Tag, ___tagVal, d0, CONST struct TagItem *, ___tagList, a0,\
       , UTILITY_BASE_NAME)
 
 #define GetTagData(___tagValue, ___defaultVal, ___tagList) \
@@ -33,7 +33,7 @@ typedef ULONG _sfdc_vararg;
       , UTILITY_BASE_NAME)
 
 #define NextTagItem(___tagListPtr) \
-      LP1(0x30, struct TagItem, *NextTagItem , struct TagItem **, ___tagListPtr, a0,\
+      LP1(0x30, struct TagItem *, NextTagItem , struct TagItem **, ___tagListPtr, a0,\
       , UTILITY_BASE_NAME)
 
 #define FilterTagChanges(___changeList, ___originalList, ___apply) \
@@ -45,11 +45,11 @@ typedef ULONG _sfdc_vararg;
       , UTILITY_BASE_NAME)
 
 #define AllocateTagItems(___numTags) \
-      LP1(0x42, struct TagItem, *AllocateTagItems , ULONG, ___numTags, d0,\
+      LP1(0x42, struct TagItem *, AllocateTagItems , ULONG, ___numTags, d0,\
       , UTILITY_BASE_NAME)
 
 #define CloneTagItems(___tagList) \
-      LP1(0x48, struct TagItem, *CloneTagItems , CONST struct TagItem *, ___tagList, a0,\
+      LP1(0x48, struct TagItem *, CloneTagItems , CONST struct TagItem *, ___tagList, a0,\
       , UTILITY_BASE_NAME)
 
 #define FreeTagItems(___tagList) \
@@ -141,7 +141,7 @@ typedef ULONG _sfdc_vararg;
       , UTILITY_BASE_NAME)
 
 #define AllocNamedObjectA(___name, ___tagList) \
-      LP2(0xe4, struct NamedObject, *AllocNamedObjectA , CONST_STRPTR, ___name, a0, CONST struct TagItem *, ___tagList, a1,\
+      LP2(0xe4, struct NamedObject *, AllocNamedObjectA , CONST_STRPTR, ___name, a0, CONST struct TagItem *, ___tagList, a1,\
       , UTILITY_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -154,7 +154,7 @@ typedef ULONG _sfdc_vararg;
       , UTILITY_BASE_NAME)
 
 #define FindNamedObject(___nameSpace, ___name, ___lastObject) \
-      LP3(0xf0, struct NamedObject, *FindNamedObject , struct NamedObject *, ___nameSpace, a0, CONST_STRPTR, ___name, a1, CONST struct NamedObject *, ___lastObject, a2,\
+      LP3(0xf0, struct NamedObject *, FindNamedObject , struct NamedObject *, ___nameSpace, a0, CONST_STRPTR, ___name, a1, CONST struct NamedObject *, ___lastObject, a2,\
       , UTILITY_BASE_NAME)
 
 #define FreeNamedObject(___object) \

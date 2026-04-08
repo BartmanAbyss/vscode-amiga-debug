@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !LABEL_BASE_NAME */
 
 #define LABEL_GetClass() \
-      LP0(0x1e, Class, *LABEL_GetClass ,\
+      LP0(0x1e, Class *, LABEL_GetClass ,\
       , LABEL_BASE_NAME)
 
 #endif /* !_INLINE_LABEL_H */

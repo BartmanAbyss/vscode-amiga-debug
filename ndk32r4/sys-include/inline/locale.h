@@ -97,7 +97,7 @@ typedef ULONG _sfdc_vararg;
       , LOCALE_BASE_NAME)
 
 #define OpenCatalogA(___locale, ___name, ___tags) \
-      LP3(0x96, struct Catalog, *OpenCatalogA , struct Locale *, ___locale, a0, CONST_STRPTR, ___name, a1, CONST struct TagItem *, ___tags, a2,\
+      LP3(0x96, struct Catalog *, OpenCatalogA , struct Locale *, ___locale, a0, CONST_STRPTR, ___name, a1, CONST struct TagItem *, ___tags, a2,\
       , LOCALE_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -106,7 +106,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define OpenLocale(___name) \
-      LP1(0x9c, struct Locale, *OpenLocale , CONST_STRPTR, ___name, a0,\
+      LP1(0x9c, struct Locale *, OpenLocale , CONST_STRPTR, ___name, a0,\
       , LOCALE_BASE_NAME)
 
 #define ParseDate(___locale, ___date, ___fmtTemplate, ___getCharFunc) \

@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GETSCREENMODE_BASE_NAME */
 
 #define GETSCREENMODE_GetClass() \
-      LP0(0x1e, Class, *GETSCREENMODE_GetClass ,\
+      LP0(0x1e, Class *, GETSCREENMODE_GetClass ,\
       , GETSCREENMODE_BASE_NAME)
 
 #endif /* !_INLINE_GETSCREENMODE_H */

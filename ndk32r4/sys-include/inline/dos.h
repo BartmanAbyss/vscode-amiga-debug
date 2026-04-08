@@ -93,7 +93,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define CreateProc(___name, ___pri, ___segList, ___stackSize) \
-      LP4(0x8a, struct MsgPort, *CreateProc , CONST_STRPTR, ___name, d1, LONG, ___pri, d2, BPTR, ___segList, d3, LONG, ___stackSize, d4,\
+      LP4(0x8a, struct MsgPort *, CreateProc , CONST_STRPTR, ___name, d1, LONG, ___pri, d2, BPTR, ___segList, d3, LONG, ___stackSize, d4,\
       , DOS_BASE_NAME)
 
 #define Exit(___returnCode) \
@@ -109,7 +109,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define DeviceProc(___name) \
-      LP1(0xae, struct MsgPort, *DeviceProc , CONST_STRPTR, ___name, d1,\
+      LP1(0xae, struct MsgPort *, DeviceProc , CONST_STRPTR, ___name, d1,\
       , DOS_BASE_NAME)
 
 #define SetComment(___name, ___comment) \
@@ -121,7 +121,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define DateStamp(___date) \
-      LP1(0xc0, struct DateStamp, *DateStamp , struct DateStamp *, ___date, d1,\
+      LP1(0xc0, struct DateStamp *, DateStamp , struct DateStamp *, ___date, d1,\
       , DOS_BASE_NAME)
 
 #define Delay(___timeout) \
@@ -190,7 +190,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define WaitPkt() \
-      LP0(0xfc, struct DosPacket, *WaitPkt ,\
+      LP0(0xfc, struct DosPacket *, WaitPkt ,\
       , DOS_BASE_NAME)
 
 #define ReplyPkt(___dp, ___res1, ___res2) \
@@ -356,15 +356,15 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define Cli() \
-      LP0(0x1ec, struct CommandLineInterface, *Cli ,\
+      LP0(0x1ec, struct CommandLineInterface *, Cli ,\
       , DOS_BASE_NAME)
 
 #define CreateNewProc(___tags) \
-      LP1(0x1f2, struct Process, *CreateNewProc , CONST struct TagItem *, ___tags, d1,\
+      LP1(0x1f2, struct Process *, CreateNewProc , CONST struct TagItem *, ___tags, d1,\
       , DOS_BASE_NAME)
 
 #define CreateNewProcTagList(___tags) \
-      LP1(0x1f2, struct Process, *CreateNewProcTagList , CONST struct TagItem *, ___tags, d1,\
+      LP1(0x1f2, struct Process *, CreateNewProcTagList , CONST struct TagItem *, ___tags, d1,\
       , DOS_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -377,19 +377,19 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define GetConsoleTask() \
-      LP0(0x1fe, struct MsgPort, *GetConsoleTask ,\
+      LP0(0x1fe, struct MsgPort *, GetConsoleTask ,\
       , DOS_BASE_NAME)
 
 #define SetConsoleTask(___task) \
-      LP1(0x204, struct MsgPort, *SetConsoleTask , struct MsgPort *, ___task, d1,\
+      LP1(0x204, struct MsgPort *, SetConsoleTask , struct MsgPort *, ___task, d1,\
       , DOS_BASE_NAME)
 
 #define GetFileSysTask() \
-      LP0(0x20a, struct MsgPort, *GetFileSysTask ,\
+      LP0(0x20a, struct MsgPort *, GetFileSysTask ,\
       , DOS_BASE_NAME)
 
 #define SetFileSysTask(___task) \
-      LP1(0x210, struct MsgPort, *SetFileSysTask , struct MsgPort *, ___task, d1,\
+      LP1(0x210, struct MsgPort *, SetFileSysTask , struct MsgPort *, ___task, d1,\
       , DOS_BASE_NAME)
 
 #define GetArgStr() \
@@ -401,7 +401,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define FindCliProc(___num) \
-      LP1(0x222, struct Process, *FindCliProc , ULONG, ___num, d1,\
+      LP1(0x222, struct Process *, FindCliProc , ULONG, ___num, d1,\
       , DOS_BASE_NAME)
 
 #define MaxCli() \
@@ -474,7 +474,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define GetDeviceProc(___name, ___dp) \
-      LP2(0x282, struct DevProc, *GetDeviceProc , CONST_STRPTR, ___name, d1, struct DevProc *, ___dp, d2,\
+      LP2(0x282, struct DevProc *, GetDeviceProc , CONST_STRPTR, ___name, d1, struct DevProc *, ___dp, d2,\
       , DOS_BASE_NAME)
 
 #define FreeDeviceProc(___dp) \
@@ -482,7 +482,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define LockDosList(___flags) \
-      LP1(0x28e, struct DosList, *LockDosList , ULONG, ___flags, d1,\
+      LP1(0x28e, struct DosList *, LockDosList , ULONG, ___flags, d1,\
       , DOS_BASE_NAME)
 
 #define UnLockDosList(___flags) \
@@ -490,7 +490,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define AttemptLockDosList(___flags) \
-      LP1(0x29a, struct DosList, *AttemptLockDosList , ULONG, ___flags, d1,\
+      LP1(0x29a, struct DosList *, AttemptLockDosList , ULONG, ___flags, d1,\
       , DOS_BASE_NAME)
 
 #define RemDosEntry(___dlist) \
@@ -502,15 +502,15 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define FindDosEntry(___dlist, ___name, ___flags) \
-      LP3(0x2ac, struct DosList, *FindDosEntry , CONST struct DosList *, ___dlist, d1, CONST_STRPTR, ___name, d2, ULONG, ___flags, d3,\
+      LP3(0x2ac, struct DosList *, FindDosEntry , CONST struct DosList *, ___dlist, d1, CONST_STRPTR, ___name, d2, ULONG, ___flags, d3,\
       , DOS_BASE_NAME)
 
 #define NextDosEntry(___dlist, ___flags) \
-      LP2(0x2b2, struct DosList, *NextDosEntry , CONST struct DosList *, ___dlist, d1, ULONG, ___flags, d2,\
+      LP2(0x2b2, struct DosList *, NextDosEntry , CONST struct DosList *, ___dlist, d1, ULONG, ___flags, d2,\
       , DOS_BASE_NAME)
 
 #define MakeDosEntry(___name, ___type) \
-      LP2(0x2b8, struct DosList, *MakeDosEntry , CONST_STRPTR, ___name, d1, LONG, ___type, d2,\
+      LP2(0x2b8, struct DosList *, MakeDosEntry , CONST_STRPTR, ___name, d1, LONG, ___type, d2,\
       , DOS_BASE_NAME)
 
 #define FreeDosEntry(___dlist) \
@@ -575,7 +575,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define FindSegment(___name, ___seg, ___system) \
-      LP3(0x30c, struct Segment, *FindSegment , CONST_STRPTR, ___name, d1, CONST struct Segment *, ___seg, d2, LONG, ___system, d3,\
+      LP3(0x30c, struct Segment *, FindSegment , CONST_STRPTR, ___name, d1, CONST struct Segment *, ___seg, d2, LONG, ___system, d3,\
       , DOS_BASE_NAME)
 
 #define RemSegment(___seg) \
@@ -587,7 +587,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define ReadArgs(___arg_template, ___array, ___args) \
-      LP3(0x31e, struct RDArgs, *ReadArgs , CONST_STRPTR, ___arg_template, d1, LONG *, ___array, d2, struct RDArgs *, ___args, d3,\
+      LP3(0x31e, struct RDArgs *, ReadArgs , CONST_STRPTR, ___arg_template, d1, LONG *, ___array, d2, struct RDArgs *, ___args, d3,\
       , DOS_BASE_NAME)
 
 #define FindArg(___keyword, ___arg_template) \
@@ -659,7 +659,7 @@ typedef ULONG _sfdc_vararg;
       , DOS_BASE_NAME)
 
 #define FindVar(___name, ___type) \
-      LP2(0x396, struct LocalVar, *FindVar , CONST_STRPTR, ___name, d1, ULONG, ___type, d2,\
+      LP2(0x396, struct LocalVar *, FindVar , CONST_STRPTR, ___name, d1, ULONG, ___type, d2,\
       , DOS_BASE_NAME)
 
 #define CliInitNewcli(___dp) \

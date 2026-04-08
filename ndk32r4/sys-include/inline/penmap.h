@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !PENMAP_BASE_NAME */
 
 #define PENMAP_GetClass() \
-      LP0(0x1e, Class, *PENMAP_GetClass ,\
+      LP0(0x1e, Class *, PENMAP_GetClass ,\
       , PENMAP_BASE_NAME)
 
 #endif /* !_INLINE_PENMAP_H */

@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !DATEBROWSER_BASE_NAME */
 
 #define DATEBROWSER_GetClass() \
-      LP0(0x1e, Class, *DATEBROWSER_GetClass ,\
+      LP0(0x1e, Class *, DATEBROWSER_GetClass ,\
       , DATEBROWSER_BASE_NAME)
 
 #define JulianWeekDay(___day, ___month, ___year) \

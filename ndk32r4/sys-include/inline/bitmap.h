@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !BITMAP_BASE_NAME */
 
 #define BITMAP_GetClass() \
-      LP0(0x1e, Class, *BITMAP_GetClass ,\
+      LP0(0x1e, Class *, BITMAP_GetClass ,\
       , BITMAP_BASE_NAME)
 
 #endif /* !_INLINE_BITMAP_H */

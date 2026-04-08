@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !DISKFONT_BASE_NAME */
 
 #define OpenDiskFont(___textAttr) \
-      LP1(0x1e, struct TextFont, *OpenDiskFont , struct TextAttr *, ___textAttr, a0,\
+      LP1(0x1e, struct TextFont *, OpenDiskFont , struct TextAttr *, ___textAttr, a0,\
       , DISKFONT_BASE_NAME)
 
 #define AvailFonts(___buffer, ___bufBytes, ___flags) \
@@ -29,7 +29,7 @@ typedef ULONG _sfdc_vararg;
       , DISKFONT_BASE_NAME)
 
 #define NewFontContents(___fontsLock, ___fontName) \
-      LP2(0x2a, struct FontContentsHeader, *NewFontContents , BPTR, ___fontsLock, a0, CONST_STRPTR, ___fontName, a1,\
+      LP2(0x2a, struct FontContentsHeader *, NewFontContents , BPTR, ___fontsLock, a0, CONST_STRPTR, ___fontName, a1,\
       , DISKFONT_BASE_NAME)
 
 #define DisposeFontContents(___fontContentsHeader) \
@@ -37,7 +37,7 @@ typedef ULONG _sfdc_vararg;
       , DISKFONT_BASE_NAME)
 
 #define NewScaledDiskFont(___sourceFont, ___destTextAttr) \
-      LP2(0x36, struct DiskFont, *NewScaledDiskFont , struct TextFont *, ___sourceFont, a0, struct TextAttr *, ___destTextAttr, a1,\
+      LP2(0x36, struct DiskFont *, NewScaledDiskFont , struct TextFont *, ___sourceFont, a0, struct TextAttr *, ___destTextAttr, a1,\
       , DISKFONT_BASE_NAME)
 
 #define GetDiskFontCtrl(___tagid) \
@@ -89,7 +89,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define OpenOutlineFont(___name, ___list, ___flags) \
-      LP3(0x66, struct OutlineFont, *OpenOutlineFont , CONST_STRPTR, ___name, a0, struct List *, ___list, a1, ULONG, ___flags, d0,\
+      LP3(0x66, struct OutlineFont *, OpenOutlineFont , CONST_STRPTR, ___name, a0, struct List *, ___list, a1, ULONG, ___flags, d0,\
       , DISKFONT_BASE_NAME)
 
 #define CloseOutlineFont(___olf, ___list) \

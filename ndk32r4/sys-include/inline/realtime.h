@@ -29,7 +29,7 @@ typedef ULONG _sfdc_vararg;
       , REALTIME_BASE_NAME)
 
 #define CreatePlayerA(___tagList) \
-      LP1(0x2a, struct Player, *CreatePlayerA , CONST struct TagItem *, ___tagList, a0,\
+      LP1(0x2a, struct Player *, CreatePlayerA , CONST struct TagItem *, ___tagList, a0,\
       , REALTIME_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -59,11 +59,11 @@ typedef ULONG _sfdc_vararg;
       , REALTIME_BASE_NAME)
 
 #define NextConductor(___previousConductor) \
-      LP1(0x48, struct Conductor, *NextConductor , CONST struct Conductor *, ___previousConductor, a0,\
+      LP1(0x48, struct Conductor *, NextConductor , CONST struct Conductor *, ___previousConductor, a0,\
       , REALTIME_BASE_NAME)
 
 #define FindConductor(___name) \
-      LP1(0x4e, struct Conductor, *FindConductor , CONST_STRPTR, ___name, a0,\
+      LP1(0x4e, struct Conductor *, FindConductor , CONST_STRPTR, ___name, a0,\
       , REALTIME_BASE_NAME)
 
 #define GetPlayerAttrsA(___player, ___tagList) \

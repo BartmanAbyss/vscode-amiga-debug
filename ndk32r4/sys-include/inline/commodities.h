@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !COMMODITIES_BASE_NAME */
 
 #define CreateCxObj(___type, ___arg1, ___arg2) \
-      LP3(0x1e, CxObj, *CreateCxObj , ULONG, ___type, d0, LONG, ___arg1, a0, LONG, ___arg2, a1,\
+      LP3(0x1e, CxObj *, CreateCxObj , ULONG, ___type, d0, LONG, ___arg1, a0, LONG, ___arg2, a1,\
       , COMMODITIES_BASE_NAME)
 
 #define CxBroker(___nb, ___error) \
-      LP2(0x24, CxObj, *CxBroker , CONST struct NewBroker *, ___nb, a0, LONG *, ___error, d0,\
+      LP2(0x24, CxObj *, CxBroker , CONST struct NewBroker *, ___nb, a0, LONG *, ___error, d0,\
       , COMMODITIES_BASE_NAME)
 
 #define ActivateCxObj(___co, ___flag) \

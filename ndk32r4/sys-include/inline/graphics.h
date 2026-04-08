@@ -49,7 +49,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define OpenFont(___textAttr) \
-      LP1(0x48, struct TextFont, *OpenFont , CONST struct TextAttr *, ___textAttr, a0,\
+      LP1(0x48, struct TextFont *, OpenFont , CONST struct TextAttr *, ___textAttr, a0,\
       , GRAPHICS_BASE_NAME)
 
 #define CloseFont(___textFont) \
@@ -313,7 +313,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define InitTmpRas(___tmpRas, ___buffer, ___size) \
-      LP3(0x1d4, struct TmpRas, *InitTmpRas , struct TmpRas *, ___tmpRas, a0, PLANEPTR, ___buffer, a1, LONG, ___size, d0,\
+      LP3(0x1d4, struct TmpRas *, InitTmpRas , struct TmpRas *, ___tmpRas, a0, PLANEPTR, ___buffer, a1, LONG, ___size, d0,\
       , GRAPHICS_BASE_NAME)
 
 #define AskFont(___rp, ___textAttr) \
@@ -345,7 +345,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define NewRegion() \
-      LP0(0x204, struct Region, *NewRegion ,\
+      LP0(0x204, struct Region *, NewRegion ,\
       , GRAPHICS_BASE_NAME)
 
 #define ClearRectRegion(___region, ___rectangle) \
@@ -381,7 +381,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define GetColorMap(___entries) \
-      LP1(0x23a, struct ColorMap, *GetColorMap , LONG, ___entries, d0,\
+      LP1(0x23a, struct ColorMap *, GetColorMap , LONG, ___entries, d0,\
       , GRAPHICS_BASE_NAME)
 
 #define FreeColorMap(___colorMap) \
@@ -397,7 +397,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define UCopperListInit(___uCopList, ___n) \
-      LP2(0x252, struct CopList, *UCopperListInit , struct UCopList *, ___uCopList, a0, WORD, ___n, d0,\
+      LP2(0x252, struct CopList *, UCopperListInit , struct UCopList *, ___uCopList, a0, WORD, ___n, d0,\
       , GRAPHICS_BASE_NAME)
 
 #define FreeGBuffers(___anOb, ___rp, ___flag) \
@@ -474,7 +474,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define OpenMonitor(___monitorName, ___displayID) \
-      LP2(0x2ca, struct MonitorSpec, *OpenMonitor , CONST_STRPTR, ___monitorName, a1, ULONG, ___displayID, d0,\
+      LP2(0x2ca, struct MonitorSpec *, OpenMonitor , CONST_STRPTR, ___monitorName, a1, ULONG, ___displayID, d0,\
       , GRAPHICS_BASE_NAME)
 
 #define CloseMonitor(___monitorSpec) \
@@ -601,7 +601,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define AllocBitMap(___sizex, ___sizey, ___depth, ___flags, ___friend_bitmap) \
-      LP5(0x396, struct BitMap, *AllocBitMap , ULONG, ___sizex, d0, ULONG, ___sizey, d1, ULONG, ___depth, d2, ULONG, ___flags, d3, CONST struct BitMap *, ___friend_bitmap, a0,\
+      LP5(0x396, struct BitMap *, AllocBitMap , ULONG, ___sizex, d0, ULONG, ___sizey, d1, ULONG, ___depth, d2, ULONG, ___flags, d3, CONST struct BitMap *, ___friend_bitmap, a0,\
       , GRAPHICS_BASE_NAME)
 
 #define FreeBitMap(___bm) \
@@ -638,7 +638,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define AllocDBufInfo(___vp) \
-      LP1(0x3c6, struct DBufInfo, *AllocDBufInfo , struct ViewPort *, ___vp, a0,\
+      LP1(0x3c6, struct DBufInfo *, AllocDBufInfo , struct ViewPort *, ___vp, a0,\
       , GRAPHICS_BASE_NAME)
 
 #define FreeDBufInfo(___dbi) \
@@ -670,7 +670,7 @@ typedef ULONG _sfdc_vararg;
       , GRAPHICS_BASE_NAME)
 
 #define AllocSpriteDataA(___bm, ___tags) \
-      LP2(0x3fc, struct ExtSprite, *AllocSpriteDataA , CONST struct BitMap *, ___bm, a2, CONST struct TagItem *, ___tags, a1,\
+      LP2(0x3fc, struct ExtSprite *, AllocSpriteDataA , CONST struct BitMap *, ___bm, a2, CONST struct TagItem *, ___tags, a1,\
       , GRAPHICS_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

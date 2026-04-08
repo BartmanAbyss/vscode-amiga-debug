@@ -29,7 +29,7 @@ typedef ULONG _sfdc_vararg;
       , ICON_BASE_NAME)
 
 #define GetDiskObject(___name) \
-      LP1(0x4e, struct DiskObject, *GetDiskObject , CONST_STRPTR, ___name, a0,\
+      LP1(0x4e, struct DiskObject *, GetDiskObject , CONST_STRPTR, ___name, a0,\
       , ICON_BASE_NAME)
 
 #define PutDiskObject(___name, ___diskobj) \
@@ -41,7 +41,7 @@ typedef ULONG _sfdc_vararg;
       , ICON_BASE_NAME)
 
 #define FindToolType(___toolTypeArray, ___typeName) \
-      LP2(0x60, UBYTE, *FindToolType , CONST_STRPTR *, ___toolTypeArray, a0, CONST_STRPTR, ___typeName, a1,\
+      LP2(0x60, UBYTE *, FindToolType , CONST_STRPTR *, ___toolTypeArray, a0, CONST_STRPTR, ___typeName, a1,\
       , ICON_BASE_NAME)
 
 #define MatchToolValue(___typeString, ___value) \
@@ -57,7 +57,7 @@ typedef ULONG _sfdc_vararg;
       , ICON_BASE_NAME)
 
 #define GetDefDiskObject(___type) \
-      LP1(0x78, struct DiskObject, *GetDefDiskObject , LONG, ___type, d0,\
+      LP1(0x78, struct DiskObject *, GetDefDiskObject , LONG, ___type, d0,\
       , ICON_BASE_NAME)
 
 #define PutDefDiskObject(___diskObject) \
@@ -65,7 +65,7 @@ typedef ULONG _sfdc_vararg;
       , ICON_BASE_NAME)
 
 #define GetDiskObjectNew(___name) \
-      LP1(0x84, struct DiskObject, *GetDiskObjectNew , CONST_STRPTR, ___name, a0,\
+      LP1(0x84, struct DiskObject *, GetDiskObjectNew , CONST_STRPTR, ___name, a0,\
       , ICON_BASE_NAME)
 
 #define DeleteDiskObject(___name) \
@@ -113,11 +113,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define NewDiskObject(___type) \
-      LP1(0xae, struct DiskObject, *NewDiskObject , LONG, ___type, d0,\
+      LP1(0xae, struct DiskObject *, NewDiskObject , LONG, ___type, d0,\
       , ICON_BASE_NAME)
 
 #define GetIconTagList(___name, ___tags) \
-      LP2(0xb4, struct DiskObject, *GetIconTagList , CONST_STRPTR, ___name, a0, CONST struct TagItem *, ___tags, a1,\
+      LP2(0xb4, struct DiskObject *, GetIconTagList , CONST_STRPTR, ___name, a0, CONST struct TagItem *, ___tags, a1,\
       , ICON_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

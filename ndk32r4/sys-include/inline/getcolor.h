@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GETCOLOR_BASE_NAME */
 
 #define GETCOLOR_GetClass() \
-      LP0(0x1e, Class, *GETCOLOR_GetClass ,\
+      LP0(0x1e, Class *, GETCOLOR_GetClass ,\
       , GETCOLOR_BASE_NAME)
 
 #endif /* !_INLINE_GETCOLOR_H */

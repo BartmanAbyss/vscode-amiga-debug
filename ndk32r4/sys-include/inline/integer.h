@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !INTEGER_BASE_NAME */
 
 #define INTEGER_GetClass() \
-      LP0(0x1e, Class, *INTEGER_GetClass ,\
+      LP0(0x1e, Class *, INTEGER_GetClass ,\
       , INTEGER_BASE_NAME)
 
 #endif /* !_INLINE_INTEGER_H */

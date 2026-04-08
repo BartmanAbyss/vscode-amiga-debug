@@ -25,7 +25,7 @@ typedef ULONG _sfdc_vararg;
       , WB_BASE_NAME)
 
 #define AddAppWindowA(___id, ___userdata, ___window, ___msgport, ___taglist) \
-      LP5(0x30, struct AppWindow, *AddAppWindowA , ULONG, ___id, d0, ULONG, ___userdata, d1, struct Window *, ___window, a0, struct MsgPort *, ___msgport, a1, CONST struct TagItem *, ___taglist, a2,\
+      LP5(0x30, struct AppWindow *, AddAppWindowA , ULONG, ___id, d0, ULONG, ___userdata, d1, struct Window *, ___window, a0, struct MsgPort *, ___msgport, a1, CONST struct TagItem *, ___taglist, a2,\
       , WB_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -38,7 +38,7 @@ typedef ULONG _sfdc_vararg;
       , WB_BASE_NAME)
 
 #define AddAppIconA(___id, ___userdata, ___text, ___msgport, ___lock, ___diskobj, ___taglist) \
-      LP7A4(0x3c, struct AppIcon, *AddAppIconA , ULONG, ___id, d0, ULONG, ___userdata, d1, CONST_STRPTR, ___text, a0, struct MsgPort *, ___msgport, a1, BPTR, ___lock, a2, struct DiskObject *, ___diskobj, a3, CONST struct TagItem *, ___taglist, d7,\
+      LP7A4(0x3c, struct AppIcon *, AddAppIconA , ULONG, ___id, d0, ULONG, ___userdata, d1, CONST_STRPTR, ___text, a0, struct MsgPort *, ___msgport, a1, BPTR, ___lock, a2, struct DiskObject *, ___diskobj, a3, CONST struct TagItem *, ___taglist, d7,\
       , WB_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -51,7 +51,7 @@ typedef ULONG _sfdc_vararg;
       , WB_BASE_NAME)
 
 #define AddAppMenuItemA(___id, ___userdata, ___text, ___msgport, ___taglist) \
-      LP5(0x48, struct AppMenuItem, *AddAppMenuItemA , ULONG, ___id, d0, ULONG, ___userdata, d1, CONST_STRPTR, ___text, a0, struct MsgPort *, ___msgport, a1, CONST struct TagItem *, ___taglist, a2,\
+      LP5(0x48, struct AppMenuItem *, AddAppMenuItemA , ULONG, ___id, d0, ULONG, ___userdata, d1, CONST_STRPTR, ___text, a0, struct MsgPort *, ___msgport, a1, CONST struct TagItem *, ___taglist, a2,\
       , WB_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

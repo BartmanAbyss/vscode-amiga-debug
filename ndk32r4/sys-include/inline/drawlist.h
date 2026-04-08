@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !DRAWLIST_BASE_NAME */
 
 #define DRAWLIST_GetClass() \
-      LP0(0x1e, Class, *DRAWLIST_GetClass ,\
+      LP0(0x1e, Class *, DRAWLIST_GetClass ,\
       , DRAWLIST_BASE_NAME)
 
 #endif /* !_INLINE_DRAWLIST_H */

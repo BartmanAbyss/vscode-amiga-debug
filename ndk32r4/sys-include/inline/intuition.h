@@ -85,11 +85,11 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define GetDefPrefs(___preferences, ___size) \
-      LP2(0x7e, struct Preferences, *GetDefPrefs , struct Preferences *, ___preferences, a0, WORD, ___size, d0,\
+      LP2(0x7e, struct Preferences *, GetDefPrefs , struct Preferences *, ___preferences, a0, WORD, ___size, d0,\
       , INTUITION_BASE_NAME)
 
 #define GetPrefs(___preferences, ___size) \
-      LP2(0x84, struct Preferences, *GetPrefs , struct Preferences *, ___preferences, a0, WORD, ___size, d0,\
+      LP2(0x84, struct Preferences *, GetPrefs , struct Preferences *, ___preferences, a0, WORD, ___size, d0,\
       , INTUITION_BASE_NAME)
 
 #define InitRequester(___requester) \
@@ -97,7 +97,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define ItemAddress(___menuStrip, ___menuNumber) \
-      LP2(0x90, struct MenuItem, *ItemAddress , CONST struct Menu *, ___menuStrip, a0, UWORD, ___menuNumber, d0,\
+      LP2(0x90, struct MenuItem *, ItemAddress , CONST struct Menu *, ___menuStrip, a0, UWORD, ___menuNumber, d0,\
       , INTUITION_BASE_NAME)
 
 #define ModifyIDCMP(___window, ___flags) \
@@ -133,11 +133,11 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define OpenScreen(___newScreen) \
-      LP1(0xc6, struct Screen, *OpenScreen , CONST struct NewScreen *, ___newScreen, a0,\
+      LP1(0xc6, struct Screen *, OpenScreen , CONST struct NewScreen *, ___newScreen, a0,\
       , INTUITION_BASE_NAME)
 
 #define OpenWindow(___newWindow) \
-      LP1(0xcc, struct Window, *OpenWindow , CONST struct NewWindow *, ___newWindow, a0,\
+      LP1(0xcc, struct Window *, OpenWindow , CONST struct NewWindow *, ___newWindow, a0,\
       , INTUITION_BASE_NAME)
 
 #define OpenWorkBench() \
@@ -201,11 +201,11 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define ViewAddress() \
-      LP0(0x126, struct View, *ViewAddress ,\
+      LP0(0x126, struct View *, ViewAddress ,\
       , INTUITION_BASE_NAME)
 
 #define ViewPortAddress(___window) \
-      LP1(0x12c, struct ViewPort, *ViewPortAddress , CONST struct Window *, ___window, a0,\
+      LP1(0x12c, struct ViewPort *, ViewPortAddress , CONST struct Window *, ___window, a0,\
       , INTUITION_BASE_NAME)
 
 #define WindowToBack(___window) \
@@ -221,7 +221,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define SetPrefs(___preferences, ___size, ___inform) \
-      LP3(0x144, struct Preferences, *SetPrefs , CONST struct Preferences *, ___preferences, a0, LONG, ___size, d0, BOOL, ___inform, d1,\
+      LP3(0x144, struct Preferences *, SetPrefs , CONST struct Preferences *, ___preferences, a0, LONG, ___size, d0, BOOL, ___inform, d1,\
       , INTUITION_BASE_NAME)
 
 #define IntuiTextLength(___iText) \
@@ -245,7 +245,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define BuildSysRequest(___window, ___body, ___posText, ___negText, ___flags, ___width, ___height) \
-      LP7(0x168, struct Window, *BuildSysRequest , struct Window *, ___window, a0, CONST struct IntuiText *, ___body, a1, CONST struct IntuiText *, ___posText, a2, CONST struct IntuiText *, ___negText, a3, ULONG, ___flags, d0, UWORD, ___width, d1, UWORD, ___height, d2,\
+      LP7(0x168, struct Window *, BuildSysRequest , struct Window *, ___window, a0, CONST struct IntuiText *, ___body, a1, CONST struct IntuiText *, ___posText, a2, CONST struct IntuiText *, ___negText, a3, ULONG, ___flags, d0, UWORD, ___width, d1, UWORD, ___height, d2,\
       , INTUITION_BASE_NAME)
 
 #define EndRefresh(___window, ___complete) \
@@ -333,7 +333,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define SetEditHook(___hook) \
-      LP1(0x1ec, struct Hook, *SetEditHook , struct Hook *, ___hook, a0,\
+      LP1(0x1ec, struct Hook *, SetEditHook , struct Hook *, ___hook, a0,\
       , INTUITION_BASE_NAME)
 
 #define SetMouseQueue(___window, ___queueLength) \
@@ -345,7 +345,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define LockPubScreen(___name) \
-      LP1(0x1fe, struct Screen, *LockPubScreen , CONST_STRPTR, ___name, a0,\
+      LP1(0x1fe, struct Screen *, LockPubScreen , CONST_STRPTR, ___name, a0,\
       , INTUITION_BASE_NAME)
 
 #define UnlockPubScreen(___name, ___screen) \
@@ -353,7 +353,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define LockPubScreenList() \
-      LP0(0x20a, struct List, *LockPubScreenList ,\
+      LP0(0x20a, struct List *, LockPubScreenList ,\
       , INTUITION_BASE_NAME)
 
 #define UnlockPubScreenList() \
@@ -377,7 +377,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define ObtainGIRPort(___gInfo) \
-      LP1(0x22e, struct RastPort, *ObtainGIRPort , struct GadgetInfo *, ___gInfo, a0,\
+      LP1(0x22e, struct RastPort *, ObtainGIRPort , struct GadgetInfo *, ___gInfo, a0,\
       , INTUITION_BASE_NAME)
 
 #define ReleaseGIRPort(___rp) \
@@ -402,7 +402,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_VARARGS */
 
 #define BuildEasyRequestArgs(___window, ___easyStruct, ___idcmp, ___args) \
-      LP4(0x252, struct Window, *BuildEasyRequestArgs , struct Window *, ___window, a0, CONST struct EasyStruct *, ___easyStruct, a1, ULONG, ___idcmp, d0, CONST_APTR, ___args, a3,\
+      LP4(0x252, struct Window *, BuildEasyRequestArgs , struct Window *, ___window, a0, CONST struct EasyStruct *, ___easyStruct, a1, ULONG, ___idcmp, d0, CONST_APTR, ___args, a3,\
       , INTUITION_BASE_NAME)
 
 #ifndef NO_INLINE_VARARGS
@@ -415,7 +415,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define OpenWindowTagList(___newWindow, ___tagList) \
-      LP2(0x25e, struct Window, *OpenWindowTagList , CONST struct NewWindow *, ___newWindow, a0, CONST struct TagItem *, ___tagList, a1,\
+      LP2(0x25e, struct Window *, OpenWindowTagList , CONST struct NewWindow *, ___newWindow, a0, CONST struct TagItem *, ___tagList, a1,\
       , INTUITION_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -424,7 +424,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define OpenScreenTagList(___newScreen, ___tagList) \
-      LP2(0x264, struct Screen, *OpenScreenTagList , CONST struct NewScreen *, ___newScreen, a0, CONST struct TagItem *, ___tagList, a1,\
+      LP2(0x264, struct Screen *, OpenScreenTagList , CONST struct NewScreen *, ___newScreen, a0, CONST struct TagItem *, ___tagList, a1,\
       , INTUITION_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -484,7 +484,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define MakeClass(___classID, ___superClassID, ___superClassPtr, ___instanceSize, ___flags) \
-      LP5(0x2a6, struct IClass, *MakeClass , CONST_STRPTR, ___classID, a0, CONST_STRPTR, ___superClassID, a1, CONST struct IClass *, ___superClassPtr, a2, UWORD, ___instanceSize, d0, ULONG, ___flags, d1,\
+      LP5(0x2a6, struct IClass *, MakeClass , CONST_STRPTR, ___classID, a0, CONST_STRPTR, ___superClassID, a1, CONST struct IClass *, ___superClassPtr, a2, UWORD, ___instanceSize, d0, ULONG, ___flags, d1,\
       , INTUITION_BASE_NAME)
 
 #define AddClass(___classPtr) \
@@ -492,7 +492,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define GetScreenDrawInfo(___screen) \
-      LP1(0x2b2, struct DrawInfo, *GetScreenDrawInfo , struct Screen *, ___screen, a0,\
+      LP1(0x2b2, struct DrawInfo *, GetScreenDrawInfo , struct Screen *, ___screen, a0,\
       , INTUITION_BASE_NAME)
 
 #define FreeScreenDrawInfo(___screen, ___drawInfo) \
@@ -512,7 +512,7 @@ typedef ULONG _sfdc_vararg;
       , INTUITION_BASE_NAME)
 
 #define AllocScreenBuffer(___sc, ___bm, ___flags) \
-      LP3(0x300, struct ScreenBuffer, *AllocScreenBuffer , struct Screen *, ___sc, a0, struct BitMap *, ___bm, a1, ULONG, ___flags, d0,\
+      LP3(0x300, struct ScreenBuffer *, AllocScreenBuffer , struct Screen *, ___sc, a0, struct BitMap *, ___bm, a1, ULONG, ___flags, d0,\
       , INTUITION_BASE_NAME)
 
 #define FreeScreenBuffer(___sc, ___sb) \

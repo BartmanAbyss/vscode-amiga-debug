@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !CLICKTAB_BASE_NAME */
 
 #define CLICKTAB_GetClass() \
-      LP0(0x1e, Class, *CLICKTAB_GetClass ,\
+      LP0(0x1e, Class *, CLICKTAB_GetClass ,\
       , CLICKTAB_BASE_NAME)
 
 #define AllocClickTabNodeA(___tags) \
-      LP1(0x24, struct Node, *AllocClickTabNodeA , struct TagItem *, ___tags, a0,\
+      LP1(0x24, struct Node *, AllocClickTabNodeA , struct TagItem *, ___tags, a0,\
       , CLICKTAB_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

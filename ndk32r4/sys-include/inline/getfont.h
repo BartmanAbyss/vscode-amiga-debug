@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GETFONT_BASE_NAME */
 
 #define GETFONT_GetClass() \
-      LP0(0x1e, Class, *GETFONT_GetClass ,\
+      LP0(0x1e, Class *, GETFONT_GetClass ,\
       , GETFONT_BASE_NAME)
 
 #endif /* !_INLINE_GETFONT_H */

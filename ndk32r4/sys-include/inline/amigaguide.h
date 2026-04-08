@@ -55,7 +55,7 @@ typedef ULONG _sfdc_vararg;
       , AMIGAGUIDE_BASE_NAME)
 
 #define GetAmigaGuideMsg(___cl) \
-      LP1(0x4e, struct AmigaGuideMsg, *GetAmigaGuideMsg , APTR, ___cl, a0,\
+      LP1(0x4e, struct AmigaGuideMsg *, GetAmigaGuideMsg , APTR, ___cl, a0,\
       , AMIGAGUIDE_BASE_NAME)
 
 #define ReplyAmigaGuideMsg(___amsg) \

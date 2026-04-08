@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !DATATYPES_BASE_NAME */
 
 #define ObtainDataTypeA(___type, ___handle, ___attrs) \
-      LP3(0x24, struct DataType, *ObtainDataTypeA , ULONG, ___type, d0, APTR, ___handle, a0, CONST struct TagItem *, ___attrs, a1,\
+      LP3(0x24, struct DataType *, ObtainDataTypeA , ULONG, ___type, d0, APTR, ___handle, a0, CONST struct TagItem *, ___attrs, a1,\
       , DATATYPES_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -34,7 +34,7 @@ typedef ULONG _sfdc_vararg;
       , DATATYPES_BASE_NAME)
 
 #define NewDTObjectA(___name, ___attrs) \
-      LP2(0x30, Object, *NewDTObjectA , CONST_STRPTR, ___name, d0, CONST struct TagItem *, ___attrs, a0,\
+      LP2(0x30, Object *, NewDTObjectA , CONST_STRPTR, ___name, d0, CONST struct TagItem *, ___attrs, a0,\
       , DATATYPES_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -100,11 +100,11 @@ typedef ULONG _sfdc_vararg;
       , DATATYPES_BASE_NAME)
 
 #define GetDTMethods(___object) \
-      LP1(0x66, ULONG, *GetDTMethods , CONST Object *, ___object, a0,\
+      LP1(0x66, ULONG *, GetDTMethods , CONST Object *, ___object, a0,\
       , DATATYPES_BASE_NAME)
 
 #define GetDTTriggerMethods(___object) \
-      LP1(0x6c, struct DTMethods, *GetDTTriggerMethods , Object *, ___object, a0,\
+      LP1(0x6c, struct DTMethods *, GetDTTriggerMethods , Object *, ___object, a0,\
       , DATATYPES_BASE_NAME)
 
 #define PrintDTObjectA(___o, ___w, ___r, ___msg) \
@@ -121,19 +121,19 @@ typedef ULONG _sfdc_vararg;
       , DATATYPES_BASE_NAME)
 
 #define FindMethod(___methods, ___searchmethodid) \
-      LP2(0x102, ULONG, *FindMethod , CONST ULONG *, ___methods, a0, ULONG, ___searchmethodid, a1,\
+      LP2(0x102, ULONG *, FindMethod , CONST ULONG *, ___methods, a0, ULONG, ___searchmethodid, a1,\
       , DATATYPES_BASE_NAME)
 
 #define FindTriggerMethod(___dtm, ___command, ___method) \
-      LP3(0x108, struct DTMethod, *FindTriggerMethod , CONST struct DTMethod *, ___dtm, a0, CONST_STRPTR, ___command, a1, ULONG, ___method, d0,\
+      LP3(0x108, struct DTMethod *, FindTriggerMethod , CONST struct DTMethod *, ___dtm, a0, CONST_STRPTR, ___command, a1, ULONG, ___method, d0,\
       , DATATYPES_BASE_NAME)
 
 #define CopyDTMethods(___methods, ___include, ___exclude) \
-      LP3(0x10e, ULONG, *CopyDTMethods , CONST ULONG *, ___methods, a0, CONST ULONG *, ___include, a1, CONST ULONG *, ___exclude, a2,\
+      LP3(0x10e, ULONG *, CopyDTMethods , CONST ULONG *, ___methods, a0, CONST ULONG *, ___include, a1, CONST ULONG *, ___exclude, a2,\
       , DATATYPES_BASE_NAME)
 
 #define CopyDTTriggerMethods(___methods, ___include, ___exclude) \
-      LP3(0x114, struct DTMethod, *CopyDTTriggerMethods , CONST struct DTMethod *, ___methods, a0, CONST struct DTMethod *, ___include, a1, CONST struct DTMethod *, ___exclude, a2,\
+      LP3(0x114, struct DTMethod *, CopyDTTriggerMethods , CONST struct DTMethod *, ___methods, a0, CONST struct DTMethod *, ___include, a1, CONST struct DTMethod *, ___exclude, a2,\
       , DATATYPES_BASE_NAME)
 
 #define FreeDTMethods(___methods) \

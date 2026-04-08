@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !CARD_BASE_NAME */
 
 #define OwnCard(___handle) \
-      LP1(0x6, struct CardHandle, *OwnCard , struct CardHandle *, ___handle, a1,\
+      LP1(0x6, struct CardHandle *, OwnCard , struct CardHandle *, ___handle, a1,\
       , CARD_BASE_NAME)
 
 #define ReleaseCard(___handle, ___flags) \
@@ -29,7 +29,7 @@ typedef ULONG _sfdc_vararg;
       , CARD_BASE_NAME)
 
 #define GetCardMap() \
-      LP0(0x12, struct CardMemoryMap, *GetCardMap ,\
+      LP0(0x12, struct CardMemoryMap *, GetCardMap ,\
       , CARD_BASE_NAME)
 
 #define BeginCardAccess(___handle) \
@@ -73,7 +73,7 @@ typedef ULONG _sfdc_vararg;
       , CARD_BASE_NAME)
 
 #define IfAmigaXIP(___handle) \
-      LP1(0x54, struct Resident, *IfAmigaXIP , struct CardHandle *, ___handle, a2,\
+      LP1(0x54, struct Resident *, IfAmigaXIP , struct CardHandle *, ___handle, a2,\
       , CARD_BASE_NAME)
 
 #define CardForceChange() \

@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !TEXTEDITOR_BASE_NAME */
 
 #define TEXTEDITOR_GetClass() \
-      LP0(0x1e, Class, *TEXTEDITOR_GetClass ,\
+      LP0(0x1e, Class *, TEXTEDITOR_GetClass ,\
       , TEXTEDITOR_BASE_NAME)
 
 #define HighlightSetFormat(___object, ___pos, ___end, ___style) \

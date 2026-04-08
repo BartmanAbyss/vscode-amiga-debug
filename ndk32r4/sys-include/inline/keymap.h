@@ -25,7 +25,7 @@ typedef ULONG _sfdc_vararg;
       , KEYMAP_BASE_NAME)
 
 #define AskKeyMapDefault() \
-      LP0(0x24, struct KeyMap, *AskKeyMapDefault ,\
+      LP0(0x24, struct KeyMap *, AskKeyMapDefault ,\
       , KEYMAP_BASE_NAME)
 
 #define MapRawKey(___event, ___buffer, ___length, ___keyMap) \

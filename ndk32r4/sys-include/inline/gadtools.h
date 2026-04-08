@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GADTOOLS_BASE_NAME */
 
 #define CreateGadgetA(___kind, ___gad, ___ng, ___taglist) \
-      LP4(0x1e, struct Gadget, *CreateGadgetA , ULONG, ___kind, d0, struct Gadget *, ___gad, a0, struct NewGadget *, ___ng, a1, CONST struct TagItem *, ___taglist, a2,\
+      LP4(0x1e, struct Gadget *, CreateGadgetA , ULONG, ___kind, d0, struct Gadget *, ___gad, a0, struct NewGadget *, ___ng, a1, CONST struct TagItem *, ___taglist, a2,\
       , GADTOOLS_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -43,7 +43,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define CreateMenusA(___newmenu, ___taglist) \
-      LP2(0x30, struct Menu, *CreateMenusA , CONST struct NewMenu *, ___newmenu, a0, struct TagItem *, ___taglist, a1,\
+      LP2(0x30, struct Menu *, CreateMenusA , CONST struct NewMenu *, ___newmenu, a0, struct TagItem *, ___taglist, a1,\
       , GADTOOLS_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -74,7 +74,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !NO_INLINE_STDARG */
 
 #define GT_GetIMsg(___iport) \
-      LP1(0x48, struct IntuiMessage, *GT_GetIMsg , struct MsgPort *, ___iport, a0,\
+      LP1(0x48, struct IntuiMessage *, GT_GetIMsg , struct MsgPort *, ___iport, a0,\
       , GADTOOLS_BASE_NAME)
 
 #define GT_ReplyIMsg(___imsg) \
@@ -94,15 +94,15 @@ typedef ULONG _sfdc_vararg;
       , GADTOOLS_BASE_NAME)
 
 #define GT_FilterIMsg(___imsg) \
-      LP1(0x66, struct IntuiMessage, *GT_FilterIMsg , CONST struct IntuiMessage *, ___imsg, a1,\
+      LP1(0x66, struct IntuiMessage *, GT_FilterIMsg , CONST struct IntuiMessage *, ___imsg, a1,\
       , GADTOOLS_BASE_NAME)
 
 #define GT_PostFilterIMsg(___imsg) \
-      LP1(0x6c, struct IntuiMessage, *GT_PostFilterIMsg , struct IntuiMessage *, ___imsg, a1,\
+      LP1(0x6c, struct IntuiMessage *, GT_PostFilterIMsg , struct IntuiMessage *, ___imsg, a1,\
       , GADTOOLS_BASE_NAME)
 
 #define CreateContext(___glistptr) \
-      LP1(0x72, struct Gadget, *CreateContext , struct Gadget **, ___glistptr, a0,\
+      LP1(0x72, struct Gadget *, CreateContext , struct Gadget **, ___glistptr, a0,\
       , GADTOOLS_BASE_NAME)
 
 #define DrawBevelBoxA(___rport, ___left, ___top, ___width, ___height, ___taglist) \

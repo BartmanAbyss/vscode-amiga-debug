@@ -33,7 +33,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define MakeLibrary(___funcInit, ___structInit, ___libInit, ___dataSize, ___segList) \
-      LP5FP(0x54, struct Library, *MakeLibrary , CONST_APTR, ___funcInit, a0, CONST_APTR, ___structInit, a1, __fpt, ___libInit, a2, ULONG, ___dataSize, d0, ULONG, ___segList, d1,\
+      LP5FP(0x54, struct Library *, MakeLibrary , CONST_APTR, ___funcInit, a0, CONST_APTR, ___structInit, a1, __fpt, ___libInit, a2, ULONG, ___dataSize, d0, ULONG, ___segList, d1,\
       , EXEC_BASE_NAME, ULONG (*__fpt)())
 
 #define MakeFunctions(___target, ___functionArray, ___funcDispBase) \
@@ -41,7 +41,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define FindResident(___name) \
-      LP1(0x60, struct Resident, *FindResident , CONST_STRPTR, ___name, a1,\
+      LP1(0x60, struct Resident *, FindResident , CONST_STRPTR, ___name, a1,\
       , EXEC_BASE_NAME)
 
 #define InitResident(___resident, ___segList) \
@@ -85,7 +85,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define SetIntVector(___intNumber, ___interrupt) \
-      LP2(0xa2, struct Interrupt, *SetIntVector , LONG, ___intNumber, d0, struct Interrupt *, ___interrupt, a1,\
+      LP2(0xa2, struct Interrupt *, SetIntVector , LONG, ___intNumber, d0, struct Interrupt *, ___interrupt, a1,\
       , EXEC_BASE_NAME)
 
 #define AddIntServer(___intNumber, ___interrupt) \
@@ -125,7 +125,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define AllocEntry(___entry) \
-      LP1(0xde, struct MemList, *AllocEntry , CONST struct MemList *, ___entry, a0,\
+      LP1(0xde, struct MemList *, AllocEntry , CONST struct MemList *, ___entry, a0,\
       , EXEC_BASE_NAME)
 
 #define FreeEntry(___entry) \
@@ -165,7 +165,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define RemHead(___list) \
-      LP1(0x102, struct Node, *RemHead , struct List *, ___list, a0,\
+      LP1(0x102, struct Node *, RemHead , struct List *, ___list, a0,\
       , EXEC_BASE_NAME)
 
 #define RemHeadMinList(___minlist) \
@@ -173,7 +173,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define RemTail(___list) \
-      LP1(0x108, struct Node, *RemTail , struct List *, ___list, a0,\
+      LP1(0x108, struct Node *, RemTail , struct List *, ___list, a0,\
       , EXEC_BASE_NAME)
 
 #define RemTailMinList(___minlist) \
@@ -185,7 +185,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define FindName(___list, ___name) \
-      LP2(0x114, struct Node, *FindName , struct List *, ___list, a0, CONST_STRPTR, ___name, a1,\
+      LP2(0x114, struct Node *, FindName , struct List *, ___list, a0, CONST_STRPTR, ___name, a1,\
       , EXEC_BASE_NAME)
 
 #define AddTask(___task, ___initPC, ___finalPC) \
@@ -197,7 +197,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define FindTask(___name) \
-      LP1(0x126, struct Task, *FindTask , CONST_STRPTR, ___name, a1,\
+      LP1(0x126, struct Task *, FindTask , CONST_STRPTR, ___name, a1,\
       , EXEC_BASE_NAME)
 
 #define SetTaskPri(___task, ___priority) \
@@ -249,7 +249,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define GetMsg(___port) \
-      LP1(0x174, struct Message, *GetMsg , struct MsgPort *, ___port, a0,\
+      LP1(0x174, struct Message *, GetMsg , struct MsgPort *, ___port, a0,\
       , EXEC_BASE_NAME)
 
 #define ReplyMsg(___message) \
@@ -257,11 +257,11 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define WaitPort(___port) \
-      LP1(0x180, struct Message, *WaitPort , struct MsgPort *, ___port, a0,\
+      LP1(0x180, struct Message *, WaitPort , struct MsgPort *, ___port, a0,\
       , EXEC_BASE_NAME)
 
 #define FindPort(___name) \
-      LP1(0x186, struct MsgPort, *FindPort , CONST_STRPTR, ___name, a1,\
+      LP1(0x186, struct MsgPort *, FindPort , CONST_STRPTR, ___name, a1,\
       , EXEC_BASE_NAME)
 
 #define AddLibrary(___library) \
@@ -273,7 +273,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define OldOpenLibrary(___libName) \
-      LP1(0x198, struct Library, *OldOpenLibrary , CONST_STRPTR, ___libName, a1,\
+      LP1(0x198, struct Library *, OldOpenLibrary , CONST_STRPTR, ___libName, a1,\
       , EXEC_BASE_NAME)
 
 #define CloseLibrary(___library) \
@@ -313,7 +313,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define CheckIO(___ioRequest) \
-      LP1(0x1d4, struct IORequest, *CheckIO , CONST struct IORequest *, ___ioRequest, a1,\
+      LP1(0x1d4, struct IORequest *, CheckIO , CONST struct IORequest *, ___ioRequest, a1,\
       , EXEC_BASE_NAME)
 
 #define WaitIO(___ioRequest) \
@@ -357,7 +357,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define OpenLibrary(___libName, ___version) \
-      LP2(0x228, struct Library, *OpenLibrary , CONST_STRPTR, ___libName, a1, ULONG, ___version, d0,\
+      LP2(0x228, struct Library *, OpenLibrary , CONST_STRPTR, ___libName, a1, ULONG, ___version, d0,\
       , EXEC_BASE_NAME)
 
 #define InitSemaphore(___sigSem) \
@@ -385,7 +385,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define FindSemaphore(___name) \
-      LP1(0x252, struct SignalSemaphore, *FindSemaphore , CONST_STRPTR, ___name, a1,\
+      LP1(0x252, struct SignalSemaphore *, FindSemaphore , CONST_STRPTR, ___name, a1,\
       , EXEC_BASE_NAME)
 
 #define AddSemaphore(___sigSem) \
@@ -433,7 +433,7 @@ typedef ULONG _sfdc_vararg;
       , EXEC_BASE_NAME)
 
 #define CreateMsgPort() \
-      LP0(0x29a, struct MsgPort, *CreateMsgPort ,\
+      LP0(0x29a, struct MsgPort *, CreateMsgPort ,\
       , EXEC_BASE_NAME)
 
 #define DeleteMsgPort(___port) \

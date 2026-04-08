@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !AREXX_BASE_NAME */
 
 #define AREXX_GetClass() \
-      LP0(0x1e, Class, *AREXX_GetClass ,\
+      LP0(0x1e, Class *, AREXX_GetClass ,\
       , AREXX_BASE_NAME)
 
 #endif /* !_INLINE_AREXX_H */

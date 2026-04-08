@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !ASL_BASE_NAME */
 
 #define AllocFileRequest() \
-      LP0(0x1e, struct FileRequester, *AllocFileRequest ,\
+      LP0(0x1e, struct FileRequester *, AllocFileRequest ,\
       , ASL_BASE_NAME)
 
 #define FreeFileRequest(___fileReq) \

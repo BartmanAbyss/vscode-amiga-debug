@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !RADIOBUTTON_BASE_NAME */
 
 #define RADIOBUTTON_GetClass() \
-      LP0(0x1e, Class, *RADIOBUTTON_GetClass ,\
+      LP0(0x1e, Class *, RADIOBUTTON_GetClass ,\
       , RADIOBUTTON_BASE_NAME)
 
 #define AllocRadioButtonNodeA(___columns, ___tags) \
-      LP2(0x24, struct Node, *AllocRadioButtonNodeA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
+      LP2(0x24, struct Node *, AllocRadioButtonNodeA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
       , RADIOBUTTON_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

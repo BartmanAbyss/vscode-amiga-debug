@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !LAYOUT_BASE_NAME */
 
 #define LAYOUT_GetClass() \
-      LP0(0x1e, Class, *LAYOUT_GetClass ,\
+      LP0(0x1e, Class *, LAYOUT_GetClass ,\
       , LAYOUT_BASE_NAME)
 
 #define ActivateLayoutGadget(___gadget, ___window, ___requester, ___object) \
@@ -41,7 +41,7 @@ typedef ULONG _sfdc_vararg;
       , LAYOUT_BASE_NAME)
 
 #define PAGE_GetClass() \
-      LP0(0x3c, Class, *PAGE_GetClass ,\
+      LP0(0x3c, Class *, PAGE_GetClass ,\
       , LAYOUT_BASE_NAME)
 
 #define SetPageGadgetAttrsA(___gadget, ___object, ___window, ___requester, ___tags) \

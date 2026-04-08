@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !LISTBROWSER_BASE_NAME */
 
 #define LISTBROWSER_GetClass() \
-      LP0(0x1e, Class, *LISTBROWSER_GetClass ,\
+      LP0(0x1e, Class *, LISTBROWSER_GetClass ,\
       , LISTBROWSER_BASE_NAME)
 
 #define AllocListBrowserNodeA(___columns, ___tags) \
-      LP2(0x24, struct Node, *AllocListBrowserNodeA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
+      LP2(0x24, struct Node *, AllocListBrowserNodeA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
       , LISTBROWSER_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -80,7 +80,7 @@ typedef ULONG _sfdc_vararg;
       , LISTBROWSER_BASE_NAME)
 
 #define AllocLBColumnInfoA(___columns, ___tags) \
-      LP2(0x60, struct ColumnInfo, *AllocLBColumnInfoA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
+      LP2(0x60, struct ColumnInfo *, AllocLBColumnInfoA , ULONG, ___columns, d0, struct TagItem *, ___tags, a0,\
       , LISTBROWSER_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

@@ -37,11 +37,11 @@ typedef ULONG _sfdc_vararg;
       , NONVOLATILE_BASE_NAME)
 
 #define GetNVInfo(___killRequesters) \
-      LP1(0x36, struct NVInfo, *GetNVInfo , BOOL, ___killRequesters, d1,\
+      LP1(0x36, struct NVInfo *, GetNVInfo , BOOL, ___killRequesters, d1,\
       , NONVOLATILE_BASE_NAME)
 
 #define GetNVList(___appName, ___killRequesters) \
-      LP2(0x3c, struct MinList, *GetNVList , CONST_STRPTR, ___appName, a0, BOOL, ___killRequesters, d1,\
+      LP2(0x3c, struct MinList *, GetNVList , CONST_STRPTR, ___appName, a0, BOOL, ___killRequesters, d1,\
       , NONVOLATILE_BASE_NAME)
 
 #define SetNVProtection(___appName, ___itemName, ___mask, ___killRequesters) \

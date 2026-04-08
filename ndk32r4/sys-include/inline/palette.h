@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !PALETTE_BASE_NAME */
 
 #define PALETTE_GetClass() \
-      LP0(0x1e, Class, *PALETTE_GetClass ,\
+      LP0(0x1e, Class *, PALETTE_GetClass ,\
       , PALETTE_BASE_NAME)
 
 #endif /* !_INLINE_PALETTE_H */

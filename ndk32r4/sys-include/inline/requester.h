@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !REQUESTER_BASE_NAME */
 
 #define REQUESTER_GetClass() \
-      LP0(0x1e, Class, *REQUESTER_GetClass ,\
+      LP0(0x1e, Class *, REQUESTER_GetClass ,\
       , REQUESTER_BASE_NAME)
 
 #endif /* !_INLINE_REQUESTER_H */

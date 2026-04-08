@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !SCROLLER_BASE_NAME */
 
 #define SCROLLER_GetClass() \
-      LP0(0x1e, Class, *SCROLLER_GetClass ,\
+      LP0(0x1e, Class *, SCROLLER_GetClass ,\
       , SCROLLER_BASE_NAME)
 
 #endif /* !_INLINE_SCROLLER_H */

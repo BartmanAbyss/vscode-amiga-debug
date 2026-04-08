@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !GETFILE_BASE_NAME */
 
 #define GETFILE_GetClass() \
-      LP0(0x1e, Class, *GETFILE_GetClass ,\
+      LP0(0x1e, Class *, GETFILE_GetClass ,\
       , GETFILE_BASE_NAME)
 
 #endif /* !_INLINE_GETFILE_H */

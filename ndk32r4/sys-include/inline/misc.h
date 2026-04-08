@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !MISC_BASE_NAME */
 
 #define AllocMiscResource(___unitNum, ___name) \
-      LP2(0x6, UBYTE, *AllocMiscResource , ULONG, ___unitNum, d0, CONST_STRPTR, ___name, a1,\
+      LP2(0x6, UBYTE *, AllocMiscResource , ULONG, ___unitNum, d0, CONST_STRPTR, ___name, a1,\
       , MISC_BASE_NAME)
 
 #define FreeMiscResource(___unitNum) \

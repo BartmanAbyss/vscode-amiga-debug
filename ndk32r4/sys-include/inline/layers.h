@@ -25,11 +25,11 @@ typedef ULONG _sfdc_vararg;
       , LAYERS_BASE_NAME)
 
 #define CreateUpfrontLayer(___li, ___bm, ___x0, ___y0, ___x1, ___y1, ___flags, ___bm2) \
-      LP8(0x24, struct Layer, *CreateUpfrontLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct BitMap *, ___bm2, a2,\
+      LP8(0x24, struct Layer *, CreateUpfrontLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct BitMap *, ___bm2, a2,\
       , LAYERS_BASE_NAME)
 
 #define CreateBehindLayer(___li, ___bm, ___x0, ___y0, ___x1, ___y1, ___flags, ___bm2) \
-      LP8(0x2a, struct Layer, *CreateBehindLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct BitMap *, ___bm2, a2,\
+      LP8(0x2a, struct Layer *, CreateBehindLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct BitMap *, ___bm2, a2,\
       , LAYERS_BASE_NAME)
 
 #define UpfrontLayer(___dummy, ___layer) \
@@ -89,7 +89,7 @@ typedef ULONG _sfdc_vararg;
       , LAYERS_BASE_NAME)
 
 #define WhichLayer(___li, ___x, ___y) \
-      LP3(0x84, struct Layer, *WhichLayer , struct Layer_Info *, ___li, a0, WORD, ___x, d0, WORD, ___y, d1,\
+      LP3(0x84, struct Layer *, WhichLayer , struct Layer_Info *, ___li, a0, WORD, ___x, d0, WORD, ___y, d1,\
       , LAYERS_BASE_NAME)
 
 #define UnlockLayerInfo(___li) \
@@ -97,7 +97,7 @@ typedef ULONG _sfdc_vararg;
       , LAYERS_BASE_NAME)
 
 #define NewLayerInfo() \
-      LP0(0x90, struct Layer_Info, *NewLayerInfo ,\
+      LP0(0x90, struct Layer_Info *, NewLayerInfo ,\
       , LAYERS_BASE_NAME)
 
 #define DisposeLayerInfo(___li) \
@@ -117,7 +117,7 @@ typedef ULONG _sfdc_vararg;
       , LAYERS_BASE_NAME)
 
 #define InstallClipRegion(___layer, ___region) \
-      LP2(0xae, struct Region, *InstallClipRegion , struct Layer *, ___layer, a0, struct Region *, ___region, a1,\
+      LP2(0xae, struct Region *, InstallClipRegion , struct Layer *, ___layer, a0, struct Region *, ___region, a1,\
       , LAYERS_BASE_NAME)
 
 #define MoveSizeLayer(___layer, ___dx, ___dy, ___dw, ___dh) \
@@ -125,19 +125,19 @@ typedef ULONG _sfdc_vararg;
       , LAYERS_BASE_NAME)
 
 #define CreateUpfrontHookLayer(___li, ___bm, ___x0, ___y0, ___x1, ___y1, ___flags, ___hook, ___bm2) \
-      LP9(0xba, struct Layer, *CreateUpfrontHookLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct Hook *, ___hook, a3, struct BitMap *, ___bm2, a2,\
+      LP9(0xba, struct Layer *, CreateUpfrontHookLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct Hook *, ___hook, a3, struct BitMap *, ___bm2, a2,\
       , LAYERS_BASE_NAME)
 
 #define CreateBehindHookLayer(___li, ___bm, ___x0, ___y0, ___x1, ___y1, ___flags, ___hook, ___bm2) \
-      LP9(0xc0, struct Layer, *CreateBehindHookLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct Hook *, ___hook, a3, struct BitMap *, ___bm2, a2,\
+      LP9(0xc0, struct Layer *, CreateBehindHookLayer , struct Layer_Info *, ___li, a0, struct BitMap *, ___bm, a1, LONG, ___x0, d0, LONG, ___y0, d1, LONG, ___x1, d2, LONG, ___y1, d3, LONG, ___flags, d4, struct Hook *, ___hook, a3, struct BitMap *, ___bm2, a2,\
       , LAYERS_BASE_NAME)
 
 #define InstallLayerHook(___layer, ___hook) \
-      LP2(0xc6, struct Hook, *InstallLayerHook , struct Layer *, ___layer, a0, struct Hook *, ___hook, a1,\
+      LP2(0xc6, struct Hook *, InstallLayerHook , struct Layer *, ___layer, a0, struct Hook *, ___hook, a1,\
       , LAYERS_BASE_NAME)
 
 #define InstallLayerInfoHook(___li, ___hook) \
-      LP2(0xcc, struct Hook, *InstallLayerInfoHook , struct Layer_Info *, ___li, a0, struct Hook *, ___hook, a1,\
+      LP2(0xcc, struct Hook *, InstallLayerInfoHook , struct Layer_Info *, ___li, a0, struct Hook *, ___hook, a1,\
       , LAYERS_BASE_NAME)
 
 #define SortLayerCR(___layer, ___dx, ___dy) \

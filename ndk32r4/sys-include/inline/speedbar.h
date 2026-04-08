@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !SPEEDBAR_BASE_NAME */
 
 #define SPEEDBAR_GetClass() \
-      LP0(0x1e, Class, *SPEEDBAR_GetClass ,\
+      LP0(0x1e, Class *, SPEEDBAR_GetClass ,\
       , SPEEDBAR_BASE_NAME)
 
 #define AllocSpeedButtonNodeA(___number, ___tags) \
-      LP2(0x24, struct Node, *AllocSpeedButtonNodeA , ULONG, ___number, d0, struct TagItem *, ___tags, a0,\
+      LP2(0x24, struct Node *, AllocSpeedButtonNodeA , ULONG, ___number, d0, struct TagItem *, ___tags, a0,\
       , SPEEDBAR_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

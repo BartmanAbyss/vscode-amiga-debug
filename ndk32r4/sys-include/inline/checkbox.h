@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !CHECKBOX_BASE_NAME */
 
 #define CHECKBOX_GetClass() \
-      LP0(0x1e, Class, *CHECKBOX_GetClass ,\
+      LP0(0x1e, Class *, CHECKBOX_GetClass ,\
       , CHECKBOX_BASE_NAME)
 
 #endif /* !_INLINE_CHECKBOX_H */

@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !CONSOLE_BASE_NAME */
 
 #define CDInputHandler(___events, ___consoleDevice) \
-      LP2(0x2a, struct InputEvent, *CDInputHandler , CONST struct InputEvent *, ___events, a0, struct Library *, ___consoleDevice, a1,\
+      LP2(0x2a, struct InputEvent *, CDInputHandler , CONST struct InputEvent *, ___events, a0, struct Library *, ___consoleDevice, a1,\
       , CONSOLE_BASE_NAME)
 
 #define RawKeyConvert(___events, ___buffer, ___length, ___keyMap) \

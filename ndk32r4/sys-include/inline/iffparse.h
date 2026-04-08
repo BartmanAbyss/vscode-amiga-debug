@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !IFFPARSE_BASE_NAME */
 
 #define AllocIFF() \
-      LP0(0x1e, struct IFFHandle, *AllocIFF ,\
+      LP0(0x1e, struct IFFHandle *, AllocIFF ,\
       , IFFPARSE_BASE_NAME)
 
 #define OpenIFF(___iff, ___rwMode) \
@@ -101,27 +101,27 @@ typedef ULONG _sfdc_vararg;
       , IFFPARSE_BASE_NAME)
 
 #define FindProp(___iff, ___type, ___id) \
-      LP3(0x9c, struct StoredProperty, *FindProp , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1,\
+      LP3(0x9c, struct StoredProperty *, FindProp , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1,\
       , IFFPARSE_BASE_NAME)
 
 #define FindCollection(___iff, ___type, ___id) \
-      LP3(0xa2, struct CollectionItem, *FindCollection , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1,\
+      LP3(0xa2, struct CollectionItem *, FindCollection , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1,\
       , IFFPARSE_BASE_NAME)
 
 #define FindPropContext(___iff) \
-      LP1(0xa8, struct ContextNode, *FindPropContext , struct IFFHandle *, ___iff, a0,\
+      LP1(0xa8, struct ContextNode *, FindPropContext , struct IFFHandle *, ___iff, a0,\
       , IFFPARSE_BASE_NAME)
 
 #define CurrentChunk(___iff) \
-      LP1(0xae, struct ContextNode, *CurrentChunk , struct IFFHandle *, ___iff, a0,\
+      LP1(0xae, struct ContextNode *, CurrentChunk , struct IFFHandle *, ___iff, a0,\
       , IFFPARSE_BASE_NAME)
 
 #define ParentChunk(___contextNode) \
-      LP1(0xb4, struct ContextNode, *ParentChunk , struct ContextNode *, ___contextNode, a0,\
+      LP1(0xb4, struct ContextNode *, ParentChunk , struct ContextNode *, ___contextNode, a0,\
       , IFFPARSE_BASE_NAME)
 
 #define AllocLocalItem(___type, ___id, ___ident, ___dataSize) \
-      LP4(0xba, struct LocalContextItem, *AllocLocalItem , LONG, ___type, d0, LONG, ___id, d1, LONG, ___ident, d2, LONG, ___dataSize, d3,\
+      LP4(0xba, struct LocalContextItem *, AllocLocalItem , LONG, ___type, d0, LONG, ___id, d1, LONG, ___ident, d2, LONG, ___dataSize, d3,\
       , IFFPARSE_BASE_NAME)
 
 #define LocalItemData(___localItem) \
@@ -137,7 +137,7 @@ typedef ULONG _sfdc_vararg;
       , IFFPARSE_BASE_NAME)
 
 #define FindLocalItem(___iff, ___type, ___id, ___ident) \
-      LP4(0xd2, struct LocalContextItem, *FindLocalItem , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1, LONG, ___ident, d2,\
+      LP4(0xd2, struct LocalContextItem *, FindLocalItem , struct IFFHandle *, ___iff, a0, LONG, ___type, d0, LONG, ___id, d1, LONG, ___ident, d2,\
       , IFFPARSE_BASE_NAME)
 
 #define StoreLocalItem(___iff, ___localItem, ___position) \
@@ -161,7 +161,7 @@ typedef ULONG _sfdc_vararg;
       , IFFPARSE_BASE_NAME)
 
 #define OpenClipboard(___unitNumber) \
-      LP1(0xf6, struct ClipboardHandle, *OpenClipboard , LONG, ___unitNumber, d0,\
+      LP1(0xf6, struct ClipboardHandle *, OpenClipboard , LONG, ___unitNumber, d0,\
       , IFFPARSE_BASE_NAME)
 
 #define CloseClipboard(___clipHandle) \

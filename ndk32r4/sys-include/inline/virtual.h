@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !VIRTUAL_BASE_NAME */
 
 #define VIRTUAL_GetClass() \
-      LP0(0x1e, Class, *VIRTUAL_GetClass ,\
+      LP0(0x1e, Class *, VIRTUAL_GetClass ,\
       , VIRTUAL_BASE_NAME)
 
 #define RefreshVirtualGadget(___gadget, ___obj, ___window, ___requester) \

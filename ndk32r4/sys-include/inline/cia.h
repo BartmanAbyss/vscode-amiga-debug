@@ -17,7 +17,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !__INLINE_MACROS_H */
 
 #define AddICRVector(___resource, ___iCRBit, ___interrupt) \
-      LP3NB(0x6, struct Interrupt, *AddICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
+      LP3NB(0x6, struct Interrupt *, AddICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)
 
 #define RemICRVector(___resource, ___iCRBit, ___interrupt) \
       LP3NRNB(0xc, RemICRVector , struct Library *, ___resource, a6, WORD, ___iCRBit, d0, struct Interrupt *, ___interrupt, a1)

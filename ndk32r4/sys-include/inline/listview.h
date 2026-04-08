@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !LISTVIEW_BASE_NAME */
 
 #define LISTVIEW_GetClass() \
-      LP0(0x1e, Class, *LISTVIEW_GetClass ,\
+      LP0(0x1e, Class *, LISTVIEW_GetClass ,\
       , LISTVIEW_BASE_NAME)
 
 #endif /* !_INLINE_LISTVIEW_H */

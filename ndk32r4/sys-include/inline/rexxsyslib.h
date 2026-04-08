@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !REXXSYSLIB_BASE_NAME */
 
 #define CreateArgstring(___string, ___length) \
-      LP2(0x7e, UBYTE, *CreateArgstring , CONST_STRPTR, ___string, a0, ULONG, ___length, d0,\
+      LP2(0x7e, UBYTE *, CreateArgstring , CONST_STRPTR, ___string, a0, ULONG, ___length, d0,\
       , REXXSYSLIB_BASE_NAME)
 
 #define DeleteArgstring(___argstring) \
@@ -33,7 +33,7 @@ typedef ULONG _sfdc_vararg;
       , REXXSYSLIB_BASE_NAME)
 
 #define CreateRexxMsg(___port, ___extension, ___host) \
-      LP3(0x90, struct RexxMsg, *CreateRexxMsg , struct MsgPort *, ___port, a0, CONST_STRPTR, ___extension, a1, CONST_STRPTR, ___host, d0,\
+      LP3(0x90, struct RexxMsg *, CreateRexxMsg , struct MsgPort *, ___port, a0, CONST_STRPTR, ___extension, a1, CONST_STRPTR, ___host, d0,\
       , REXXSYSLIB_BASE_NAME)
 
 #define DeleteRexxMsg(___packet) \
@@ -61,7 +61,7 @@ typedef ULONG _sfdc_vararg;
       , REXXSYSLIB_BASE_NAME)
 
 #define CreateRexxHostPort(___basename) \
-      LP1(0x1e0, struct MsgPort, *CreateRexxHostPort , CONST_STRPTR, ___basename, a0,\
+      LP1(0x1e0, struct MsgPort *, CreateRexxHostPort , CONST_STRPTR, ___basename, a0,\
       , REXXSYSLIB_BASE_NAME)
 
 #define DeleteRexxHostPort(___port) \
@@ -77,7 +77,7 @@ typedef ULONG _sfdc_vararg;
       , REXXSYSLIB_BASE_NAME)
 
 #define LaunchRexxScript(___script, ___replyport, ___extension, ___input, ___output) \
-      LP5(0x1f8, struct RexxMsg, *LaunchRexxScript , CONST_STRPTR, ___script, a0, struct MsgPort *, ___replyport, a1, CONST_STRPTR, ___extension, a2, BPTR, ___input, d1, BPTR, ___output, d2,\
+      LP5(0x1f8, struct RexxMsg *, LaunchRexxScript , CONST_STRPTR, ___script, a0, struct MsgPort *, ___replyport, a1, CONST_STRPTR, ___extension, a2, BPTR, ___input, d1, BPTR, ___output, d2,\
       , REXXSYSLIB_BASE_NAME)
 
 #define FreeRexxMsg(___msgptr) \

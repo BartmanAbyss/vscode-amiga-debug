@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !SLIDER_BASE_NAME */
 
 #define SLIDER_GetClass() \
-      LP0(0x1e, Class, *SLIDER_GetClass ,\
+      LP0(0x1e, Class *, SLIDER_GetClass ,\
       , SLIDER_BASE_NAME)
 
 #endif /* !_INLINE_SLIDER_H */

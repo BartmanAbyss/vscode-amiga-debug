@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !STRING_BASE_NAME */
 
 #define STRING_GetClass() \
-      LP0(0x1e, Class, *STRING_GetClass ,\
+      LP0(0x1e, Class *, STRING_GetClass ,\
       , STRING_BASE_NAME)
 
 #endif /* !_INLINE_STRING_H */

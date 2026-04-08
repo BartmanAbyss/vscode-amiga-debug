@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !WINDOW_BASE_NAME */
 
 #define WINDOW_GetClass() \
-      LP0(0x1e, Class, *WINDOW_GetClass ,\
+      LP0(0x1e, Class *, WINDOW_GetClass ,\
       , WINDOW_BASE_NAME)
 
 #endif /* !_INLINE_WINDOW_H */

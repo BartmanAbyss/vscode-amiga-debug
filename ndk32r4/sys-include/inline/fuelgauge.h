@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !FUELGAUGE_BASE_NAME */
 
 #define FUELGAUGE_GetClass() \
-      LP0(0x1e, Class, *FUELGAUGE_GetClass ,\
+      LP0(0x1e, Class *, FUELGAUGE_GetClass ,\
       , FUELGAUGE_BASE_NAME)
 
 #endif /* !_INLINE_FUELGAUGE_H */

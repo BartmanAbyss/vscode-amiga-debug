@@ -21,11 +21,11 @@ typedef ULONG _sfdc_vararg;
 #endif /* !CHOOSER_BASE_NAME */
 
 #define CHOOSER_GetClass() \
-      LP0(0x1e, Class, *CHOOSER_GetClass ,\
+      LP0(0x1e, Class *, CHOOSER_GetClass ,\
       , CHOOSER_BASE_NAME)
 
 #define AllocChooserNodeA(___tags) \
-      LP1(0x24, struct Node, *AllocChooserNodeA , struct TagItem *, ___tags, a0,\
+      LP1(0x24, struct Node *, AllocChooserNodeA , struct TagItem *, ___tags, a0,\
       , CHOOSER_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG

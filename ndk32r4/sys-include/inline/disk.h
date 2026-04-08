@@ -29,7 +29,7 @@ typedef ULONG _sfdc_vararg;
       , DISK_BASE_NAME)
 
 #define GetUnit(___unitPointer) \
-      LP1(0x12, struct DiskResourceUnit, *GetUnit , struct DiskResourceUnit *, ___unitPointer, a1,\
+      LP1(0x12, struct DiskResourceUnit *, GetUnit , struct DiskResourceUnit *, ___unitPointer, a1,\
       , DISK_BASE_NAME)
 
 #define GiveUnit() \

@@ -21,7 +21,7 @@ typedef ULONG _sfdc_vararg;
 #endif /* !BEVEL_BASE_NAME */
 
 #define BEVEL_GetClass() \
-      LP0(0x1e, Class, *BEVEL_GetClass ,\
+      LP0(0x1e, Class *, BEVEL_GetClass ,\
       , BEVEL_BASE_NAME)
 
 #endif /* !_INLINE_BEVEL_H */
