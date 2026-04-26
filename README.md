@@ -258,6 +258,10 @@ Make sure WSL doesn't run the Windows installation of Node.js/NPM, append to `/e
 [interop]
 appendWindowsPath=false
 ```
+Let Git use the same credentials as on Windows:
+```sh
+git config --global credential.helper "/mnt/c/Program\\ Files/Git/mingw64/libexec/git-core/git-credential-wincred.exe"
+```
 
 ## Development (Linux/MacOS)
 - Have a look at the CI scripts here https://github.com/BartmanAbyss/vscode-amiga-debug/tree/master/ci
