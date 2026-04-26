@@ -244,6 +244,21 @@ rm -r /mnt/c/amiga-mingw/opt/share
 find /mnt/c/amiga-mingw/opt -name *.exe | xargs strip
 ```
 
+## Notes for developing the extension in WSL
+Install node.js LTS:
+```sh
+sudo apt purge nodejs npm libnode-dev
+sudo apt autoremove
+sudo apt autoclean
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+Make sure WSL doesn't run the Windows installation of Node.js/NPM, append to `/etc/wsl.conf`:
+```
+[interop]
+appendWindowsPath=false
+```
+
 ## Development (Linux/MacOS)
 - Have a look at the CI scripts here https://github.com/BartmanAbyss/vscode-amiga-debug/tree/master/ci
 
