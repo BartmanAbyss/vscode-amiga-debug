@@ -615,6 +615,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		// Remove emulator close listener now debugger is connected
 		emu.off("exit", handleExit);
+		// If emulator closes after a successful connect, stop GDB and end session.
+		emu.on("exit", () => {
+			if(this.miDebugger)
+				this.miDebugger.stop();
+			this.quitEvent();
+		});
 	}
 
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
