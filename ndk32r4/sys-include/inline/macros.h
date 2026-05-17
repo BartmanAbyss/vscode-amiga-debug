@@ -1745,4 +1745,15 @@
    _##name##_re2;						\
 })
 
+/*
+ * sfdc 1.12 emits cia.resource calls using "NB" (No-Base) macro names,
+ * but this macros.h has them under the older "UB" (User-Base) name.
+ * Semantics are identical -- both pass the library base as an explicit
+ * caller-provided argument. Alias NB to UB so generated headers like
+ * inline/cia.h work without modification.
+ */
+#define LP2NB    LP2UB
+#define LP3NB    LP3UB
+#define LP3NRNB  LP3NRUB
+
 #endif /* __INLINE_MACROS_H */
