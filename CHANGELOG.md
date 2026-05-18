@@ -3,6 +3,10 @@
 All notable changes to the "amiga-debug" extension will be documented in this file.
 See PR links for more information.
 
+## 1.8.3
+- NEW: update gcc to 15.2.0
+- FIX: 1.8.2 used MacOS ARM by mistake, now back on MacOS Intel
+
 ## 1.8.2
 - NEW: copper visualizer in "Screen" tab
 - CHG: "Copper" now shows position of instructions when they are executed (was: when instructions are fetched)
