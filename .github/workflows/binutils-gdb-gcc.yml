@@ -5,8 +5,8 @@ on:
     paths:
       - "gcc-barto.patch"
       - "ci/**"
-  schedule:
-    - cron: "0 0 * * *"
+#  schedule:
+#    - cron: "0 0 * * *"
   workflow_dispatch:
 
 # make sure to run ci/binutils-gdb/install.sh after ci/gcc/build.sh
@@ -41,7 +41,7 @@ jobs:
           path: binutils-gdb-gcc-linux.tar
 
   macos:
-    runs-on: macos-14
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v3
       - run: ci/install-packages-macos.sh
