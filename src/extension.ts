@@ -34,6 +34,11 @@ import { CountCodeLensProvider } from './counts_codelens_provider';
  */
 const EMBED_DEBUG_ADAPTER = true;
 
+// Limit the number of frames that can be captured during profiling. This matches the hard limit in the debug server.
+const MAX_CAPTURE_FRAMES = 100;
+
+const DEFAULT_CAPTURE_FRAMES = 50;
+
 // .vscode/amiga.json
 interface AmigaConfiguration {
 	includePath?: string[];
@@ -423,7 +428,18 @@ class AmigaDebugExtension {
 	}
 
 	private startProfileMulti() {
-		void vscode.debug.activeDebugSession.customRequest('start-profile', { numFrames: 50 });
+		vscode.window.showInputBox({
+			value: String(DEFAULT_CAPTURE_FRAMES),
+			prompt: `Number of frames to capture (1-${MAX_CAPTURE_FRAMES})`,
+			validateInput: (value) => {
+				const num = Number(value);
+				if(isNaN(num) || num < 1 || num > MAX_CAPTURE_FRAMES)	{
+					return `Please enter a number between 1 and ${MAX_CAPTURE_FRAMES}`;
+				}
+			}
+		}).then((result) => {
+			void vscode.debug.activeDebugSession?.customRequest('start-profile', { numFrames: Number(result) });
+		}, (error) => { /**/ });
 	}
 
 	private async profileSize(uri: vscode.Uri) {
