@@ -387,6 +387,30 @@
 								},
 								"description": "Addtional CLI arguments for emulator",
 								"default": []
+							},
+							"noExtension": {
+								"type": "boolean",
+								"description": "Build binary with no extension (omit .exe)",
+								"default": false
+							},
+							"emulatorType": {
+								"type": "string",
+								"description": "Emulator to use: fs-uae or winuae",
+								"default": "fs-uae",
+								"enum": [
+									"fs-uae",
+									"winuae"
+								]
+							},
+							"stopOnEntry": {
+								"type": "boolean",
+								"description": "Stop the debugger on entry",
+								"default": false
+							},
+							"noDebug": {
+								"type": "boolean",
+								"description": "Run the emulator without debugger support",
+								"default": false
 							}
 						}
 					}

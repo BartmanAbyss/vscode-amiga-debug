@@ -39,6 +39,9 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	slowmem?: string; // '0', '512k', '1M', '1.8M'
 	ntsc?: boolean; // NTSC mode
 	emuargs?: string[]; // Additional CLI arguments for emulator
+	noExtension?: boolean; // default: false — build binary with no extension
+	emulatorType?: string; // 'fs-uae' | 'winuae', default: 'fs-uae'
+	stopOnEntry?: boolean; // default: false — stop debugger on entry
 }
 
 class ExtendedVariable {
@@ -193,8 +196,16 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		let config = new Map<string, string>();
 
 		const exePath = path.dirname(args.program);
-		const exeName = path.basename(args.program) + ".exe";
-		const debugTrigger = args.endcli ? exeName : ':' + exeName;
+		const exeName = args.noExtension
+			? path.basename(args.program)
+			: path.basename(args.program) + ".exe";
+		const debugTrigger = args.noDebug
+			? exeName
+			: (args.endcli ? exeName : ':' + exeName);
+
+		const emulatorType = args.emulatorType || (isWin ? 'winuae' : 'fs-uae');
+		const useWinUAE = (emulatorType === 'winuae');
+		const useFSUAE = !useWinUAE;
 		const machine = args.config?.toLowerCase();
 
 		if (args.kickstart && !fs.existsSync(args.kickstart)) {
@@ -206,7 +217,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return;
 		}
 
-		if (isWin) {
+		if (useWinUAE) {
 			// WinUAE:
 
 			try {
@@ -279,8 +290,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config.set('filesystem', 'rw,dh0:' + dh0Path);
 			config.set('filesystem2', 'rw,dh1:dh1:' + exePath + ',-128');
 			// debugging options
-			config.set('debugging_features', 'gdbserver');
-			config.set('debugging_trigger', debugTrigger);
+			if(!args.noDebug) {
+				config.set('debugging_features', 'gdbserver');
+				config.set('debugging_trigger', debugTrigger);
+			}
 			// video
 			config.set('ntsc', args.ntsc ? 'true' : 'false');
 
@@ -389,9 +402,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			config.set('hard_drive_0', dh0Path);
 			config.set('hard_drive_1', exePath);
 			// debugging options
-			config.set('remote_debugger', "20");
-			config.set('remote_debugger_port', "2345");
-			config.set('remote_debugger_trigger', debugTrigger);
+			if(!args.noDebug) {
+				config.set('remote_debugger', "20");
+				config.set('remote_debugger_port', "2345");
+				config.set('remote_debugger_trigger', debugTrigger);
+			}
 			// video
 			config.set('ntsc_mode', args.ntsc ? '1' : '0');
 			// specify savestate dir so we don't overwrite user's default FS-UAE save slots
@@ -402,7 +417,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 			// args.cpuboard: no FS-UAE equivalent?
 
-			// Optional override memory config
+			// Optional override memory config (values in MB for FS-UAE)
 			switch(args.chipmem?.toLowerCase()) {
 			case '256k':
 				config.set('chip_memory', '256');
@@ -471,15 +486,15 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 		}
 
-		const emuPath = isWin
+		const emuPath = useWinUAE
 			? path.join(binPath, "winuae-gdb.exe")
-			: path.join(binPath, "fs-uae", "fs-uae");
+			: path.join(binPath, "fs-uae", isWin ? "fs-uae.exe" : "fs-uae");
 
 		if(args.emuargs === undefined)
 			args.emuargs = [];
 
 		const emuArgs = [
-			...(isWin
+			...(useWinUAE
 				// all WinUAE options now in config file
 				? [ '-portable' ]
 				// FS-UAE options as args
@@ -500,8 +515,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return;
 		}
 
-		if (!fs.existsSync(args.program + ".exe")) {
-			this.sendErrorResponse(response, 103, `Unable to find executable file at ${args.program}.exe.`);
+		const exeFile = args.noExtension ? args.program : args.program + ".exe";
+		if (!fs.existsSync(exeFile)) {
+			this.sendErrorResponse(response, 103, `Unable to find executable file at ${exeFile}.`);
 			return;
 		}
 
@@ -547,7 +563,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		const cwd = isWin
+		const cwd = useWinUAE
 			? dirname(emuPath)
 			// CWD determines location for debug_save/debug_load on FS-UAE
 			: vscode.workspace.workspaceFolders[0].uri.fsPath;
@@ -568,6 +584,12 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Emulator error. ${err.toString()}`);
 		});
 
+		if(args.noDebug) {
+			// No debugger — just launch emulator and return success
+			this.sendResponse(response);
+			return;
+		}
+
 		// init debugger
 		this.miDebugger = new MI2(gdbPath, gdbArgs);
 		this.miDebugger.procEnv = { XDG_CACHE_HOME: gdbPath, HOME: gdbPath }; // to shut up GDB about index cache directory
@@ -583,6 +605,9 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				this.symbolTable.relocate(sections);
 				this.started = true;
 				this.sendResponse(response);
+				if(args.stopOnEntry) {
+					this.sendEvent(new StoppedEvent('entry', this.currentThreadId));
+				}
 			} else {
 				this.sendErrorResponse(response, 103, 'no sections found');
 			}
