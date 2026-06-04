@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - "ci/elf2hunk/**"
-  schedule:
-    - cron: "0 0 * * *"
+#  schedule:
+#    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
           path: elf2hunk-linux.tar
 
   macos:
-    runs-on: macos-14
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v3
       - run: ci/elf2hunk/clone.sh

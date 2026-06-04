@@ -19,5 +19,6 @@ cd build-binutils-gdb
 	--without-guile \
     --enable-static \
 	--disable-source-highlight \
+    --with-system-zlib \
     --prefix="$PREFIX" \
     --target=m68k-amiga-elf
