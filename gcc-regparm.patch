@@ -1,28 +1,42 @@
-Adds support for explicit asm("reg") register parameters in function
-declarations for the m68k-amiga-elf (Bartman/Abyss) toolchain.
+Adds support for explicit asm("reg") / __asm__("reg") register parameter
+constraints in function declarations for the m68k-amiga-elf toolchain.
 
-Enables vbcc-style AmigaOS register parameter syntax on the callee side:
+Enables vbcc/SAS-C-style AmigaOS register parameter syntax:
 
-  void DevOpen(struct Library *dev  asm("a6"),
-               struct IORequest *io asm("a1"),
-               ULONG unit           asm("d0"),
-               ULONG flags          asm("d1"));
+  /* Both asm() and __asm__() are accepted */
+  void DevOpen(struct ExecBase  *SysBase asm("a6"),
+               struct IORequest *ioreq   asm("a1"),
+               ULONG             unit    asm("d0"),
+               ULONG             flags   asm("d1"));
 
-When a function is compiled with register-constrained parameters, each
-argument arrives directly in the named register with no stack frame slot.
+Register parameters are supported on function *definitions*: the callee
+receives each annotated argument in the named register, and C callers in
+the same translation unit load the registers at the call site (no stack
+slot in either direction).  Annotated prototypes, typedefs and function
+pointers are rejected with a hard error, since a caller seeing only a
+prototype would otherwise silently use the stack ABI while the definition
+reads registers.  Sibcalls to register-parameter functions are disabled
+because the sibcall epilogue would clobber arguments living in call-saved
+registers (d2-d7/a2-a5).
 
-Note: this patch covers the callee (function being compiled) side.
-Calls to register-parameter functions from C still use the existing
-inline-asm macro stubs in the NDK headers, as before.
+Changes:
+  gcc/config/m68k/m68k.h   - FUNCTION_ARG_REGNO_P, CUMULATIVE_ARGS struct
+                              (+fndecl), INIT_CUMULATIVE_INCOMING_ARGS
+  gcc/config/m68k/m68k.cc  - m68k_get_parm_regno, m68k_function_arg,
+                              m68k_function_arg_advance, sibcall guard
+  gcc/c/c-tree.h            - asm_name field in struct c_parm, build_c_parm
+  gcc/c/c-decl.cc           - build_c_parm, grokparm, push_parm_decl,
+                              grokparms (prototype rejection),
+                              store_parm_decls (register map attribute)
+  gcc/c/c-parser.cc         - parse asm() after parameter declarator
 
-Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
-
+Apply after gcc-barto.patch:
   patch -p1 < gcc-barto.patch
   patch -p1 < gcc-regparm.patch
 
---- a/gcc/config/m68k/m68k.h	2026-03-29 07:45:50.000000000 +0000
-+++ b/gcc/config/m68k/m68k.h	2026-03-29 09:36:44.444382911 +0000
-@@ -487,16 +487,29 @@
+--- a/gcc/config/m68k/m68k.h
++++ b/gcc/config/m68k/m68k.h
+@@ -487,16 +487,40 @@
     XXX This macro is m68k specific and used only for m68kemb.h.  */
  #define NEEDS_UNTYPED_CALL 0
  
@@ -41,34 +55,65 @@ Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
 -/* On the m68k, this is a single integer, which is a number of bytes
 -   of arguments scanned so far.  */
 -#define CUMULATIVE_ARGS int
-+/* For the m68k we track both the number of stack bytes consumed and the
-+   parameter index so that m68k_function_arg can look up the PARM_DECL
-+   (and its optional asm("reg") constraint) by position in the parameter
-+   list of current_function_decl.  */
++/* For the m68k we track the number of stack bytes consumed, the
++   parameter index, and the FUNCTION_DECL whose parameter list defines
++   the calling convention, so that m68k_function_arg can look up the
++   PARM_DECL (and its optional asm("reg") constraint) by position.
++
++   For outgoing calls INIT_CUMULATIVE_ARGS receives the callee's
++   FUNCTION_DECL from calls.cc (the historical INDIRECT parameter).
++   For incoming argument assignment in the callee prologue,
++   INIT_CUMULATIVE_INCOMING_ARGS uses current_function_decl.
++   Only definitions carry PARM_DECLs; annotated prototypes are
++   rejected by the C front end, so a NULL/parm-less fndecl always
++   corresponds to the default stack ABI on both sides.  */
 +struct m68k_args {
-+  int bytes;   /* stack bytes consumed by non-register args */
-+  int parmno;  /* 0-based index of the next parameter to process */
++  int bytes;    /* stack bytes consumed by non-register args */
++  int parmno;   /* 0-based index of the next parameter to process */
++  tree fndecl;  /* FUNCTION_DECL supplying the convention, or NULL_TREE */
 +};
 +#define CUMULATIVE_ARGS struct m68k_args
  
 -/* On the m68k, the offset starts at 0.  */
-+/* Initialise both fields to zero.  */
  #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
 - ((CUM) = 0)
-+ ((CUM).bytes = 0, (CUM).parmno = 0)
++ ((CUM).bytes = 0, (CUM).parmno = 0, (CUM).fndecl = (INDIRECT))
++
++#define INIT_CUMULATIVE_INCOMING_ARGS(CUM, FNTYPE, LIBNAME) \
++ ((CUM).bytes = 0, (CUM).parmno = 0, (CUM).fndecl = current_function_decl)
  
  #define FUNCTION_PROFILER(FILE, LABELNO)  \
    asm_fprintf (FILE, "\tlea %LLP%d,%Ra0\n\tjsr mcount\n", (LABELNO))
---- a/gcc/config/m68k/m68k.cc	2026-03-29 07:45:50.000000000 +0000
-+++ b/gcc/config/m68k/m68k.cc	2026-03-29 09:37:04.365378470 +0000
-@@ -1465,11 +1465,65 @@
+--- a/gcc/config/m68k/m68k.cc
++++ b/gcc/config/m68k/m68k.cc
+@@ -1431,6 +1431,19 @@
+   if (CALL_EXPR_STATIC_CHAIN (exp))
+     return false;
+ 
++  /* Never sibcall a function with asm("reg") register parameters.
++     The arguments may live in call-saved registers (d2-d7/a2-a5), and
++     the sibcall epilogue restores those registers after the outgoing
++     arguments have been loaded and before the jump, clobbering them.
++     A normal call is always safe: the caller's restore happens after
++     the call returns, and the callee itself preserves the incoming
++     argument values per the usual callee-saved discipline.  (Indirect
++     sibcalls are unaffected: annotated function-pointer types are
++     rejected by the C front end.)  */
++  if (decl
++      && lookup_attribute ("m68k parm regs", DECL_ATTRIBUTES (decl)))
++    return false;
++
+   if (!VOID_TYPE_P (TREE_TYPE (DECL_RESULT (cfun->decl))))
+     {
+       /* Check that the return value locations are the same.  For
+@@ -1465,11 +1478,77 @@
    return false;
  }
  
 -/* On the m68k all args are always pushed.  */
-+/* If the PARM_DECL at position PARMNO in current_function_decl's argument
-+   list carries an explicit asm("reg") register constraint, return the hard
-+   register number.  Return -1 in all other cases.
++/* If the parameter at index CUM->parmno of CUM->fndecl carries an
++   explicit asm("reg") register constraint, return the hard register
++   number.  Return -1 in all other cases.
 +
 +   This implements the caller/callee agreement for the AmigaOS register
 +   parameter calling convention.  When a parameter has an asm() spec:
@@ -76,31 +121,43 @@ Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
 +     - (caller) it is placed in that register before the call
 +   with no stack slot in either direction.
 +
-+   Note: this works for the callee (function being compiled) side.
-+   Outgoing calls to register-parameter functions still use the
-+   existing inline-asm stub approach via the NDK headers.
++   Works on both sides: the callee prologue receives arguments in the
++   named registers, and same-translation-unit callers of an annotated
++   *definition* place arguments in those registers.  Annotated
++   prototypes (no definition visible) are rejected by the C front end
++   to prevent silent caller/callee ABI mismatches.
 +
 +   The frame pointer (a5), stack pointer (sp), and the virtual arg
 +   pointer are rejected to prevent silent frame corruption.  */
 +
 +static int
-+m68k_get_parm_regno_at (int parmno)
++m68k_get_parm_regno (const CUMULATIVE_ARGS *cum)
 +{
-+  if (!current_function_decl)
++  /* CUM->fndecl is the callee for outgoing calls and the current
++     function for incoming argument assignment.  The register map is
++     recorded by the C front end as an internal "m68k parm regs"
++     attribute on the FUNCTION_DECL of a *definition* (see
++     store_parm_decls in c-decl.cc); prototypes never carry it and
++     annotated prototypes are rejected outright, so returning -1
++     (stack ABI) here is always consistent between caller and callee.
++     DECL_ATTRIBUTES is used rather than the PARM_DECL chain because
++     cgraph frees DECL_ARGUMENTS once a function has been compiled,
++     which would make later callers fall back to the stack ABI.  */
++  if (!cum->fndecl || TREE_CODE (cum->fndecl) != FUNCTION_DECL)
 +    return -1;
-+  int i = 0;
-+  for (const_tree parm = DECL_ARGUMENTS (current_function_decl);
-+       parm; parm = DECL_CHAIN (parm), i++)
++  tree attr = lookup_attribute ("m68k parm regs",
++				DECL_ATTRIBUTES (cum->fndecl));
++  if (!attr)
++    return -1;
++  for (tree entry = TREE_VALUE (attr); entry; entry = TREE_CHAIN (entry))
 +    {
-+      if (i != parmno)
++      if (!tree_fits_shwi_p (TREE_PURPOSE (entry))
++	  || tree_to_shwi (TREE_PURPOSE (entry)) != cum->parmno)
 +	continue;
-+      if (TREE_CODE (parm) != PARM_DECL)
++      tree str = TREE_VALUE (entry);
++      if (!str || TREE_CODE (str) != STRING_CST)
 +	return -1;
-+      if (!DECL_ASSEMBLER_NAME_SET_P (parm))
-+	return -1;
-+      /* DECL_ASSEMBLER_NAME requires a non-const tree.  */
-+      const char *name =
-+	IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (CONST_CAST_TREE (parm)));
++      const char *name = TREE_STRING_POINTER (str);
 +      if (!name || *name == '\0')
 +	return -1;
 +      int regno = decode_reg_name (name);
@@ -123,19 +180,19 @@ Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
 +m68k_function_arg (cumulative_args_t cum_v, const function_arg_info &arg)
  {
 +  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-+  int regno = m68k_get_parm_regno_at (cum->parmno);
++  int regno = m68k_get_parm_regno (cum);
 +  if (regno >= 0)
 +    return gen_rtx_REG (arg.mode, regno);
    return NULL_RTX;
  }
  
-@@ -1479,7 +1533,12 @@
+@@ -1479,7 +1558,12 @@
  {
    CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
  
 -  *cum += (arg.promoted_size_in_bytes () + 3) & ~3;
 +  /* Register-constrained parameters consume no stack space.  */
-+  if (m68k_get_parm_regno_at (cum->parmno) < 0)
++  if (m68k_get_parm_regno (cum) < 0)
 +    cum->bytes += (arg.promoted_size_in_bytes () + 3) & ~3;
 +
 +  /* Always advance the parameter index.  */
@@ -143,3 +200,161 @@ Apply AFTER gcc-barto.patch from inside the gcc-15.1.0 source directory:
  }
  
  /* Convert X to a legitimate function call memory reference and return the
+--- a/gcc/c/c-tree.h
++++ b/gcc/c/c-tree.h
+@@ -585,6 +585,10 @@
+   struct c_declspecs *specs;
+   /* The attributes.  */
+   tree attrs;
++  /* The optional asm register name from an asm("reg") specifier on the
++     parameter declaration, or NULL_TREE if none.  Used to implement
++     the AmigaOS register parameter calling convention.  */
++  tree asm_name;
+   /* The declarator.  */
+   struct c_declarator *declarator;
+   /* The location of the parameter.  */
+@@ -723,7 +727,7 @@
+ extern tree xref_tag (enum tree_code, tree);
+ extern struct c_typespec parser_xref_tag (location_t, enum tree_code, tree,
+ 					  bool, tree, bool);
+-extern struct c_parm *build_c_parm (struct c_declspecs *, tree,
++extern struct c_parm *build_c_parm (struct c_declspecs *, tree, tree,
+ 				    struct c_declarator *, location_t);
+ extern struct c_declarator *build_attrs_declarator (tree,
+ 						    struct c_declarator *);
+--- a/gcc/c/c-decl.cc
++++ b/gcc/c/c-decl.cc
+@@ -6223,6 +6223,17 @@
+ 
+   decl_attributes (&decl, attrs, 0);
+ 
++  if (parm->asm_name && decl && DECL_P (decl))
++    /* Record the asm("reg") specifier as an internal attribute on the
++       PARM_DECL; the name contains a space so it cannot be spelled in
++       source code.  store_parm_decls later consolidates the map onto
++       the FUNCTION_DECL for the m68k backend.  DECL_ASSEMBLER_NAME
++       must NOT be used here: PARM_DECLs have no assembler-name field,
++       and setting it aliases DECL_INCOMING_RTL storage.  */
++    DECL_ATTRIBUTES (decl)
++      = tree_cons (get_identifier ("m68k parm reg"), parm->asm_name,
++		   DECL_ATTRIBUTES (decl));
++
+   return decl;
+ }
+ 
+@@ -6422,6 +6433,17 @@
+   attrs = get_parm_array_spec (parm, attrs);
+   decl_attributes (&decl, attrs, 0);
+ 
++  if (parm->asm_name && decl && DECL_P (decl))
++    /* Record the asm("reg") specifier as an internal attribute on the
++       PARM_DECL; the name contains a space so it cannot be spelled in
++       source code.  store_parm_decls later consolidates the map onto
++       the FUNCTION_DECL for the m68k backend.  DECL_ASSEMBLER_NAME
++       must NOT be used here: PARM_DECLs have no assembler-name field,
++       and setting it aliases DECL_INCOMING_RTL storage.  */
++    DECL_ATTRIBUTES (decl)
++      = tree_cons (get_identifier ("m68k parm reg"), parm->asm_name,
++		   DECL_ATTRIBUTES (decl));
++
+   decl = pushdecl (decl);
+ 
+   finish_decl (decl, input_location, NULL_TREE, NULL_TREE, NULL_TREE);
+@@ -8441,6 +8463,25 @@
+ {
+   tree arg_types = arg_info->types;
+ 
++  /* Reject asm("reg") register annotations on parameters of anything
++     that is not a function definition (prototypes, typedefs, function
++     pointers).  The register map is recorded only on the FUNCTION_DECL
++     of a definition (see store_parm_decls); a call through an annotated
++     prototype would silently fall back to the default stack ABI while
++     the definition reads registers -- an ABI mismatch that corrupts
++     memory at run time.  */
++  if (!funcdef_flag)
++    for (tree p = arg_info->parms; p; p = DECL_CHAIN (p))
++      if (TREE_CODE (p) == PARM_DECL
++	  && lookup_attribute ("m68k parm reg", DECL_ATTRIBUTES (p)))
++	{
++	  error_at (DECL_SOURCE_LOCATION (p),
++		    "register parameter %qD is only supported on "
++		    "function definitions", p);
++	  DECL_ATTRIBUTES (p)
++	    = remove_attribute ("m68k parm reg", DECL_ATTRIBUTES (p));
++	}
++
+   if (funcdef_flag && arg_info->had_vla_unspec)
+     {
+       /* A function definition isn't function prototype scope C99 6.2.1p4.  */
+@@ -11313,6 +11354,30 @@
+   else
+     store_parm_decls_oldstyle (fndecl, arg_info);
+ 
++  /* If any parameter carries an asm("reg") annotation (recorded as an
++     internal "m68k parm reg" attribute by grokparm/push_parm_decl),
++     consolidate the mapping into a single "m68k parm regs" attribute
++     on FNDECL: a list of (parameter index, register-name STRING_CST).
++     The FUNCTION_DECL is used as the durable carrier because cgraph
++     frees DECL_ARGUMENTS once a function has been compiled, which
++     would otherwise make callers expanded later in the same
++     translation unit fall back to the stack ABI silently.  */
++  {
++    tree regs = NULL_TREE;
++    int parmno = 0;
++    for (tree p = DECL_ARGUMENTS (fndecl); p; p = DECL_CHAIN (p), parmno++)
++      {
++	tree a = lookup_attribute ("m68k parm reg", DECL_ATTRIBUTES (p));
++	if (a)
++	  regs = tree_cons (build_int_cst (integer_type_node, parmno),
++			    TREE_VALUE (a), regs);
++      }
++    if (regs)
++      DECL_ATTRIBUTES (fndecl)
++	= tree_cons (get_identifier ("m68k parm regs"), regs,
++		     DECL_ATTRIBUTES (fndecl));
++  }
++
+   /* The next call to push_scope will be a function body.  */
+ 
+   next_is_function_body = true;
+@@ -11846,13 +11911,14 @@
+ /* Return a c_parm structure with the given SPECS, ATTRS and DECLARATOR.  */
+ 
+ struct c_parm *
+-build_c_parm (struct c_declspecs *specs, tree attrs,
++build_c_parm (struct c_declspecs *specs, tree attrs, tree asm_name,
+ 	      struct c_declarator *declarator,
+ 	      location_t loc)
+ {
+   struct c_parm *ret = XOBNEW (&parser_obstack, struct c_parm);
+   ret->specs = specs;
+   ret->attrs = attrs;
++  ret->asm_name = asm_name;
+   ret->declarator = declarator;
+   ret->loc = loc;
+   return ret;
+--- a/gcc/c/c-parser.cc
++++ b/gcc/c/c-parser.cc
+@@ -5333,6 +5333,13 @@
+   if (c_parser_next_token_is_keyword (parser, RID_ATTRIBUTE))
+     postfix_attrs = c_parser_gnu_attributes (parser);
+ 
++  /* If followed by an asm register specification e.g. __asm__("d0"),
++     record it so grokparm/push_parm_decl can apply it to the PARM_DECL.
++     This enables the AmigaOS register parameter calling convention.  */
++  tree asm_name = NULL_TREE;
++  if (c_parser_next_token_is_keyword (parser, RID_ASM))
++    asm_name = c_parser_simple_asm_expr (parser);
++
+   /* Generate a location for the parameter, ranging from the start of the
+      initial token to the end of the final token.
+ 
+@@ -5358,7 +5365,7 @@
+   location_t param_loc = make_location (caret_loc, start_loc, end_loc);
+ 
+   return build_c_parm (specs, chainon (postfix_attrs, prefix_attrs),
+-		       declarator, param_loc);
++		       asm_name, declarator, param_loc);
+ }
+ 
+ /* Parse a string literal in an asm expression.  It should not be
