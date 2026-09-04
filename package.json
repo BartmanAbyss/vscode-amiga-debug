@@ -521,6 +521,17 @@
 			{
 				"title": "Amiga C/C++ Compile, Debug & Profile",
 				"properties": {
+					"amiga.emulator": {
+						"type": "string",
+						"enum": ["auto", "copperline"],
+						"default": "auto",
+						"description": "Emulator backend: bundled WinUAE/FS-UAE, or an installed Copperline with the Bartman GDB dialect."
+					},
+					"amiga.copperline-path": {
+						"type": "string",
+						"default": "copperline",
+						"description": "Path to the Copperline executable (or a command on PATH)."
+					},
 					"amiga.program": {
 						"type": "string",
 						"default": "out/a",
