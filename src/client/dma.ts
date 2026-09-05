@@ -440,18 +440,23 @@ export interface IScreen {
 	ham: boolean;
 }
 
-export function GetScreenFromCopper(copper: Copper[], chipsetFlags: number): IScreen {
-	let planes = [0, 0, 0, 0, 0, 0, 0, 0];
-	const modulos = [0, 0];
+export function GetScreenFromCopper(copper: Copper[], chipsetFlags: number, customRegs: ArrayLike<number> = []): IScreen {
+	// A display register may have been initialized by the CPU or a previous
+	// frame. Copper moves in this frame override the captured starting state.
+	const initial = (name: string) => customRegs[(Custom.ByName(name).adr - 0xdff000) >>> 1] ?? 0;
+	let planes = Array.from({ length: 8 }, (_, i) =>
+		(initial(`BPL${i + 1}PTH`) << 16) | initial(`BPL${i + 1}PTL`));
+	const modulos = [COERCE16(initial("BPL1MOD")), COERCE16(initial("BPL2MOD"))];
 
-	let BPLCON0 = 0;
-	let DDFSTRT = 0;
-	let DDFSTOP = 0;
-	let DIWSTRT = 0;
-	let DIWSTOP = 0;
-	let DIWHIGH = 0;
+	let BPLCON0 = initial("BPLCON0");
+	let DDFSTRT = initial("DDFSTRT");
+	let DDFSTOP = initial("DDFSTOP");
+	let DIWSTRT = initial("DIWSTRT");
+	let DIWSTOP = initial("DIWSTOP");
+	let DIWHIGH = initial("DIWHIGH");
+	// The snapshot does not record whether DIWHIGH has ever been written.
 	let useDIWHIGH = false;
-	let FMODE = 0;
+	let FMODE = initial("FMODE");
 
 	const regBPLCON0 = Custom.ByName("BPLCON0").adr;
 	const regBPL1MOD = Custom.ByName("BPL1MOD").adr;

@@ -1,3 +1,4 @@
+import { copperlineArgs } from "./backend/copperline";
 /* eslint-disable no-prototype-builtins */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -108,6 +109,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	private args: LaunchRequestArguments;
 	private symbolTable: SymbolTable;
+	private useCopperline = false;
 
 	// we may need to temporarily stop the target when setting breakpoints; don't let VSCode let it know though,
 	// it will send requests for threads and registers, they will fail because we already continued..
@@ -160,6 +162,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if(DEBUG)
 			logger.setup(Logger.LogLevel.Verbose, false);
 
+		const useCopperline = this.useCopperline = vscode.workspace.getConfiguration("amiga").get<string>("emulator", "auto") === "copperline";
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
 		const dh0Path = path.join(binPath, "..", "dh0");
@@ -201,12 +204,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
 			return;
 		}
-		if (args.cpuboard && !fs.existsSync(args.cpuboard)) {
+		if (!useCopperline && args.cpuboard && !fs.existsSync(args.cpuboard)) {
 			this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
 			return;
 		}
 
-		if (isWin) {
+		if (useCopperline) {
+			// --run stages the boot volume; no shared UAE configuration files.
+		} else if (isWin) {
 			// WinUAE:
 
 			try {
@@ -471,14 +476,18 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			}
 		}
 
-		const emuPath = isWin
+		const emuPath = useCopperline
+			? vscode.workspace.getConfiguration("amiga").get<string>("copperline-path", "copperline")
+			: isWin
 			? path.join(binPath, "winuae-gdb.exe")
 			: path.join(binPath, "fs-uae", "fs-uae");
 
 		if(args.emuargs === undefined)
 			args.emuargs = [];
 
-		const emuArgs = [
+		let emuArgs: string[];
+		try {
+			emuArgs = useCopperline ? copperlineArgs(args) : [
 			...(isWin
 				// all WinUAE options now in config file
 				? [ '-portable' ]
@@ -486,6 +495,11 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				: [...config].map(([k, v]) => `--${k}=${v}`)),
 			...args.emuargs
 		];
+
+		} catch (error) {
+			this.sendErrorResponse(response, 103, (error as Error).message);
+			return;
+		}
 
 		// defaults - from package.json
 		if(args.endcli === undefined)
@@ -510,6 +524,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		this.breakpointMap = new Map();
 		this.fileExistsCache = new Map();
 
+		if (!useCopperline) {
 		const ssPath = path.join(dh0Path, "s/startup-sequence");
 		try {
 			let startupSequence = '';
@@ -530,6 +545,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			return;
 		}
 
+		}
 		this.quit = false;
 		this.started = false;
 		this.crashed = false;
@@ -547,7 +563,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		}
 
 		// launch Emulator
-		const cwd = isWin
+		const cwd = useCopperline ? path.dirname(args.program) : isWin
 			? dirname(emuPath)
 			// CWD determines location for debug_save/debug_load on FS-UAE
 			: vscode.workspace.workspaceFolders[0].uri.fsPath;
@@ -615,6 +631,14 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 		// Remove emulator close listener now debugger is connected
 		emu.off("exit", handleExit);
+		if (useCopperline) {
+			emu.once("exit", () => {
+				if (!this.quit) {
+					this.miDebugger.stop();
+					this.quitEvent();
+				}
+			});
+		}
 	}
 
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): Promise<void> {
@@ -867,7 +891,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
 
 				// write unwind table for WinUAE
-				const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);
+				const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable,
+					this.useCopperline);
 				fs.writeFileSync(tmp + ".unwind", unwind.unwind);
 
 				progress.report({ message: 'Starting profile...'});
@@ -931,7 +956,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected customReadRegistersRequest(response: DebugProtocol.Response) {
-		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x').then((node) => {
+		// Copperline's Bartman dialect exposes the 18 integer CPU registers.
+		const registerNumbers = this.useCopperline
+			? " " + Array.from({ length: 18 }, (_, i) => i).join(" ") : "";
+		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x' + registerNumbers).then((node) => {
 			if (node.resultRecords.resultClass === 'done') {
 				const rv = node.resultRecords.results[0][1];
 				response.body = rv.map((n) => {
@@ -1106,6 +1134,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected quitEvent() {
+		if (this.quit)
+			return;
 		this.quit = true;
 		this.sendEvent(new TerminatedEvent());
 	}

@@ -27,6 +27,28 @@ Here's a video showing off all the new features of v1.1, including the frame pro
 5. Hit <kbd>F5</kbd> to build and run a minimal sample project
 6. If you prefer C++ instead of C, just rename `main.c` to `main.cpp`
 
+## Copperline backend
+
+Set `amiga.emulator` to `copperline` and `amiga.copperline-path` to an installed
+Copperline executable with `--gdb-dialect bartman` support. The extension keeps
+its bundled patched GDB, compiler and profile viewer. Copperline stages the
+`.exe` through `--run`; the `.elf` still supplies symbols to GDB. It supports
+all six existing model presets and the chip/fast/slow memory overrides.
+`emuargs` are passed as separate Copperline CLI arguments. `cpuboard` ROMs
+are specific to UAE and must be removed when selecting this backend.
+
+The register view requests Copperline's 18 integer registers. CPU profiling
+uses available DWARF call-frame information and stops unwinding at assembly
+without CFI; such samples still contribute their measured cycles. Unmapped
+profile addresses are shown explicitly. Inferred Copper bitmaps start from
+the captured custom registers, so display setup performed by the CPU is
+included even when the frame's Copper list leaves those registers alone.
+
+The binary profile viewer uses its existing fixed PAL grid. Native Copperline
+profiles retain other frame geometries. USS documents continue to use the
+existing UAE savestate editor; Copperline's separate `--load-uss` importer has
+its own supported chunk coverage.
+
 ## Features
 - No additional tools required. Everything is included (except Kickstart ROM 😒). Ready to go make your next Amiga 500 production!
 - State-of-the-art code generation by GCC with Link-Time-Optimizations (LTO) for increased performance and smaller code size
@@ -357,3 +379,7 @@ diff -ruN gcc-15.2.0 gcc-15.2.0-barto > gcc-barto.patch
 * Denise: `fightin.uss`: wrong palette
 * TODO: AGA colors (256 colors and 24bit)
 
+
+Copperline's generated `--run` boot volume requires Kickstart 2.0 or newer.
+Omit the launch `kickstart` field to use its bundled AROS ROM; the existing
+Kickstart 1.3 snippets need that field changed for this backend.
