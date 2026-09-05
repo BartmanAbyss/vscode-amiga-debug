@@ -203,7 +203,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 103, `Unable to find Kickstart ROM at ${args.kickstart}.`);
 			return;
 		}
-		if (args.cpuboard && !fs.existsSync(args.cpuboard)) {
+		if (!useCopperline && args.cpuboard && !fs.existsSync(args.cpuboard)) {
 			this.sendErrorResponse(response, 103, `Unable to find CPU Board Extension ROM at ${args.cpuboard}.`);
 			return;
 		}
