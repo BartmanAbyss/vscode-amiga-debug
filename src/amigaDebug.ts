@@ -109,6 +109,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 
 	private args: LaunchRequestArguments;
 	private symbolTable: SymbolTable;
+	private useCopperline = false;
 
 	// we may need to temporarily stop the target when setting breakpoints; don't let VSCode let it know though,
 	// it will send requests for threads and registers, they will fail because we already continued..
@@ -161,7 +162,7 @@ export class AmigaDebugSession extends LoggingDebugSession {
 		if(DEBUG)
 			logger.setup(Logger.LogLevel.Verbose, false);
 
-		const useCopperline = vscode.workspace.getConfiguration("amiga").get<string>("emulator", "auto") === "copperline";
+		const useCopperline = this.useCopperline = vscode.workspace.getConfiguration("amiga").get<string>("emulator", "auto") === "copperline";
 		const binPath: string = await vscode.commands.executeCommand("amiga.bin-path");
 		const objdumpPath = path.join(binPath, "opt/bin/m68k-amiga-elf-objdump");
 		const dh0Path = path.join(binPath, "..", "dh0");
@@ -890,7 +891,8 @@ export class AmigaDebugSession extends LoggingDebugSession {
 				const tmp = path.join(os.tmpdir(), `amiga-profile-${dateString}`);
 
 				// write unwind table for WinUAE
-				const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable);
+				const unwind = new UnwindTable(objdumpPath, this.args.program + ".elf", this.symbolTable,
+					this.useCopperline);
 				fs.writeFileSync(tmp + ".unwind", unwind.unwind);
 
 				progress.report({ message: 'Starting profile...'});
@@ -954,7 +956,10 @@ export class AmigaDebugSession extends LoggingDebugSession {
 	}
 
 	protected customReadRegistersRequest(response: DebugProtocol.Response) {
-		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x').then((node) => {
+		// Copperline's Bartman dialect exposes the 18 integer CPU registers.
+		const registerNumbers = this.useCopperline
+			? " " + Array.from({ length: 18 }, (_, i) => i).join(" ") : "";
+		this.miDebugger.sendCommand('data-list-register-values --skip-unavailable x' + registerNumbers).then((node) => {
 			if (node.resultRecords.resultClass === 'done') {
 				const rv = node.resultRecords.results[0][1];
 				response.body = rv.map((n) => {

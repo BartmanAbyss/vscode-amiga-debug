@@ -19,6 +19,7 @@ import { AmigaAssemblyDocumentMananger, AmigaAssemblyLanguageProvider } from './
 import { BaseNode as RBaseNode, CustomRegisterTreeProvider, FieldNode, RegisterTreeProvider, TreeNode as RTreeNode } from './registers';
 import { NumberFormat, SourceLineWithDisassembly, SymbolInformation, SymbolScope } from './symbols';
 import { SymbolTable } from './backend/symbols';
+import { bundledGccExecutables } from './backend/toolchain';
 import { SourceMap, Profiler } from './backend/profile';
 import { ObjdumpEditorProvider } from './objdump_editor_provider';
 import { SavestateEditorProvider } from './savestate_editor_provider';
@@ -706,7 +707,6 @@ class AmigaDebugExtension {
 	}
 
 	private async setPermissions() {
-		const version = "15.2.0";
 		const exes = [
 			"elf2hunk",
 			"exe2adf",
@@ -717,11 +717,7 @@ class AmigaDebugExtension {
 			"opt/bin/m68k-amiga-elf-gdb",
 			"opt/bin/m68k-amiga-elf-ld",
 			"opt/bin/m68k-amiga-elf-objdump",
-			`opt/libexec/gcc/m68k-amiga-elf/${version}/cc1`,
-			`opt/libexec/gcc/m68k-amiga-elf/${version}/cc1plus`,
-			`opt/libexec/gcc/m68k-amiga-elf/${version}/collect2`,
-			`opt/libexec/gcc/m68k-amiga-elf/${version}/lto-wrapper`,
-			`opt/libexec/gcc/m68k-amiga-elf/${version}/lto1`,
+			...bundledGccExecutables(this.binPath),
 			"opt/m68k-amiga-elf/bin/ar",
 			"opt/m68k-amiga-elf/bin/as",
 			"opt/m68k-amiga-elf/bin/ld",

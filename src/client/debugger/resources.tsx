@@ -426,7 +426,7 @@ export const GfxResourcesView: FunctionComponent<{
 		// dupecheck copper screens from all frames
 		for(let i = 0; i < MODELS.length; i++) {
 			if(MODELS[i].copper) {
-				const copperScreen = GetScreenFromCopper(MODELS[i].copper, MODELS[0].amiga.chipsetFlags);
+				const copperScreen = GetScreenFromCopper(MODELS[i].copper, MODELS[i].amiga.chipsetFlags, MODELS[i].amiga.customRegs);
 				const dupe = copperScreens.findIndex((cs) => JSON.stringify(cs.screen) === JSON.stringify(copperScreen));
 				if(dupe === -1)
 					copperScreens.push({ screen: copperScreen, frames: [i + 1] });

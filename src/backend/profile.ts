@@ -111,7 +111,7 @@ export class UnwindTable {
 	public unwind: Int16Array;
 	public codeSize: number;
 
-	constructor(private objdumpPath: string, private elfPath: string, private symbols: SymbolTable) {
+	constructor(private objdumpPath: string, private elfPath: string, private symbols: SymbolTable, stopAtMissingCfi = false) {
 		const textSection = symbols.sections.find((section) => section.name === '.text');
 		this.codeSize = textSection.size;
 		const invalidUnwind: Unwind = {
@@ -120,7 +120,8 @@ export class UnwindTable {
 			r13: -1,
 			ra: -1
 		};
-		let unwind = new Array<Unwind>(this.codeSize).fill(invalidUnwind);
+		// Each compact row describes one instruction word, not one byte.
+		let unwind = new Array<Unwind>(Math.ceil(this.codeSize / 2)).fill(invalidUnwind);
 
 		const objdump = childProcess.spawnSync(this.objdumpPath, ['--dwarf=frames-interp', this.elfPath], { maxBuffer: 10 * 1024 * 1024 });
 		if (objdump.status !== 0)
@@ -222,8 +223,10 @@ export class UnwindTable {
 		}
 
 		// Replace remaining invalid unwinds with default values
+		// Copperline stops at a non-advancing CFA. Assembly without CFI may
+		// adjust SP, so guessing A7+4 can invent a caller from saved data.
 		const defaultUnwind: Unwind = {
-			cfaOfs: 4,
+			cfaOfs: stopAtMissingCfi ? 0 : 4,
 			cfaReg: 15,
 			r13: -1,
 			ra: -4
@@ -721,6 +724,10 @@ export class Profiler {
 					if (callstack.frames.length)
 						pc -= 2; // unwinding gets PC of next instruction, we want the previous!
 					const l = this.sourceMap.uniqueLines[this.sourceMap.lines[pc >> 1]];
+					if (!l) {
+						callstack.frames.unshift({ func: `[Unmapped $${pc.toString(16)}]`, file: '', line: 0 });
+						continue;
+					}
 					for (let i = l.frames.length - 1; i >= 0; i--) {
 						callstack.frames.unshift({ ...l.frames[i] });
 						if (i !== 0)

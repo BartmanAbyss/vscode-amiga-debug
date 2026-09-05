@@ -37,6 +37,13 @@ all six existing model presets and the chip/fast/slow memory overrides.
 `emuargs` are passed as separate Copperline CLI arguments. `cpuboard` ROMs
 are specific to UAE and must be removed when selecting this backend.
 
+The register view requests Copperline's 18 integer registers. CPU profiling
+uses available DWARF call-frame information and stops unwinding at assembly
+without CFI; such samples still contribute their measured cycles. Unmapped
+profile addresses are shown explicitly. Inferred Copper bitmaps start from
+the captured custom registers, so display setup performed by the CPU is
+included even when the frame's Copper list leaves those registers alone.
+
 The binary profile viewer uses its existing fixed PAL grid. Native Copperline
 profiles retain other frame geometries. USS documents continue to use the
 existing UAE savestate editor; Copperline's separate `--load-uss` importer has
